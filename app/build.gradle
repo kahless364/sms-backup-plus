@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'jacoco'
 
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('keystore.properties')
@@ -30,9 +31,14 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            // U-004: enabled R8 code-shrinking on release (was false)
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig keystoreProperties.isEmpty() ? null : signingConfigs.release
+        }
+        debug {
+            // Enable coverage instrumentation so JaCoCo can collect execution data
+            testCoverageEnabled true
         }
     }
 
@@ -73,5 +79,90 @@ dependencies {
 tasks.withType(JavaCompile) {
     if (!it.name.toLowerCase().contains('test')) {
         options.compilerArgs = ['-Werror', '-Xlint:unchecked', '-Xlint:deprecation']
+    }
+}
+
+// ---------------------------------------------------------------------------
+// JaCoCo coverage report + per-package 70% gate (U-004 / REQ-MODERNIZATION-003 AC-3)
+// ---------------------------------------------------------------------------
+
+jacoco {
+    toolVersion = "0.8.7"
+}
+
+// Shared class-file filter: exclude generated/framework files from coverage
+def jacocoFileFilter = [
+        '**/R.class',
+        '**/R$*.class',
+        '**/BuildConfig.*',
+        '**/Manifest*.*',
+        '**/*Test*.*',
+        'android/**/*.*'
+]
+
+// jacocoTestReport: generates the HTML/XML coverage report and then triggers
+// the per-package coverage verification as a finalizer so CI fails on breach.
+task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+    sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
+    classDirectories.setFrom(files([
+            fileTree(dir: "${buildDir}/intermediates/javac/debug", excludes: jacocoFileFilter)
+    ]))
+    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec', '**/*.ec']))
+
+    // Trigger coverage verification after the report; build fails non-zero on breach
+    finalizedBy 'jacocoTestCoverageVerification'
+}
+
+// jacocoTestCoverageVerification: enforces >= 70% LINE coverage independently
+// on each of the three gated packages (service/**, mail/**, auth/**).
+// Each rule is a separate block so a breach names the specific offending package.
+//
+// IMPORTANT glob note: JaCoCo PACKAGE element includes use slash-separated
+// class-path patterns. The '**' suffix matches 'service' itself AND sub-packages
+// 'service/state' and 'service/exception' (both verified present in source tree).
+// If the JaCoCo version resolved by AGP 4.1.3 does not support '**' for sub-package
+// recursion, list sub-packages explicitly (see Technical Notes in U-004).
+task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn: ['testDebugUnitTest']) {
+    sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
+    classDirectories.setFrom(files([
+            fileTree(dir: "${buildDir}/intermediates/javac/debug", excludes: jacocoFileFilter)
+    ]))
+    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec', '**/*.ec']))
+
+    violationRules {
+        // Rule 1: com/zegoggles/smssync/service/** (includes state/ and exception/)
+        rule {
+            element = 'PACKAGE'
+            includes = ['com/zegoggles/smssync/service/**']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+        // Rule 2: com/zegoggles/smssync/mail/**
+        rule {
+            element = 'PACKAGE'
+            includes = ['com/zegoggles/smssync/mail/**']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+        // Rule 3: com/zegoggles/smssync/auth/**
+        rule {
+            element = 'PACKAGE'
+            includes = ['com/zegoggles/smssync/auth/**']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
     }
 }

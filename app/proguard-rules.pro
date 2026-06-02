@@ -23,3 +23,32 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ---------------------------------------------------------------------------
+# U-004: R8 keep rules for reflection surfaces (interim — removed by later MUs)
+# ---------------------------------------------------------------------------
+
+# Otto event bus: preserve all methods annotated with @Subscribe or @Produce.
+# Otto dispatches events by reflecting on these methods at runtime. R8 would
+# otherwise rename or strip them, silently breaking all event delivery.
+# 12 @Subscribe/@Produce import sites across 11 files in the current codebase.
+# These keep rules are INTERIM and must be removed when Otto is replaced by
+# StateFlow in MU-006.
+-keep @com.squareup.otto.Subscribe class * { *; }
+-keepclassmembers class * {
+    @com.squareup.otto.Subscribe <methods>;
+    @com.squareup.otto.Produce <methods>;
+}
+
+# firebase-jobdispatcher: SmsJobService is resolved reflectively via the
+# ACTION_EXECUTE intent filter. Without this rule R8 strips or renames the
+# class, breaking job dispatch.
+# INTERIM: remove when firebase-jobdispatcher is replaced by WorkManager in MU-005.
+-keep public class com.zegoggles.smssync.service.SmsJobService { *; }
+
+# AuthMode and DataType enums: Preferences.getDefaultType() uses valueOf() paths
+# that R8 treats as dead code without a keep rule.
+-keepclassmembers enum com.zegoggles.smssync.** {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

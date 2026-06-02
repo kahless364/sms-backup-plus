@@ -17,4 +17,5 @@ out
 proguard.cfg
 proguard-project.txt
 .gradle
-build
+/build
+/app/build
