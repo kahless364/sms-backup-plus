@@ -55,8 +55,8 @@ artifact_type: sprint-plan
 
 | Wave | Story ID | Title | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |------|----------|-------|-----------|-------|-------------|------------|--------|----------|
-| wave-1 | U-001 | AGP S1: Bump AGP 4.1.3 to 7.4.x, Gradle wrapper to 7.5.x, and raise minSdkVersion to 21 | developer | sonnet | lead | — | planned | critical |
-| wave-1 | U-004 | Add GitHub Actions CI workflow with JaCoCo per-package coverage gate and R8 enablement | developer | sonnet | lead | — | planned | high |
+| wave-1 | U-001 | AGP S1: Bump AGP 4.1.3 to 7.4.x, Gradle wrapper to 7.5.x, and raise minSdkVersion to 21 | developer | sonnet | lead | — | done | critical |
+| wave-1 | U-004 | Add GitHub Actions CI workflow with JaCoCo per-package coverage gate and R8 enablement | developer | sonnet | lead | — | done | high |
 | wave-2 | U-002 | AGP Stage S2: Bump AGP to 8.x, Gradle wrapper to 8.x, and pin JDK 17 toolchain | developer | sonnet | lead | U-001 | planned | critical |
 | wave-3 | U-005 | Upgrade test toolchain (Robolectric 4.12.x, JUnit 4.13.2, Mockito-core 5.x, Truth 1.4.x) | developer | sonnet | lead | U-002, U-004 | planned | high |
 | wave-4 | U-003 | Stage S3: raise targetSdk to 35, co-land conformance fixes, and remove JCenter | developer | sonnet | lead | U-002, U-005 | planned | critical |
