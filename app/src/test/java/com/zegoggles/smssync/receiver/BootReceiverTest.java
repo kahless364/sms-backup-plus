@@ -12,7 +12,7 @@ import org.robolectric.RuntimeEnvironment;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class BootReceiverTest {
@@ -20,7 +20,7 @@ public class BootReceiverTest {
     BootReceiver receiver;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         receiver = new BootReceiver() {
             @Override protected BackupJobs getBackupJobs(Context context) {
                 return backupJobs;

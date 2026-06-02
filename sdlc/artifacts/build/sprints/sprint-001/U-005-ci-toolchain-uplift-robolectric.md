@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: low
@@ -25,6 +25,8 @@ title: Upgrade test toolchain in the SDK-35 PR (Robolectric 4.12.x, JUnit 4.13.2
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-02T19:33:42.543Z'
+resolution: done
 ---
 
 # U-005: Upgrade test toolchain in the SDK-35 PR (Robolectric 4.12.x, JUnit 4.13.2, Mockito-core 5.x, Truth 1.4.x) and generate verification metadata

@@ -18,12 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.zegoggles.smssync.mail.DataType.CALLLOG;
 import static com.zegoggles.smssync.mail.DataType.MMS;
 import static com.zegoggles.smssync.mail.DataType.SMS;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class BackupItemsFetcherTest {
@@ -34,7 +35,7 @@ public class BackupItemsFetcherTest {
     Preferences preferences;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         context = RuntimeEnvironment.application;
         preferences = new Preferences(context);
         fetcher = new BackupItemsFetcher(
@@ -45,12 +46,12 @@ public class BackupItemsFetcherTest {
     @Test public void shouldGetItemsForDataType() throws Exception {
         preferences.getDataTypePreferences().setBackupEnabled(true, SMS);
         assertThat(fetcher.getItemsForDataType(SMS, null, -1).getCount()).isEqualTo(0);
-        verifyZeroInteractions(resolver);
+        verifyNoInteractions(resolver);
     }
 
     @Test public void shouldCatchSQLiteExceptions() throws Exception {
         preferences.getDataTypePreferences().setBackupEnabled(true, SMS);
-        when(resolver.query(any(Uri.class), any(String[].class), anyString(), any(String[].class), anyString()))
+        when(resolver.query(nullable(Uri.class), nullable(String[].class), nullable(String.class), nullable(String[].class), nullable(String.class)))
                 .thenThrow(new SQLiteException());
 
         mockEmptyQuery();
@@ -60,7 +61,7 @@ public class BackupItemsFetcherTest {
 
     @Test public void shouldCatchNullPointerExceptions() throws Exception {
         preferences.getDataTypePreferences().setBackupEnabled(true, SMS);
-        when(resolver.query(any(Uri.class), any(String[].class), anyString(), any(String[].class), anyString()))
+        when(resolver.query(nullable(Uri.class), nullable(String[].class), nullable(String.class), nullable(String[].class), nullable(String.class)))
                 .thenThrow(new NullPointerException());
 
         mockEmptyQuery();
@@ -96,11 +97,11 @@ public class BackupItemsFetcherTest {
         BackupQueryBuilder.Query query = mock(BackupQueryBuilder.Query.class);
         when(queryBuilder.buildMostRecentQueryForDataType(type)).thenReturn(query);
 
-        when(resolver.query(any(Uri.class),
-                any(String[].class),
-                any(String.class),
-                any(String[].class),
-                any(String.class))).thenReturn(cursor);
+        when(resolver.query(nullable(Uri.class),
+                nullable(String[].class),
+                nullable(String.class),
+                nullable(String[].class),
+                nullable(String.class))).thenReturn(cursor);
     }
 
     private void mockEmptyQuery() {

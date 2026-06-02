@@ -14,11 +14,12 @@ import java.util.Map;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.zegoggles.smssync.contacts.ContactAccessor.EVERYBODY_ID;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class ContactAccessorTest {
@@ -26,7 +27,7 @@ public class ContactAccessorTest {
     @Mock ContentResolver resolver;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         accessor = new ContactAccessor();
     }
 
@@ -41,8 +42,8 @@ public class ContactAccessorTest {
 
         verify(resolver).query(eq(ContactsContract.Groups.CONTENT_SUMMARY_URI),
                 any(String[].class),
-                any(String.class),
-                any(String[].class),
+                nullable(String.class),
+                nullable(String[].class),
                 eq(ContactsContract.Groups.TITLE + " ASC"));
     }
 
@@ -57,8 +58,8 @@ public class ContactAccessorTest {
 
         when(resolver.query(eq(ContactsContract.Groups.CONTENT_SUMMARY_URI),
                 any(String[].class),
-                any(String.class),
-                any(String[].class),
+                nullable(String.class),
+                nullable(String[].class),
                 eq(ContactsContract.Groups.TITLE + " ASC"))).thenReturn(
                 cursor
         );
@@ -83,7 +84,7 @@ public class ContactAccessorTest {
                         ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID}),
                 eq(ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID + " = ? AND " + ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE + " = ?"),
                 eq(new String[]{String.valueOf(1), ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE}),
-                any(String.class)
+                nullable(String.class)
         );
     }
 
@@ -99,9 +100,9 @@ public class ContactAccessorTest {
         when(resolver.query(
                 eq(ContactsContract.Data.CONTENT_URI),
                 any(String[].class),
-                any(String.class),
-                any(String[].class),
-                any(String.class))
+                nullable(String.class),
+                nullable(String[].class),
+                nullable(String.class))
         ).thenReturn(cursor);
 
         ContactGroupIds ids = accessor.getGroupContactIds(resolver, new ContactGroup(1));

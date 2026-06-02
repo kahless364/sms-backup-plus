@@ -9,14 +9,14 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class AuthPreferencesTest {
     private AuthPreferences authPreferences;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         authPreferences = new AuthPreferences(RuntimeEnvironment.application);
     }
 

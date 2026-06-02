@@ -18,8 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.AUTH_TOKEN_TYPE;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.GOOGLE_TYPE;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class TokenRefresherTest {
@@ -30,7 +31,7 @@ public class TokenRefresherTest {
     TokenRefresher refresher;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         refresher = new TokenRefresher(accountManager, oauth2Client, authPreferences);
     }
 
@@ -48,12 +49,12 @@ public class TokenRefresherTest {
         when(authPreferences.getOauth2Token()).thenReturn("token");
         when(authPreferences.getOauth2Username()).thenReturn("username");
 
-        when(accountManager.getAuthToken(notNull(Account.class),
+        when(accountManager.getAuthToken(notNull(),
                 anyString(),
-                isNull(Bundle.class),
+                isNull(),
                 anyBoolean(),
-                any(AccountManagerCallback.class),
-                any(Handler.class))).thenReturn(mock(AccountManagerFuture.class));
+                nullable(AccountManagerCallback.class),
+                nullable(Handler.class))).thenReturn(mock(AccountManagerFuture.class));
 
         try {
             refresher.refreshOAuth2Token();
@@ -70,12 +71,12 @@ public class TokenRefresherTest {
 
 
         AccountManagerFuture<Bundle> future = mock(AccountManagerFuture.class);
-        when(accountManager.getAuthToken(notNull(Account.class),
+        when(accountManager.getAuthToken(notNull(),
                 anyString(),
-                isNull(Bundle.class),
+                isNull(),
                 anyBoolean(),
-                any(AccountManagerCallback.class),
-                any(Handler.class))).thenReturn(future);
+                nullable(AccountManagerCallback.class),
+                nullable(Handler.class))).thenReturn(future);
         AuthenticatorException exception = new AuthenticatorException();
         when(future.getResult()).thenThrow(exception);
 
@@ -84,7 +85,7 @@ public class TokenRefresherTest {
             fail("expected exception");
         } catch (TokenRefreshException e) {
 
-            assertThat(e.getCause()).isSameAs(exception);
+            assertThat(e.getCause()).isSameInstanceAs(exception);
         }
 
         verify(accountManager).invalidateAuthToken(GOOGLE_TYPE, "token");
