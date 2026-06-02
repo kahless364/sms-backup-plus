@@ -1,0 +1,27 @@
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: FATAL EXCEPTION: main
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: Process: com.zegoggles.smssync, PID: 6426
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: java.lang.RuntimeException: Unable to create application com.zegoggles.smssync.App
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:8313)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.ActivityThread.-$$Nest$mhandleBindApplication(ActivityThread.java:0)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2761)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.os.Handler.dispatchMessageImpl(Handler.java:142)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:125)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:296)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:397)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:9523)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:575)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:939)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: Caused by: java.lang.IllegalArgumentException: com.zegoggles.smssync: Targeting S+ (version 31 and above) requires that one of FLAG_IMMUTABLE or FLAG_MUTABLE be specified when creating a PendingIntent.
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: Strongly consider using FLAG_IMMUTABLE, only use FLAG_MUTABLE if some functionality depends on the PendingIntent being mutable, e.g. if it needs to be used with inline replies or bubbles.
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.PendingIntent.checkPendingIntent(PendingIntent.java:461)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.PendingIntent.getBroadcastAsUser(PendingIntent.java:765)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.PendingIntent.getBroadcast(PendingIntent.java:752)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at com.firebase.jobdispatcher.GooglePlayDriver.<init>(GooglePlayDriver.java:72)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at com.zegoggles.smssync.service.BackupJobs.<init>(BackupJobs.java:71)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at com.zegoggles.smssync.service.BackupJobs.<init>(BackupJobs.java:63)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at com.zegoggles.smssync.App.onCreate(App.java:78)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1398)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:8308)
+06-02 16:38:34.324  6426  6426 E AndroidRuntime: 	... 10 more
+06-02 16:38:34.326   698  1780 I ActivityManager: Process com.android.vending (pid 6146) has died: cch CEM 

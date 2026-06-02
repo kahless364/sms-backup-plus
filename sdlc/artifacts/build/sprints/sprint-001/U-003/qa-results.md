@@ -203,3 +203,45 @@ Result: **PASS — AC-20, AC-21 satisfied (API 33+ gate present)**
 | AC-29 | Play Console pre-launch review pass | NOT VERIFIED (requires Play Console upload) |
 
 All static/build/test verifications pass. The device-required ACs (AC-15/20/21/29) require a running AVD or physical device and are outside the scope of this automated build story.
+
+---
+
+## Emulator Runtime Test (post-merge, on-device — targetSdk 35)
+
+**Date:** 2026-06-02 · **Device:** emulator-5554 (API 37 / Android 17) · **APK:** fresh debug build, `targetSdkVersion:'35'` confirmed via aapt2
+
+### Finding: launch crash (FAILED on first run)
+The target-35 app **crashed on every launch** with:
+```
+java.lang.IllegalArgumentException: Targeting S+ (version 31 and above) requires that
+one of FLAG_IMMUTABLE or FLAG_MUTABLE be specified when creating a PendingIntent.
+  at com.firebase.jobdispatcher.GooglePlayDriver.<init>(GooglePlayDriver.java:72)
+  at com.zegoggles.smssync.service.BackupJobs.<init>(BackupJobs.java:71)
+  at com.zegoggles.smssync.App.onCreate(App.java:78)
+```
+Root cause: U-001/U-003 added FLAG_IMMUTABLE to the app's own PendingIntent sites, but the
+**deprecated firebase-jobdispatcher library's `GooglePlayDriver` creates its own PendingIntent
+internally without a mutability flag**. The Gradle build cannot detect this; only on-device
+launch at API 31+ surfaces it. Evidence: evidence/u003-launch-crash-api37.png,
+evidence/u003-crash-stacktrace.txt.
+
+### Fix: patched the vendored library
+Added a `Build.VERSION`-guarded `FLAG_IMMUTABLE` to `GooglePlayDriver` (the token is never
+mutated). Patch + rebuild recipe vendored in-repo at `vendor/firebase-jobdispatcher/`
+(README.md + google-play-driver-flag-immutable.patch). Rebuilt the patched AAR via
+`:jobdispatcher:publishToMavenLocal` and rebuilt the app against it.
+
+### Re-test: PASS
+| Check | Result |
+|-------|--------|
+| Install (target-35 debug APK) | Success |
+| Launch / MainActivity | Resumed, pid stable, **0 FATAL** |
+| POST_NOTIFICATIONS runtime request (API 33+) | **Fired correctly** — system "Allow SMS Backup+ to send you notifications?" dialog shown (U-003's requestPostNotificationsIfNeeded working); granted via adb |
+| Reach main screen after grant | topResumedActivity = MainActivity, 0 FATAL |
+
+Evidence: evidence/u003-launch-OK-after-patch-api37.png.
+
+### Residual note
+The patched firebase-jobdispatcher is build-from-source into ~/.m2 (not in a fresh clone /
+CI). Tracked limitation until MU-005 (WorkManager, U-014/U-017) removes the library. See
+vendor/firebase-jobdispatcher/README.md §Caveat.
