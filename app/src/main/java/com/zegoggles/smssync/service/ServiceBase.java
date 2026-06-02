@@ -133,6 +133,7 @@ public abstract class ServiceBase extends Service {
         return PowerManager.PARTIAL_WAKE_LOCK;
     }
 
+    @SuppressWarnings("deprecation")
     private int getWifiLockType() {
         return WifiManager.WIFI_MODE_FULL_HIGH_PERF;
     }
@@ -201,7 +202,7 @@ public abstract class ServiceBase extends Service {
          return PendingIntent.getActivity(getApplicationContext(),
                  0,
                  intent,
-                 FLAG_UPDATE_CURRENT);
+                 FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     boolean isConnectedViaWifi() {

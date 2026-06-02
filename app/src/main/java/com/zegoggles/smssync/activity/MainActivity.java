@@ -116,6 +116,7 @@ public class MainActivity extends ThemeActivity implements
     private static final int REQUEST_PERMISSIONS_BACKUP_MANUAL = 4;
     private static final int REQUEST_PERMISSIONS_BACKUP_MANUAL_SKIP = 5;
     private static final int REQUEST_PERMISSIONS_BACKUP_SERVICE = 6;
+    private static final int REQUEST_POST_NOTIFICATIONS = 7;
 
     public static final String EXTRA_PERMISSIONS = "permissions";
     private static final String SCREEN_TITLE_RES = "titleRes";
@@ -147,6 +148,7 @@ public class MainActivity extends ThemeActivity implements
         }
         checkDefaultSmsApp();
         requestPermissionsIfNeeded();
+        requestPostNotificationsIfNeeded();
     }
 
     @Override
@@ -190,6 +192,7 @@ public class MainActivity extends ThemeActivity implements
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Log.d(TAG, "onActivityResult(" + requestCode + "," + resultCode + "," + data + ")");
@@ -460,6 +463,26 @@ public class MainActivity extends ThemeActivity implements
     private void checkDefaultSmsApp() {
         if (isSmsBackupDefaultSmsApp(this) && SmsRestoreService.isServiceIdle()) {
             restoreDefaultSmsProvider(preferences.getSmsDefaultPackage());
+        }
+    }
+
+    /**
+     * On API 33+ (Android 13 / TIRAMISU), the POST_NOTIFICATIONS permission is a runtime
+     * permission that must be requested before posting any notification. This method requests
+     * it on first activity launch so the user sees the dialog before the first backup/restore
+     * progress notification is posted by SmsBackupService / SmsRestoreService.
+     * On API 32 and below the call is suppressed entirely — the permission did not exist and
+     * calling requestPermissions for it would crash on older SDKs.
+     */
+    private void requestPostNotificationsIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        REQUEST_POST_NOTIFICATIONS);
+            }
         }
     }
 

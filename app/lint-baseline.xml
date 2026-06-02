@@ -1,26 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 7.4.2" type="baseline" client="gradle" dependencies="false" name="AGP (7.4.2)" variant="all" version="7.4.2">
+<issues format="6" by="lint 8.7.3" type="baseline" client="gradle" dependencies="false" name="AGP (8.7.3)" variant="all" version="8.7.3">
 
     <issue
-        id="CheckResult"
-        message="The result of `assertThat` is not used"
-        errorLine1="        assertThat(ids.getIds().contains(123L));"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="Range"
+        message="Value must be ≥ 0 but `getColumnIndex` can be -1"
+        errorLine1="            final String address = cursor.getString(cursor.getColumnIndex(&quot;address&quot;));"
+        errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/test/java/com/zegoggles/smssync/contacts/ContactAccessorTest.java"
-            line="109"
-            column="9"/>
+            file="src/main/java/com/zegoggles/smssync/mail/MmsSupport.java"
+            line="102"
+            column="53"/>
     </issue>
 
     <issue
-        id="CheckResult"
-        message="The result of `assertThat` is not used"
-        errorLine1="        assertThat(ids.getRawIds().contains(256L));"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="Range"
+        message="Value must be ≥ 0 but `getColumnIndex` can be -1"
+        errorLine1="            String type = cursor.getString(cursor.getColumnIndex(&quot;type&quot;));"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/test/java/com/zegoggles/smssync/contacts/ContactAccessorTest.java"
-            line="110"
-            column="9"/>
+            file="src/main/java/com/zegoggles/smssync/mail/MmsSupport.java"
+            line="111"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="Range"
+        message="Value must be ≥ 0 but `getColumnIndex` can be -1"
+        errorLine1="            final String id = curPart.getString(curPart.getColumnIndex(&quot;_id&quot;));"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/zegoggles/smssync/mail/MmsSupport.java"
+            line="161"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="Range"
+        message="Value must be ≥ 0 but `getColumnIndex` can be -1"
+        errorLine1="            final String contentType = curPart.getString(curPart.getColumnIndex(&quot;ct&quot;));"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/zegoggles/smssync/mail/MmsSupport.java"
+            line="162"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="Range"
+        message="Value must be ≥ 0 but `getColumnIndex` can be -1"
+        errorLine1="            final String fileName = curPart.getString(curPart.getColumnIndex(&quot;cl&quot;));"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/zegoggles/smssync/mail/MmsSupport.java"
+            line="163"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="Range"
+        message="Value must be ≥ 0 but `getColumnIndex` can be -1"
+        errorLine1="            final String text = curPart.getString(curPart.getColumnIndex(&quot;text&quot;));"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/zegoggles/smssync/mail/MmsSupport.java"
+            line="164"
+            column="51"/>
     </issue>
 
     <issue
@@ -30,7 +74,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/activity/MainActivity.java"
-            line="179"
+            line="181"
             column="18"/>
     </issue>
 
@@ -41,7 +85,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/activity/MainActivity.java"
-            line="182"
+            line="184"
             column="18"/>
     </issue>
 
@@ -52,19 +96,19 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/activity/MainActivity.java"
-            line="185"
+            line="187"
             column="18"/>
     </issue>
 
     <issue
         id="RedundantLabel"
         message="Redundant label can be removed"
-        errorLine1="        &lt;activity android:name=&quot;.activity.MainActivity&quot; android:label=&quot;@string/app_name&quot;>"
-        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                  android:label=&quot;@string/app_name&quot;"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="94"
-            column="57"/>
+            line="99"
+            column="19"/>
     </issue>
 
     <issue
@@ -74,7 +118,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="61"
+            line="92"
             column="20"/>
     </issue>
 
@@ -85,7 +129,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="63"
+            line="94"
             column="20"/>
     </issue>
 
@@ -96,7 +140,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="64"
+            line="95"
             column="20"/>
     </issue>
 
@@ -107,29 +151,29 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="65"
+            line="96"
             column="20"/>
     </issue>
 
     <issue
         id="GradleDependency"
-        message="A newer version of junit:junit than 4.12 is available: 4.13.2"
-        errorLine1="    testImplementation &apos;junit:junit:4.12&apos;"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~">
+        message="A newer version of org.mockito:mockito-core than 5.14.2 is available: 5.23.0"
+        errorLine1="    testImplementation &apos;org.mockito:mockito-core:5.14.2&apos;"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="67"
+            line="103"
             column="24"/>
     </issue>
 
     <issue
         id="GradleDependency"
-        message="A newer version of com.google.auto.service:auto-service than 1.0-rc4 is available: 1.1.1"
-        errorLine1="    testAnnotationProcessor &apos;com.google.auto.service:auto-service:1.0-rc4&apos;"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="A newer version of com.google.auto.service:auto-service than 1.0 is available: 1.1.1"
+        errorLine1="    testAnnotationProcessor &apos;com.google.auto.service:auto-service:1.0&apos;"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="72"
+            line="106"
             column="29"/>
     </issue>
 
@@ -162,40 +206,7 @@
         errorLine2="         ~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="155"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="IntentFilterExportedReceiver"
-        message="As of Android 12, `android:exported` must be set; use `true` to make the activity \&#xA;available to other apps, and `false` otherwise. For launcher activities, this should be set to `true`."
-        errorLine1="        &lt;activity android:name=&quot;.activity.MainActivity&quot; android:label=&quot;@string/app_name&quot;>"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="94"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="IntentFilterExportedReceiver"
-        message="As of Android 12, `android:exported` must be set; use `true` to make the activity \&#xA;available to other apps, and `false` otherwise."
-        errorLine1="        &lt;activity android:name=&quot;.activity.auth.RedirectReceiverActivity&quot; android:launchMode=&quot;singleTask&quot;>"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="107"
-            column="10"/>
-    </issue>
-
-    <issue
-        id="IntentFilterExportedReceiver"
-        message="As of Android 12, `android:exported` must be set; use `true` to make the activity \&#xA;available to other apps, and `false` otherwise."
-        errorLine1="        &lt;activity android:name=&quot;.compat.ComposeSmsActivity&quot; >"
-        errorLine2="         ~~~~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="184"
+            line="167"
             column="10"/>
     </issue>
 
@@ -211,36 +222,14 @@
     </issue>
 
     <issue
-        id="UnspecifiedImmutableFlag"
-        message="Missing `PendingIntent` mutability flag"
-        errorLine1="        return PendingIntent.getService(ctx, 0, intent, FLAG_UPDATE_CURRENT);"
-        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~">
+        id="DataExtractionRules"
+        message="The attribute `android:fullBackupContent` is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures cloud backups and device transfers on Android 12 and higher."
+        errorLine1="                 android:fullBackupContent=&quot;@xml/backup_descriptor&quot;>"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/zegoggles/smssync/service/AlarmManagerDriver.java"
-            line="127"
-            column="57"/>
-    </issue>
-
-    <issue
-        id="UnspecifiedImmutableFlag"
-        message="Missing `PendingIntent` mutability flag"
-        errorLine1="                 FLAG_UPDATE_CURRENT);"
-        errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/zegoggles/smssync/service/ServiceBase.java"
-            line="204"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="ExpiredTargetSdkVersion"
-        message="Google Play requires that apps target API level 31 or higher.&#xA;"
-        errorLine1="        targetSdkVersion 29"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="16"
-            column="9"/>
+            file="src/main/AndroidManifest.xml"
+            line="96"
+            column="45"/>
     </issue>
 
     <issue
@@ -283,7 +272,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/activity/MainActivity.java"
-            line="361"
+            line="364"
             column="5"/>
     </issue>
 
@@ -294,7 +283,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/activity/MainActivity.java"
-            line="365"
+            line="368"
             column="13"/>
     </issue>
 
@@ -305,7 +294,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/service/ServiceBase.java"
-            line="208"
+            line="209"
             column="13"/>
     </issue>
 
@@ -316,7 +305,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/service/ServiceBase.java"
-            line="224"
+            line="225"
             column="5"/>
     </issue>
 
@@ -360,7 +349,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/zegoggles/smssync/service/SmsRestoreService.java"
-            line="163"
+            line="165"
             column="13"/>
     </issue>
 
@@ -399,7 +388,7 @@
 
     <issue
         id="RtlHardcoded"
-        message="Redundant attribute `layout_alignParentLeft`; already defining `layout_alignParentStart` with `targetSdkVersion` 29"
+        message="Redundant attribute `layout_alignParentLeft`; already defining `layout_alignParentStart` with `targetSdkVersion` 35"
         errorLine1="                android:layout_alignParentLeft=&quot;true&quot;"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -410,7 +399,7 @@
 
     <issue
         id="RtlHardcoded"
-        message="Redundant attribute `layout_marginLeft`; already defining `layout_marginStart` with `targetSdkVersion` 29"
+        message="Redundant attribute `layout_marginLeft`; already defining `layout_marginStart` with `targetSdkVersion` 35"
         errorLine1="                android:layout_marginLeft=&quot;6dip&quot;"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -421,7 +410,7 @@
 
     <issue
         id="RtlHardcoded"
-        message="Redundant attribute `layout_toRightOf`; already defining `layout_toEndOf` with `targetSdkVersion` 29"
+        message="Redundant attribute `layout_toRightOf`; already defining `layout_toEndOf` with `targetSdkVersion` 35"
         errorLine1="                android:layout_toRightOf=&quot;@id/status_icon&quot;"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -432,7 +421,7 @@
 
     <issue
         id="RtlHardcoded"
-        message="Redundant attribute `layout_alignLeft`; already defining `layout_alignStart` with `targetSdkVersion` 29"
+        message="Redundant attribute `layout_alignLeft`; already defining `layout_alignStart` with `targetSdkVersion` 35"
         errorLine1="                android:layout_alignLeft=&quot;@id/status_label&quot;"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -443,7 +432,7 @@
 
     <issue
         id="RtlHardcoded"
-        message="Redundant attribute `paddingLeft`; already defining `paddingStart` with `targetSdkVersion` 29"
+        message="Redundant attribute `paddingLeft`; already defining `paddingStart` with `targetSdkVersion` 35"
         errorLine1="                android:paddingLeft=&quot;0dip&quot;"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
@@ -454,7 +443,7 @@
 
     <issue
         id="RtlHardcoded"
-        message="Redundant attribute `paddingRight`; already defining `paddingEnd` with `targetSdkVersion` 29"
+        message="Redundant attribute `paddingRight`; already defining `paddingEnd` with `targetSdkVersion` 35"
         errorLine1="                android:paddingRight=&quot;10dip&quot;"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~">
         <location

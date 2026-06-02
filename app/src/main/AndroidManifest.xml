@@ -77,6 +77,10 @@
 
     <!-- Apps wanting to use foreground services must now request the FOREGROUND_SERVICE permission first. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <!-- API 34+: dataSync foreground service type requires this permission -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <!-- API 33+: required to post progress notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <uses-feature android:name="android.hardware.telephony" android:required="false"/>
     <uses-feature android:name="android.hardware.wifi" android:required="false"/>
@@ -123,8 +127,12 @@
         <activity android:name=".activity.auth.AccountManagerAuthActivity"/>
         <activity android:name=".activity.donation.DonationActivity"/>
 
-        <service android:name=".service.SmsBackupService" android:exported="false"/>
-        <service android:name=".service.SmsRestoreService" android:exported="false"/>
+        <service android:name=".service.SmsBackupService"
+                 android:exported="false"
+                 android:foregroundServiceType="dataSync"/>
+        <service android:name=".service.SmsRestoreService"
+                 android:exported="false"
+                 android:foregroundServiceType="dataSync"/>
         <service android:name=".service.SmsJobService" android:exported="false">
             <intent-filter>
                 <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE"/>

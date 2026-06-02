@@ -142,7 +142,7 @@ public class AlarmManagerDriverTest {
         ComponentName component = shadowPendingIntent.getSavedIntent().getComponent();
         assertThat(component.getPackageName()).isEqualTo("com.zegoggles.smssync");
         assertThat(component.getClassName()).isEqualTo("com.zegoggles.smssync.service.SmsBackupService");
-        assertThat(shadowPendingIntent.getFlags()).isEqualTo(FLAG_UPDATE_CURRENT);
+        assertThat(shadowPendingIntent.getFlags()).isEqualTo(FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         assertThat(shadowPendingIntent.getSavedIntent().getAction()).isNotEmpty();
 
         assertThat(shadowPendingIntent.getSavedIntent().getAction())

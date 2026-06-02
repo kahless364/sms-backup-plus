@@ -124,7 +124,7 @@ class AlarmManagerDriver implements Driver, JobValidator {
         final Intent intent = (new Intent(ctx, SmsBackupService.class))
             .setAction(backupType.name());
 
-        return PendingIntent.getService(ctx, 0, intent, FLAG_UPDATE_CURRENT);
+        return PendingIntent.getService(ctx, 0, intent, FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private static long scheduleTime(JobTrigger trigger) {

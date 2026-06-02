@@ -45,6 +45,7 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.LOGIN;
 import static com.zegoggles.smssync.service.state.SmsSyncState.RESTORE;
 import static com.zegoggles.smssync.service.state.SmsSyncState.UPDATING_THREADS;
 
+@SuppressWarnings("deprecation")
 class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
     private static final String ERROR = "error";
     private Set<String> smsIds = new HashSet<String>();

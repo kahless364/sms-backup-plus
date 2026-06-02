@@ -156,6 +156,7 @@ public class AccountManagerAuthActivity extends ThemeActivity {
     public static class AccountDialogs extends Dialogs.BaseFragment {
         static final String ACCOUNTS = "accounts";
 
+        @SuppressWarnings("deprecation")
         @Override @NonNull
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             final Account[] accounts = (Account[]) getArguments().getParcelableArray(ACCOUNTS);

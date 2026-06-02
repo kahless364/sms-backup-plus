@@ -213,6 +213,7 @@ public class App extends Application {
             .build());
     }
 
+    @SuppressWarnings("deprecation")
     private static class LoggingContentObserver extends ContentObserver {
         LoggingContentObserver() {
             super(new Handler());
