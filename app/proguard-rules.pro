@@ -25,28 +25,27 @@
 #-renamesourcefileattribute SourceFile
 
 # ---------------------------------------------------------------------------
-# U-004: R8 keep rules for reflection surfaces (interim — removed by later MUs)
+# R8 keep rules for reflection surfaces (U-004 + U-002; AGP 8 R8 full-mode).
+# INTERIM — removed by later MUs as the reflected libraries are replaced.
 # ---------------------------------------------------------------------------
 
-# Otto event bus: preserve all methods annotated with @Subscribe or @Produce.
-# Otto dispatches events by reflecting on these methods at runtime. R8 would
-# otherwise rename or strip them, silently breaking all event delivery.
-# 12 @Subscribe/@Produce import sites across 11 files in the current codebase.
-# These keep rules are INTERIM and must be removed when Otto is replaced by
-# StateFlow in MU-006.
--keep @com.squareup.otto.Subscribe class * { *; }
+# Otto event bus: preserve all @Subscribe and @Produce annotated methods.
+# Otto dispatches events by reflecting on these methods at runtime. R8 full-mode
+# would otherwise inline, rename, or strip them, silently breaking event delivery.
+# 12 @Subscribe/@Produce sites across the codebase.
+# INTERIM: remove when Otto is replaced by StateFlow in MU-006.
 -keepclassmembers class * {
     @com.squareup.otto.Subscribe <methods>;
     @com.squareup.otto.Produce <methods>;
 }
 
 # firebase-jobdispatcher: SmsJobService is resolved reflectively via the
-# ACTION_EXECUTE intent filter. Without this rule R8 strips or renames the
-# class, breaking job dispatch.
+# ACTION_EXECUTE intent filter. Without this rule R8 strips or renames the class.
 # INTERIM: remove when firebase-jobdispatcher is replaced by WorkManager in MU-005.
 -keep public class com.zegoggles.smssync.service.SmsJobService { *; }
+-keep class com.firebase.jobdispatcher.** { *; }
 
-# AuthMode and DataType enums: Preferences.getDefaultType() uses valueOf() paths
+# AuthMode/DataType enums: Preferences reflection uses valueOf()/values() paths
 # that R8 treats as dead code without a keep rule.
 -keepclassmembers enum com.zegoggles.smssync.** {
     public static **[] values();

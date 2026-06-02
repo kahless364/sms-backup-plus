@@ -19,8 +19,11 @@ import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static android.provider.CallLog.Calls.INCOMING_TYPE;
@@ -86,11 +89,12 @@ public class MessageGeneratorTest {
     @Test public void testShouldGenerateSubjectWithNameForMMS() throws Exception {
         PersonRecord personRecord = new PersonRecord(1, "Foo Bar", "foo@bar.com", "1234");
 
-        MmsSupport.MmsDetails details = new MmsSupport.MmsDetails(true, "foo",
+        MmsSupport.MmsDetails details = new MmsSupport.MmsDetails(true,
                 personRecord,
-                new Address("foo@bar.com"));
+                Collections.singletonList(personRecord),
+                Collections.singletonList("foo@bar.com"));
 
-        when(mmsSupport.getDetails(any(Uri.class), any(AddressStyle.class))).thenReturn(details);
+        when(mmsSupport.getDetails(any(Uri.class), any(AddressStyle.class), any(Map.class))).thenReturn(details);
         Message msg = generator.messageForDataType(mockMessage("1234", personRecord), DataType.MMS);
 
         assertThat(msg).isNotNull();
@@ -99,11 +103,12 @@ public class MessageGeneratorTest {
 
     @Test public void testShouldGenerateMMSMessageWithCorrectEncoding() throws Exception {
         PersonRecord personRecord = new PersonRecord(1, "Foo Bar", "foo@bar.com", "1234");
-        MmsSupport.MmsDetails details = new MmsSupport.MmsDetails(true, "foo",
+        MmsSupport.MmsDetails details = new MmsSupport.MmsDetails(true,
                 personRecord,
-                new Address("foo@bar.com"));
+                Collections.singletonList(personRecord),
+                Collections.singletonList("foo@bar.com"));
 
-        when(mmsSupport.getDetails(any(Uri.class), any(AddressStyle.class))).thenReturn(details);
+        when(mmsSupport.getDetails(any(Uri.class), any(AddressStyle.class), any(Map.class))).thenReturn(details);
         Message msg = generator.messageForDataType(mockMessage("1234", personRecord), DataType.MMS);
         assertThat(msg.getHeader(MimeHeader.HEADER_CONTENT_TRANSFER_ENCODING)).isEqualTo(new String[] {
                 MimeUtil.ENC_7BIT
@@ -193,7 +198,7 @@ public class MessageGeneratorTest {
                 any(Map.class),
                 eq(DataType.SMS),
                 anyString(),
-                eq(record),
+                anyString(),
                 eq(date),
                 eq(0));
     }

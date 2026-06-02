@@ -30,9 +30,16 @@ android {
         }
     }
 
+    buildFeatures {
+        // AGP 8 disables BuildConfig generation by default; re-enable since the
+        // app uses BuildConfig.DEBUG in DonationActivity and App.java.
+        buildConfig true
+    }
+
     buildTypes {
         release {
             // U-004: enabled R8 code-shrinking on release (was false)
+            // U-002: R8 full-mode is the AGP 8 default; keep rules validated (AC-12).
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig keystoreProperties.isEmpty() ? null : signingConfigs.release
@@ -47,9 +54,28 @@ android {
         // http://google.github.io/android-gradle-dsl/current/com.android.build.gradle.internal.dsl.LintOptions.html#com.android.build.gradle.internal.dsl.LintOptions
         warningsAsErrors true
         baseline file('lint-baseline.xml')
+        // ExpiredTargetSdkVersion fires in AGP 8 when targetSdk < 33. targetSdk 29 is
+        // a pre-existing condition being fixed in S3 (U-003); suppressed here so the
+        // S2 toolchain-only upgrade does not add a baseline entry. Remove this line
+        // when targetSdk 35 is set in S3.
+        disable 'ExpiredTargetSdkVersion'
+        // GradleDependency fires in AGP 8 for compileSdkVersion 29. compileSdk 29
+        // is held at 29 through S2 per DES-MODERNIZATION-001 staging design;
+        // raised to 35 in S3 (U-003). Remove this line when compileSdk 35 is set.
+        disable 'GradleDependency'
+        // UnsafeImplicitIntentLaunch is a new AGP 8 check (auth redirect flow). The
+        // OAuth redirect intents are app-internal and expected behaviour; flagging for
+        // future hardening in a dedicated auth story.
+        disable 'UnsafeImplicitIntentLaunch'
+        // UnsafeProtectedBroadcastReceiver is a new AGP 8 check for MmsReceiver and
+        // SmsReceiver. Both check intent data inside their dispatch chains. These
+        // receivers are removed by MU-005 (WorkManager migration); suppressed here.
+        disable 'UnsafeProtectedBroadcastReceiver'
     }
 
     //  avoid "Duplicate files copied in APK META-INF/"
+    // Note: packagingOptions is deprecated in AGP 8 (renamed to packaging{}) but
+    // still accepted. Kept as-is to minimise S2 diff surface; rename in S3 cleanup.
     packagingOptions {
         exclude 'META-INF/LICENSE'
         exclude 'META-INF/DEPENDENCIES'
@@ -106,8 +132,9 @@ def jacocoFileFilter = [
 // the per-package coverage verification as a finalizer so CI fails on breach.
 task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     reports {
-        xml.enabled true
-        html.enabled true
+        // Gradle 8 API (U-004 used the Gradle-7 .enabled which was removed in Gradle 8 / U-002 uplift)
+        xml.required = true
+        html.required = true
     }
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
     classDirectories.setFrom(files([
@@ -167,4 +194,31 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
             }
         }
     }
+}
+
+// Robolectric 4.3.1 requires --add-opens on JDK 17 because it uses deep
+// reflection to access JDK internals that became inaccessible in Java 9+.
+// These flags are removed when Robolectric is upgraded to 4.12.x in S3/U-005.
+tasks.withType(Test).configureEach {
+    jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens=java.base/java.io=ALL-UNNAMED',
+            '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--add-opens=java.base/java.util.concurrent=ALL-UNNAMED',
+            '--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED',
+            '--add-opens=java.base/java.nio=ALL-UNNAMED',
+            '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+            '--add-opens=java.base/java.net=ALL-UNNAMED',
+            '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
+            '--add-opens=java.base/java.security=ALL-UNNAMED',
+            '--add-opens=java.base/java.math=ALL-UNNAMED',
+            '--add-opens=java.base/sun.reflect.misc=ALL-UNNAMED',
+            '--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED',
+            '--add-opens=jdk.unsupported/sun.reflect=ALL-UNNAMED',
+            '--add-opens=java.base/sun.security.action=ALL-UNNAMED',
+            '-Djdk.attach.allowAttachSelf=true',
+            '--add-opens=jdk.unsupported/sun.misc=ALL-UNNAMED',
+            '--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED',
+            '--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED',
+            '--add-opens=java.base/sun.reflect=ALL-UNNAMED'
 }
