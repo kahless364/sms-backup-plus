@@ -91,7 +91,9 @@
                  android:allowBackup="true"
                  android:fullBackupContent="@xml/backup_descriptor">
 
-        <activity android:name=".activity.MainActivity" android:label="@string/app_name">
+        <activity android:name=".activity.MainActivity"
+                  android:label="@string/app_name"
+                  android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -104,7 +106,9 @@
             The system creates the activity at the root of a new task and routes the intent to it.
             However, if an instance of the activity already exists, the system routes the intent to existing
             instance through a call to its onNewIntent() method, rather than creating a new one. -->
-        <activity android:name=".activity.auth.RedirectReceiverActivity" android:launchMode="singleTask">
+        <activity android:name=".activity.auth.RedirectReceiverActivity"
+                  android:launchMode="singleTask"
+                  android:exported="true">
             <!-- handle oauth browser callbacks (legacy auth support) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -181,7 +185,8 @@
         </receiver>
 
         <!-- Activity that allows the user to send new SMS/MMS messages -->
-        <activity android:name=".compat.ComposeSmsActivity" >
+        <activity android:name=".compat.ComposeSmsActivity"
+                  android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SENDTO" />

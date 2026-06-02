@@ -33,7 +33,7 @@ public class HeaderGeneratorTest {
 
         PersonRecord person = new PersonRecord(0, null, null, null);
 
-        generator.setHeaders(message, map, DataType.SMS, "1234", person, sent, 0);
+        generator.setHeaders(message, map, DataType.SMS, "1234", person.getNumber(), sent, 0);
 
         assertThat(get(message, Headers.ADDRESS)).isEqualTo("1234");
         assertThat(get(message, Headers.DATATYPE)).isEqualTo("SMS");
@@ -63,7 +63,7 @@ public class HeaderGeneratorTest {
         map.put(Telephony.TextBasedSmsColumns.PROTOCOL, "protocol");
         map.put(Telephony.TextBasedSmsColumns.SERVICE_CENTER, "svc");
 
-        generator.setHeaders(message, map, DataType.SMS, "1234", person, sent, 0);
+        generator.setHeaders(message, map, DataType.SMS, "1234", person.getNumber(), sent, 0);
 
         assertThat(get(message, Headers.ID)).isEqualTo("someId");
         assertThat(get(message, Headers.TYPE)).isEqualTo("type");
@@ -87,7 +87,7 @@ public class HeaderGeneratorTest {
         map.put(CallLog.Calls.DURATION, "duration");
         map.put(CallLog.Calls.DATE, "date");
 
-        generator.setHeaders(message, map, DataType.CALLLOG, "1234", person, sent, 0);
+        generator.setHeaders(message, map, DataType.CALLLOG, "1234", person.getNumber(), sent, 0);
 
         assertThat(get(message, Headers.ID)).isEqualTo("id");
         assertThat(get(message, Headers.TYPE)).isEqualTo("type");
@@ -108,7 +108,7 @@ public class HeaderGeneratorTest {
         map.put(Telephony.BaseMmsColumns.DATE, "date");
         map.put(Telephony.BaseMmsColumns.READ, "read");
 
-        generator.setHeaders(message, map, DataType.MMS, "1234", person, sent, 0);
+        generator.setHeaders(message, map, DataType.MMS, "1234", person.getNumber(), sent, 0);
 
         assertThat(get(message, Headers.ID)).isEqualTo("id");
         assertThat(get(message, Headers.TYPE)).isEqualTo("type");
@@ -123,6 +123,6 @@ public class HeaderGeneratorTest {
         Date sent = new Date();
         PersonRecord person = new PersonRecord(0, null, null, null);
 
-        generator.setHeaders(message, map, DataType.SMS, null, person, sent, 0);
+        generator.setHeaders(message, map, DataType.SMS, null, person.getNumber(), sent, 0);
     }
 }
