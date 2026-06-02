@@ -169,3 +169,19 @@ Result: PASS
 ## Verdict
 
 PASS — `assembleRelease` exits 0. `lintDebug` exits 0 with baseline. Release APK produced at 2.4 MB. All primary ACs are satisfied. AC-8 has a minor deviation (one ExportedReceiver entry in baseline for BackupBroadcastReceiver's pre-existing no-permission warning), but the underlying manifest-merger requirement (all receivers have explicit android:exported) is fully met. Story is marked **done**.
+
+---
+
+## Emulator Smoke Test (post-merge, on-device verification)
+
+**Date:** 2026-06-02 · **Device:** emulator-5554 (`sdk_gphone16k_x86_64`, API 37 / Android 17)
+
+| Check | Result |
+|-------|--------|
+| `adb install -r app-debug.apk` | Success (minSdk 21 APK) |
+| App launch (MainActivity) | Resumed; pid stable; `topResumedActivity = com.zegoggles.smssync/.activity.MainActivity` |
+| FATAL exceptions in logcat | 0 |
+| UI render | Main screen + 1.6.0-BETA2 release-notes dialog rendered correctly (see evidence/u001-launch-emulator-api37.png) |
+| Notable logs | Benign StrictMode debug notice only (disk read in Preferences.<init>:67 — pre-existing, not a regression) |
+
+**Conclusion:** The AGP 7.4.2 / Gradle 7.5.1 / minSdk 21 uplift produces a genuinely installable, launchable app that runs without crash on a current Android version (API 37, above target SDK 35). On-device verification PASS.
