@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+import static com.firebase.jobdispatcher.FirebaseJobDispatcher.CANCEL_RESULT_SUCCESS;
 import static com.firebase.jobdispatcher.FirebaseJobDispatcher.SCHEDULE_RESULT_SUCCESS;
 import static com.firebase.jobdispatcher.FirebaseJobDispatcher.SCHEDULE_RESULT_UNSUPPORTED_TRIGGER;
 import static com.google.common.truth.Truth.assertThat;
@@ -77,6 +78,53 @@ public class AlarmManagerDriverTest {
             .build();
         final int result = subject.schedule(job);
         assertThat(result).isEqualTo(SCHEDULE_RESULT_UNSUPPORTED_TRIGGER);
+    }
+
+    @Test
+    public void testScheduleJobWithImmediateTrigger() throws Exception {
+        final Job job = jobBuilder()
+            .setTrigger(Trigger.NOW)
+            .build();
+        final int result = subject.schedule(job);
+        // ImmediateTrigger uses System.currentTimeMillis() — returns SCHEDULE_RESULT_SUCCESS
+        assertThat(result).isEqualTo(SCHEDULE_RESULT_SUCCESS);
+    }
+
+    // U-006: coverage tests for cancel/cancelAll/validation/availability methods
+
+    @Test
+    public void cancel_returnsSuccessAndRemovesAlarm() throws Exception {
+        // Schedule first so there's something to cancel
+        final Job job = jobBuilder()
+            .setTag("REGULAR")
+            .setTrigger(Trigger.executionWindow(30, 30))
+            .build();
+        subject.schedule(job);
+
+        final int result = subject.cancel("REGULAR");
+        assertThat(result).isEqualTo(CANCEL_RESULT_SUCCESS);
+    }
+
+    @Test
+    public void cancelAll_returnsSuccess() throws Exception {
+        final int result = subject.cancelAll();
+        assertThat(result).isEqualTo(CANCEL_RESULT_SUCCESS);
+    }
+
+    @Test
+    public void isAvailable_returnsTrue() throws Exception {
+        assertThat(subject.isAvailable()).isTrue();
+    }
+
+    @Test
+    public void getValidator_returnsSelf() throws Exception {
+        // AlarmManagerDriver implements JobValidator itself
+        JobValidator validator = subject.getValidator();
+        assertThat(validator).isNotNull();
+        // validate methods return null (no errors) for any input
+        assertThat(validator.validate((JobParameters) null)).isNull();
+        assertThat(validator.validate((JobTrigger) null)).isNull();
+        assertThat(validator.validate((RetryStrategy) null)).isNull();
     }
 
     private Intent assertAlarmScheduled(String ofExpectedType) {

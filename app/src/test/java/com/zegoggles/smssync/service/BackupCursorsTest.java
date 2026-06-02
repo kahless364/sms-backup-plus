@@ -89,6 +89,22 @@ public class BackupCursorsTest {
         cursors.remove();
     }
 
+    // U-006: cover CursorAndType.empty() and toString()
+    @Test public void cursorAndTypeEmpty_createsSmsEmptyCursor() {
+        BackupCursors.CursorAndType empty = BackupCursors.CursorAndType.empty();
+        assertThat(empty).isNotNull();
+        assertThat(empty.type).isEqualTo(SMS);
+        assertThat(empty.cursor).isNotNull();
+        assertThat(empty.cursor.getCount()).isEqualTo(0);
+        assertThat(empty.hasNext()).isFalse();
+    }
+
+    @Test public void cursorAndTypeToString_containsTypeAndCursor() {
+        BackupCursors.CursorAndType cursorAndType = new BackupCursors.CursorAndType(SMS, cursor(0));
+        String str = cursorAndType.toString();
+        assertThat(str).contains("SMS");
+    }
+
     private Cursor cursor(int rows) {
         MatrixCursor c = new MatrixCursor(new String[] {});
         for (int i=0; i<rows; i++) {

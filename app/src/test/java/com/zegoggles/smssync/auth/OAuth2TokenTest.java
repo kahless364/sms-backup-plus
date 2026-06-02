@@ -58,4 +58,34 @@ public class OAuth2TokenTest {
         assertThat(token.getTokenForLogging()).doesNotContain("secret");
         assertThat(token.toString()).doesNotContain("secret");
     }
+
+    // U-006 coverage additions: error paths in fromJSON
+
+    @Test public void testFromJSONWithInvalidJson_throwsIOException() {
+        try {
+            OAuth2Token.fromJSON("not valid json {{{");
+            org.junit.Assert.fail("Expected IOException");
+        } catch (java.io.IOException e) {
+            // Expected — JSON parse error
+        }
+    }
+
+    @Test public void testFromJSONWithNonObjectJson_throwsIOException() {
+        try {
+            OAuth2Token.fromJSON("[\"array\", \"not\", \"object\"]");
+            org.junit.Assert.fail("Expected IOException for non-object JSON");
+        } catch (java.io.IOException e) {
+            assertThat(e.getMessage()).contains("Invalid JSON data");
+        }
+    }
+
+    @Test public void testFromJSONWithMissingAccessToken_throwsIOException() {
+        // access_token is required — missing it should throw
+        try {
+            OAuth2Token.fromJSON("{\"token_type\": \"Bearer\"}");
+            org.junit.Assert.fail("Expected IOException for missing access_token");
+        } catch (java.io.IOException e) {
+            // Expected — access_token is required by getString()
+        }
+    }
 }
