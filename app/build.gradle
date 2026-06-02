@@ -7,11 +7,12 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
+    namespace 'com.zegoggles.smssync'
     compileSdkVersion 29
     buildToolsVersion '29.0.2'
     defaultConfig {
         applicationId 'com.zegoggles.smssync'
-        minSdkVersion 14
+        minSdkVersion 21
         targetSdkVersion 29
         versionCode 1602
         versionName '1.6.0-BETA2'
@@ -36,9 +37,10 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         // http://google.github.io/android-gradle-dsl/current/com.android.build.gradle.internal.dsl.LintOptions.html#com.android.build.gradle.internal.dsl.LintOptions
         warningsAsErrors true
+        baseline file('lint-baseline.xml')
     }
 
     //  avoid "Duplicate files copied in APK META-INF/"

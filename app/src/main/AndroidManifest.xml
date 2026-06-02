@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
-          package="com.zegoggles.smssync"
           android:description="@string/app_description">
 
     <!-- “dangerous” permissions -->
@@ -130,25 +129,32 @@
 
         <receiver android:name=".receiver.SmsBroadcastReceiver"
                   android:enabled="true"
+                  android:exported="false"
                   android:permission="android.permission.BROADCAST_SMS">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".receiver.BootReceiver" android:enabled="true">
+        <receiver android:name=".receiver.BootReceiver"
+                  android:enabled="true"
+                  android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".receiver.PackageReplacedReceiver" android:enabled="true">
+        <receiver android:name=".receiver.PackageReplacedReceiver"
+                  android:enabled="true"
+                  android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".receiver.BackupBroadcastReceiver" android:enabled="true" tools:ignore="ExportedReceiver">
+        <receiver android:name=".receiver.BackupBroadcastReceiver"
+                  android:enabled="true"
+                  android:exported="true">
             <intent-filter>
                 <action android:name="com.zegoggles.smssync.BACKUP"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -157,6 +163,7 @@
 
         <!-- BroadcastReceiver that listens for incoming SMS messages -->
         <receiver android:name=".compat.SmsReceiver"
+                android:exported="true"
                 android:permission="android.permission.BROADCAST_SMS">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_DELIVER" />
@@ -165,6 +172,7 @@
 
         <!-- BroadcastReceiver that listens for incoming MMS messages -->
         <receiver android:name=".compat.MmsReceiver"
+            android:exported="true"
             android:permission="android.permission.BROADCAST_WAP_PUSH">
             <intent-filter>
                 <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
