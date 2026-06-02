@@ -47,6 +47,7 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 import static com.zegoggles.smssync.service.state.SmsSyncState.FINISHED_BACKUP;
 import static com.zegoggles.smssync.service.state.SmsSyncState.LOGIN;
 
+@SuppressWarnings("deprecation")
 class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
     @SuppressLint("StaticFieldLeak")
     private final SmsBackupService service;

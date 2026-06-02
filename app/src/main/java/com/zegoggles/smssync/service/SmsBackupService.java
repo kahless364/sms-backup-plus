@@ -105,6 +105,7 @@ public class SmsBackupService extends ServiceBase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void backup(BackupType backupType) {
         getNotifier().cancel(NOTIFICATION_ID_WARNING);
 
@@ -203,6 +204,7 @@ public class SmsBackupService extends ServiceBase {
         return state;
     }
 
+    @SuppressWarnings("deprecation")
     @Subscribe public void backupStateChanged(BackupState state) {
         if (this.state == state) return;
 

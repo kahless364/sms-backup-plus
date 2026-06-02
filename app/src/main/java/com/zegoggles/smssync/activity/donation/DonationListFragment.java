@@ -39,6 +39,7 @@ public class DonationListFragment extends Dialogs.BaseFragment {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         final ArrayList<Sku> skus = getArguments().getParcelableArrayList(SKUS);

@@ -265,6 +265,7 @@ public class Dialogs {
     }
 
     public static class AccountManagerTokenError extends BaseFragment {
+        @SuppressWarnings("deprecation")
         @Override @NonNull
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             return new AlertDialog.Builder(getContext())
@@ -284,6 +285,7 @@ public class Dialogs {
     public static class WebConnect extends BaseFragment {
         static final String INTENT = "intent";
 
+        @SuppressWarnings("deprecation")
         @Override @NonNull
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             return new AlertDialog.Builder(getContext())

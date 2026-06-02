@@ -1,7 +1,6 @@
 buildscript {
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -19,11 +18,9 @@ allprojects {
 
     repositories {
         mavenLocal()
-        jcenter()
         mavenCentral()
         maven { url "https://maven.google.com" }
         maven { url "https://jitpack.io" }
-        maven { url "https://jcenter.bintray.com" }
         //  This is the only repo that seems to be hosting "com.firebase:firebase-jobdispatcher" in 2024
         maven { url "https://maven.scijava.org/content/repositories/public/" }
         google()

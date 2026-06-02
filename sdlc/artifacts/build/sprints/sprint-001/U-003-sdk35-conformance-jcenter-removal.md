@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: critical
 complexity: high
@@ -30,6 +30,8 @@ id: U-003
 title: 'Stage S3: raise targetSdk to 35, co-land all API-31-through-34 conformance fixes, and remove JCenter'
 pipeline: modernization
 domain: modernization
+updated_at: '2026-06-02T21:30:57.916Z'
+resolution: done
 ---
 
 # U-003: Stage S3 — SDK 35 Uplift, Manifest Conformance, and JCenter Removal

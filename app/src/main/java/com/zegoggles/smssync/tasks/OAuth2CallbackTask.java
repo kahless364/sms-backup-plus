@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 import static com.zegoggles.smssync.App.TAG;
 
+@SuppressWarnings("deprecation")
 public class OAuth2CallbackTask extends AsyncTask<String, Void, OAuth2Token> {
 
     private final OAuth2Client oauth2Client;

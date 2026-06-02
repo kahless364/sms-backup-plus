@@ -24,6 +24,7 @@ public abstract class ThemeActivity extends AppCompatActivity {
     }
 
     @TargetApi(26)
+    @SuppressWarnings("deprecation")
     private void setNavBarColor(@StyleRes final int themeId) {
         final int navBarColor = getResources().getColor(
             themeId == R.style.SMSBackupPlusTheme_Light ?

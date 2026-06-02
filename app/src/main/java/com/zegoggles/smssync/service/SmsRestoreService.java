@@ -69,6 +69,7 @@ public class SmsRestoreService extends ServiceBase {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void handleIntent(final Intent intent) {
         if (isWorking()) return;
 
@@ -135,6 +136,7 @@ public class SmsRestoreService extends ServiceBase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Subscribe public void restoreStateChanged(final RestoreState state) {
         this.state = state;
         if (this.state.isInitialState()) return;

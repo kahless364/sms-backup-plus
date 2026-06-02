@@ -15,6 +15,7 @@ public abstract class SMSBackupPreferenceFragment extends PreferenceFragmentComp
     protected Preferences preferences;
     private Handler handler;
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onCreatePreferences(Bundle bundle, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
