@@ -7,6 +7,7 @@ import com.firebase.jobdispatcher.Constraint;
 import com.firebase.jobdispatcher.Job;
 import com.firebase.jobdispatcher.JobTrigger;
 import com.firebase.jobdispatcher.ObservedUri;
+import com.firebase.jobdispatcher.RetryStrategy;
 import com.firebase.jobdispatcher.Trigger;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
 import com.zegoggles.smssync.preferences.Preferences;
@@ -121,6 +122,90 @@ public class BackupJobsTest {
     @Test public void shouldNotScheduleIncomingBackupIfAutoBackupIsDisabled() throws Exception {
         when(preferences.isAutoBackupEnabled()).thenReturn(false);
         assertThat(subject.scheduleIncoming()).isEqualTo(null);
+    }
+
+    // -------------------------------------------------------------------------
+    // U-006 characterization tests — pins BackupJobs retry/constraint contract
+    // before WorkManager migration (DES-005 / U-014). These four tests are the
+    // behavioral specification that the WorkManager adapter must preserve.
+    // -------------------------------------------------------------------------
+
+    /**
+     * AC-4: Pins the retry base (initial) backoff = 30 seconds.
+     * Source: BackupJobs.java:205 firebaseJobDispatcher.newRetryStrategy(RETRY_POLICY_EXPONENTIAL, 30, 300)
+     * RetryStrategy exposes getInitialBackoff() on firebase-jobdispatcher 0.8.6 (verified via javap).
+     * DES-005 WorkManager equivalent: setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS).
+     */
+    @Test public void defaultRetryStrategy_hasBaseIntervalOf30Seconds() {
+        when(preferences.isAutoBackupEnabled()).thenReturn(true);
+        when(preferences.getRegularTimeoutSecs()).thenReturn(2000);
+
+        Job job = subject.scheduleRegular();
+
+        assertThat(job).isNotNull();
+        RetryStrategy retryStrategy = job.getRetryStrategy();
+        assertThat(retryStrategy).isNotNull();
+        // Pins BackupJobs.java:205 first arg to newRetryStrategy: base interval = 30 seconds.
+        assertThat(retryStrategy.getInitialBackoff()).isEqualTo(30);
+    }
+
+    /**
+     * AC-5: Pins the retry maximum backoff = 300 seconds.
+     * Source: BackupJobs.java:205 firebaseJobDispatcher.newRetryStrategy(RETRY_POLICY_EXPONENTIAL, 30, 300)
+     * RetryStrategy exposes getMaximumBackoff() on firebase-jobdispatcher 0.8.6 (verified via javap).
+     * DES-005 WorkManager equivalent: setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 300, TimeUnit.SECONDS).
+     * AC-4 and AC-5 are independent @Test methods so each can fail independently.
+     */
+    @Test public void defaultRetryStrategy_hasMaxIntervalOf300Seconds() {
+        when(preferences.isAutoBackupEnabled()).thenReturn(true);
+        when(preferences.getRegularTimeoutSecs()).thenReturn(2000);
+
+        Job job = subject.scheduleRegular();
+
+        assertThat(job).isNotNull();
+        RetryStrategy retryStrategy = job.getRetryStrategy();
+        assertThat(retryStrategy).isNotNull();
+        // Pins BackupJobs.java:205 second arg to newRetryStrategy: max interval = 300 seconds.
+        assertThat(retryStrategy.getMaximumBackoff()).isEqualTo(300);
+    }
+
+    /**
+     * AC-6: Pins the wifi-only (isWifiOnly=true) constraint → ON_UNMETERED_NETWORK.
+     * Source: BackupJobs.java:199 isWifiOnly() ? ON_UNMETERED_NETWORK : ON_ANY_NETWORK
+     * DES-005 WorkManager equivalent: Constraints.setRequiredNetworkType(NetworkType.UNMETERED).
+     * These tests are additive and do NOT modify the existing verifyJobScheduled helper.
+     */
+    @Test public void scheduleRegular_wifiOnly_constraintIsUnmetered() {
+        when(preferences.isAutoBackupEnabled()).thenReturn(true);
+        when(preferences.getRegularTimeoutSecs()).thenReturn(2000);
+        // Stub wifi-only = true to exercise the ON_UNMETERED_NETWORK branch.
+        when(preferences.isWifiOnly()).thenReturn(true);
+
+        Job job = subject.scheduleRegular();
+
+        assertThat(job).isNotNull();
+        // On wifi-only, the constraint must be ON_UNMETERED_NETWORK (not ON_ANY_NETWORK).
+        assertThat(job.getConstraints()).asList().contains(Constraint.ON_UNMETERED_NETWORK);
+        assertThat(job.getConstraints()).asList().doesNotContain(Constraint.ON_ANY_NETWORK);
+    }
+
+    /**
+     * AC-7: Pins the any-network (isWifiOnly=false) constraint → ON_ANY_NETWORK.
+     * Source: BackupJobs.java:199 isWifiOnly() ? ON_UNMETERED_NETWORK : ON_ANY_NETWORK
+     * DES-005 WorkManager equivalent: Constraints.setRequiredNetworkType(NetworkType.CONNECTED).
+     */
+    @Test public void scheduleRegular_anyNetwork_constraintIsAny() {
+        when(preferences.isAutoBackupEnabled()).thenReturn(true);
+        when(preferences.getRegularTimeoutSecs()).thenReturn(2000);
+        // Stub wifi-only = false to exercise the ON_ANY_NETWORK branch.
+        when(preferences.isWifiOnly()).thenReturn(false);
+
+        Job job = subject.scheduleRegular();
+
+        assertThat(job).isNotNull();
+        // Without wifi-only restriction, the constraint must be ON_ANY_NETWORK (not ON_UNMETERED_NETWORK).
+        assertThat(job.getConstraints()).asList().contains(Constraint.ON_ANY_NETWORK);
+        assertThat(job.getConstraints()).asList().doesNotContain(Constraint.ON_UNMETERED_NETWORK);
     }
 
     private void verifyJobScheduled(Job job, int scheduled, String expectedType) {

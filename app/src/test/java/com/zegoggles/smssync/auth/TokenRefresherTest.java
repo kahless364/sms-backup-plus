@@ -136,4 +136,65 @@ public class TokenRefresherTest {
 
         verify(authPreferences).setOauth2Token("username", "newToken", "newRefresh");
     }
+
+    // U-006 coverage additions for TokenRefresher
+
+    @Test public void shouldThrowWhenNoTokenSet() {
+        when(authPreferences.getOauth2Token()).thenReturn(null);
+
+        try {
+            refresher.refreshOAuth2Token();
+            fail("Expected TokenRefreshException for null token");
+        } catch (TokenRefreshException e) {
+            assertThat(e.getMessage()).contains("no current token set");
+        }
+    }
+
+    @Test public void shouldThrowWhenAccountManagerIsNull() throws Exception {
+        // Create refresher with null accountManager to cover that branch.
+        // Cast to AccountManager explicitly to resolve constructor ambiguity.
+        AccountManager nullAm = null;
+        TokenRefresher nullAmRefresher = new TokenRefresher(nullAm, oauth2Client, authPreferences);
+        when(authPreferences.getOauth2Token()).thenReturn("token");
+        when(authPreferences.getOauth2Username()).thenReturn("username");
+
+        try {
+            nullAmRefresher.refreshOAuth2Token();
+            fail("Expected TokenRefreshException for null account manager");
+        } catch (TokenRefreshException e) {
+            assertThat(e.getMessage()).contains("account manager is null");
+        }
+    }
+
+    @Test public void invalidateToken_withNullAccountManager_returnsFalse() throws Exception {
+        AccountManager nullAm = null;
+        TokenRefresher nullAmRefresher = new TokenRefresher(nullAm, oauth2Client, authPreferences);
+        assertThat(nullAmRefresher.invalidateToken("token")).isFalse();
+    }
+
+    @Test public void publicConstructor_withContext_createsRefresher() throws Exception {
+        // Covers the public TokenRefresher(Context, OAuth2Client, AuthPreferences) constructor.
+        // The public constructor calls AccountManager.get(context) which works in Robolectric.
+        TokenRefresher contextRefresher = new TokenRefresher(
+            org.robolectric.RuntimeEnvironment.application,
+            oauth2Client,
+            authPreferences
+        );
+        assertThat(contextRefresher).isNotNull();
+    }
+
+    @Test public void shouldThrowWhenOAuth2ClientFails() throws Exception {
+        when(authPreferences.getOauth2Token()).thenReturn("token");
+        when(authPreferences.getOauth2RefreshToken()).thenReturn("refresh");
+        when(authPreferences.getOauth2Username()).thenReturn("username");
+
+        when(oauth2Client.refreshToken("refresh")).thenThrow(new java.io.IOException("network error"));
+
+        try {
+            refresher.refreshOAuth2Token();
+            fail("Expected TokenRefreshException when oauth2client fails");
+        } catch (TokenRefreshException e) {
+            assertThat(e.getCause()).isInstanceOf(java.io.IOException.class);
+        }
+    }
 }

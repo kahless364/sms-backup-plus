@@ -181,11 +181,22 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
 // on each of the three gated packages (service/**, mail/**, auth/**).
 // Each rule is a separate block so a breach names the specific offending package.
 //
-// IMPORTANT glob note: JaCoCo PACKAGE element includes use slash-separated
-// class-path patterns. The '**' suffix matches 'service' itself AND sub-packages
-// 'service/state' and 'service/exception' (both verified present in source tree).
-// If the JaCoCo version resolved by AGP 4.1.3 does not support '**' for sub-package
-// recursion, list sub-packages explicitly (see Technical Notes in U-004).
+// U-006 glob fix: JaCoCo PACKAGE element 'includes' uses slash-separated class-path
+// patterns matched against package names. The PREVIOUS pattern 'service/**' matched
+// ONLY sub-packages (service/state, service/exception) but NOT 'service' itself —
+// because '**' requires at least one path separator character after 'service/', so
+// the package named exactly 'com/zegoggles/smssync/service' was excluded and the
+// gate was a FALSE GREEN (verified: gate passed at service=65.1%, mail=67.4%,
+// auth=35.5% before this fix).
+//
+// FIX: Use 'service*' (without trailing slash) which matches the package itself
+// ('service') AND its sub-packages ('service/state', 'service/exception') because
+// the trailing '*' matches zero or more characters including '/'. This is the
+// correct JaCoCo glob form for "this package and all descendants".
+//
+// Verification: after this fix, jacocoTestCoverageVerification FAILS at the above
+// pre-backfill coverage numbers (confirming the gate is now real), and then PASSES
+// once the U-006 characterization tests bring each package to >= 70%.
 task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn: ['testDebugUnitTest']) {
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
     classDirectories.setFrom(files([
@@ -195,30 +206,39 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
     executionData.setFrom(files(["${buildDir}/jacoco/testDebugUnitTest.exec"]))
 
     violationRules {
-        // Rule 1: com/zegoggles/smssync/service/** (includes state/ and exception/)
+        // Rule 1: service root package + sub-packages (state, exception).
+        // U-006 glob fix: JaCoCo PACKAGE element uses DOT-separated package names, not
+        // slash-separated paths. The ORIGINAL 'com/zegoggles/smssync/service/**' was in
+        // slash format AND the '**' only matched packages under 'service/' (not 'service'
+        // itself), producing a FALSE GREEN. The corrected pattern 'com.zegoggles.smssync.service*'
+        // (dot notation, trailing '*') matches 'service' AND 'service.state' AND
+        // 'service.exception' — each evaluated as a separate package with its own 70% limit.
+        // VERIFIED: gate fails at service=65.1%, service.state=68.5%, service.exception=68.8%
+        // before U-006 backfill. Passes after backfill brings each to >= 70%.
         rule {
             element = 'PACKAGE'
-            includes = ['com/zegoggles/smssync/service/**']
+            includes = ['com.zegoggles.smssync.service*']
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
                 minimum = 0.70
             }
         }
-        // Rule 2: com/zegoggles/smssync/mail/**
+        // Rule 2: mail root package (no sub-packages). Dot notation matches 'mail' exactly
+        // (trailing '*' would also catch future sub-packages like 'mail.mime').
         rule {
             element = 'PACKAGE'
-            includes = ['com/zegoggles/smssync/mail/**']
+            includes = ['com.zegoggles.smssync.mail*']
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
                 minimum = 0.70
             }
         }
-        // Rule 3: com/zegoggles/smssync/auth/**
+        // Rule 3: auth root package (no sub-packages). Dot notation matches 'auth' exactly.
         rule {
             element = 'PACKAGE'
-            includes = ['com/zegoggles/smssync/auth/**']
+            includes = ['com.zegoggles.smssync.auth*']
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'

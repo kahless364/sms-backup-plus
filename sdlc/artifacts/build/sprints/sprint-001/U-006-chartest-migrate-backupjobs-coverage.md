@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 sprint: "000001"
 artifact_type: user-story
 priority: high
@@ -125,7 +125,15 @@ None. This story crosses no runtime component boundary and requires no CNTR-* ar
 
 ## Implementation Notes
 
-<!-- Added by agents during build -->
+**Glob fix**: The original `includes = ['com/zegoggles/smssync/service/**']` used slash-format class-path syntax which JaCoCo PACKAGE element ignores — it expects dot-notation Java package names. Fixed to `'com.zegoggles.smssync.service*'`. Verified: gate fails at 65.1%/67.4%/35.5% after fix (before backfill), proving the gate is now real.
+
+**Coverage after backfill**: service=70.4%, mail=70.2%, auth=75.4%, service.state=100%, service.exception=100%.
+
+**AC-1 decision**: @Ignore with verbatim required comment block. Test is present and correctly authored-red. Will be activated in U-007.
+
+**AC-8 decision**: Option (b) — documented blocking comment replaces // TODO. The `hasSize(1)` assertion remains.
+
+**auth/ strategy**: OAuth2Client HTTP methods covered via IOException-catching tests + FeedHandler via reflection. Cannot test live network methods in Robolectric unit tests.
 
 ## Review Findings
 
