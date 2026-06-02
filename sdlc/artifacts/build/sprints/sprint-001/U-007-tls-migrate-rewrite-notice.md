@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: critical
 complexity: medium
@@ -23,6 +23,8 @@ title: Rewrite AuthPreferences.migrate() to eliminate silent trust-all write and
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-02T22:34:47.616Z'
+resolution: done
 ---
 
 # U-007: Rewrite AuthPreferences.migrate() to Eliminate Silent Trust-All Write and Clear Stale Downgrade
