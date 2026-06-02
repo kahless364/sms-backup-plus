@@ -1,0 +1,133 @@
+# SDLC Framework - Project Configuration
+# This file is the single source of truth for project setup.
+# Read by agents, skills, plans, and the dashboard at runtime.
+
+# ─── Project Identity ───────────────────────────────────────────
+project:
+  name: "SMS Backup+"                     # Project name (e.g., "RAG Index")
+  purpose: ""                            # One-line purpose statement
+  client: "Open Source"                  # Client or organization name
+  engagement_type: "modernization"       # Engagement type
+
+# ─── Source Code Repositories ───────────────────────────────────
+# Where the application code lives. Single-repo or multi-repo.
+#
+# Single-repo (code is in this project):
+#   source_repos:
+#     - name: Application
+#       path: .
+#
+# Multi-repo (code in sibling directories):
+#   source_repos:
+#     - name: API Service
+#       path: ../api-service
+#       repo_url: git@github.com:org/api-service.git
+#     - name: Frontend App
+#       path: ../frontend-app
+#       repo_url: git@github.com:org/frontend-app.git
+#
+# For greenfield projects with no code yet:
+#   code_location: greenfield
+source_repos:
+  - name: sms-backup-plus
+    path: .
+code_location: "."                       # "greenfield" or path to existing code (legacy compat)
+
+# ─── Plugins ────────────────────────────────────────────────────
+# Which framework plugins are active for this project.
+# The init script populates this from technology selections.
+plugins:
+  - core
+  # - react-native
+  # - dotnet
+  # - flutter
+  # - python
+  # - dynamics-crm
+  # - cloud-aws
+  # - cloud-azure
+  # - cloud-gcp
+
+# ─── Dashboard ──────────────────────────────────────────────────
+dashboard:
+  enabled: true                          # Whether the dashboard is active
+  port: 3818                             # HTTP port (each project needs a unique port)
+  logging:
+    event_log_enabled: true              # Enable event logging to JSONL files
+    event_log_retention_days: 30         # Days to retain event log directories
+    event_log_max_total_mb: 500          # Maximum total size of all event logs (MB)
+    event_log_max_file_mb: 10            # Maximum size of a single event log file before rotation (MB)
+    event_log_severity_filter: debug     # Minimum severity to log (debug|info|warn|error)
+
+# ─── Team ───────────────────────────────────────────────────────
+team:
+  members:
+    - username: ""
+      name: ""
+      role: lead
+
+# ─── Defaults ───────────────────────────────────────────────────
+defaults:
+  workflow: standard-story
+  model_routing:
+    solution_architect: opus
+    code_reviewer: sonnet
+    security_reviewer: sonnet
+    qa_analyst: opus
+    developer: sonnet
+    requirements_analyst: sonnet
+    requirements_reviewer: opus
+  quality_gates:
+    require_security_review: true
+    require_code_review: true
+    require_qa_validation: true
+    require_sa_signoff: true
+    require_requirements_review: true
+
+# ─── Analysis ───────────────────────────────────────────────────
+analysis:
+  assessment_naming: "YYYYMMDD-{description}"
+
+# ─── Build ──────────────────────────────────────────────────────
+build:
+  sprint_naming: "sprint-{NNN}"
+  story_prefix: "U"
+  bug_prefix: "BUG"
+  requirement_prefix: "REQ"
+  design_prefix: "DES"
+  id_digits: 3
+  domains: [modernization]               # e.g., [auth, fin, jobs, fleet, sys]
+
+# ─── Workflows ──────────────────────────────────────────────────
+workflows:
+  analysis:
+    extraction_audit_loop: true
+    design_audit_loop: true
+  requirements_authoring:
+    enabled: true
+    domain_modeling: true
+    architecture_decisions: false
+    design_readiness_gate: true
+    impact_analysis: true
+    requirements_audit_loop: true
+  delivery:
+    wave_execution: true
+    velocity_tracking: false
+    sprint_freshness_check: true
+  change_management:
+    enabled: true
+    tbc_resolution_gate: true
+    auto_discovery: true
+  orchestration:
+    mandatory_rules: true
+
+# ─── Design Pipeline ────────────────────────────────────────────
+design:
+  prompts:
+    # Steps 01, 05, 06 default ON (required for most projects)
+    system_architecture_enabled: true     # prompt 01 — system architecture
+    integration_design_enabled: true      # prompt 05 — integration design
+    design_validation_enabled: true       # prompt 06 — design validation
+    # Steps 02, 03, 04 default OFF (optional, project opt-in)
+    data_model_enabled: false             # prompt 02 — data model design
+    api_design_enabled: false             # prompt 03 — API design
+    component_design_enabled: false       # prompt 04 — component design
