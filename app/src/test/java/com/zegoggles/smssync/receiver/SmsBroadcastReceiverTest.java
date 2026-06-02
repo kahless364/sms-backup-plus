@@ -13,7 +13,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
 import static org.mockito.Mockito.*;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class SmsBroadcastReceiverTest {
@@ -24,7 +24,7 @@ public class SmsBroadcastReceiverTest {
     SmsBroadcastReceiver receiver;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         context = RuntimeEnvironment.application;
         receiver = new SmsBroadcastReceiver() {
             @Override protected BackupJobs getBackupJobs(Context context) {
@@ -51,21 +51,21 @@ public class SmsBroadcastReceiverTest {
         mockScheduled();
         when(preferences.isAutoBackupEnabled()).thenReturn(false);
         receiver.onReceive(context, new Intent().setAction("android.provider.Telephony.SMS_RECEIVED"));
-        verifyZeroInteractions(backupJobs);
+        verifyNoInteractions(backupJobs);
     }
 
     @Test public void shouldNotScheduleIfLoginInformationIsNotSet() throws Exception {
         mockScheduled();
         when(authPreferences.isLoginInformationSet()).thenReturn(false);
         receiver.onReceive(context, new Intent().setAction("android.provider.Telephony.SMS_RECEIVED"));
-        verifyZeroInteractions(backupJobs);
+        verifyNoInteractions(backupJobs);
     }
 
     @Test public void shouldNotScheduleIfFirstBackupHasNotBeenRun() throws Exception {
         mockScheduled();
         when(preferences.isFirstBackup()).thenReturn(true);
         receiver.onReceive(context, new Intent().setAction("android.provider.Telephony.SMS_RECEIVED"));
-        verifyZeroInteractions(backupJobs);
+        verifyNoInteractions(backupJobs);
     }
 
     private void mockScheduled() {

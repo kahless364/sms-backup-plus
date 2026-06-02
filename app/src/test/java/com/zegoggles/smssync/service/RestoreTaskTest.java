@@ -27,13 +27,14 @@ import java.util.Date;
 import java.util.List;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class RestoreTaskTest {
@@ -49,7 +50,7 @@ public class RestoreTaskTest {
 
     @Before
     public void before() throws MessagingException {
-        initMocks(this);
+        openMocks(this);
         config = new RestoreConfig(store, 0, true, false, false, -1, 0);
         when(service.getApplicationContext()).thenReturn(RuntimeEnvironment.application);
         when(service.getState()).thenReturn(state);
@@ -91,7 +92,8 @@ public class RestoreTaskTest {
 
         messages.add(mockMessage);
 
-        when(folder.getMessages(anyInt(), anyBoolean(), any(Date.class))).thenReturn(messages);
+        // nullable: production code passes null for date (no date filter on restore)
+        when(folder.getMessages(anyInt(), anyBoolean(), nullable(Date.class))).thenReturn(messages);
         when(resolver.insert(Consts.SMS_PROVIDER, values)).thenReturn(Uri.parse("content://sms/123"));
         task.doInBackground(config);
 

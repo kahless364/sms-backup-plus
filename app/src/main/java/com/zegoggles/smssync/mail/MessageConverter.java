@@ -39,6 +39,7 @@ import com.zegoggles.smssync.utils.ThreadHelper;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Locale;
@@ -136,7 +137,9 @@ public class MessageConverter {
                 if (is == null) {
                     throw new MessagingException("body.getInputStream() is null for " + message.getBody());
                 }
-                final String body = IOUtils.toString(is);
+                // U-005: explicitly specify UTF-8 to match MIME Content-Type charset; prevents
+                // platform-default charset from causing encoding mismatches on JDK 17+ toolchain.
+                final String body = IOUtils.toString(is, StandardCharsets.UTF_8);
                 final String address = Headers.get(message, Headers.ADDRESS);
                 values.put(Telephony.TextBasedSmsColumns.BODY, body);
                 values.put(Telephony.TextBasedSmsColumns.ADDRESS, address);

@@ -38,20 +38,23 @@ import static com.zegoggles.smssync.mail.DataType.CALLLOG;
 import static com.zegoggles.smssync.mail.DataType.MMS;
 import static com.zegoggles.smssync.mail.DataType.SMS;
 import static com.zegoggles.smssync.service.BackupItemsFetcher.emptyCursor;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.notNull;
-import static org.mockito.Matchers.same;
-import static org.mockito.Mockito.anyListOf;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class BackupTaskTest {
@@ -72,7 +75,7 @@ public class BackupTaskTest {
     @Mock TokenRefresher tokenRefresher;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         config = getBackupConfig(EnumSet.of(SMS));
         when(service.getApplicationContext()).thenReturn(RuntimeEnvironment.application);
         when(service.getState()).thenReturn(state);
@@ -110,11 +113,11 @@ public class BackupTaskTest {
         mockFetch(SMS, 1);
 
         when(converter.convertMessages(any(Cursor.class), eq(SMS))).thenReturn(result(SMS, 1));
-        when(store.getFolder(notNull(DataType.class), same(dataTypePreferences))).thenReturn(folder);
+        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
 
         BackupState finalState = task.doInBackground(config);
 
-        verify(folder).appendMessages(anyListOf(Message.class));
+        verify(folder).appendMessages(anyList());
 
         verify(service).transition(SmsSyncState.LOGIN, null);
         verify(service).transition(SmsSyncState.CALC, null);
@@ -130,21 +133,21 @@ public class BackupTaskTest {
     public void shouldBackupMultipleTypes() throws Exception {
         mockFetch(SMS, 1);
         mockFetch(MMS, 2);
-        when(store.getFolder(notNull(DataType.class), same(dataTypePreferences))).thenReturn(folder);
+        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
         when(converter.convertMessages(any(Cursor.class), any(DataType.class))).thenReturn(result(SMS, 1));
 
         BackupState finalState = task.doInBackground(getBackupConfig(EnumSet.of(SMS, MMS)));
 
         assertThat(finalState.currentSyncedItems).isEqualTo(3);
 
-        verify(folder, times(3)).appendMessages(anyListOf(Message.class));
+        verify(folder, times(3)).appendMessages(anyList());
     }
 
     @Test public void shouldCreateFoldersLazilyOnlyForNeededTypes() throws Exception {
         mockFetch(SMS, 1);
 
         when(converter.convertMessages(any(Cursor.class), eq(SMS))).thenReturn(result(SMS, 1));
-        when(store.getFolder(notNull(DataType.class), same(dataTypePreferences))).thenReturn(folder);
+        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
 
         task.doInBackground(config);
 
@@ -156,7 +159,7 @@ public class BackupTaskTest {
     @Test public void shouldCloseImapFolderAfterBackup() throws Exception {
         mockFetch(SMS, 1);
         when(converter.convertMessages(any(Cursor.class), eq(SMS))).thenReturn(result(SMS, 1));
-        when(store.getFolder(notNull(DataType.class), same(dataTypePreferences))).thenReturn(folder);
+        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
 
         task.doInBackground(config);
 
@@ -166,7 +169,7 @@ public class BackupTaskTest {
     @Test public void shouldCreateNoFoldersIfNoItemsToBackup() throws Exception {
         mockFetch(SMS, 0);
         task.doInBackground(config);
-        verifyZeroInteractions(store);
+        verifyNoInteractions(store);
     }
 
     @Test public void shouldSkipItems() throws Exception {
@@ -177,7 +180,8 @@ public class BackupTaskTest {
             )
         );
         verify(dataTypePreferences).setMaxSyncedDate(DataType.SMS, -23);
-        verifyZeroInteractions(dataTypePreferences);
+        // verifyNoMoreInteractions: confirm no other interactions with dataTypePreferences beyond setMaxSyncedDate
+        verifyNoMoreInteractions(dataTypePreferences);
 
         assertThat(finalState).isNotNull();
         assertThat(finalState.isFinished()).isTrue();
@@ -185,12 +189,12 @@ public class BackupTaskTest {
 
     @Test public void shouldHandleAuthErrorAndTokenCannotBeRefreshed() throws Exception {
         mockFetch(SMS, 1);
-        when(converter.convertMessages(any(Cursor.class), notNull(DataType.class))).thenReturn(result(SMS, 1));
+        when(converter.convertMessages(any(Cursor.class), notNull())).thenReturn(result(SMS, 1));
 
         XOAuth2AuthenticationFailedException exception = mock(XOAuth2AuthenticationFailedException.class);
         when(exception.getStatus()).thenReturn(400);
 
-        when(store.getFolder(notNull(DataType.class), same(dataTypePreferences))).thenThrow(exception);
+        when(store.getFolder(notNull(), same(dataTypePreferences))).thenThrow(exception);
 
         doThrow(new TokenRefreshException("failed")).when(tokenRefresher).refreshOAuth2Token();
 
@@ -206,12 +210,12 @@ public class BackupTaskTest {
 
     @Test public void shouldHandleAuthErrorAndTokenCouldBeRefreshed() throws Exception {
         mockFetch(SMS, 1);
-        when(converter.convertMessages(any(Cursor.class), notNull(DataType.class))).thenReturn(result(SMS, 1));
+        when(converter.convertMessages(any(Cursor.class), notNull())).thenReturn(result(SMS, 1));
 
         XOAuth2AuthenticationFailedException exception = mock(XOAuth2AuthenticationFailedException.class);
         when(exception.getStatus()).thenReturn(400);
 
-        when(store.getFolder(notNull(DataType.class), same(dataTypePreferences))).thenThrow(exception);
+        when(store.getFolder(notNull(), same(dataTypePreferences))).thenThrow(exception);
         when(service.getBackupImapStore()).thenReturn(store);
 
         task.doInBackground(config);
@@ -237,7 +241,8 @@ public class BackupTaskTest {
     }
 
     private void mockFetch(DataType type, final int n) {
-        when(fetcher.getItemsForDataType(eq(type), any(ContactGroupIds.class), anyInt())).then(new Answer<Object>() {
+        // nullable() matches null ContactGroupIds — production code passes null when no contact group
+        when(fetcher.getItemsForDataType(eq(type), nullable(ContactGroupIds.class), anyInt())).then(new Answer<Object>() {
             @Override public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 return testMessages(n);
             }
@@ -256,6 +261,7 @@ public class BackupTaskTest {
 
 
     private void mockAllFetchEmpty() {
-        when(fetcher.getItemsForDataType(any(DataType.class), any(ContactGroupIds.class), anyInt())).thenReturn(emptyCursor());
+        // nullable() matches null ContactGroupIds — production code passes null when no contact group
+        when(fetcher.getItemsForDataType(any(DataType.class), nullable(ContactGroupIds.class), anyInt())).thenReturn(emptyCursor());
     }
 }

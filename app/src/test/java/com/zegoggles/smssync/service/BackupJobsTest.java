@@ -24,7 +24,7 @@ import static com.zegoggles.smssync.Consts.CALLLOG_PROVIDER;
 import static com.zegoggles.smssync.Consts.SMS_PROVIDER;
 import static com.zegoggles.smssync.mail.DataType.CALLLOG;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(RobolectricTestRunner.class)
@@ -35,7 +35,7 @@ public class BackupJobsTest {
     @Mock private DataTypePreferences dataTypePreferences;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         ShadowPackageManager pm = shadowOf(RuntimeEnvironment.application.getPackageManager());
 
         Intent executeIntent = new Intent("com.firebase.jobdispatcher.ACTION_EXECUTE");

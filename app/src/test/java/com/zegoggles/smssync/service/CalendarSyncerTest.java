@@ -18,9 +18,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class CalendarSyncerTest {
@@ -33,7 +33,7 @@ public class CalendarSyncerTest {
     final static long CALENDAR_ID = 123;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
 
         syncer = new CalendarSyncer(
             accessor,

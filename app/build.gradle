@@ -45,8 +45,10 @@ android {
             signingConfig keystoreProperties.isEmpty() ? null : signingConfigs.release
         }
         debug {
-            // Enable coverage instrumentation so JaCoCo can collect execution data
-            testCoverageEnabled true
+            // U-005: testCoverageEnabled is for instrumented (on-device) tests; for
+            // Robolectric unit test coverage we configure JaCoCo directly on the
+            // test task below (see tasks.named('testDebugUnitTest')).
+            // testCoverageEnabled true  // removed in U-005
         }
     }
 
@@ -85,6 +87,15 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    testOptions {
+        unitTests {
+            // Robolectric 4.12.x requires Android resources to be included for
+            // tests that access application resources. Without this flag, calls to
+            // RuntimeEnvironment.application that touch resources will fail.
+            includeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -96,12 +107,15 @@ dependencies {
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.core:core-role:1.0.0-beta01'
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.robolectric:robolectric:4.3.1'
-    testImplementation "com.google.truth:truth:0.39"
-    testImplementation 'org.mockito:mockito-all:1.10.17'
+    // U-005: Toolchain uplift (AC-1 through AC-4 / REQ-MODERNIZATION-003 AC-7)
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.12.2'
+    testImplementation "com.google.truth:truth:1.4.4"
+    // mockito-all (fat-jar, 2015) replaced with mockito-core 5.x (AC-3)
+    testImplementation 'org.mockito:mockito-core:5.14.2'
+    // byte-buddy and objenesis pulled transitively by mockito-core 5.x
 
-    testAnnotationProcessor 'com.google.auto.service:auto-service:1.0-rc4'
+    testAnnotationProcessor 'com.google.auto.service:auto-service:1.0'
 }
 
 tasks.withType(JavaCompile) {
@@ -115,7 +129,7 @@ tasks.withType(JavaCompile) {
 // ---------------------------------------------------------------------------
 
 jacoco {
-    toolVersion = "0.8.7"
+    toolVersion = "0.8.12"
 }
 
 // Shared class-file filter: exclude generated/framework files from coverage
@@ -128,6 +142,21 @@ def jacocoFileFilter = [
         'android/**/*.*'
 ]
 
+// Configure testDebugUnitTest to emit JaCoCo execution data (U-005).
+// testCoverageEnabled in debug buildType was removed because it targets instrumented tests.
+// For Robolectric unit tests we enable JaCoCo on the test JVM directly.
+// afterEvaluate is required because Android tasks are registered lazily.
+afterEvaluate {
+    tasks.named('testDebugUnitTest') {
+        jacoco {
+            // Write a deterministic exec file path for the report task to consume.
+            destinationFile = file("${buildDir}/jacoco/testDebugUnitTest.exec")
+            includeNoLocationClasses = true
+            excludes = ['jdk.internal.*']
+        }
+    }
+}
+
 // jacocoTestReport: generates the HTML/XML coverage report and then triggers
 // the per-package coverage verification as a finalizer so CI fails on breach.
 task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
@@ -138,9 +167,11 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     }
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
     classDirectories.setFrom(files([
-            fileTree(dir: "${buildDir}/intermediates/javac/debug", excludes: jacocoFileFilter)
+            fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+                     excludes: jacocoFileFilter)
     ]))
-    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec', '**/*.ec']))
+    // U-005: use the deterministic exec path written by the testDebugUnitTest jacoco {} block
+    executionData.setFrom(files(["${buildDir}/jacoco/testDebugUnitTest.exec"]))
 
     // Trigger coverage verification after the report; build fails non-zero on breach
     finalizedBy 'jacocoTestCoverageVerification'
@@ -158,9 +189,10 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
 task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn: ['testDebugUnitTest']) {
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
     classDirectories.setFrom(files([
-            fileTree(dir: "${buildDir}/intermediates/javac/debug", excludes: jacocoFileFilter)
+            fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+                     excludes: jacocoFileFilter)
     ]))
-    executionData.setFrom(fileTree(dir: buildDir, includes: ['**/*.exec', '**/*.ec']))
+    executionData.setFrom(files(["${buildDir}/jacoco/testDebugUnitTest.exec"]))
 
     violationRules {
         // Rule 1: com/zegoggles/smssync/service/** (includes state/ and exception/)
@@ -196,29 +228,6 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
     }
 }
 
-// Robolectric 4.3.1 requires --add-opens on JDK 17 because it uses deep
-// reflection to access JDK internals that became inaccessible in Java 9+.
-// These flags are removed when Robolectric is upgraded to 4.12.x in S3/U-005.
-tasks.withType(Test).configureEach {
-    jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED',
-            '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
-            '--add-opens=java.base/java.io=ALL-UNNAMED',
-            '--add-opens=java.base/java.util=ALL-UNNAMED',
-            '--add-opens=java.base/java.util.concurrent=ALL-UNNAMED',
-            '--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED',
-            '--add-opens=java.base/java.nio=ALL-UNNAMED',
-            '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
-            '--add-opens=java.base/java.net=ALL-UNNAMED',
-            '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
-            '--add-opens=java.base/java.security=ALL-UNNAMED',
-            '--add-opens=java.base/java.math=ALL-UNNAMED',
-            '--add-opens=java.base/sun.reflect.misc=ALL-UNNAMED',
-            '--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED',
-            '--add-opens=jdk.unsupported/sun.reflect=ALL-UNNAMED',
-            '--add-opens=java.base/sun.security.action=ALL-UNNAMED',
-            '-Djdk.attach.allowAttachSelf=true',
-            '--add-opens=jdk.unsupported/sun.misc=ALL-UNNAMED',
-            '--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED',
-            '--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED',
-            '--add-opens=java.base/sun.reflect=ALL-UNNAMED'
-}
+// U-005: The --add-opens jvmArgs block that was added as a stopgap for Robolectric 4.3.1
+// incompatibility with JDK 17 has been removed. Robolectric 4.12.x handles JDK 17
+// natively and no longer requires these JVM flags.
