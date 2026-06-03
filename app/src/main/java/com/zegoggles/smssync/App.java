@@ -47,6 +47,8 @@ import com.zegoggles.smssync.receiver.SmsBroadcastReceiver;
 import com.zegoggles.smssync.scheduler.BackupScheduler;
 import com.zegoggles.smssync.scheduler.LegacyScheduler;
 import com.zegoggles.smssync.service.BackupJobs;
+import com.zegoggles.smssync.service.state.DefaultSyncStateRepository;
+import com.zegoggles.smssync.service.state.SyncStateRepository;
 
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
@@ -60,6 +62,15 @@ public class App extends Application {
     public static final String CHANNEL_ID = "sms_backup_plus";
 
     private static final Bus bus = new Bus();
+
+    /**
+     * U-019: Manual application singleton for SyncStateRepository.
+     * Constructed in onCreate; exposed via syncStateRepository() accessor.
+     * Hilt injection deferred to U-022 (DES-MODERNIZATION-008).
+     * AC-5: exactly one construction site; IC-1: accessible via static accessor.
+     */
+    private static SyncStateRepository syncStateRepositoryInstance;
+
     /** Google Play Services present on this device? */
     public static boolean gcmAvailable;
 
@@ -100,6 +111,10 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         setupStrictMode();
+        // U-019: construct the SyncStateRepository singleton before any other component
+        // that may call syncStateRepository(). Must be first so the accessor is non-null
+        // when register(this) fires Otto subscriptions later in onCreate.
+        syncStateRepositoryInstance = new DefaultSyncStateRepository();
         gcmAvailable = GooglePlayServices.isAvailable(this);
         preferences = new Preferences(this);
         preferences.migrate();
@@ -168,6 +183,16 @@ public class App extends Application {
 
     public static void post(Object event) {
         bus.post(event);
+    }
+
+    /**
+     * U-019: Application-scoped SyncStateRepository accessor.
+     * Constructed in onCreate; non-null for the lifetime of the application process.
+     * AC-5: single construction site; IC-1: reachable from all production call sites.
+     * Hilt injection deferred to U-022 (DES-MODERNIZATION-008).
+     */
+    public static SyncStateRepository syncStateRepository() {
+        return syncStateRepositoryInstance;
     }
 
     @Nullable

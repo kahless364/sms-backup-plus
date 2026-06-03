@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 apply plugin: 'jacoco'
 
 def keystoreProperties = new Properties()
@@ -76,6 +77,11 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    // U-019: Kotlin source compatibility alongside Java 8
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
     testOptions {
         unitTests {
             // Robolectric 4.12.x requires Android resources to be included for
@@ -87,6 +93,11 @@ android {
 }
 
 dependencies {
+    // U-019: Kotlin stdlib + coroutines for SyncStateRepository / SyncEvent facade
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.25'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+
     implementation 'com.squareup:otto:1.3.8'
     implementation 'com.github.jberkel.k-9:k9mail-library:eaf689025e'
     implementation 'com.android.billingclient:billing:7.1.1' // U-028 pinned 2026-06-02; latest stable 7.x
@@ -94,6 +105,9 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.core:core-role:1.0.0-beta01'
+
+    // U-019: coroutines test helpers for SyncStateRepository tests
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
 
     // U-005: Toolchain uplift (AC-1 through AC-4 / REQ-MODERNIZATION-003 AC-7)
     testImplementation 'junit:junit:4.13.2'
@@ -162,8 +176,11 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
         html.required = true
     }
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
+    // U-019: include Kotlin compiled classes alongside Java classes
     classDirectories.setFrom(files([
             fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+                     excludes: jacocoFileFilter),
+            fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
                      excludes: jacocoFileFilter)
     ]))
     // U-005: use the deterministic exec path written by the testDebugUnitTest jacoco {} block
@@ -195,8 +212,11 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
 // once the U-006 characterization tests bring each package to >= 70%.
 task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn: ['testDebugUnitTest']) {
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
+    // U-019: include Kotlin compiled classes alongside Java classes
     classDirectories.setFrom(files([
             fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+                     excludes: jacocoFileFilter),
+            fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
                      excludes: jacocoFileFilter)
     ]))
     executionData.setFrom(files(["${buildDir}/jacoco/testDebugUnitTest.exec"]))
