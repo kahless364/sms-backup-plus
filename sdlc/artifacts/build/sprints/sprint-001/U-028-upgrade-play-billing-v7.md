@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: low
 complexity: low
@@ -23,6 +23,8 @@ title: 'Upgrade Play Billing 2.1.0 → 7.x: replace SkuDetails pipeline with Pro
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T03:13:07.290Z'
+resolution: done
 ---
 
 # U-028: Upgrade Play Billing 2.1.0 → 7.x — Replace SkuDetails Pipeline with ProductDetails/queryProductDetailsAsync Across the Donation Subsystem

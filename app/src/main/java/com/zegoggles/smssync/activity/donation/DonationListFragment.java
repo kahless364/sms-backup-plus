@@ -10,32 +10,35 @@ import androidx.appcompat.app.AlertDialog;
 
 import android.text.TextUtils;
 
-import com.android.billingclient.api.SkuDetails;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.Dialogs;
-
-import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static android.R.string.cancel;
 
+/**
+ * Fragment that displays the list of donation products.
+ * Reports the user's selection by index to {@link ProductSelectionListener};
+ * the activity resolves the live {@link com.android.billingclient.api.ProductDetails}
+ * by that index from its in-memory list (U-028: eliminates SkuDetails JSON re-hydration).
+ */
 public class DonationListFragment extends Dialogs.BaseFragment {
     static final String SKUS = "skus";
-    private SkuSelectionListener listener;
+    private ProductSelectionListener listener;
 
-    interface SkuSelectionListener {
-        void selectedSku(SkuDetails sku);
+    interface ProductSelectionListener {
+        void selectedProduct(int index);
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof SkuSelectionListener) {
-            listener = (SkuSelectionListener) context;
+        if (context instanceof ProductSelectionListener) {
+            listener = (ProductSelectionListener) context;
         } else {
-            throw new IllegalArgumentException("Context does not implement SkuSelectionListener");
+            throw new IllegalArgumentException("Context does not implement ProductSelectionListener");
         }
     }
 
@@ -49,11 +52,7 @@ public class DonationListFragment extends Dialogs.BaseFragment {
             .setItems(getOptions(skus), new OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    try {
-                        listener.selectedSku(new SkuDetails(skus.get(which).getOriginalJson()));
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
-                    }
+                    listener.selectedProduct(which);
                 }
             })
             .setNegativeButton(cancel, new OnClickListener() {

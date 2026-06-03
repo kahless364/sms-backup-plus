@@ -1,16 +1,14 @@
 package com.zegoggles.smssync.activity.donation;
 
 import android.os.Parcel;
-import android.os.ParcelFormatException;
 import android.os.Parcelable;
-import com.android.billingclient.api.SkuDetails;
+import com.android.billingclient.api.ProductDetails;
 
-import org.json.JSONException;
-
-import static com.android.billingclient.api.BillingClient.SkuType.INAPP;
+import static com.android.billingclient.api.BillingClient.ProductType.INAPP;
 
 /**
- * A parcelable and comparable implementation of {@link SkuDetails}.
+ * A parcelable and comparable value object wrapping Google Play ProductDetails primitives.
+ * Replaces the former SkuDetails-backed implementation (U-028 / 2026-06-02).
  */
 public class Sku implements Parcelable, Comparable<Sku> {
     private final String type;
@@ -19,46 +17,53 @@ public class Sku implements Parcelable, Comparable<Sku> {
     private final String title;
     private final String description;
     private final long priceAmountMicros;
-    private final String originalJson;
 
-    Sku(SkuDetails detail) {
-        this(detail.getType(), detail.getSku(), detail.getPrice(), detail.getTitle(), detail.getDescription(), detail.getPriceAmountMicros(), detail.getOriginalJson());
+    /**
+     * Construct from a Play Billing 7.x {@link ProductDetails}.
+     * Safe-defaults for null {@code getOneTimePurchaseOfferDetails()} — only INAPP
+     * products are used here, so this should never be null in practice.
+     */
+    Sku(ProductDetails detail) {
+        this.type = detail.getProductType();
+        this.sku = detail.getProductId();
+        this.title = detail.getTitle();
+        this.description = detail.getDescription();
+        ProductDetails.OneTimePurchaseOfferDetails offer = detail.getOneTimePurchaseOfferDetails();
+        if (offer != null) {
+            this.price = offer.getFormattedPrice();
+            this.priceAmountMicros = offer.getPriceAmountMicros();
+        } else {
+            this.price = "";
+            this.priceAmountMicros = 0L;
+        }
     }
 
     /**
-     * @param type SKU type
-     * @param sku  the product Id
-     * @param price formatted price of the item, including its currency sign
-     * @param title  the title of the product
-     * @param description the description of the product
-     * @param priceAmountMicros the price in micro-units, where 1,000,000 micro-units equal one unit of the currency
+     * Primitive-field constructor used by {@link Sku.Test} fixtures and Parcel deserialization.
+     *
+     * @param type             product type (e.g. {@code "inapp"})
+     * @param sku              the product ID
+     * @param price            formatted price including currency sign
+     * @param title            the title of the product
+     * @param description      the description of the product
+     * @param priceAmountMicros price in micro-units (1,000,000 = 1 currency unit)
      */
-    Sku(String type, String sku, String price, String title, String description, long priceAmountMicros, String originalJson) {
+    Sku(String type, String sku, String price, String title, String description, long priceAmountMicros) {
         this.type = type;
         this.sku = sku;
         this.price = price;
         this.title = title;
         this.description = description;
         this.priceAmountMicros = priceAmountMicros;
-        this.originalJson = originalJson;
     }
 
     private Sku(Parcel in) {
-        originalJson = in.readString();
-        if (originalJson == null) {
-            throw new ParcelFormatException();
-        }
-        try {
-            SkuDetails skuDetails = new SkuDetails(originalJson);
-            sku = skuDetails.getSku();
-            price = skuDetails.getPrice();
-            type = skuDetails.getType();
-            title = skuDetails.getTitle();
-            description = skuDetails.getPrice();
-            priceAmountMicros = skuDetails.getPriceAmountMicros();
-        } catch (JSONException e) {
-           throw new ParcelFormatException(e.getMessage());
-        }
+        this.sku = in.readString();
+        this.title = in.readString();
+        this.description = in.readString();
+        this.price = in.readString();
+        this.priceAmountMicros = in.readLong();
+        this.type = in.readString();
     }
 
     public static final Creator<Sku> CREATOR = new Creator<Sku>() {
@@ -76,21 +81,21 @@ public class Sku implements Parcelable, Comparable<Sku> {
     public String getType() {
         return type;
     }
+
     public String getSku() {
         return sku;
     }
+
     public String getPrice() {
         return price;
     }
+
     public String getTitle() {
         return title;
     }
+
     public String getDescription() {
         return description;
-    }
-
-    public String getOriginalJson() {
-        return originalJson;
     }
 
     @Override
@@ -99,8 +104,13 @@ public class Sku implements Parcelable, Comparable<Sku> {
     }
 
     @Override
-    public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeString(originalJson);
+    public void writeToParcel(Parcel parcel, int flags) {
+        parcel.writeString(sku);
+        parcel.writeString(title);
+        parcel.writeString(description);
+        parcel.writeString(price);
+        parcel.writeLong(priceAmountMicros);
+        parcel.writeString(type);
     }
 
     @Override
@@ -129,45 +139,31 @@ public class Sku implements Parcelable, Comparable<Sku> {
 
         /**
          * When you make an In-app Billing request with this product ID, Google Play responds as though
-         * you successfully purchased an item. The response includes a JSON string, which contains fake
-         * purchase information (for example, a fake order ID). In some cases, the JSON string is signed
-         * and the response includes the signature so you can test your signature verification implementation
-         * using these responses.
+         * you successfully purchased an item.
          */
         static final Sku PURCHASED =
-                new Sku(INAPP, TEST_PREFIX + "purchased", TEST_PRICE, "Test (purchased)", "Purchased", 0, null);
-
+                new Sku(INAPP, TEST_PREFIX + "purchased", TEST_PRICE, "Test (purchased)", "Purchased", 0);
 
         /**
          * When you make an In-app Billing request with this product ID Google Play responds as though
-         * the purchase was canceled. This can occur when an error is encountered in the order process,
-         * such as an invalid credit card, or when you cancel a user's order before it is charged.
+         * the purchase was canceled.
          */
         static final Sku CANCELED =
-                new Sku(INAPP, TEST_PREFIX + "canceled", TEST_PRICE, "Test (canceled)", "Canceled", 0, null);
+                new Sku(INAPP, TEST_PREFIX + "canceled", TEST_PRICE, "Test (canceled)", "Canceled", 0);
 
         /**
          * When you make an In-app Billing request with this product ID, Google Play responds as though
-         * the purchase was refunded. Refunds cannot be initiated through Google Play's in-app billing service.
-         * Refunds must be initiated by you (the merchant). After you process a refund request through your
-         * Google Wallet merchant account, a refund message is sent to your application by Google Play.
-         * This occurs only when Google Play gets notification from Google Wallet that a refund has been made.
-         * For more information about refunds, see
-         * <a href="http://developer.android.com/google/play/billing/v2/api.html#billing-action-notify">
-         * Handling IN_APP_NOTIFY messages</a> and
-         * <a href="http://support.google.com/googleplay/android-developer/bin/answer.py?hl=en&answer=1153485">
-         * In-app Billing Pricing
-         * </a>.
+         * the purchase was refunded.
          */
         static final Sku REFUNDED =
-                new Sku(INAPP, TEST_PREFIX + "refunded", TEST_PRICE, "Test (refunded)", "Refunded", 0, null);
+                new Sku(INAPP, TEST_PREFIX + "refunded", TEST_PRICE, "Test (refunded)", "Refunded", 0);
 
         /**
          * When you make an In-app Billing request with this product ID, Google Play responds as though
          * the item being purchased was not listed in your application's product list.
          */
         static final Sku UNAVAILABLE =
-                new Sku(INAPP, TEST_PREFIX + "item_unavailable", TEST_PRICE, "Test (unavailable)", "Unavailable", 0, null);
+                new Sku(INAPP, TEST_PREFIX + "item_unavailable", TEST_PRICE, "Test (unavailable)", "Unavailable", 0);
 
         static final Sku[] SKUS = {
                 PURCHASED, CANCELED, REFUNDED, UNAVAILABLE
