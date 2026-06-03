@@ -1,0 +1,48 @@
+k9mail-vendored — Asset Capture for Supply-Chain Reproducibility
+================================================================
+
+Upstream Repository: https://github.com/jberkel/k-9
+Specific Commit SHA: eaf689025ec28d55e3b62f5ea3b1f185f410ee6b
+Branch at Capture:   sms-backup-plus-1.5.11
+Capture Date:        2026-06-03
+Captured By:         U-027 (k-9 dependency unpin — reproducible coordinate)
+
+This module is an asset capture for supply-chain reproducibility. The following
+minimal modifications were made to enable compilation under AGP 8 / AndroidX
+(no behavioral changes; no logic changes; documented per AC-5 U-027):
+
+  (1) Import migration: android.support.annotation.* → androidx.annotation.* in 12
+      source files (Address, BoundaryGenerator, Message, Part, MessageExtractor,
+      MessageIdGenerator, MimeBodyPart, MimeHeader, MimeMessage, MimeUtility,
+      TextBody, SmtpTransport). Pure annotation rename; no API change.
+
+  (2) Dependency coordinates: migrated from jcenter (shut down 2022) to mavenCentral
+      equivalents at identical versions (apache-mime4j 0.7.2, commons-io 2.4,
+      jutf7 1.0.0, jzlib 1.0.7, support-annotations → androidx.annotation:1.7.1).
+
+No other source modifications were made.
+
+The original JitPack coordinate com.github.jberkel.k-9:k9mail-library:eaf689025e
+was an evictable bare-SHA artifact. The artifact was confirmed evicted (HTTP 404
+from jitpack.io) during U-027 evaluation (2026-06-03). No mavenCentral() coordinate
+was found for k9mail-library (app.k9mail:* and com.fsck.k9:* searches returned zero
+results). No JitPack tag coordinate pointed to exactly commit eaf689025e. Path C
+(vendor) was therefore selected per ADR-009-A.
+
+Original k-9 NOTICE:
+--------------------
+K-9 Mail
+Copyright 2008-2016, K-9 Mail Developers
+Copyright 2005-2016, The Android Open Source Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
