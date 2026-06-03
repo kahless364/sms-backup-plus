@@ -192,7 +192,11 @@ public class SmsBackupService extends ServiceBase {
 
     private void moveToState(BackupState state) {
         backupStateChanged(state);
-        App.post(state);
+        // U-019: proof-of-life migration (AC-6). Replaced App.post(state) with the
+        // SyncStateRepository facade. DefaultSyncStateRepository.emitState delegates
+        // back to App.post internally, so runtime behavior is IDENTICAL.
+        // IC-2: this call reaches DefaultSyncStateRepository.emitState via App.syncStateRepository().
+        App.syncStateRepository().emitState(state);
     }
 
     @Override
