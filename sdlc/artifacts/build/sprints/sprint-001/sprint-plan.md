@@ -65,7 +65,7 @@ artifact_type: sprint-plan
 | wave-5 | U-013 | Introduce BackupScheduler port and LegacyScheduler adapter (branch-by-abstraction seam) | developer | sonnet | lead | U-006 | planned | high |
 | wave-5 | U-018 | Dead-Code Removal and minSdk Cleanup: delete CalendarAccessorPre40, collapse sub-21 guards | developer | sonnet | lead | U-006, U-003 | planned | medium |
 | wave-5 | U-019 | SyncStateRepository Facade: define interface + SyncEvent sealed class and Otto-delegating impl | developer | sonnet | lead | U-003 | planned | high |
-| wave-5 | U-028 | Upgrade Play Billing 2.1.0 → 7.x: replace SkuDetails pipeline with ProductDetails/queryProductDetailsAsync | developer | sonnet | lead | U-003 | planned | low |
+| wave-5 | U-028 | Upgrade Play Billing 2.1.0 → 7.x: replace SkuDetails pipeline with ProductDetails/queryProductDetailsAsync | developer | sonnet | lead | U-003 | done | low |
 | wave-5 | U-029 | Replace deprecated GData contacts call with ContactsPort + People API adapter | developer | sonnet | lead | U-003 | planned | low |
 | wave-6 | U-008 | Introduce TlsTrustPolicy enum, PinnedCertificateSocketFactory, PinnedCertStore, rewrite factory selection | developer | sonnet | lead | U-007, U-003 | planned | critical |
 | wave-6 | U-011 | Introduce SecretStore port, EncryptedPrefsSecretStore adapter, InMemorySecretStore fake | developer | sonnet | lead | U-006, U-007 | planned | high |
