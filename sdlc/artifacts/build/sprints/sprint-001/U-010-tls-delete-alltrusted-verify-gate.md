@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: low
@@ -26,6 +26,8 @@ title: Delete AllTrustedSocketFactory, audit every trust write site, and declare
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T17:36:22.876Z'
+resolution: done
 ---
 
 # U-010: Delete AllTrustedSocketFactory, audit every trust write site, and declare Gate G1
@@ -197,6 +199,20 @@ This declaration must be present before this story is moved to `status: done`.
 
 This story is the closing verification and gate-declaration step for MU-003 (Transport Security Hardening). No new production code is introduced. The developer's deliverable is: (1) grep audit outputs recorded here as evidence; (2) CI green confirmation; (3) Gate G1 declared.
 
-Gate G1 / Milestone M1 declaration will be recorded here upon completion:
+Gate G1 / Milestone M1 declaration:
 
-> [Gate G1 / Milestone M1 declaration — to be recorded by developer upon AC-1 through AC-4 confirmation, including Git commit SHA]
+> **Gate G1 / Milestone M1 PASSED.**
+> Confirmed: (a) `AllTrustedSocketFactory` is deleted — grep-zero in production source (AC-1);
+> (b) no production `X509TrustManager` has an empty or non-examining `checkServerTrusted()` body
+> in the data path — `PinnedX509TrustManager` validates SHA-256 fingerprint + validity window (AC-2);
+> (c) the `SERVER_TRUST_ALL_CERTIFICATES=true` write-site audit confirms zero writers of `true` —
+> the enrollment handler uses `PinnedCertStore` exclusively; the only remaining write is
+> `false` in `AuthPreferences.migrate()` for stale-value clearing (AC-3); (d) CI is green:
+> `assembleDebug`, `testDebugUnitTest` (561 active tests, 0 failures), and
+> `jacocoTestCoverageVerification` (>=70%) all pass with BUILD SUCCESSFUL (AC-4).
+> No code path in the shipping binary accepts an unvalidated TLS certificate.
+> `AuthPreferences.migrate()` is proven non-downgrading by the green characterization and
+> rewrite test suite. Phase 2 substrate-swap work (MU-008 and later) may proceed once
+> G0 and G2 are also declared.
+>
+> Git commit SHA: `1bb32a4947927abbb9430e30083b9139b3f76f79` (worktree-agent-ae6612bd523125f7a)

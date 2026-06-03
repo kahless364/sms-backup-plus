@@ -189,17 +189,6 @@
     </issue>
 
     <issue
-        id="CustomX509TrustManager"
-        message="Implementing a custom `X509TrustManager` is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android&apos;s default implementation."
-        errorLine1="    private static class InsecureX509TrustManager implements X509TrustManager"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/zegoggles/smssync/mail/AllTrustedSocketFactory.java"
-            line="42"
-            column="26"/>
-    </issue>
-
-    <issue
         id="ExportedReceiver"
         message="Exported receiver does not require permission"
         errorLine1="        &lt;receiver android:name=&quot;.receiver.BackupBroadcastReceiver&quot;"
