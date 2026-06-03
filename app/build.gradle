@@ -114,6 +114,12 @@ dependencies {
     // U-019: coroutines test helpers for SyncStateRepository tests
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
 
+    // U-014: WorkManager adapter (CNTR-MODERNIZATION-004, INV-1..4)
+    // 2.9.1 is compatible with compileSdk 35 + minSdk 21 (AGP/SDK uplift from U-003).
+    // work-testing is testImplementation only (WorkManagerTestInitHelper + SynchronousExecutor).
+    implementation 'androidx.work:work-runtime-ktx:2.9.1'
+    testImplementation 'androidx.work:work-testing:2.9.1'
+
     // U-005: Toolchain uplift (AC-1 through AC-4 / REQ-MODERNIZATION-003 AC-7)
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.robolectric:robolectric:4.12.2'
