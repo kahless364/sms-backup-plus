@@ -61,7 +61,7 @@ artifact_type: sprint-plan
 | wave-3 | U-005 | Upgrade test toolchain (Robolectric 4.12.x, JUnit 4.13.2, Mockito-core 5.x, Truth 1.4.x) | developer | sonnet | lead | U-002, U-004 | done | high |
 | wave-4 | U-003 | Stage S3: raise targetSdk to 35, co-land conformance fixes, and remove JCenter | developer | sonnet | lead | U-002, U-005 | done | critical |
 | wave-4 | U-006 | Characterization tests: AuthPreferences.migrate(), BackupJobs retry/constraints, notification assertion | developer | sonnet | lead | U-004, U-005 | planned | high |
-| wave-5 | U-007 | Rewrite AuthPreferences.migrate() to eliminate silent trust-all write and clear stale downgrade | developer | sonnet | lead | U-006 | planned | critical |
+| wave-5 | U-007 | Rewrite AuthPreferences.migrate() to eliminate silent trust-all write and clear stale downgrade | developer | sonnet | lead | U-006 | done | critical |
 | wave-5 | U-013 | Introduce BackupScheduler port and LegacyScheduler adapter (branch-by-abstraction seam) | developer | sonnet | lead | U-006 | planned | high |
 | wave-5 | U-018 | Dead-Code Removal and minSdk Cleanup: delete CalendarAccessorPre40, collapse sub-21 guards | developer | sonnet | lead | U-006, U-003 | planned | medium |
 | wave-5 | U-019 | SyncStateRepository Facade: define interface + SyncEvent sealed class and Otto-delegating impl | developer | sonnet | lead | U-003 | planned | high |

@@ -48,6 +48,16 @@ public class AuthPreferences {
     private static final String SERVER_TRUST_ALL_CERTIFICATES = "server_trust_all_certificates";
 
     /**
+     * Boolean flag written by migrate() to indicate that a one-time transport-security
+     * notice should be shown to the user. Set when the legacy +ssl/+tls protocol downgrade
+     * is detected, or when a stale SERVER_TRUST_ALL_CERTIFICATES=true value is cleared.
+     * The presentation layer reads this flag, shows the notice once, and writes
+     * "transport_security_notice_shown" = true (analogous to sms_default_package_change_seen
+     * at Preferences.java:247-253). This story (U-007) writes the flag only; the UI is U-009.
+     */
+    static final String TRANSPORT_SECURITY_NOTICE_PENDING = "transport_security_notice_pending";
+
+    /**
      * IMAP URI.
      *
      * This should be in the form of:
@@ -274,16 +284,45 @@ public class AuthPreferences {
     }
 
     void migrate() {
+        // DES-MODERNIZATION-002 Decision 6 — rewritten by U-007 to eliminate the
+        // silent trust-all downgrade (ARCH-008 / SEC-001 / CWE-295).
         if (useXOAuth()) {
             return;
         }
-        // convert deprecated authentication methods
-        if ("+ssl".equals(getServerProtocol()) ||
-            "+tls".equals(getServerProtocol())) {
-            preferences.edit()
-                .putBoolean(SERVER_TRUST_ALL_CERTIFICATES, true)
-                .putString(SERVER_PROTOCOL, getServerProtocol()+"+")
-                .commit();
+        final String protocol = getServerProtocol();
+        final boolean wasLegacyDowngradeProtocol =
+            "+ssl".equals(protocol) || "+tls".equals(protocol);
+
+        SharedPreferences.Editor edit = preferences.edit();
+
+        // AC-5 / REQ-MODERNIZATION-002 AC-10: NEVER write SERVER_TRUST_ALL_CERTIFICATES=true.
+        // AC-2 migration-of-already-downgraded-users: actively clear any stale true left by
+        // the previous app version's silent downgrade, restoring validated TLS immediately.
+        if (preferences.getBoolean(SERVER_TRUST_ALL_CERTIFICATES, false)) {
+            edit.putBoolean(SERVER_TRUST_ALL_CERTIFICATES, false);
+            markTransportSecurityNoticePending(edit);   // AC-3: one-time notice for affected cohort
         }
+
+        // Protocol normalization is preserved (AC-5 "may update SERVER_PROTOCOL"),
+        // but WITHOUT the coupled trust-all write that the old code performed.
+        if (wasLegacyDowngradeProtocol) {
+            edit.putString(SERVER_PROTOCOL, protocol + "+");
+            markTransportSecurityNoticePending(edit);   // AC-3: these users are the affected cohort
+        }
+
+        // ARCH-017: apply(), not commit(), for a launch-path write.
+        // The write is idempotent — if the process is killed before apply() flushes,
+        // migrate() re-executes on the next launch and produces the same result.
+        edit.apply();
+    }
+
+    /**
+     * Records that a one-time transport-security notice is pending for this user.
+     * Called from migrate() when the user is in the affected cohort (legacy +ssl/+tls
+     * protocol, or stale SERVER_TRUST_ALL_CERTIFICATES=true). The notice flag is consumed
+     * by the UI presentation layer (U-009); this method only writes the flag.
+     */
+    private static void markTransportSecurityNoticePending(SharedPreferences.Editor edit) {
+        edit.putBoolean(TRANSPORT_SECURITY_NOTICE_PENDING, true);
     }
 }
