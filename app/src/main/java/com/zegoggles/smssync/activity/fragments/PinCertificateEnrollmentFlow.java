@@ -60,10 +60,10 @@ import static com.zegoggles.smssync.App.TAG;
  *   <li>On confirmation, store the certificate in {@link PinnedCertStore}.</li>
  * </ol>
  *
- * <p>The ephemeral TrustManager used during the TLS fetch is an anonymous inner class scoped
- * exclusively to this enrollment code path. It is NOT {@code AllTrustedSocketFactory} (which is
- * deleted). Its sole purpose is to capture the leaf certificate; no data is transmitted through
- * this socket, and the ephemeral trust is never reused for IMAP data connections.
+ * <p>The ephemeral TrustManager used during the TLS fetch is the {@link EnrollmentCaptureTrustManager}
+ * inner class, scoped exclusively to this enrollment code path. Its sole purpose is to capture
+ * the leaf certificate for user review; no data is transmitted through this socket, and the
+ * ephemeral trust is never reused for IMAP data connections.
  *
  * <p>Per CNTR-MODERNIZATION-002: {@link PinnedCertStore#put} is called ONLY from the
  * affirmative confirmation callback, never automatically. The Cancel path leaves the store
@@ -219,9 +219,9 @@ public class PinCertificateEnrollmentFlow {
      * enrollment TLS handshake. Its SOLE purpose is to capture the server's leaf certificate
      * for display to the user — NO data is transmitted through the connection.
      *
-     * <p>This trust manager is scoped exclusively to the enrollment flow. It is NOT the
-     * deleted {@code AllTrustedSocketFactory}; it is not reachable from any data connection
-     * path and is not stored or reused beyond the single handshake.
+     * <p>This trust manager is scoped exclusively to the enrollment flow. It is NOT a
+     * trust-all factory; it is not reachable from any data connection path and is not
+     * stored or reused beyond the single handshake.
      */
     static final class EnrollmentCaptureTrustManager implements X509TrustManager {
         private volatile X509Certificate leafCert;
