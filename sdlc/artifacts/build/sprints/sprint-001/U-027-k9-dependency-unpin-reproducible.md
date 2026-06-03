@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -23,6 +23,8 @@ title: Unpin k-9 mail library from JitPack SHA to a reproducible coordinate (or 
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T17:01:16.868Z'
+resolution: done
 ---
 
 # U-027: Unpin k-9 Mail Library from JitPack SHA to a Reproducible Coordinate (or Vendor as :k9mail-vendored); Record in verification-metadata.xml

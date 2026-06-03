@@ -74,7 +74,7 @@ artifact_type: sprint-plan
 | wave-7 | U-009 | TLS enrollment UI: pin-cert preference action, one-time security notice, and string cleanup | developer | sonnet | lead | U-008 | done | high |
 | wave-7 | U-012 | Idempotent plaintext-to-encrypted credential migration on first launch after upgrade | developer | sonnet | lead | U-011 | planned | high |
 | wave-7 | U-015 | CoroutineWorker rewrite: extract backup/restore use-cases and replace BackupTask/RestoreTask | developer | sonnet | lead | U-014 | planned | high |
-| wave-7 | U-027 | Unpin k-9 mail library from JitPack SHA to a reproducible coordinate | developer | sonnet | lead | U-025 | planned | medium |
+| wave-7 | U-027 | Unpin k-9 mail library from JitPack SHA to a reproducible coordinate | developer | sonnet | lead | U-025 | done | medium |
 | wave-8 | U-010 | Delete AllTrustedSocketFactory, audit every trust write site, and declare Gate G1 | developer | sonnet | lead | U-009 | planned | high |
 | wave-8 | U-016 | Durable Restore Checkpoint — Resumable Restore Worker with Fault-Injection Verification | developer | sonnet | lead | U-015 | planned | high |
 | wave-8 | U-020 | Otto removal: swap facade to MutableStateFlow/MutableSharedFlow, migrate 28 handler sites, delete App.bus | developer | sonnet | lead | U-019, U-015 | planned | high |
