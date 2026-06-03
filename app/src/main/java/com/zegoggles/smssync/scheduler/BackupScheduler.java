@@ -27,12 +27,11 @@ import com.zegoggles.smssync.service.BackupType;
  * No {@code com.firebase.*}, {@code androidx.work.*}, {@code android.app.AlarmManager},
  * {@code Constraints}, {@code WorkRequest}, or {@code BackoffPolicy} types appear
  * here. Android-specific construction lives entirely in the adapters
- * ({@code LegacyScheduler}, and the future {@code WorkManagerScheduler}).
+ * ({@code WorkManagerScheduler}).
  * <p>
- * All seven call sites (BackupBroadcastReceiver, BootReceiver, SmsBroadcastReceiver,
- * SmsJobService, SmsBackupService, App ×2) are routed through this port.
- * The bound implementation is {@link LegacyScheduler} for this story (U-013);
- * U-014 introduces {@code WorkManagerScheduler} and U-017 flips the binding.
+ * All call sites (BackupBroadcastReceiver, BootReceiver, SmsBroadcastReceiver,
+ * SmsBackupService, App) are routed through this port.
+ * U-017: binding flipped from LegacyScheduler to WorkManagerScheduler (Gate G3).
  * <p>
  * <strong>Contract: CNTR-MODERNIZATION-004</strong> — all nine operations below,
  * the {@link ScheduledJob} return type, and the {@link SchedulerObservable} observable

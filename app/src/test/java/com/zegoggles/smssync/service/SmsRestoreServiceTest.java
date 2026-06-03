@@ -11,8 +11,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.robolectric.Robolectric.setupService;
 
 /**
- * U-006 characterization tests for SmsRestoreService.
- * Pins the initial state and basic lifecycle behavior before service refactoring.
+ * Characterization tests for SmsRestoreService.
+ *
+ * U-006: pins the initial state and basic lifecycle behavior.
+ * U-017: extended to increase service package coverage after legacy scheduler removal.
  */
 @RunWith(RobolectricTestRunner.class)
 public class SmsRestoreServiceTest {
@@ -39,5 +41,31 @@ public class SmsRestoreServiceTest {
         // This pins the wake lock type before service refactoring.
         int wakeLockType = service.wakeLockType();
         assertThat(wakeLockType).isNotEqualTo(0);
+    }
+
+    @Test public void restoreStateChanged_withInitialState_returnsEarly() {
+        // restoreStateChanged(INITIAL) should be a no-op (isInitialState() == true returns)
+        RestoreState initial = new RestoreState();
+        assertThat(initial.state).isEqualTo(SmsSyncState.INITIAL);
+        // should not throw
+        service.restoreStateChanged(initial);
+        // state should still be the initial one (not mutated by the call)
+        assertThat(service.getState().state).isEqualTo(SmsSyncState.INITIAL);
+    }
+
+    @Test public void restoreStateChanged_withErrorState_updatesStateAndStops() {
+        // An error state is finished (not running, not initial) — triggers stopForeground + stopSelf
+        RestoreState errorState = new RestoreState().transition(SmsSyncState.ERROR, new Exception("test error"));
+        assertThat(errorState.isFinished()).isTrue();
+
+        service.restoreStateChanged(errorState);
+
+        assertThat(service.getState()).isEqualTo(errorState);
+    }
+
+    @Test public void clearCache_withEmptyCache_doesNotThrow() {
+        // clearCache() iterates getCacheDir() looking for "body*" temp files.
+        // With an empty cache dir (Robolectric), this should be a no-op.
+        service.clearCache(); // should not throw
     }
 }

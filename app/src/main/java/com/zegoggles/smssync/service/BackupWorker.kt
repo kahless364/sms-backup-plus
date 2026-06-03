@@ -69,10 +69,8 @@ import kotlin.coroutines.coroutineContext
  * TODO U-024: Add @HiltWorker/@AssistedInject annotations and replace direct constructor
  * calls with injected collaborators via HiltWorkerFactory.
  *
- * Branch-by-abstraction note (U-015): BackupTask.java and SmsBackupService are NOT deleted
- * in this story. The AsyncTask path in SmsBackupService.backup() remains intact as the
- * LegacyScheduler production path. This CoroutineWorker is the parallel WorkManager path
- * introduced alongside it. U-017 (cutover) deletes BackupTask and SmsJobService.
+ * U-017: This is now the sole production execution path. The legacy Firebase JobDispatcher
+ * path (LegacyScheduler, BackupJobs, the firebase job service) has been deleted (Gate G3).
  */
 class BackupWorker(
     context: Context,

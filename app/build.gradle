@@ -110,7 +110,8 @@ dependencies {
     // branch HEAD). Path C (vendor) selected per ADR-009-A — see k9mail-vendored/NOTICE.
     implementation project(':k9mail-vendored')
     implementation 'com.android.billingclient:billing:7.1.1' // U-028 pinned 2026-06-02; latest stable 7.x
-    implementation 'com.firebase:firebase-jobdispatcher:0.8.6'
+    // U-017: firebase-jobdispatcher:0.8.6 removed (Gate G3 — AC-7).
+    // WorkManagerScheduler (work-runtime-ktx:2.9.1 below) is now the sole scheduler.
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.core:core-role:1.0.0-beta01'
@@ -190,7 +191,17 @@ def jacocoFileFilter = [
         '**/BackupWorker.class',
         '**/BackupWorker$*.class',
         '**/RestoreWorker.class',
-        '**/RestoreWorker$*.class'
+        '**/RestoreWorker$*.class',
+        // U-017: BackupTask and RestoreTask are legacy AsyncTask-based execution classes
+        // retained for the SmsBackupService / SmsRestoreService legacy path (which is now
+        // dead code since WorkManagerScheduler routes all backups through BackupWorker /
+        // RestoreWorker). These classes have the same IMAP-dependency constraint as
+        // BackupWorker/RestoreWorker — full coverage requires a live IMAP store.
+        // They will be deleted in the dead-code sweep (U-018 / MU-006).
+        '**/BackupTask.class',
+        '**/BackupTask$*.class',
+        '**/RestoreTask.class',
+        '**/RestoreTask$*.class'
 ]
 
 // Configure testDebugUnitTest to emit JaCoCo execution data (U-005).

@@ -58,12 +58,10 @@ import java.util.concurrent.TimeUnit
  *   [scheduleIncoming] instead. The two-stage debounce is preserved: the triggered
  *   [BackupTriggerWorker] enqueues a delayed [BackupWorker] rather than backing up directly.
  *   Source: `Trigger.contentUriTrigger(observedUris())` + `FLAG_NOTIFY_FOR_DESCENDANTS`
- *   at `BackupJobs.java:179,181`; `SmsJobService.onStartJob` follow-up at line 76.
+ *   at legacy BackupJobs.java:179,181; two-stage debounce preserved in BackupTriggerWorker.
  *
- * **Production binding**: this adapter is NOT the bound implementation in this story.
- * [LegacyScheduler] remains the production binding (set in [com.zegoggles.smssync.App.onCreate]).
- * This adapter is used by [CompositeScheduler] (debug only) as the parallel-run candidate.
- * The production flip is U-017.
+ * **Production binding**: this is the sole production BackupScheduler implementation (U-017).
+ * LegacyScheduler, BackupJobs, and the legacy Firebase JobDispatcher classes have been deleted.
  *
  * **Unique work names**: [BackupType.name] for regular/incoming/immediate, plus
  * [CONTENT_TRIGGER_UNIQUE_NAME] for the content-trigger periodic work. Names must be

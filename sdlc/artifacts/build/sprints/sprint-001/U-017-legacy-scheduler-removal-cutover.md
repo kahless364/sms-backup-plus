@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -30,6 +30,8 @@ title: Flip production binding LegacyScheduler→WorkManagerScheduler; delete Ba
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T20:52:52.046Z'
+resolution: done
 ---
 
 # U-017: Flip production binding LegacyScheduler→WorkManagerScheduler; delete BackupJobs, AlarmManagerDriver, SmsJobService, and firebase-jobdispatcher; declare Gate G3

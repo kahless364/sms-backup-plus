@@ -34,9 +34,9 @@ import java.util.concurrent.TimeUnit
  * It does NOT perform a backup directly; instead it enqueues a delayed
  * [OneTimeWorkRequest] for [BackupWorker] with [initialDelay = getIncomingTimeoutSecs()].
  *
- * This preserves the two-stage debounce verified in [com.zegoggles.smssync.service.SmsJobService]:
- * - Stage 1: content-URI change fires this trigger worker (was: SmsJobService.onStartJob)
- * - Stage 2: this worker enqueues the delayed incoming backup (was: scheduleIncoming())
+ * This preserves the two-stage debounce (INV-4):
+ * - Stage 1: content-URI change fires this trigger worker
+ * - Stage 2: this worker enqueues the delayed incoming backup via scheduleIncoming()
  *
  * The worker does NOT back up on the raw content change (INV-4, DES-MODERNIZATION-005
  * §Incoming-SMS trigger).

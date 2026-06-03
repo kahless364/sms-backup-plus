@@ -42,8 +42,7 @@ import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.receiver.BootReceiver;
 import com.zegoggles.smssync.receiver.SmsBroadcastReceiver;
 import com.zegoggles.smssync.scheduler.BackupScheduler;
-import com.zegoggles.smssync.scheduler.LegacyScheduler;
-import com.zegoggles.smssync.service.BackupJobs;
+import com.zegoggles.smssync.scheduler.WorkManagerScheduler;
 import com.zegoggles.smssync.service.state.FlowSyncStateRepository;
 import com.zegoggles.smssync.service.state.SyncStateRepository;
 
@@ -82,6 +81,7 @@ public class App extends Application {
     /**
      * Application-scoped {@link BackupScheduler} singleton.
      * U-013: replaced BackupJobs field with this port-level field.
+     * U-017: binding flipped from LegacyScheduler to WorkManagerScheduler.
      * TODO U-022: replace with Hilt @Inject BackupScheduler.
      */
     private BackupScheduler scheduler;
@@ -109,14 +109,15 @@ public class App extends Application {
             createNotificationChannel();
         }
 
-        scheduler = new LegacyScheduler(new BackupJobs(this));
+        // U-017: binding flipped to WorkManagerScheduler (Gate G3).
+        // The legacy scheduling classes have been deleted per AC-3/AC-4/AC-5.
+        // WorkManagerScheduler is now the sole production BackupScheduler implementation.
+        scheduler = new WorkManagerScheduler(this, preferences);
 
-        if (gcmAvailable) {
-            setBroadcastReceiversEnabled(false);
-        } else {
-            Log.v(TAG, "Google Play Services not available, forcing use of old scheduler");
-            preferences.setUseOldScheduler(true);
-        }
+        // U-017: SmsBroadcastReceiver / BootReceiver enable/disable logic simplified:
+        // WorkManagerScheduler owns all scheduling; legacy GCM/AlarmManager toggle removed.
+        // Receivers remain enabled (WorkManager does not need manual component toggling).
+        setBroadcastReceiversEnabled(preferences.isAutoBackupEnabled());
 
         K9MailLib.setDebugStatus(new K9MailLib.DebugStatus() {
             @Override
@@ -147,7 +148,8 @@ public class App extends Application {
                     if (LOCAL_LOGV) {
                         Log.v(TAG, "autoBackupSettingsChanged()");
                     }
-                    setBroadcastReceiversEnabled(preferences.isUseOldScheduler() && preferences.isAutoBackupEnabled());
+                    // U-017: isUseOldScheduler() check removed; WorkManagerScheduler is now sole impl.
+                    setBroadcastReceiversEnabled(preferences.isAutoBackupEnabled());
                     rescheduleJobs();
                 }
             }
@@ -232,7 +234,9 @@ public class App extends Application {
         if (preferences.isAutoBackupEnabled()) {
             scheduler.scheduleRegular();
 
-            if (preferences.getIncomingTimeoutSecs() > 0 && !preferences.isUseOldScheduler()) {
+            // U-017: isUseOldScheduler() guard removed; WorkManagerScheduler handles
+            // API-level branching internally (content-URI triggers on API 24+).
+            if (preferences.getIncomingTimeoutSecs() > 0) {
                 scheduler.scheduleContentTrigger();
             }
         }

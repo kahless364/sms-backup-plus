@@ -33,11 +33,8 @@ import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.scheduler.BackupScheduler;
 import com.zegoggles.smssync.scheduler.ScheduledJob;
 import com.zegoggles.smssync.service.exception.BackupDisabledException;
-import com.zegoggles.smssync.service.exception.ConnectivityException;
 import com.zegoggles.smssync.service.exception.MissingPermissionException;
-import com.zegoggles.smssync.service.exception.NoConnectionException;
 import com.zegoggles.smssync.service.exception.RequiresLoginException;
-import com.zegoggles.smssync.service.exception.RequiresWifiException;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 
@@ -128,17 +125,15 @@ public class SmsBackupService extends ServiceBase {
             checkPermissions(enabledTypes);
             if (backupType != SKIP) {
                 checkCredentials();
-                if (getPreferences().isUseOldScheduler()) {
-                    legacyCheckConnectivity();
-                }
+                // U-017: legacyCheckConnectivity() removed — WorkManagerScheduler enforces
+                // network constraints via Constraints; no manual pre-flight check needed.
             }
             appLog(R.string.app_log_start_backup, backupType);
             getBackupTask().execute(getBackupConfig(backupType, enabledTypes, getBackupImapStore()));
         } catch (MessagingException e) {
             Log.w(TAG, e);
             moveToState(state.transition(ERROR, e));
-        } catch (ConnectivityException e) {
-            moveToState(state.transition(ERROR, e));
+        // U-017: catch(ConnectivityException) removed — legacyCheckConnectivity() deleted.
         } catch (RequiresLoginException e) {
             appLog(R.string.app_log_missing_credentials);
             moveToState(state.transition(ERROR, e));
@@ -187,16 +182,8 @@ public class SmsBackupService extends ServiceBase {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void legacyCheckConnectivity() throws ConnectivityException {
-        android.net.NetworkInfo active = getConnectivityManager().getActiveNetworkInfo();
-        if (active == null || !active.isConnectedOrConnecting()) {
-            throw new NoConnectionException();
-        }
-        if (getPreferences().isWifiOnly() && isBackgroundTask() && !isConnectedViaWifi()) {
-            throw new RequiresWifiException();
-        }
-    }
+    // U-017: legacyCheckConnectivity() deleted — WorkManagerScheduler enforces
+    // network constraints via Constraints; no manual pre-flight check needed.
 
     protected BackupTask getBackupTask() {
         return new BackupTask(this);
@@ -297,15 +284,22 @@ public class SmsBackupService extends ServiceBase {
      * field instead of parsing a {@code JobTrigger.ExecutionWindowTrigger}; behavior
      * is functionally identical (a next-sync time is logged when available).
      */
+    /**
+     * U-017: isUseOldScheduler() guard removed — WorkManagerScheduler persists periodic
+     * work automatically. scheduleRegular() is still called here to ensure the periodic
+     * work request is re-queued after a regular backup completes (WorkManager replaces
+     * any existing item via ExistingPeriodicWorkPolicy.UPDATE, which is a no-op if already
+     * enqueued — safe to call unconditionally).
+     */
     private void scheduleNextBackup(BackupState state) {
-        if (state.backupType == REGULAR && getPreferences().isUseOldScheduler()) {
+        if (state.backupType == REGULAR) {
             final ScheduledJob nextSync = getScheduler().scheduleRegular();
             if (nextSync != null) {
                 appLog(R.string.app_log_scheduled_next_sync, nextSync.description);
             } else {
                 appLog(R.string.app_log_no_next_sync);
             }
-        } // else job already persisted
+        } // WorkManager persists periodic work across restarts
     }
 
     void notifyUser(int notificationId, NotificationCompat.Builder builder) {

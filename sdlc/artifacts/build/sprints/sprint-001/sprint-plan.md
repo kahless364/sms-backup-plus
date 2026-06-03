@@ -78,7 +78,7 @@ artifact_type: sprint-plan
 | wave-8 | U-010 | Delete AllTrustedSocketFactory, audit every trust write site, and declare Gate G1 | developer | sonnet | lead | U-009 | done | high |
 | wave-8 | U-016 | Durable Restore Checkpoint — Resumable Restore Worker with Fault-Injection Verification | developer | sonnet | lead | U-015 | done | high |
 | wave-8 | U-020 | Otto removal: swap facade to MutableStateFlow/MutableSharedFlow, migrate 28 handler sites, delete App.bus | developer | sonnet | lead | U-019, U-015 | done | high |
-| wave-9 | U-017 | Flip production binding LegacyScheduler→WorkManagerScheduler; delete legacy scheduler code; declare Gate G3 | developer | sonnet | lead | U-015, U-016 | planned | high |
+| wave-9 | U-017 | Flip production binding LegacyScheduler→WorkManagerScheduler; delete legacy scheduler code; declare Gate G3 | developer | sonnet | lead | U-015, U-016 | done | high |
 | wave-9 | U-021 | Introduce MainViewModel and decompose MainActivity: migrate 9 @Subscribe handlers to Flow collection | developer | sonnet | lead | U-020 | planned | high |
 | wave-9 | U-022 | Hilt bootstrap: @HiltAndroidApp on App, Gradle plugin, kapt/ksp, and all SingletonComponent @Module classes | developer | sonnet | lead | U-020, U-003 | planned | medium |
 | wave-10 | U-023 | Annotate @Inject constructors on eight BackupTask collaborators, remove manual wiring, migrate tests | developer | sonnet | lead | U-022 | planned | medium |
