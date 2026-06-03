@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: high
@@ -24,6 +24,8 @@ title: 'Introduce MainViewModel and decompose MainActivity: migrate all 9 @Subsc
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T20:48:29.420Z'
+resolution: done
 ---
 
 # U-021: Introduce MainViewModel and decompose MainActivity — migrate all 9 @Subscribe handlers to lifecycle-aware Flow collection
