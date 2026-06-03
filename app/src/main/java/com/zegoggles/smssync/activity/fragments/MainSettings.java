@@ -8,15 +8,11 @@ import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.donation.DonationActivity;
 import com.zegoggles.smssync.activity.donation.DonationActivity.DonationStatusListener;
-import com.zegoggles.smssync.activity.events.AccountAddedEvent;
-import com.zegoggles.smssync.activity.events.AccountRemovedEvent;
-import com.zegoggles.smssync.activity.events.AutoBackupSettingsChangedEvent;
-import com.zegoggles.smssync.activity.events.SettingsResetEvent;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 
@@ -31,8 +27,11 @@ import static com.zegoggles.smssync.preferences.Preferences.Keys.INCOMING_TIMEOU
 import static com.zegoggles.smssync.preferences.Preferences.Keys.REGULAR_TIMEOUT_SECONDS;
 import static com.zegoggles.smssync.preferences.Preferences.Keys.WIFI_ONLY;
 
+// U-020: @Subscribe handlers replaced by Flow collection via MainSettingsFlowHelper.
 public class MainSettings extends SMSBackupPreferenceFragment {
     private AuthPreferences authPreferences;
+    // U-020: coroutine job for flow collection; cancelled in onDestroy.
+    private kotlinx.coroutines.Job flowCollectionJob = null;
 
     @Override
     public void onCreatePreferences(Bundle bundle, String rootKey) {
@@ -53,13 +52,20 @@ public class MainSettings extends SMSBackupPreferenceFragment {
     @Override
     public void onStart() {
         super.onStart();
-        App.register(this);
-
+        // U-020: App.register(this) replaced by Flow collection
+        if (App.syncStateRepository() != null) {
+            flowCollectionJob = MainSettingsFlowHelper.startCollection(App.syncStateRepository(), this);
+        }
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
-        App.unregister(this);
+        // U-020: App.unregister(this) replaced by cancelling the flow collection
+        if (flowCollectionJob != null) {
+            flowCollectionJob.cancel(null);
+            flowCollectionJob = null;
+        }
     }
 
     @Override
@@ -71,22 +77,26 @@ public class MainSettings extends SMSBackupPreferenceFragment {
         addPreferenceListener(ENABLE_AUTO_BACKUP.key);
     }
 
-    @Subscribe public void onAccountAdded(AccountAddedEvent event) {
+    // U-020: called by MainSettingsFlowHelper (was @Subscribe onAccountAdded)
+    void onAccountAdded() {
         updateAutoBackupPreferences();
     }
 
-    @Subscribe public void onAccountRemoved(AccountRemovedEvent event) {
+    // U-020: called by MainSettingsFlowHelper (was @Subscribe onAccountRemoved)
+    void onAccountRemoved() {
         authPreferences.clearOauth2Data();
         preferences.getDataTypePreferences().clearLastSyncData();
         findAutoBackupPreference().setChecked(false);
         updateAutoBackupPreferences();
     }
 
-    @Subscribe public void onAutoBackupSettingsChanged(final AutoBackupSettingsChangedEvent event) {
+    // U-020: called by MainSettingsFlowHelper (was @Subscribe onAutoBackupSettingsChanged)
+    void onAutoBackupSettingsChanged() {
         updateAutoBackupPreferences();
     }
 
-    @Subscribe public void onSettingsReset(SettingsResetEvent event) {
+    // U-020: called by MainSettingsFlowHelper (was @Subscribe onSettingsReset)
+    void onSettingsReset() {
         preferences.getDataTypePreferences().clearLastSyncData();
         preferences.reset();
     }

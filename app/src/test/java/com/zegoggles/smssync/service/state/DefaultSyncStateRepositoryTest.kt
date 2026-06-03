@@ -3,33 +3,29 @@ package com.zegoggles.smssync.service.state
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /**
- * U-019: Unit tests for DefaultSyncStateRepository.
+ * U-020: Updated from DefaultSyncStateRepository to FlowSyncStateRepository.
  *
- * Verifies that the facade delegates to App.bus (Otto) via App.post as required by
- * CNTR-MODERNIZATION-006 and the story's IC-2 integration criterion.
+ * DefaultSyncStateRepository (Otto-delegating facade from U-019) is deleted by U-020.
+ * These tests now validate FlowSyncStateRepository directly.
  *
- * Note: We test the delegation indirectly by verifying that emitState updates the
- * StateFlow stub value AND posts via App.post. Since App.post is a static method
- * calling a static Bus, we verify the stub StateFlow updates and the return values.
+ * The test cases are preserved verbatim where applicable; assertions that referenced
+ * Otto-specific behaviour (always-true tryEmitEvent) are updated to match the new
+ * Flow-backed semantics (tryEmitEvent returns true with buffer capacity > 0).
  */
 @RunWith(RobolectricTestRunner::class)
 class DefaultSyncStateRepositoryTest {
 
-    private lateinit var repository: DefaultSyncStateRepository
+    private lateinit var repository: FlowSyncStateRepository
 
     @Before
     fun setUp() {
-        repository = DefaultSyncStateRepository()
+        repository = FlowSyncStateRepository()
     }
 
     @Test
@@ -41,14 +37,14 @@ class DefaultSyncStateRepositoryTest {
     }
 
     @Test
-    fun `emitState updates the stub StateFlow value`() {
+    fun `emitState updates the StateFlow value`() {
         val newState = BackupState()
         repository.emitState(newState)
         assertThat(repository.state.value).isSameInstanceAs(newState)
     }
 
     @Test
-    fun `tryEmitEvent always returns true (Otto has no back-pressure)`() {
+    fun `tryEmitEvent returns true (extraBufferCapacity=1 with no collector)`() {
         val event = SyncEvent.AccountAdded
         val result = repository.tryEmitEvent(event)
         assertThat(result).isTrue()
@@ -70,9 +66,9 @@ class DefaultSyncStateRepositoryTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `emitEvent is suspend function and completes synchronously`() = runTest {
+    fun `emitEvent is suspend function and completes`() = runTest {
         val event = SyncEvent.SettingsReset
-        // Should not throw and should complete (no actual suspension in Otto-backed impl)
+        // Should not throw and should complete
         repository.emitEvent(event)
     }
 

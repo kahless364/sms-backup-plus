@@ -19,11 +19,12 @@ import android.os.Bundle;
 import android.util.Log;
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.scheduler.BackupScheduler;
 import com.zegoggles.smssync.service.state.BackupState;
+import com.zegoggles.smssync.service.state.SyncEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,52 +32,43 @@ import java.util.Map;
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
 import static com.zegoggles.smssync.service.BackupType.REGULAR;
-import static com.zegoggles.smssync.service.CancelEvent.Origin.SYSTEM;
+import static com.zegoggles.smssync.service.state.SyncEvent.Cancel.Origin.SYSTEM;
 
 
 /**
- * Firebase JobDispatcher entry point that bridges job callbacks to
- * {@link SmsBackupService}.
- * <p>
- * U-013 CS-4/IC-3: replaced the private {@code getBackupJobs()} factory and all
- * direct {@code BackupJobs} usage with the injected {@link BackupScheduler} port.
- * The {@code getScheduler()} protected factory method provides the same
- * test-override surface that {@code getBackupJobs()} previously offered.
- * <p>
- * IC-3 compliance: {@code SmsJobService} holds no direct reference to
- * {@code BackupJobs} after this story. Both {@code shouldRun()}'s
- * {@code cancelRegular()} call and the content-trigger
- * {@code scheduleIncoming()} call are routed through the port.
+ * Firebase JobDispatcher entry point that bridges job callbacks to SmsBackupService.
+ *
+ * U-013: replaced BackupJobs with BackupScheduler port.
+ * U-020: Otto removed. App.register/unregister removed. @Subscribe backupStateChanged
+ * replaced by StateFlow observation via SmsJobServiceFlowHelper.
+ * App.post(new CancelEvent(SYSTEM)) replaced by repository.tryEmitEvent (AC-17).
  */
 public class SmsJobService extends JobService {
     /** job parameters keyed by job tag / {@link BackupType} */
     private Map<String, JobParameters> jobs = new HashMap<String, JobParameters>();
+    // U-020: StateFlow observation job; cancelled in onDestroy
+    private kotlinx.coroutines.Job stateObservationJob = null;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        App.register(this);
+        // U-020: App.register(this) removed — replaced by StateFlow observation below
+        if (App.syncStateRepository() != null) {
+            stateObservationJob = SmsJobServiceFlowHelper.observeBackupState(
+                App.syncStateRepository(), this);
+        }
     }
 
     @Override
     public void onDestroy() {
+        // U-020: App.unregister(this) removed
+        if (stateObservationJob != null) {
+            stateObservationJob.cancel(null);
+            stateObservationJob = null;
+        }
         super.onDestroy();
-        App.unregister(this);
     }
 
-    /**
-     * The entry point to your Job. Implementations should offload work to another thread of execution
-     * as soon as possible because this runs on the main thread. If work was offloaded, call {@link
-     * JobService#jobFinished(JobParameters, boolean)} to notify the scheduling service that the work
-     * is completed.
-     *
-     * <p>If a job with the same service and tag was rescheduled during execution {@link
-     * #onStopJob(JobParameters)} will be called and the wakelock will be released. Please
-     * make sure that all reschedule requests happen at the end of the job.
-     *
-     * @return {@code true} if there is more work remaining in the worker thread, {@code false} if the
-     * job was completed.
-     */
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
         final Bundle extras = jobParameters.getExtras();
@@ -88,14 +80,9 @@ public class SmsJobService extends JobService {
             if (LOCAL_LOGV) {
                 Log.v(TAG, "scheduling follow-up job for content triggered job "+jobParameters);
             }
-            // AC-4 / INV-4 two-stage debounce: content-URI trigger enqueues a
-            // delayed incoming backup rather than backing up on the raw content change.
             getScheduler().scheduleIncoming();
             return false;
         } else if (shouldRun(jobParameters)) {
-            // Since API level 26, an app in background cannot start a background service,
-            // so just instantiate service manually
-            // https://developer.android.com/about/versions/oreo/background.html#services
             SmsBackupService service = new SmsBackupService();
             service.attachBaseContext(this);
             service.handleIntent(new Intent(jobParameters.getTag()).putExtras(extras));
@@ -108,24 +95,24 @@ public class SmsJobService extends JobService {
         }
     }
 
-    /**
-     * Called when the scheduling engine has decided to interrupt the execution of a running job, most
-     * likely because the runtime constraints associated with the job are no longer satisfied. The job
-     * must stop execution.
-     *
-     * @return true if the job should be retried
-     */
     @Override
     public boolean onStopJob(JobParameters jobParameters) {
         if (LOCAL_LOGV) {
             Log.v(TAG, "onStopJob(" + jobParameters + ", extras=" + jobParameters.getExtras() + ")");
         }
-        App.post(new CancelEvent(SYSTEM));
+        // U-020: App.post(new CancelEvent(SYSTEM)) replaced by tryEmitEvent (AC-17)
+        if (App.syncStateRepository() != null) {
+            boolean emitted = App.syncStateRepository().tryEmitEvent(new SyncEvent.Cancel(SYSTEM));
+            if (!emitted) {
+                Log.w(TAG, "onStopJob: tryEmitEvent(Cancel(SYSTEM)) returned false");
+            }
+        }
         return false;
     }
 
-    @Subscribe
-    public void backupStateChanged(BackupState state) {
+    // U-020: @Subscribe backupStateChanged() replaced by StateFlow observation.
+    // Called by SmsJobServiceFlowHelper on the Main dispatcher.
+    void onBackupStateChanged(BackupState state) {
         if (!state.isFinished()) {
             return;
         }
@@ -151,7 +138,6 @@ public class SmsJobService extends JobService {
             final Preferences prefs = new Preferences(this);
             final boolean autoBackupEnabled = prefs.isAutoBackupEnabled();
             if (!autoBackupEnabled) {
-                // was disabled in meantime, cancel via port (IC-3)
                 getScheduler().cancelRegular();
             }
             return autoBackupEnabled;
@@ -160,13 +146,6 @@ public class SmsJobService extends JobService {
         }
     }
 
-    /**
-     * Returns the application-scoped {@link BackupScheduler}.
-     * <p>
-     * Protected to allow test subclasses to inject a mock scheduler (replaces the
-     * old {@code getBackupJobs()} factory). Will be replaced by Hilt
-     * {@code @Inject} field injection in U-022.
-     */
     protected BackupScheduler getScheduler() {
         return App.getScheduler(this);
     }

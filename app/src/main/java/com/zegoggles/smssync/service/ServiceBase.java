@@ -79,14 +79,14 @@ public abstract class ServiceBase extends Service {
         if (new Preferences(this).isAppLogEnabled()) {
             this.appLog = new AppLog(this);
         }
-        App.register(this);
+        // U-020: App.register(this) removed (AC-7). No Otto bus registration needed.
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         if (appLog != null) appLog.close();
-        App.unregister(this);
+        // U-020: App.unregister(this) removed (AC-7). No Otto bus deregistration needed.
         notification = null;
     }
 

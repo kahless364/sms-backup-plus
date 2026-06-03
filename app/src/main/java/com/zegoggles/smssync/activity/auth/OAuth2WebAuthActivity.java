@@ -4,10 +4,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.activity.ThemeActivity;
+import com.zegoggles.smssync.service.state.SyncEvent;
 
+// U-020: @Subscribe onBrowserAuthResult replaced by lifecycle-aware
+// SyncEvent.BrowserAuthResult collection from repository.events.
+// App.register/unregister removed.
 public class OAuth2WebAuthActivity extends ThemeActivity {
     public static final String EXTRA_CODE = "code";
     private static final String EXTRA_ERROR = "error";
@@ -15,9 +19,14 @@ public class OAuth2WebAuthActivity extends ThemeActivity {
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         final Uri urlToLoad = getIntent().getData();
-        App.register(this);
+        // U-020: App.register(this) removed
 
         startActivity(new Intent(Intent.ACTION_VIEW, urlToLoad));
+
+        // U-020: start collecting SyncEvent.BrowserAuthResult in lifecycle-aware scope
+        if (App.syncStateRepository() != null) {
+            OAuth2WebAuthFlowHelper.collectBrowserAuthResult(this, App.syncStateRepository(), this);
+        }
     }
 
     @Override
@@ -28,12 +37,12 @@ public class OAuth2WebAuthActivity extends ThemeActivity {
         finish();
     }
 
-    @Subscribe
-    public void onBrowserAuthResult(RedirectReceiverActivity.BrowserAuthResult event) {
-        if (!TextUtils.isEmpty(event.code)) {
-            setResult(RESULT_OK, new Intent().putExtra(EXTRA_CODE, event.code));
+    // U-020: replaces @Subscribe onBrowserAuthResult(RedirectReceiverActivity.BrowserAuthResult event)
+    void onBrowserAuthResult(SyncEvent.BrowserAuthResult event) {
+        if (!TextUtils.isEmpty(event.getCode())) {
+            setResult(RESULT_OK, new Intent().putExtra(EXTRA_CODE, event.getCode()));
         } else {
-            setResult(RESULT_OK, new Intent().putExtra(EXTRA_ERROR, event.error));
+            setResult(RESULT_OK, new Intent().putExtra(EXTRA_ERROR, event.getError()));
         }
         finish();
     }
@@ -41,6 +50,6 @@ public class OAuth2WebAuthActivity extends ThemeActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        App.unregister(this);
+        // U-020: App.unregister(this) removed — lifecycle handles cleanup
     }
 }

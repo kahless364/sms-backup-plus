@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: high
@@ -31,6 +31,8 @@ title: 'Otto removal: swap Otto-delegating SyncStateRepository facade to Mutable
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T19:28:07.835Z'
+resolution: done
 ---
 
 # U-020: Otto removal — swap Otto-delegating SyncStateRepository facade to MutableStateFlow/MutableSharedFlow, migrate all 28 handler sites across 12 files, delete App.bus + static service fields, remove otto dependency

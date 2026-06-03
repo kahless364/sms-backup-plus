@@ -16,20 +16,18 @@ import android.widget.TextView;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
 
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed (AC-15)
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.activity.events.MissingPermissionsEvent;
 import com.zegoggles.smssync.activity.events.PerformAction;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
-import com.zegoggles.smssync.service.CancelEvent;
-import com.zegoggles.smssync.service.SmsBackupService;
-import com.zegoggles.smssync.service.SmsRestoreService;
+// U-020: CancelEvent, SmsBackupService.isServiceWorking(), SmsRestoreService.isServiceIdle() removed
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.RestoreState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 import com.zegoggles.smssync.service.state.State;
+import com.zegoggles.smssync.service.state.SyncEvent;
 import com.zegoggles.smssync.utils.Drawables;
 
 import java.text.DateFormat;
@@ -38,6 +36,7 @@ import java.util.List;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
+import static com.zegoggles.smssync.service.state.SyncEvent.Cancel.Origin.USER;
 import static com.zegoggles.smssync.activity.events.PerformAction.Actions.Backup;
 import static com.zegoggles.smssync.activity.events.PerformAction.Actions.Restore;
 
@@ -74,6 +73,10 @@ public class StatusPreference extends Preference implements View.OnClickListener
     // Snapshot stored by onRestoreInstanceState; consumed (and cleared) in onBindViewHolder.
     // Package-private visibility to allow verification from same-package unit tests.
     SavedState restoredState = null;
+
+    // U-020: coroutine scope for state/event Flow collection; cancelled in onDetached (AC-15).
+    // TODO U-022/MU-007: replace with @Inject SyncStateRepository.
+    private kotlinx.coroutines.CoroutineScope collectionScope = null;
 
     @SuppressWarnings("unused")
     public StatusPreference(Context context) {
@@ -113,7 +116,11 @@ public class StatusPreference extends Preference implements View.OnClickListener
     @Override
     public void onDetached() {
         super.onDetached();
-        App.unregister(this);
+        // U-020: App.unregister(this) removed (AC-15). Cancel the collection scope.
+        if (collectionScope != null) {
+            StatusPreferenceFlowHelper.cancelScope(collectionScope);
+            collectionScope = null;
+        }
     }
 
     @Override
@@ -151,7 +158,11 @@ public class StatusPreference extends Preference implements View.OnClickListener
             idle();
         }
 
-        App.register(this);
+        // U-020: App.register(this) replaced by Flow collection (AC-15).
+        if (collectionScope != null) {
+            StatusPreferenceFlowHelper.cancelScope(collectionScope);
+        }
+        collectionScope = StatusPreferenceFlowHelper.startCollection(App.syncStateRepository(), this);
     }
 
     @Override
@@ -180,7 +191,8 @@ public class StatusPreference extends Preference implements View.OnClickListener
         this.restoredState = s;
     }
 
-    @Subscribe public void restoreStateChanged(final RestoreState newState) {
+    // U-020: @Subscribe removed — called by StatusPreferenceFlowHelper (AC-15).
+    void restoreStateChanged(final RestoreState newState) {
         if (App.LOCAL_LOGV) Log.v(TAG, "restoreStateChanged:" + newState);
 
         stateChanged(newState);
@@ -212,7 +224,8 @@ public class StatusPreference extends Preference implements View.OnClickListener
         }
     }
 
-    @Subscribe public void backupStateChanged(final BackupState newState) {
+    // U-020: @Subscribe removed — called by StatusPreferenceFlowHelper (AC-15).
+    void backupStateChanged(final BackupState newState) {
         if (App.LOCAL_LOGV) Log.v(TAG, "backupStateChanged:"+newState);
         if (newState.backupType.isBackground()) return;
 
@@ -240,31 +253,60 @@ public class StatusPreference extends Preference implements View.OnClickListener
         }
     }
 
-    @Subscribe public void onMissingPermissions(MissingPermissionsEvent event) {
-        displayMissingPermissions(event.permissions);
+    // U-020: @Subscribe removed — called by StatusPreferenceFlowHelper (AC-15).
+    void onMissingPermissions(SyncEvent.MissingPermissions event) {
+        displayMissingPermissions(event.getPermissions());
     }
 
     private void onBackup() {
-        if (!SmsBackupService.isServiceWorking()) {
+        // U-020: SmsBackupService.isServiceWorking() replaced by repository state check (AC-8b)
+        boolean backupRunning = App.syncStateRepository() != null
+            && App.syncStateRepository().getState().getValue().isRunning()
+            && App.syncStateRepository().getState().getValue() instanceof BackupState;
+        if (!backupRunning) {
             if (LOCAL_LOGV) Log.v(TAG, "user requested sync");
-            App.post(new PerformAction(Backup, preferences.confirmAction()));
+            // U-020: App.post(new PerformAction(...)) replaced by tryEmitEvent (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.PerformActionRequested(Backup, preferences.confirmAction()));
+                if (!emitted) Log.w(TAG, "onBackup: tryEmitEvent(PerformAction) returned false");
+            }
         } else {
             if (LOCAL_LOGV) Log.v(TAG, "user requested cancel");
             // Sync button will be restored on next status update.
             backupButton.setText(R.string.ui_sync_button_label_canceling);
             backupButton.setEnabled(false);
-            App.post(new CancelEvent());
+            // U-020: App.post(new CancelEvent()) replaced by tryEmitEvent(Cancel(USER)) (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.Cancel(USER));
+                if (!emitted) Log.w(TAG, "onBackup cancel: tryEmitEvent(Cancel) returned false");
+            }
         }
     }
 
     private void onRestore() {
         if (LOCAL_LOGV) Log.v(TAG, "restore");
-        if (SmsRestoreService.isServiceIdle()) {
-            App.post(new PerformAction(Restore, preferences.confirmAction()));
+        // U-020: SmsRestoreService.isServiceIdle() replaced by repository state check (AC-9b)
+        boolean restoreRunning = App.syncStateRepository() != null
+            && App.syncStateRepository().getState().getValue().isRunning()
+            && App.syncStateRepository().getState().getValue() instanceof RestoreState;
+        if (!restoreRunning) {
+            // U-020: App.post(new PerformAction(...)) replaced by tryEmitEvent (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.PerformActionRequested(Restore, preferences.confirmAction()));
+                if (!emitted) Log.w(TAG, "onRestore: tryEmitEvent(PerformAction) returned false");
+            }
         } else {
             restoreButton.setText(R.string.ui_sync_button_label_canceling);
             restoreButton.setEnabled(false);
-            App.post(new CancelEvent());
+            // U-020: App.post(new CancelEvent()) replaced by tryEmitEvent(Cancel(USER)) (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.Cancel(USER));
+                if (!emitted) Log.w(TAG, "onRestore cancel: tryEmitEvent(Cancel) returned false");
+            }
         }
     }
 

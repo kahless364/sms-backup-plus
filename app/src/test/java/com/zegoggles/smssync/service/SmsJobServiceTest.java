@@ -56,23 +56,23 @@ public class SmsJobServiceTest {
     }
 
     @Test public void backupStateChanged_forUnknownJob_doesNotCrash() {
-        // U-006: covers the backupStateChanged path when job not in map.
-        // When no job is registered with the tag, backupStateChanged logs a warning
+        // U-006: covers the onBackupStateChanged path when job not in map.
+        // When no job is registered with the tag, onBackupStateChanged logs a warning
         // and does nothing (graceful no-op).
         BackupState finishedState = new BackupState(
             SmsSyncState.FINISHED_BACKUP, 0, 0, BackupType.REGULAR, null, null
         );
         // Should not throw even with no job registered
-        smsJobService.backupStateChanged(finishedState);
+        smsJobService.onBackupStateChanged(finishedState);
     }
 
     @Test public void backupStateChanged_withNonFinishedState_isIgnored() {
-        // Covers the !state.isFinished() early return path
+        // U-020: Covers the !state.isFinished() early return path in onBackupStateChanged
         BackupState runningState = new BackupState(
             SmsSyncState.BACKUP, 0, 0, BackupType.REGULAR, null, null
         );
         // Should not throw — just returns early
-        smsJobService.backupStateChanged(runningState);
+        smsJobService.onBackupStateChanged(runningState);
     }
 
     /**

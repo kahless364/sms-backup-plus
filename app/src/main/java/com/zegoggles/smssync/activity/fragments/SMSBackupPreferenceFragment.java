@@ -2,15 +2,20 @@ package com.zegoggles.smssync.activity.fragments;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.activity.events.AutoBackupSettingsChangedEvent;
 import com.zegoggles.smssync.preferences.Preferences;
+import com.zegoggles.smssync.service.state.SyncEvent;
 
+import static com.zegoggles.smssync.App.TAG;
+
+// U-020: App.post(event) replaced by App.syncStateRepository().tryEmitEvent(event).
+// addPreferenceListener(Object event, ...) signature changed to SyncEvent event.
 public abstract class SMSBackupPreferenceFragment extends PreferenceFragmentCompat {
     protected Preferences preferences;
     private Handler handler;
@@ -24,10 +29,10 @@ public abstract class SMSBackupPreferenceFragment extends PreferenceFragmentComp
     }
 
     void addPreferenceListener(String... prefKeys) {
-        addPreferenceListener(new AutoBackupSettingsChangedEvent(), prefKeys);
+        addPreferenceListener(SyncEvent.AutoBackupSettingsChanged.INSTANCE, prefKeys);
     }
 
-    void addPreferenceListener(final Object event, String... prefKeys) {
+    void addPreferenceListener(final SyncEvent event, String... prefKeys) {
         for (String prefKey : prefKeys) {
             findPreference(prefKey).setOnPreferenceChangeListener(
                     new Preference.OnPreferenceChangeListener() {
@@ -35,7 +40,13 @@ public abstract class SMSBackupPreferenceFragment extends PreferenceFragmentComp
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    App.post(event);
+                                    // U-020: App.post(event) replaced by tryEmitEvent(event)
+                                    if (App.syncStateRepository() != null) {
+                                        boolean emitted = App.syncStateRepository().tryEmitEvent(event);
+                                        if (!emitted) {
+                                            Log.w(TAG, "SMSBackupPrefFragment: tryEmitEvent returned false for " + event);
+                                        }
+                                    }
                                 }
                             });
                             return true;

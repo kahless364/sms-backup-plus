@@ -34,15 +34,12 @@ import androidx.fragment.app.FragmentManager;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.activity.events.AccountRemovedEvent;
-import com.zegoggles.smssync.activity.events.FallbackAuthEvent;
 import com.zegoggles.smssync.activity.events.PerformAction;
 import com.zegoggles.smssync.activity.events.PerformAction.Actions;
-import com.zegoggles.smssync.activity.events.SettingsResetEvent;
-import com.zegoggles.smssync.tasks.OAuth2CallbackTask;
+import com.zegoggles.smssync.service.state.SyncEvent;
 import com.zegoggles.smssync.utils.AppLog;
 
 import static android.R.drawable.ic_dialog_alert;
@@ -118,7 +115,13 @@ public class Dialogs {
                     new OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            App.post(which == SKIP_BUTTON ? BackupSkip : Backup);
+                            // U-020: App.post(enum value) replaced by tryEmitEvent(PerformActionRequested)
+                        Actions action = which == SKIP_BUTTON ? BackupSkip : Backup;
+                        if (App.syncStateRepository() != null) {
+                            boolean emitted = App.syncStateRepository().tryEmitEvent(
+                                new SyncEvent.PerformActionRequested(action, false));
+                            if (!emitted) android.util.Log.w(App.TAG, "FirstSync: tryEmitEvent returned false");
+                        }
                         }
                     };
             final int maxItems = getArguments().getInt(MAX_ITEMS_PER_SYNC);
@@ -196,7 +199,11 @@ public class Dialogs {
                 .setTitle(R.string.ui_dialog_reset_title)
                 .setPositiveButton(ok, new OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        App.post(new SettingsResetEvent());
+                        // U-020: App.post(new SettingsResetEvent()) replaced
+                        if (App.syncStateRepository() != null) {
+                            boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.SettingsReset.INSTANCE);
+                            if (!emitted) android.util.Log.w(App.TAG, "Reset: tryEmitEvent returned false");
+                        }
                     }
                 })
                 .setMessage(R.string.ui_dialog_reset_message)
@@ -215,7 +222,11 @@ public class Dialogs {
                 .setNegativeButton(cancel, null)
                 .setPositiveButton(ok, new OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        App.post(new AccountRemovedEvent());
+                        // U-020: App.post(new AccountRemovedEvent()) replaced
+                        if (App.syncStateRepository() != null) {
+                            boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.AccountRemoved.INSTANCE);
+                            if (!emitted) android.util.Log.w(App.TAG, "Disconnect: tryEmitEvent returned false");
+                        }
                     }
                 }).create();
         }
@@ -246,20 +257,32 @@ public class Dialogs {
         }
     }
 
+    // U-020: @Subscribe onOAuth2Callback + App.register/unregister replaced by Flow collection.
     public static class OAuth2AccessTokenProgress extends AccessTokenProgress {
+        private kotlinx.coroutines.Job collectionJob = null;
+
         @Override
         public void onAttach(Context context) {
             super.onAttach(context);
-            App.register(this);
+            // U-020: App.register(this) replaced by Flow collection via DialogsFlowHelper
+            if (App.syncStateRepository() != null) {
+                collectionJob = DialogsFlowHelper.collectOAuth2Callback(
+                    App.syncStateRepository(), this);
+            }
         }
 
         @Override
         public void onDetach() {
+            // U-020: App.unregister(this) replaced by cancelling the collection job
+            if (collectionJob != null) {
+                collectionJob.cancel(null);
+                collectionJob = null;
+            }
             super.onDetach();
-            App.unregister(this);
         }
 
-        @Subscribe public void onOAuth2Callback(OAuth2CallbackTask.OAuth2CallbackEvent event) {
+        // U-020: called by DialogsFlowHelper when SyncEvent.OAuth2Callback is emitted
+        void onOAuth2Callback(SyncEvent.OAuth2Callback event) {
             dismissAllowingStateLoss();
         }
     }
@@ -274,7 +297,12 @@ public class Dialogs {
                     .setMessage(R.string.ui_dialog_account_manager_token_error)
                     .setPositiveButton(yes, new OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            App.post(new FallbackAuthEvent(false));
+                            // U-020: App.post(new FallbackAuthEvent(false)) replaced
+                            // FallbackAuth is now a payload-less object (U-019 AC-13)
+                            if (App.syncStateRepository() != null) {
+                                boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.FallbackAuth.INSTANCE);
+                                if (!emitted) android.util.Log.w(App.TAG, "AccountManagerTokenError: tryEmitEvent returned false");
+                            }
                         }
                     })
                     .setNegativeButton(android.R.string.no, null)
@@ -317,7 +345,13 @@ public class Dialogs {
                 .setTitle(R.string.ui_dialog_confirm_action_title)
                 .setPositiveButton(ok, new OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        App.post(new PerformAction(Actions.valueOf(getArguments().getString(ACTION)), false));
+                        // U-020: App.post(new PerformAction(...)) replaced
+                        Actions performAction = Actions.valueOf(getArguments().getString(ACTION));
+                        if (App.syncStateRepository() != null) {
+                            boolean emitted = App.syncStateRepository().tryEmitEvent(
+                                new SyncEvent.PerformActionRequested(performAction, false));
+                            if (!emitted) android.util.Log.w(App.TAG, "ConfirmAction: tryEmitEvent returned false");
+                        }
                     }
                 })
                 .setMessage(R.string.ui_dialog_confirm_action_msg)

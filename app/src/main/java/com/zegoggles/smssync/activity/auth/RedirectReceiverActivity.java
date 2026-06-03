@@ -6,19 +6,14 @@ import android.os.Bundle;
 import android.util.Log;
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.auth.OAuth2Client;
+import com.zegoggles.smssync.service.state.SyncEvent;
 
 import static com.zegoggles.smssync.App.TAG;
 
+// U-020: App.post(new BrowserAuthResult(code, error)) replaced by
+// repository.tryEmitEvent(new SyncEvent.BrowserAuthResult(code, error)).
+// The inner BrowserAuthResult class is deleted — SyncEvent.BrowserAuthResult is used instead.
 public class RedirectReceiverActivity extends Activity {
-    static class BrowserAuthResult {
-        final String code;
-        final String error;
-
-        BrowserAuthResult(String code, String error) {
-            this.code = code;
-            this.error = error;
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +33,14 @@ public class RedirectReceiverActivity extends Activity {
             final String code = intent.getData().getQueryParameter("code");
             final String error = intent.getData().getQueryParameter("error");
 
-            App.post(new BrowserAuthResult(code, error));
+            // U-020: App.post(new BrowserAuthResult(code, error)) replaced (AC-17)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.BrowserAuthResult(code, error));
+                if (!emitted) {
+                    Log.w(TAG, "RedirectReceiverActivity: tryEmitEvent(BrowserAuthResult) returned false");
+                }
+            }
         }
         finish();
     }

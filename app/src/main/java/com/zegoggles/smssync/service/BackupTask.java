@@ -9,7 +9,7 @@ import com.fsck.k9.mail.AuthenticationFailedException;
 import com.fsck.k9.mail.Message;
 import com.fsck.k9.mail.MessagingException;
 import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException;
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.auth.OAuth2Client;
@@ -108,19 +108,16 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
 
     @Override
     protected void onPreExecute() {
-        App.register(this);
-    }
-
-    @Subscribe public void canceled(CancelEvent cancelEvent) {
-        if (LOCAL_LOGV) {
-            Log.v(TAG, "canceled("+cancelEvent+")");
-        }
-        cancel(cancelEvent.mayInterruptIfRunning());
+        // U-020: App.register(this) removed. Cancel events collected via BackupCancelCollector.
     }
 
     @Override protected BackupState doInBackground(BackupConfig... params) {
         if (params == null || params.length == 0) {
             throw new IllegalArgumentException("No config passed");
+        }
+        // U-020: subscribe to Cancel events from the repository on this background thread.
+        if (App.syncStateRepository() != null) {
+            BackupCancelCollector.collect(App.syncStateRepository(), this);
         }
         final BackupConfig config = params[0];
         if (config.backupType == SKIP) {
@@ -237,23 +234,35 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
         }
     }
 
+    /** U-020: called by BackupCancelCollector when SyncEvent.Cancel is received. */
+    void onCancelRequested(boolean mayInterrupt) {
+        if (LOCAL_LOGV) {
+            Log.v(TAG, "onCancelRequested(mayInterrupt=" + mayInterrupt + ")");
+        }
+        cancel(mayInterrupt);
+    }
+
     @Override
     protected void onPostExecute(BackupState result) {
         if (result != null) {
             post(result);
         }
-        App.unregister(this);
+        // U-020: App.unregister(this) removed
     }
 
     @Override
     protected void onCancelled() {
         post(transition(CANCELED_BACKUP, null));
-        App.unregister(this);
+        // U-020: App.unregister(this) removed
     }
 
     private void post(BackupState state) {
         if (state == null) return;
-        App.post(state);
+        // U-020: App.post(state) replaced by repository.emitState + direct service callback (IC-3)
+        if (App.syncStateRepository() != null) {
+            App.syncStateRepository().emitState(state);
+        }
+        service.backupStateChanged(state);
     }
 
     private BackupState backupCursors(BackupCursors cursors, BackupImapStore store, BackupType backupType, int itemsToSync)

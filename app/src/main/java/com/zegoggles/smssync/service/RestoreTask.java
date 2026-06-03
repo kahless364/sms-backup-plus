@@ -15,7 +15,7 @@ import com.fsck.k9.mail.FetchProfile;
 import com.fsck.k9.mail.Message;
 import com.fsck.k9.mail.MessagingException;
 import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException;
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.Consts;
 import com.zegoggles.smssync.auth.TokenRefreshException;
@@ -72,16 +72,22 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
 
     @Override
     protected void onPreExecute() {
-        App.register(this);
+        // U-020: App.register(this) removed. Cancel events collected via BackupCancelCollector.
     }
 
-    @Subscribe public void canceled(CancelEvent canceled) {
-        cancel(canceled.mayInterruptIfRunning());
+    /** U-020: called by BackupCancelCollector when SyncEvent.Cancel is received. */
+    void onCancelRequested(boolean mayInterrupt) {
+        cancel(mayInterrupt);
     }
 
     @NonNull protected RestoreState doInBackground(RestoreConfig... params) {
         if (params == null || params.length == 0) throw new IllegalArgumentException("No config passed");
         RestoreConfig config = params[0];
+
+        // U-020: subscribe to Cancel events on this background thread
+        if (App.syncStateRepository() != null) {
+            BackupCancelCollector.collectForRestore(App.syncStateRepository(), this);
+        }
 
         if (!config.restoreSms && !config.restoreCallLog) {
             return new RestoreState(FINISHED_RESTORE, 0, 0, 0, 0, null, null);
@@ -192,14 +198,14 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
             Log.d(TAG, "finished (" + result + "/" + uids.size() + ")");
             post(result);
         }
-        App.unregister(this);
+        // U-020: App.unregister(this) removed
     }
 
     @Override
     protected void onCancelled() {
         Log.d(TAG, "restore cancelled");
         post(transition(CANCELED_RESTORE, null));
-        App.unregister(this);
+        // U-020: App.unregister(this) removed
     }
 
     @Override
@@ -211,7 +217,11 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
 
     private void post(RestoreState changed) {
         if (changed == null) return;
-        App.post(changed);
+        // U-020: App.post(changed) replaced by repository.emitState + direct service callback (IC-3)
+        if (App.syncStateRepository() != null) {
+            App.syncStateRepository().emitState(changed);
+        }
+        service.restoreStateChanged(changed);
     }
 
     @SuppressWarnings("unchecked")
