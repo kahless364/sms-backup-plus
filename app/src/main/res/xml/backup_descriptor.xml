@@ -2,4 +2,7 @@
 <full-backup-content>
     <!-- Exclude the shared preferences file that contain authentication tokens-->
     <exclude domain="sharedpref" path="credentials.xml"/>
+    <!-- Exclude the pinned certificate store so that enrolled certificates are not copied
+         to a new device without user re-enrollment (CNTR-MODERNIZATION-001 AC-4). -->
+    <exclude domain="sharedpref" path="pinned_certs.xml"/>
 </full-backup-content>
