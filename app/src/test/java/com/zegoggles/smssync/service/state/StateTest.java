@@ -1,9 +1,9 @@
 package com.zegoggles.smssync.service.state;
 
 import android.content.res.Resources;
-import com.fsck.k9.mail.MessagingException;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.mail.DataType;
+import com.zegoggles.smssync.mail.transport.TemporaryImapException;
 import com.zegoggles.smssync.service.BackupType;
 import com.zegoggles.smssync.service.exception.RequiresWifiException;
 import org.junit.Before;
@@ -60,8 +60,11 @@ public class StateTest {
     }
 
     @Test public void shouldGetErrorMessagePrefix() throws Exception {
+        // AC-8: use TemporaryImapException (type-based classification) instead of
+        // MessagingException with magic string (string-match removed per CNTR-MODERNIZATION-007).
         BackupState state = new BackupState(SmsSyncState.ERROR, 0, 0,
-                BackupType.REGULAR, DataType.SMS, new MessagingException("Unable to get IMAP prefix"));
+                BackupType.REGULAR, DataType.SMS,
+                new TemporaryImapException(null));
 
         assertThat(state.getErrorMessage(resources)).isEqualTo("Temporary IMAP error, try again later.");
     }

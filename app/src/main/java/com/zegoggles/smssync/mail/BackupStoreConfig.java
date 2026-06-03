@@ -3,11 +3,11 @@ package com.zegoggles.smssync.mail;
 import com.fsck.k9.mail.store.StoreConfig;
 import com.fsck.k9.mail.NetworkType;
 
-class BackupStoreConfig implements StoreConfig {
+public class BackupStoreConfig implements StoreConfig {
     private static final String INBOX = "INBOX";
     private final String storeUri;
 
-    BackupStoreConfig(String storeUri) {
+    public BackupStoreConfig(String storeUri) {
         this.storeUri = storeUri;
     }
 

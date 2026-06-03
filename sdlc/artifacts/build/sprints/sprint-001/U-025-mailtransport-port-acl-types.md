@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: medium
 complexity: high
@@ -25,6 +25,8 @@ title: Define MailTransport port, app-owned ACL types, and reshape BackupImapSto
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T07:29:48.214Z'
+resolution: done
 ---
 
 # U-025: Define MailTransport Port, App-Owned ACL Types, and Reshape BackupImapStore into K9MailTransport Adapter
