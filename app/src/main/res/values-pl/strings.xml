@@ -191,8 +191,6 @@
     <string name="permission_read_call_log">Dostęp do historii połączeń</string>
     <string name="permission_read_contacts">Dostęp do kontaktów</string>
     <string name="permission_unknown">Nieznane</string>
-    <string name="ui_protocol_trust_all_certificates_label">Ufaj wszystkim certyfikatom</string>
-    <string name="ui_protocol_trust_all_certificates_desc">Nie zalecane. Włącz dla samodzielnie podpisanych certyfikatów.</string>
     <string name="ui_backup_calllog_after_call_label">Kopia zapasowa po rozmowie telefonicznej</string>
     <string name="ui_backup_calllog_after_call_desc">Automatycznie wykonaj kopię bezpieczeństwa po każdej rozmowie telefonicznej (używa harmonogramu dla rozmów przychodzących).</string>
     <string name="mark_as_read_always_read">Zawsze oznacz jako przeczytany</string>

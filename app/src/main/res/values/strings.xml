@@ -87,8 +87,19 @@
 
   <string name="ui_protocol_label">Security</string>
 
-  <string name="ui_protocol_trust_all_certificates_label">Trust all certificates</string>
-  <string name="ui_protocol_trust_all_certificates_desc">Not recommended. Enable for a server with a self-signed certificate.</string>
+  <string name="ui_protocol_pin_certificate_action">Pin server certificate</string>
+  <string name="ui_protocol_pin_certificate_action_desc">Required for servers with a self-signed or private CA certificate</string>
+  <string name="ui_protocol_pin_certificate_trust_button">Trust this certificate</string>
+  <string name="ui_protocol_pin_certificate_remove">Remove pinned certificate</string>
+  <string name="ui_protocol_pin_certificate_active">Relaxed validation active — pinned certificate for %1$s</string>
+  <string name="ui_protocol_pin_certificate_dialog_title">Server certificate details</string>
+  <string name="ui_protocol_pin_certificate_dialog_subject">Subject: %1$s</string>
+  <string name="ui_protocol_pin_certificate_dialog_issuer">Issuer: %1$s</string>
+  <string name="ui_protocol_pin_certificate_dialog_fingerprint">SHA-256: %1$s</string>
+  <string name="ui_protocol_pin_certificate_dialog_expires">Expires: %1$s</string>
+  <string name="ui_protocol_pin_certificate_fetch_error">Could not fetch server certificate. Check server address and port.</string>
+  <string name="ui_transport_security_notice_title">Connection security updated</string>
+  <string name="ui_transport_security_notice_message">Your IMAP connection now uses certificate validation. If you use a self-hosted server with a self-signed or private CA certificate, go to Advanced Settings → IMAP settings and tap \"Pin server certificate\". No action is needed for Gmail or other servers with publicly trusted certificates.</string>
 
   <string name="ui_authentication_label">Authentication</string>
   <string name="plain">IMAP username/password</string>

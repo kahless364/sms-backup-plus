@@ -51,11 +51,15 @@
                 android:entryValues="@array/server_protocol_entryValues"
                 android:defaultValue="@string/plus_ssl_plus"/>
 
-        <CheckBoxPreference
-                android:key="server_trust_all_certificates"
-                android:title="@string/ui_protocol_trust_all_certificates_label"
-                android:summary="@string/ui_protocol_trust_all_certificates_desc"
-                android:defaultValue="false"/>
+        <Preference
+                android:key="pin_server_certificate"
+                android:title="@string/ui_protocol_pin_certificate_action"
+                android:summary="@string/ui_protocol_pin_certificate_action_desc"/>
+
+        <Preference
+                android:key="remove_pinned_certificate"
+                android:title="@string/ui_protocol_pin_certificate_remove"
+                android:visible="false"/>
     </PreferenceScreen>
 
     <PreferenceScreen

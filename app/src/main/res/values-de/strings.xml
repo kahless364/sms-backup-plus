@@ -313,9 +313,7 @@
   <string name="ui_backup_calllog_after_call_label">Sichern nach Anruf</string>
   <string name="ui_dialog_sms_default_package_change_title">Benötige Änderung</string>
   <string name="ui_enable_auto_sync_no_enabled_summary">Keine Sicherungsart ausgewählt.</string>
-  <string name="ui_protocol_trust_all_certificates_desc">Nicht empfohlen. Benötigt für selbsterstellte Zertifkate.
-  </string>
-  <string name="ui_protocol_trust_all_certificates_label">Allen Zertifikaten trauen</string>
+
   <string name="app_log_backup_messages_with_config">Benuzte Konfiguration: %1$s</string>
 
 

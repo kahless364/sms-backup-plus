@@ -157,8 +157,6 @@
   <string name="permission_read_call_log">Acesso ao registo de chamadas</string>
   <string name="permission_read_contacts">Acesso aos contactos</string>
   <string name="permission_unknown">Desconhecido</string>
-  <string name="ui_protocol_trust_all_certificates_label">Confiar em todos os certificados</string>
-  <string name="ui_protocol_trust_all_certificates_desc">"Não recomendado. Ative para um servidor com certificado auto-assinado.</string>
   <string name="ui_backup_calllog_after_call_label">Cópia de segurança depois chamada</string>
   <string name="mark_as_read_always_read">Sempre marcar como lidas</string>
   <string name="mark_as_read_always_unread">Sempre marcar como não lidas</string>

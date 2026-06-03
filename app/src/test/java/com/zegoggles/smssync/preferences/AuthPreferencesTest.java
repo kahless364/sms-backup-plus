@@ -471,4 +471,132 @@ public class AuthPreferencesTest {
         // Username IS in plaintext preferences
         assertThat(prefs.getString("oauth2_user", null)).isEqualTo("user@example.com");
     }
+
+    // -------------------------------------------------------------------------
+    // U-009: AC-7 (negative) — migrate() never writes PinnedCertStore
+    // These tests live here because AuthPreferences.migrate() is package-private.
+    // -------------------------------------------------------------------------
+
+    /**
+     * AC-7 (U-009): migrate() with +ssl protocol does NOT write the PinnedCertStore.
+     * The PinnedCertStore is verified by checking the "pinned_certs" SharedPreferences file.
+     */
+    @Test public void u009_ac7_migrateWithLegacySsl_doesNotWritePinnedCertStore() {
+        prefs.edit()
+            .putString("server_protocol", "+ssl")
+            .putString("server_address", "imap.example.org:993")
+            .putString("server_authentication", "plain")
+            .commit();
+
+        authPreferences.migrate();
+
+        // The pinned_certs prefs file must remain empty — migrate() never pins certs.
+        android.content.SharedPreferences pinnedPrefs =
+            RuntimeEnvironment.application.getSharedPreferences("pinned_certs",
+                android.content.Context.MODE_PRIVATE);
+        assertThat(pinnedPrefs.getAll()).isEmpty();
+    }
+
+    /**
+     * AC-7 (U-009): migrate() with stale trust_all=true does NOT write PinnedCertStore.
+     */
+    @Test public void u009_ac7_migrateWithStaleTrustAll_doesNotWritePinnedCertStore() {
+        prefs.edit()
+            .putBoolean("server_trust_all_certificates", true)
+            .putString("server_protocol", "+ssl+")
+            .putString("server_address", "imap.example.org:993")
+            .putString("server_authentication", "plain")
+            .commit();
+
+        authPreferences.migrate();
+
+        android.content.SharedPreferences pinnedPrefs =
+            RuntimeEnvironment.application.getSharedPreferences("pinned_certs",
+                android.content.Context.MODE_PRIVATE);
+        assertThat(pinnedPrefs.getAll()).isEmpty();
+    }
+
+    /**
+     * AC-7 (U-009): xoauth migrate() early-return — PinnedCertStore still empty.
+     */
+    @Test public void u009_ac7_migrateXoauth_doesNotWritePinnedCertStore() {
+        prefs.edit()
+            .putString("server_protocol", "+ssl")
+            .putString("server_address", "imap.gmail.com:993")
+            .putString("server_authentication", "xoauth")
+            .commit();
+
+        authPreferences.migrate();
+
+        android.content.SharedPreferences pinnedPrefs =
+            RuntimeEnvironment.application.getSharedPreferences("pinned_certs",
+                android.content.Context.MODE_PRIVATE);
+        assertThat(pinnedPrefs.getAll()).isEmpty();
+    }
+
+    // -------------------------------------------------------------------------
+    // U-009: AC-8/AC-9 end-to-end notice flag lifecycle (via migrate())
+    // -------------------------------------------------------------------------
+
+    /**
+     * AC-8 (U-009): migrate() with +ssl sets the pending flag;
+     * consumeTransportSecurityNotice clears it; second call returns false.
+     */
+    @Test public void u009_ac8_legacySslMigrateSetsFlagThenNoticeConsumed() {
+        prefs.edit()
+            .putString("server_protocol", "+ssl")
+            .putString("server_authentication", "plain")
+            .commit();
+
+        authPreferences.migrate();
+        assertThat(prefs.getBoolean(AuthPreferences.TRANSPORT_SECURITY_NOTICE_PENDING, false)).isTrue();
+
+        // Consuming the notice clears the flag.
+        boolean shown = com.zegoggles.smssync.activity.TransportSecurityNoticeHelper
+            .checkAndClearNoticePending(RuntimeEnvironment.application);
+        assertThat(shown).isTrue();
+        assertThat(prefs.getBoolean(AuthPreferences.TRANSPORT_SECURITY_NOTICE_PENDING, true)).isFalse();
+
+        // Second call — must NOT re-show.
+        boolean shownAgain = com.zegoggles.smssync.activity.TransportSecurityNoticeHelper
+            .checkAndClearNoticePending(RuntimeEnvironment.application);
+        assertThat(shownAgain).isFalse();
+    }
+
+    /**
+     * AC-9 (U-009): migrate() with +ssl+ (already-normalized) does NOT set the pending flag;
+     * consumeTransportSecurityNotice returns false for this user.
+     */
+    @Test public void u009_ac9_normalizedProtocol_noFlagSet_noticeNotShown() {
+        prefs.edit()
+            .putString("server_protocol", "+ssl+")
+            .putString("server_authentication", "plain")
+            .commit();
+
+        authPreferences.migrate();
+
+        assertThat(prefs.getBoolean(AuthPreferences.TRANSPORT_SECURITY_NOTICE_PENDING, false)).isFalse();
+
+        boolean shown = com.zegoggles.smssync.activity.TransportSecurityNoticeHelper
+            .checkAndClearNoticePending(RuntimeEnvironment.application);
+        assertThat(shown).isFalse();
+    }
+
+    /**
+     * AC-9 (U-009): xoauth user — migrate() early-returns; no flag set; no notice shown.
+     */
+    @Test public void u009_ac9_xoauthUser_noFlagSet_noticeNotShown() {
+        prefs.edit()
+            .putString("server_protocol", "+ssl")
+            .putString("server_authentication", "xoauth")
+            .commit();
+
+        authPreferences.migrate();
+
+        assertThat(prefs.getBoolean(AuthPreferences.TRANSPORT_SECURITY_NOTICE_PENDING, false)).isFalse();
+
+        boolean shown = com.zegoggles.smssync.activity.TransportSecurityNoticeHelper
+            .checkAndClearNoticePending(RuntimeEnvironment.application);
+        assertThat(shown).isFalse();
+    }
 }

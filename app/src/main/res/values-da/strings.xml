@@ -300,8 +300,7 @@
   <string name="permission_read_call_log">Adgang til opkalds lister</string>
   <string name="permission_read_contacts">Adgang til kontakter</string>
   <string name="permission_unknown">Ukendt</string>
-  <string name="ui_protocol_trust_all_certificates_label">Stol på alle certifikater</string>
-  <string name="ui_protocol_trust_all_certificates_desc">Ikke anbefalet. Aktiver hvis der bruges en server med selv signeret certifikat.</string>
+
   <string name="ui_backup_calllog_after_call_label">Backup efter et opkald</string>
   <string name="ui_backup_calllog_after_call_desc">Backup automatisk efter et indgående/udgående opkald med same interval som indgående SMS</string>
   <string name="mark_as_read_always_read">Marker altid som læst</string>
