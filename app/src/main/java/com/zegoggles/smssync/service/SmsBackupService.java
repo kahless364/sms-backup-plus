@@ -66,6 +66,13 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
  * object to extract the trigger window start for logging. After migration, the port's
  * {@link ScheduledJob} carries a tag and description string; the log message now uses the
  * description rather than parsing a {@code JobTrigger.ExecutionWindowTrigger}.
+ *
+ * <p>U-022: @AndroidEntryPoint deferred to U-023. ServiceBase declares @Inject fields
+ * (Preferences, AuthPreferences) but injection fires only when @AndroidEntryPoint is
+ * applied to the concrete service. Adding @AndroidEntryPoint here would break Robolectric
+ * tests that create anonymous service subclasses without a Hilt test component (AC-10).
+ * U-023 migrates those tests to @HiltAndroidTest and activates injection.
+ * TODO(U-023): add @AndroidEntryPoint here once tests are migrated to @HiltAndroidTest.
  */
 public class SmsBackupService extends ServiceBase {
     private static final int BACKUP_ID = 1;

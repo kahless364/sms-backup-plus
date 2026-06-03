@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -29,6 +29,8 @@ title: 'Hilt bootstrap: @HiltAndroidApp on App, Gradle plugin, kapt/ksp, and all
 pipeline: modernization
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T22:01:18.925Z'
+resolution: done
 ---
 
 # U-022: Hilt Bootstrap — @HiltAndroidApp, Gradle Plugin, and Singleton Modules
