@@ -19,12 +19,13 @@ allprojects {
     }
 
     repositories {
-        mavenLocal()
         mavenCentral()
         maven { url "https://maven.google.com" }
         maven { url "https://jitpack.io" }
-        // U-017: maven.scijava.org removed (Gate G3 — AC-7).
-        // It only served firebase-jobdispatcher:0.8.6 which is now deleted.
+        // U-017: maven.scijava.org AND mavenLocal() removed (Gate G3 — AC-7).
+        // Both only served firebase-jobdispatcher:0.8.6 (from ~/.m2), now deleted.
+        // The k-9 mail library is the in-tree :k9mail-vendored Gradle module (U-027),
+        // not a mavenLocal artifact, so mavenLocal() is no longer needed.
         google()
     }
 }

@@ -8,3 +8,4 @@
 {"timestamp":"2026-05-30T10:20:26.248Z","event_type":"teardown","child_skill":"create-requirements","child_instance_id":"create-requirements-20260530-100550","context_file_sha256":"356c522b6c25f371ec35d9972ce9b5ee9ad6d9f757eb318232c8537f21ef40e9"}
 {"timestamp":"2026-05-30T10:48:53.049Z","event_type":"teardown","child_skill":"create-requirements","child_instance_id":"create-requirements-20260530-104808","context_file_sha256":"6af3d7fa98afa9e854e01889367ac736c18c4f6898dad55ec4beb7cb8323c159"}
 {"timestamp":"2026-06-02T14:48:22.168Z","event_type":"teardown","child_skill":"create-sprint","child_instance_id":"create-sprint-20260602-144058","context_file_sha256":"46951ea0e28cf76f42cb6eb30f8f1516a9b93c63a78f77bb850c99dc6043a247"}
+{"timestamp":"2026-06-02T15:03:24.049Z","event_type":"teardown","child_skill":"execute-sprint","child_instance_id":"execute-sprint-20260602-145313","context_file_sha256":"69107cfe824dcc7dea5b608be2755f6f6eda05aeb8c331604fe5aa9249d164e1"}
