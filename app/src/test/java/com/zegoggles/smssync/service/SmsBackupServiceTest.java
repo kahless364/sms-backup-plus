@@ -13,6 +13,8 @@ import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
 import com.zegoggles.smssync.preferences.Preferences;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
+import com.zegoggles.smssync.scheduler.ScheduledJob;
 import com.zegoggles.smssync.service.exception.BackupDisabledException;
 import com.zegoggles.smssync.service.exception.NoConnectionException;
 import com.zegoggles.smssync.service.exception.RequiresLoginException;
@@ -26,7 +28,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowConnectivityManager;
 import org.robolectric.shadows.ShadowNetworkInfo;
 import org.robolectric.shadows.ShadowWifiManager;
@@ -40,6 +41,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.zegoggles.smssync.service.BackupType.MANUAL;
 import static com.zegoggles.smssync.service.BackupType.REGULAR;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -57,7 +59,8 @@ public class SmsBackupServiceTest {
     @Mock Preferences preferences;
     @Mock DataTypePreferences dataTypePreferences;
     @Mock BackupTask backupTask;
-    @Mock BackupJobs backupJobs;
+    // U-013: BackupJobs mock replaced by BackupScheduler mock (getBackupJobs factory removed)
+    @Mock BackupScheduler scheduler;
 
     @Before public void before() {
         openMocks(this);
@@ -66,7 +69,8 @@ public class SmsBackupServiceTest {
             @Override public Context getApplicationContext() { return RuntimeEnvironment.application; }
             @Override public Resources getResources() { return getApplicationContext().getResources(); }
             @Override protected BackupTask getBackupTask() { return backupTask; }
-            @Override protected BackupJobs getBackupJobs() { return backupJobs; }
+            // U-013: override getScheduler() instead of getBackupJobs()
+            @Override protected BackupScheduler getScheduler() { return scheduler; }
             @Override protected Preferences getPreferences() { return preferences; }
             @Override public int checkPermission(String permission, int pid, int uid) { return PERMISSION_GRANTED; }
             @Override protected AuthPreferences getAuthPreferences() { return authPreferences; }
@@ -174,6 +178,9 @@ public class SmsBackupServiceTest {
     }
 
     @Test public void shouldScheduleNextRegularBackupAfterFinished() throws Exception {
+        // U-013: scheduler.scheduleRegular() returns a ScheduledJob (not a Firebase Job)
+        when(scheduler.scheduleRegular()).thenReturn(new ScheduledJob("REGULAR", "REGULAR @ test"));
+
         shadowConnectivityManager.setBackgroundDataSetting(true);
         Intent intent = new Intent(REGULAR.name());
         service.handleIntent(intent);
@@ -182,7 +189,7 @@ public class SmsBackupServiceTest {
 
         service.backupStateChanged(service.transition(SmsSyncState.FINISHED_BACKUP, null));
 
-        verify(backupJobs).scheduleRegular();
+        verify(scheduler).scheduleRegular();
 
         assertThat(shadowOf(service).isStoppedBySelf()).isTrue();
         assertThat(shadowOf(service).isForegroundStopped()).isTrue();

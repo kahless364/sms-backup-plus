@@ -2,6 +2,10 @@ package com.zegoggles.smssync.service;
 
 import android.os.Bundle;
 import com.firebase.jobdispatcher.JobParameters;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
+import com.zegoggles.smssync.scheduler.ScheduledJob;
+import com.zegoggles.smssync.scheduler.SchedulerObservable;
+import com.zegoggles.smssync.scheduler.SchedulerState;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 import org.junit.Before;
@@ -11,6 +15,8 @@ import org.robolectric.RobolectricTestRunner;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Robolectric.setupService;
 
@@ -67,5 +73,38 @@ public class SmsJobServiceTest {
         );
         // Should not throw — just returns early
         smsJobService.backupStateChanged(runningState);
+    }
+
+    /**
+     * AC-4 / CNTR-MODERNIZATION-004 INV-4 two-stage debounce:
+     * When onStartJob is called with the content-trigger tag, it must call
+     * scheduler.scheduleIncoming() and no other schedule operation.
+     * This verifies the port routing is correct; the underlying behavior
+     * (delayed follow-up rather than immediate backup) is preserved in BackupJobs.
+     */
+    @Test public void contentTrigger_schedulesIncomingFollowUp_notDirectBackup() {
+        final BackupScheduler mockScheduler = mock(BackupScheduler.class);
+
+        // Create SmsJobService subclass that injects the mock scheduler
+        SmsJobService service = new SmsJobService() {
+            @Override
+            protected BackupScheduler getScheduler() {
+                return mockScheduler;
+            }
+        };
+
+        final JobParameters jobParameters = mock(JobParameters.class);
+        when(jobParameters.getTag()).thenReturn(BackupJobs.CONTENT_TRIGGER_TAG);
+
+        boolean moreWork = service.onStartJob(jobParameters);
+
+        // content-trigger returns false (no more work — just enqueued follow-up)
+        assertThat(moreWork).isFalse();
+
+        // Must call scheduleIncoming — the two-stage debounce follow-up
+        verify(mockScheduler).scheduleIncoming();
+
+        // Must NOT call any other schedule operation (no direct backup on raw change)
+        verifyNoMoreInteractions(mockScheduler);
     }
 }

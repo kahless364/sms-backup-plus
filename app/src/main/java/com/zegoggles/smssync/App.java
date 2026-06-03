@@ -30,6 +30,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.StrictMode;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
@@ -43,6 +44,8 @@ import com.zegoggles.smssync.compat.GooglePlayServices;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.receiver.BootReceiver;
 import com.zegoggles.smssync.receiver.SmsBroadcastReceiver;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
+import com.zegoggles.smssync.scheduler.LegacyScheduler;
 import com.zegoggles.smssync.service.BackupJobs;
 
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
@@ -61,7 +64,37 @@ public class App extends Application {
     public static boolean gcmAvailable;
 
     private Preferences preferences;
-    private BackupJobs backupJobs;
+
+    /**
+     * Application-scoped {@link BackupScheduler} singleton.
+     * <p>
+     * U-013: replaced {@code BackupJobs} field with this port-level field so that
+     * the bound implementation can be swapped in U-014/U-017 by changing this one
+     * assignment (or, once Hilt is introduced in U-022, by changing the Hilt binding).
+     * <p>
+     * The static {@link #getScheduler(Context)} accessor lets BroadcastReceiver call
+     * sites resolve the scheduler without a Hilt entry point (which is not yet
+     * available). This is the "EntryPoints.get fallback" documented in the story's
+     * Technical Notes and will be replaced by {@code @AndroidEntryPoint} injection
+     * in U-022.
+     */
+    private BackupScheduler scheduler;
+
+    /**
+     * Returns the application-scoped {@link BackupScheduler} singleton.
+     * <p>
+     * Used by BroadcastReceiver call sites (BackupBroadcastReceiver, BootReceiver,
+     * SmsBroadcastReceiver) that cannot use constructor injection because
+     * {@code BroadcastReceiver.onReceive} is system-managed. This is the approved
+     * pre-Hilt DI fallback (U-013 Technical Notes; replaced by Hilt in U-022).
+     *
+     * @param context any context; used to obtain the Application instance
+     * @return the singleton BackupScheduler; never null after Application.onCreate()
+     */
+    @NonNull
+    public static BackupScheduler getScheduler(@NonNull Context context) {
+        return ((App) context.getApplicationContext()).scheduler;
+    }
 
     @Override
     public void onCreate() {
@@ -75,7 +108,11 @@ public class App extends Application {
             createNotificationChannel();
         }
 
-        backupJobs = new BackupJobs(this);
+        // U-013: construct LegacyScheduler (wrapping BackupJobs) as the BackupScheduler
+        // binding. This is the strangler seam: all call sites route through the port.
+        // U-014 will introduce WorkManagerScheduler; U-017 will flip this binding and
+        // remove BackupJobs. BackupJobs.java is unmodified by this story.
+        scheduler = new LegacyScheduler(new BackupJobs(this));
 
         if (gcmAvailable) {
             setBroadcastReceiversEnabled(false);
@@ -192,14 +229,27 @@ public class App extends Application {
             DONT_KILL_APP /* apply setting without restart */);
     }
 
+    /**
+     * Cancels all existing backup jobs and reschedules them according to current
+     * preferences.
+     * <p>
+     * U-013: migrated from direct {@code BackupJobs} calls to the
+     * {@link BackupScheduler} port. AC-6 / App.rescheduleJobs() compliance:
+     * - cancelAll()
+     * - scheduleRegular()
+     * - scheduleContentTrigger() (guarded by isUseOldScheduler() check per AC-6 note)
+     */
     private void rescheduleJobs() {
-        backupJobs.cancelAll();
+        scheduler.cancelAll();
 
         if (preferences.isAutoBackupEnabled()) {
-            backupJobs.scheduleRegular();
+            scheduler.scheduleRegular();
 
+            // AC-6 note: preserve the isUseOldScheduler() guard from the original
+            // App.java:201. The content-trigger job is only scheduled for the new
+            // (GCM-backed) scheduler path. The guard is preserved here unchanged.
             if (preferences.getIncomingTimeoutSecs() > 0 && !preferences.isUseOldScheduler()) {
-                backupJobs.scheduleContentTriggerJob();
+                scheduler.scheduleContentTrigger();
             }
         }
     }
