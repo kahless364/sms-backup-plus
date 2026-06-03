@@ -14,9 +14,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.zegoggles.smssync.mail.DataType.CALLLOG;
 import static com.zegoggles.smssync.mail.DataType.MMS;
 import static com.zegoggles.smssync.mail.DataType.SMS;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class BackupQueryBuilderTest {
@@ -25,7 +25,7 @@ public class BackupQueryBuilderTest {
     @Mock DataTypePreferences dataTypePreferences;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         when(dataTypePreferences.getMaxSyncedDate(any(DataType.class))).thenReturn(-1L);
         builder = new BackupQueryBuilder(dataTypePreferences);
     }

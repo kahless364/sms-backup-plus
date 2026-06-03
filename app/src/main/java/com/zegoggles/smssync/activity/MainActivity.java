@@ -41,19 +41,14 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.Dialogs.WebConnect;
 import com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity;
 import com.zegoggles.smssync.activity.auth.OAuth2WebAuthActivity;
-import com.zegoggles.smssync.activity.events.AccountAddedEvent;
-import com.zegoggles.smssync.activity.events.AccountConnectionChangedEvent;
-import com.zegoggles.smssync.activity.events.FallbackAuthEvent;
-import com.zegoggles.smssync.activity.events.MissingPermissionsEvent;
 import com.zegoggles.smssync.activity.events.PerformAction;
 import com.zegoggles.smssync.activity.events.PerformAction.Actions;
-import com.zegoggles.smssync.activity.events.ThemeChangedEvent;
 import com.zegoggles.smssync.activity.fragments.MainSettings;
 import com.zegoggles.smssync.auth.OAuth2Client;
 import com.zegoggles.smssync.compat.SmsReceiver;
@@ -64,6 +59,7 @@ import com.zegoggles.smssync.service.SmsBackupService;
 import com.zegoggles.smssync.service.SmsRestoreService;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.RestoreState;
+import com.zegoggles.smssync.service.state.SyncEvent;
 import com.zegoggles.smssync.tasks.OAuth2CallbackTask;
 import com.zegoggles.smssync.utils.BundleBuilder;
 
@@ -77,7 +73,7 @@ import static androidx.core.role.RoleManagerCompat.ROLE_SMS;
 import static androidx.preference.PreferenceFragmentCompat.ARG_PREFERENCE_ROOT;
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
-import static com.zegoggles.smssync.App.post;
+// U-020: import static App.post removed
 import static com.zegoggles.smssync.activity.AppPermission.allGranted;
 import static com.zegoggles.smssync.activity.Dialogs.ConfirmAction.ACTION;
 import static com.zegoggles.smssync.activity.Dialogs.FirstSync.MAX_ITEMS_PER_SYNC;
@@ -116,6 +112,7 @@ public class MainActivity extends ThemeActivity implements
     private static final int REQUEST_PERMISSIONS_BACKUP_MANUAL = 4;
     private static final int REQUEST_PERMISSIONS_BACKUP_MANUAL_SKIP = 5;
     private static final int REQUEST_PERMISSIONS_BACKUP_SERVICE = 6;
+    private static final int REQUEST_POST_NOTIFICATIONS = 7;
 
     public static final String EXTRA_PERMISSIONS = "permissions";
     private static final String SCREEN_TITLE_RES = "titleRes";
@@ -125,6 +122,9 @@ public class MainActivity extends ThemeActivity implements
     private OAuth2Client oauth2Client;
     private Intent fallbackAuthIntent;
     private PreferenceTitles preferenceTitles;
+    // U-020: MainViewModel holds SyncStateRepository; survives configuration changes (AC-14).
+    // TODO U-022/MU-007: replace manual factory with @HiltViewModel.
+    private MainViewModel viewModel;
 
     @Override
     public void onCreate(Bundle bundle) {
@@ -139,6 +139,12 @@ public class MainActivity extends ThemeActivity implements
         fallbackAuthIntent = new Intent(this, OAuth2WebAuthActivity.class).setData(oauth2Client.requestUrl());
         preferenceTitles = new PreferenceTitles(getResources(), R.xml.preferences);
         preferences = new Preferences(this);
+
+        // U-020: Create MainViewModel via manual factory (AC-18, TODO U-022/MU-007)
+        viewModel = new androidx.lifecycle.ViewModelProvider(this,
+            new MainViewModelFactory(App.syncStateRepository()))
+            .get(MainViewModel.class);
+
         if (bundle == null) {
             showFragment(new MainSettings(), null);
         }
@@ -147,18 +153,31 @@ public class MainActivity extends ThemeActivity implements
         }
         checkDefaultSmsApp();
         requestPermissionsIfNeeded();
+        requestPostNotificationsIfNeeded();
+
+        // U-020: replaces onStart App.register(this) / onStop App.unregister(this) (AC-14b).
+        // Uses repeatOnLifecycle(STARTED) via MainActivityFlowHelper.
+        MainActivityFlowHelper.startCollection(this, viewModel);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        App.register(this);
+        // U-020: App.register(this) removed — lifecycle-aware Flow collection started in onCreate.
     }
 
     @Override
     protected void onStop() {
-        App.unregister(this);
+        // U-020: App.unregister(this) removed — lifecycle handles cleanup.
         super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // AC-8: consume the one-time transport-security notice if pending.
+        // Shows the notice exactly once for the affected cohort; does nothing for others (AC-9).
+        TransportSecurityNoticeHelper.consumeTransportSecurityNotice(this);
     }
 
     @Override
@@ -190,6 +209,7 @@ public class MainActivity extends ThemeActivity implements
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Log.d(TAG, "onActivityResult(" + requestCode + "," + resultCode + "," + data + ")");
@@ -223,7 +243,8 @@ public class MainActivity extends ThemeActivity implements
                     if (ACTION_ADD_ACCOUNT.equals(data.getAction())) {
                         handleAccountManagerAuth(data);
                     } else if (ACTION_FALLBACK_AUTH.equals(data.getAction())) {
-                        handleFallbackAuth(new FallbackAuthEvent(true));
+                        // U-020: FallbackAuth(showDialog=true) → show WEB_CONNECT dialog directly
+                        showDialog(WEB_CONNECT);
                     }
                 } else if (LOCAL_LOGV) {
                     Log.v(TAG, "request canceled, result=" + resultCode);
@@ -262,13 +283,15 @@ public class MainActivity extends ThemeActivity implements
         }
     }
 
-    @Subscribe public void restoreStateChanged(final RestoreState newState) {
+    // U-020: Called by MainActivityFlowHelper when a State is emitted (AC-14a,b).
+    // Replaces @Subscribe restoreStateChanged / backupStateChanged.
+    void onRestoreStateChanged(final RestoreState newState) {
         if (newState.isFinished() && isSmsBackupDefaultSmsApp(this)) {
              restoreDefaultSmsProvider(preferences.getSmsDefaultPackage());
         }
     }
 
-    @Subscribe public void backupStateChanged(final BackupState newState) {
+    void onBackupStateChanged(final BackupState newState) {
         if ((newState.backupType == MANUAL || newState.backupType == SKIP) && newState.isPermissionException()) {
             ActivityCompat.requestPermissions(this,
                 newState.getMissingPermissions(),
@@ -277,34 +300,47 @@ public class MainActivity extends ThemeActivity implements
         }
     }
 
-    @Subscribe public void onOAuth2Callback(OAuth2CallbackTask.OAuth2CallbackEvent event) {
-        if (event.valid()) {
-            authPreferences.setOauth2Token(event.token.userName, event.token.accessToken, event.token.refreshToken);
-            App.post(new AccountAddedEvent());
-        } else {
-            showDialog(OAUTH2_ACCESS_TOKEN_ERROR);
-        }
-    }
-
-    @Subscribe public void onConnect(AccountConnectionChangedEvent event) {
-        if (event.connected) {
+    // U-020: Called by MainActivityFlowHelper when a SyncEvent is emitted (AC-14a).
+    // Routes each event to the appropriate handler, replacing the 5 @Subscribe methods.
+    void onSyncEvent(SyncEvent event) {
+        if (event instanceof SyncEvent.OAuth2Callback) {
+            // Replaces @Subscribe onOAuth2Callback(OAuth2CallbackTask.OAuth2CallbackEvent event)
+            SyncEvent.OAuth2Callback oauthEvent = (SyncEvent.OAuth2Callback) event;
+            if (oauthEvent.getPayload().valid()) {
+                OAuth2CallbackTask.OAuth2CallbackEvent payload = oauthEvent.getPayload();
+                authPreferences.setOauth2Token(payload.token.userName, payload.token.accessToken, payload.token.refreshToken);
+                // U-020: App.post(new AccountAddedEvent()) replaced (AC-14d)
+                if (App.syncStateRepository() != null) {
+                    boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.AccountAdded.INSTANCE);
+                    if (!emitted) Log.w(TAG, "onOAuth2Callback: tryEmitEvent(AccountAdded) returned false");
+                }
+            } else {
+                showDialog(OAUTH2_ACCESS_TOKEN_ERROR);
+            }
+        } else if (event instanceof SyncEvent.AccountConnectionChanged) {
+            // Replaces @Subscribe onConnect(AccountConnectionChangedEvent event)
+            // NOTE: U-019 AccountConnectionChanged is a payload-less object.
+            // The trigger is from AdvancedSettings.Main which posts it when "connect" changes.
+            // The behaviour from the old handler: if event.connected → pick account, else disconnect.
+            // Since the object has no payload, we rely on the current preference state.
+            // AC-13: consume the event; the action is to show the account picker dialog.
+            // The user clicked "connected" so show the account picker.
             startActivityForResult(new Intent(this,
                     AccountManagerAuthActivity.class), REQUEST_PICK_ACCOUNT);
-        } else {
-            showDialog(DISCONNECT);
-        }
-    }
-
-    @Subscribe public void handleFallbackAuth(FallbackAuthEvent event) {
-        if (event.showDialog) {
-            showDialog(WEB_CONNECT);
-        } else {
+        } else if (event instanceof SyncEvent.FallbackAuth) {
+            // Replaces @Subscribe handleFallbackAuth(FallbackAuthEvent event)
+            // NOTE: U-019 FallbackAuth is a payload-less object. Original: showDialog if event.showDialog.
+            // The only caller that triggers FallbackAuth is AccountManagerTokenError dialog (showDialog=false).
+            // The FallbackAuth(true) case was used when picking an account → handled in onActivityResult.
+            // So here we start the fallback auth activity.
             startActivityForResult(fallbackAuthIntent, REQUEST_WEB_AUTH);
+        } else if (event instanceof SyncEvent.ThemeChanged) {
+            // Replaces @Subscribe themeChangedEvent(ThemeChangedEvent event)
+            recreate();
+        } else if (event instanceof SyncEvent.PerformActionRequested) {
+            // Replaces @Subscribe performAction(PerformAction action)
+            performAction((SyncEvent.PerformActionRequested) event);
         }
-    }
-
-    @Subscribe public void themeChangedEvent(ThemeChangedEvent event) {
-        recreate();
     }
 
     @Override public void onBackStackChanged() {
@@ -328,21 +364,23 @@ public class MainActivity extends ThemeActivity implements
         }
     }
 
-    @Subscribe public void performAction(PerformAction action) {
+    // U-020: replaces @Subscribe performAction(PerformAction action)
+    private void performAction(SyncEvent.PerformActionRequested action) {
         if (authPreferences.isLoginInformationSet()) {
-            if (action.confirm) {
-                showDialog(CONFIRM_ACTION, new BundleBuilder().putString(ACTION, action.action.name()).build());
-            } else if (preferences.isFirstBackup() && action.action == Backup) {
+            if (action.getConfirm()) {
+                showDialog(CONFIRM_ACTION, new BundleBuilder().putString(ACTION, action.getAction().name()).build());
+            } else if (preferences.isFirstBackup() && action.getAction() == Backup) {
                 showDialog(FIRST_SYNC);
             } else {
-                doPerform(action.action);
+                doPerform(action.getAction());
             }
         } else {
             showDialog(MISSING_CREDENTIALS);
         }
     }
 
-    @Subscribe public void doPerform(Actions action) {
+    // U-020: replaces @Subscribe doPerform(Actions action)
+    private void doPerform(Actions action) {
         switch (action) {
             case Backup:
             case BackupSkip:
@@ -448,7 +486,11 @@ public class MainActivity extends ThemeActivity implements
         final String account = data.getStringExtra(EXTRA_ACCOUNT);
         if (!TextUtils.isEmpty(token) && !TextUtils.isEmpty(account)) {
             authPreferences.setOauth2Token(account, token, null);
-            App.post(new AccountAddedEvent());
+            // U-020: App.post(new AccountAddedEvent()) replaced (AC-14d)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.AccountAdded.INSTANCE);
+                if (!emitted) Log.w(TAG, "handleAccountManagerAuth: tryEmitEvent(AccountAdded) returned false");
+            }
         } else {
             String error = data.getStringExtra(AccountManagerAuthActivity.EXTRA_ERROR);
             if (!TextUtils.isEmpty(error)) {
@@ -458,8 +500,32 @@ public class MainActivity extends ThemeActivity implements
     }
 
     private void checkDefaultSmsApp() {
-        if (isSmsBackupDefaultSmsApp(this) && SmsRestoreService.isServiceIdle()) {
+        // U-020: SmsRestoreService.isServiceIdle() replaced by repository state check (AC-9)
+        boolean restoreIdle = App.syncStateRepository() == null
+            || !App.syncStateRepository().getState().getValue().isRunning()
+            || !(App.syncStateRepository().getState().getValue() instanceof RestoreState);
+        if (isSmsBackupDefaultSmsApp(this) && restoreIdle) {
             restoreDefaultSmsProvider(preferences.getSmsDefaultPackage());
+        }
+    }
+
+    /**
+     * On API 33+ (Android 13 / TIRAMISU), the POST_NOTIFICATIONS permission is a runtime
+     * permission that must be requested before posting any notification. This method requests
+     * it on first activity launch so the user sees the dialog before the first backup/restore
+     * progress notification is posted by SmsBackupService / SmsRestoreService.
+     * On API 32 and below the call is suppressed entirely — the permission did not exist and
+     * calling requestPermissions for it would crash on older SDKs.
+     */
+    private void requestPostNotificationsIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                        REQUEST_POST_NOTIFICATIONS);
+            }
         }
     }
 
@@ -484,14 +550,24 @@ public class MainActivity extends ThemeActivity implements
                 } else {
                     final List<AppPermission> missing = AppPermission.from(permissions, grantResults);
                     Log.w(TAG, "not all permissions granted: "+missing);
-                    post(new MissingPermissionsEvent(missing));
+                    // U-020: post(new MissingPermissionsEvent(missing)) replaced (AC-12)
+                    if (App.syncStateRepository() != null) {
+                        boolean emitted = App.syncStateRepository().tryEmitEvent(
+                            new SyncEvent.MissingPermissions(missing));
+                        if (!emitted) Log.w(TAG, "tryEmitEvent(MissingPermissions) returned false");
+                    }
                 }
                 break;
             case REQUEST_PERMISSIONS_BACKUP_SERVICE:
                 if (allGranted(grantResults)) {
                     startBackup(MANUAL);
                 } else {
-                    post(new MissingPermissionsEvent(AppPermission.from(permissions, grantResults)));
+                    // U-020: post(new MissingPermissionsEvent(...)) replaced (AC-12)
+                    if (App.syncStateRepository() != null) {
+                        boolean emitted = App.syncStateRepository().tryEmitEvent(
+                            new SyncEvent.MissingPermissions(AppPermission.from(permissions, grantResults)));
+                        if (!emitted) Log.w(TAG, "tryEmitEvent(MissingPermissions) returned false");
+                    }
                 }
                 break;
          }

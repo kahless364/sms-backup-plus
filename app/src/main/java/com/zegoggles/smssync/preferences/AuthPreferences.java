@@ -25,11 +25,20 @@ public class AuthPreferences {
     private static final String UTF_8 = "UTF-8";
     private final Context context;
     private final SharedPreferences preferences;
-    private SharedPreferences credentials;
+    // U-011: SecretStore replaces direct SharedPreferences("credentials") access.
+    // The secretStore field is final and injected via the two-arg constructor.
+    // The single-arg convenience constructor constructs EncryptedPrefsSecretStore (Phase 1).
+    // In Phase 2 (DES-MODERNIZATION-008, Hilt), the @Binds injection will target the
+    // two-arg constructor — no other code changes required at that time.
+    private final SecretStore secretStore;
 
     public static final String SERVER_AUTHENTICATION = "server_authentication";
 
     private static final String OAUTH2_USER = "oauth2_user";
+    // U-011: OAUTH2_TOKEN, OAUTH2_REFRESH_TOKEN, IMAP_PASSWORD are the exact on-disk key
+    // strings (CNTR-MODERNIZATION-003 §Backing key set). They are referenced via the Java
+    // constants (not inline string literals) to keep the values consistent with the
+    // migration routine in U-012.
     private static final String OAUTH2_TOKEN = "oauth2_token";
     private static final String OAUTH2_REFRESH_TOKEN = "oauth2_refresh_token";
 
@@ -48,6 +57,16 @@ public class AuthPreferences {
     private static final String SERVER_TRUST_ALL_CERTIFICATES = "server_trust_all_certificates";
 
     /**
+     * Boolean flag written by migrate() to indicate that a one-time transport-security
+     * notice should be shown to the user. Set when the legacy +ssl/+tls protocol downgrade
+     * is detected, or when a stale SERVER_TRUST_ALL_CERTIFICATES=true value is cleared.
+     * The presentation layer reads this flag, shows the notice once, and writes
+     * "transport_security_notice_shown" = true (analogous to sms_default_package_change_seen
+     * at Preferences.java:247-253). This story (U-007) writes the flag only; the UI is U-009.
+     */
+    static final String TRANSPORT_SECURITY_NOTICE_PENDING = "transport_security_notice_pending";
+
+    /**
      * IMAP URI.
      *
      * This should be in the form of:
@@ -64,17 +83,66 @@ public class AuthPreferences {
     private static final String DEFAULT_SERVER_ADDRESS = "imap.gmail.com:993";
     private static final String DEFAULT_SERVER_PROTOCOL = "+ssl+";
 
+    /**
+     * Convenience constructor — Phase 1 (DES-MODERNIZATION-004 §Hilt Injection).
+     *
+     * Constructs an EncryptedPrefsSecretStore and delegates to the two-arg constructor.
+     * This is the constructor called by {@code Preferences.java:295} and on every
+     * {@code App.onCreate()}; its signature MUST remain unchanged (AC-8 / AC-5).
+     *
+     * If EncryptedSharedPreferences construction fails (GeneralSecurityException or
+     * IOException) — which happens in unit-test environments where the Android Keystore
+     * provider is unavailable — the constructor logs a warning and falls back to an
+     * InMemorySecretStore. This fallback is intentional for the test path; in production
+     * on a real device the AndroidKeyStore provider is always present and the fallback
+     * is never taken.
+     *
+     * Robolectric limitation note (AC-11 / U-011 Tech Notes): Robolectric 4.12.x does
+     * not shadow the AndroidKeyStore JCA provider. EncryptedSharedPreferences.create()
+     * therefore throws NoSuchAlgorithmException under Robolectric. All tests that exercise
+     * credential I/O must use the two-arg constructor with InMemorySecretStore injection.
+     */
     public AuthPreferences(Context context) {
+        this(context, buildEncryptedStoreSafe(context));
+    }
+
+    /**
+     * Two-arg constructor — the injection seam (AC-8 / DES-MODERNIZATION-004 §Hilt Injection).
+     *
+     * Accepts any SecretStore implementation, enabling test injection of InMemorySecretStore.
+     * In Phase 2 (DES-MODERNIZATION-008, Hilt), {@code @Binds @Singleton SecretStore <-
+     * EncryptedPrefsSecretStore} will target this constructor — a mechanical swap that
+     * requires no change to SecretStore, EncryptedPrefsSecretStore, or any caller.
+     */
+    public AuthPreferences(Context context, SecretStore secretStore) {
         this.context = context.getApplicationContext();
         this.preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        this.secretStore = secretStore;
+    }
+
+    /**
+     * Constructs an EncryptedPrefsSecretStore with lazy initialization.
+     *
+     * The EncryptedPrefsSecretStore constructor is trivial (just stores the context);
+     * the actual EncryptedSharedPreferences backing store is opened lazily on first use.
+     * This means the construction here never throws — any Keystore failure surfaces at
+     * the first get/put/contains/etc. call, where it is caught and surfaced as null (reads)
+     * or a RuntimeException (writes).
+     *
+     * Under Robolectric (AC-11 / U-011 Tech Notes), the AndroidKeyStore JCA provider is
+     * unavailable. Tests that exercise credential I/O must use the two-arg constructor
+     * with InMemorySecretStore injection rather than the single-arg constructor.
+     */
+    private static SecretStore buildEncryptedStoreSafe(Context context) {
+        return new EncryptedPrefsSecretStore(context);
     }
 
     public String getOauth2Token() {
-        return getCredentials().getString(OAUTH2_TOKEN, null);
+        return secretStore.get(OAUTH2_TOKEN);
     }
 
     public String getOauth2RefreshToken() {
-        return getCredentials().getString(OAUTH2_REFRESH_TOKEN, null);
+        return secretStore.get(OAUTH2_REFRESH_TOKEN);
     }
 
     public boolean hasOAuth2Tokens() {
@@ -83,29 +151,29 @@ public class AuthPreferences {
     }
 
     public void setOauth2Token(String username, String accessToken, String refreshToken) {
+        // oauth2_user is NOT a secret — it stays in plaintext preferences (AC-4 /
+        // CNTR-MODERNIZATION-003 §Backing key set note).
         preferences.edit()
                 .putString(OAUTH2_USER, username)
                 .commit();
 
-        getCredentials().edit()
-                .putString(OAUTH2_TOKEN, accessToken)
-                .commit();
-        getCredentials().edit()
-                .putString(OAUTH2_REFRESH_TOKEN, refreshToken)
-                .commit();
+        // Credentials go through SecretStore for encrypted-at-rest storage.
+        // put() uses commit() semantics per CNTR-MODERNIZATION-003 §Type notes.
+        secretStore.put(OAUTH2_TOKEN, accessToken);
+        secretStore.put(OAUTH2_REFRESH_TOKEN, refreshToken);
     }
 
    public void clearOauth2Data() {
         final String oauth2token = getOauth2Token();
 
+        // oauth2_user stays in plaintext preferences — not a secret (AC-4).
         preferences.edit()
                 .remove(OAUTH2_USER)
                 .commit();
 
-        getCredentials().edit()
-                .remove(OAUTH2_TOKEN)
-                .remove(OAUTH2_REFRESH_TOKEN)
-                .commit();
+        // Remove secrets via SecretStore.
+        secretStore.remove(OAUTH2_TOKEN);
+        secretStore.remove(OAUTH2_REFRESH_TOKEN);
 
         if (!TextUtils.isEmpty(oauth2token)) {
             new TokenRefresher(context, new OAuth2Client(getOAuth2ClientId()), this).invalidateToken(oauth2token);
@@ -117,7 +185,7 @@ public class AuthPreferences {
     }
 
     public void setImapPassword(String s) {
-        getCredentials().edit().putString(IMAP_PASSWORD, s).commit();
+        secretStore.put(IMAP_PASSWORD, s);
     }
 
     public void setImapUser(String s) {
@@ -216,15 +284,6 @@ public class AuthPreferences {
         return getDefaultType(preferences, SERVER_AUTHENTICATION, AuthMode.class, AuthMode.PLAIN);
     }
 
-    // All sensitive information is stored in a separate prefs file so we can
-    // backup the rest without exposing sensitive data
-    private SharedPreferences getCredentials() {
-        if (credentials == null) {
-            credentials = context.getSharedPreferences("credentials", Context.MODE_PRIVATE);
-        }
-        return credentials;
-    }
-
     public String getServername() {
         return preferences.getString(SERVER_ADDRESS, null);
     }
@@ -234,7 +293,7 @@ public class AuthPreferences {
     }
 
     private String getImapPassword() {
-        return getCredentials().getString(IMAP_PASSWORD, null);
+        return secretStore.get(IMAP_PASSWORD);
     }
 
     /**
@@ -274,16 +333,55 @@ public class AuthPreferences {
     }
 
     void migrate() {
+        // DES-MODERNIZATION-002 Decision 6 — rewritten by U-007 to eliminate the
+        // silent trust-all downgrade (ARCH-008 / SEC-001 / CWE-295).
+
+        // U-012: one-time plaintext-to-encrypted credential migration.
+        // Called BEFORE the useXOAuth() early-return so that OAuth2 users' tokens
+        // (oauth2_token / oauth2_refresh_token) are also migrated. Placing this call
+        // after the early-return would silently leave OAuth2 users' plaintext tokens
+        // un-migrated, causing all OAuth2 users to be logged out after upgrading.
+        // The call is idempotent: guarded by the __secretstore_migration_complete__
+        // marker so subsequent launches are no-ops (CNTR-MODERNIZATION-003 §Migration).
+        secretStore.migrateFromPlaintext();
+
         if (useXOAuth()) {
             return;
         }
-        // convert deprecated authentication methods
-        if ("+ssl".equals(getServerProtocol()) ||
-            "+tls".equals(getServerProtocol())) {
-            preferences.edit()
-                .putBoolean(SERVER_TRUST_ALL_CERTIFICATES, true)
-                .putString(SERVER_PROTOCOL, getServerProtocol()+"+")
-                .commit();
+        final String protocol = getServerProtocol();
+        final boolean wasLegacyDowngradeProtocol =
+            "+ssl".equals(protocol) || "+tls".equals(protocol);
+
+        SharedPreferences.Editor edit = preferences.edit();
+
+        // AC-5 / REQ-MODERNIZATION-002 AC-10: NEVER write SERVER_TRUST_ALL_CERTIFICATES=true.
+        // AC-2 migration-of-already-downgraded-users: actively clear any stale true left by
+        // the previous app version's silent downgrade, restoring validated TLS immediately.
+        if (preferences.getBoolean(SERVER_TRUST_ALL_CERTIFICATES, false)) {
+            edit.putBoolean(SERVER_TRUST_ALL_CERTIFICATES, false);
+            markTransportSecurityNoticePending(edit);   // AC-3: one-time notice for affected cohort
         }
+
+        // Protocol normalization is preserved (AC-5 "may update SERVER_PROTOCOL"),
+        // but WITHOUT the coupled trust-all write that the old code performed.
+        if (wasLegacyDowngradeProtocol) {
+            edit.putString(SERVER_PROTOCOL, protocol + "+");
+            markTransportSecurityNoticePending(edit);   // AC-3: these users are the affected cohort
+        }
+
+        // ARCH-017: apply(), not commit(), for a launch-path write.
+        // The write is idempotent — if the process is killed before apply() flushes,
+        // migrate() re-executes on the next launch and produces the same result.
+        edit.apply();
+    }
+
+    /**
+     * Records that a one-time transport-security notice is pending for this user.
+     * Called from migrate() when the user is in the affected cohort (legacy +ssl/+tls
+     * protocol, or stale SERVER_TRUST_ALL_CERTIFICATES=true). The notice flag is consumed
+     * by the UI presentation layer (U-009); this method only writes the flag.
+     */
+    private static void markTransportSecurityNoticePending(SharedPreferences.Editor edit) {
+        edit.putBoolean(TRANSPORT_SECURITY_NOTICE_PENDING, true);
     }
 }

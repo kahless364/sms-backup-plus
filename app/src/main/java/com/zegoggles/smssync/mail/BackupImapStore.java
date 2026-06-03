@@ -26,7 +26,6 @@ import com.fsck.k9.mail.Folder;
 import com.fsck.k9.mail.Folder.FolderType;
 import com.fsck.k9.mail.Message;
 import com.fsck.k9.mail.MessagingException;
-import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
 import com.fsck.k9.mail.ssl.TrustedSocketFactory;
 import com.fsck.k9.mail.store.imap.ImapFolder;
 import com.fsck.k9.mail.store.imap.ImapMessage;
@@ -55,10 +54,24 @@ import static java.util.Locale.ENGLISH;
 public class BackupImapStore extends ImapStore {
     private final Map<DataType, BackupFolder> openFolders = new HashMap<DataType, BackupFolder>();
 
+    /**
+     * Constructs a BackupImapStore with a pre-resolved TLS socket factory.
+     *
+     * <p>The {@code socketFactory} must be a fully-resolved, never-trust-all
+     * {@link TrustedSocketFactory} produced by the transport-security policy layer
+     * ({@code ServiceBase.getBackupImapStore()}) per CNTR-MODERNIZATION-001.
+     * Exactly two concrete implementations are permitted:
+     * {@code DefaultTrustedSocketFactory} (for {@link TlsTrustPolicy#SYSTEM_VALIDATED}) and
+     * {@link PinnedCertificateSocketFactory} (for {@link TlsTrustPolicy#PINNED_CERTIFICATE}).
+     *
+     * @param context       Android context
+     * @param uri           IMAP store URI
+     * @param socketFactory the pre-resolved TLS socket factory; must not be null
+     */
     public BackupImapStore(final Context context, final String uri,
-                           boolean trustAllCertificates) throws MessagingException {
+                           TrustedSocketFactory socketFactory) throws MessagingException {
         super(new BackupStoreConfig(uri),
-            trustAllCertificates ? AllTrustedSocketFactory.INSTANCE : new DefaultTrustedSocketFactory(context),
+            socketFactory,
             (ConnectivityManager) context.getSystemService(CONNECTIVITY_SERVICE));
     }
 

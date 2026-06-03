@@ -86,8 +86,7 @@
 
   <string name="ui_protocol_label">보안</string>
 
-  <string name="ui_protocol_trust_all_certificates_label">모든 인증서 신뢰</string>
-  <string name="ui_protocol_trust_all_certificates_desc">권장하지 않음. 자체 서명 인증서를 가진 서버에 활성하세요.</string>
+
 
   <string name="ui_authentication_label">인증</string>
   <string name="plain">일반 텍스트</string>

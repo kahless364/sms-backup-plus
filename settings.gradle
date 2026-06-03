@@ -1,1 +1,1 @@
-include ':app', ':metadata'
+include ':app', ':metadata', ':k9mail-vendored'

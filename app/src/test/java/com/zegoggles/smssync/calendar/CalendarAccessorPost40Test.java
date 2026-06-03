@@ -22,12 +22,13 @@ import java.util.Map;
 import static android.provider.CalendarContract.Events;
 import static android.provider.CalendarContract.Events.CONTENT_URI;
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class CalendarAccessorPost40Test {
@@ -36,7 +37,7 @@ public class CalendarAccessorPost40Test {
     @Mock ContentResolver resolver;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         accessor = new CalendarAccessorPost40(resolver);
     }
 
@@ -45,8 +46,8 @@ public class CalendarAccessorPost40Test {
     public void shouldEnableSync() throws Exception {
         when(resolver.update(eq(Uri.parse("content://com.android.calendar/calendars/123")),
                 any(ContentValues.class),
-                anyString(),
-                any(String[].class)))
+                nullable(String.class),
+                nullable(String[].class)))
             .thenReturn(1);
 
         assertThat(accessor.enableSync(123)).isTrue();
@@ -83,8 +84,8 @@ public class CalendarAccessorPost40Test {
         cursor.addRow(new Object[] { "12", "Testing", 1 });
 
         when(resolver.query(eq(CalendarContract.Calendars.CONTENT_URI), any(String[].class),
-                any(String.class),
-                any(String[].class),
+                nullable(String.class),
+                nullable(String[].class),
                 eq(CalendarContract.Calendars.NAME + " ASC"))).thenReturn(
             cursor
         );

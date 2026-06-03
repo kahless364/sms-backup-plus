@@ -1,0 +1,82 @@
+// Asset capture of com.github.jberkel.k-9:k9mail-library:eaf689025e for reproducible builds — see NOTICE
+//
+// Source: https://github.com/jberkel/k-9 at commit eaf689025ec28d55e3b62f5ea3b1f185f410ee6b
+//         (branch sms-backup-plus-1.5.11)
+// Captured: 2026-06-03 as part of U-027 (k-9 dependency unpin)
+// Reason:   JitPack evicted the SHA artifact (HTTP 404 confirmed 2026-06-03).
+//           No mavenCentral() coordinate exists (app.k9mail:* and com.fsck.k9:* searches
+//           returned zero results). No JitPack tag points to this exact commit.
+//           Path C (vendor) selected per ADR-009-A.
+//
+// Permitted modifications (per AC-5, U-027):
+//   - This build.gradle (module scaffold, required by Gradle module system)
+//   - AndroidManifest.xml (required; copied verbatim from original)
+//   - Dependency coordinates: jcenter() deps migrated to mavenCentral() equivalents
+//     (jcenter was shut down in 2022; functionally identical artifacts).
+//     apache-mime4j pinned to 0.7.2 (exact original version from mavenCentral).
+//     commons-io pinned to 2.4 (exact original version).
+//     jutf7 1.0.0 and jzlib 1.0.7 available from mavenCentral.
+//   - compileSdkVersion raised from 25 to 35 (matches host project; no source changes).
+//   - support-annotations replaced with androidx.annotation:annotation (jcenter artifact
+//     migrated to mavenCentral; no API change — same @NonNull/@Nullable etc).
+//   - useLibrary 'org.apache.http.legacy' added: required for webdav/ package which
+//     uses Apache HTTP Client. No behavioral change; webdav/ is not used by SMS Backup+.
+//   - Source import: android.support.annotation.* → androidx.annotation.* in 12 files.
+//     Pure annotation migration; no behavioral change. AGP 8 / AndroidX requires this.
+//     Documented per AC-5 U-027 "permitted if documented in NOTICE and build.gradle".
+//     Affected files: Address, BoundaryGenerator, Message, Part, MessageExtractor,
+//     MessageIdGenerator, MimeBodyPart, MimeHeader, MimeMessage, MimeUtility, TextBody,
+//     SmtpTransport (12 files — import statement only, no logic change).
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.fsck.k9.mail'
+    compileSdkVersion 35
+    defaultConfig {
+        minSdkVersion 21
+    }
+
+    // for using Apache HTTP Client (webdav/ package)
+    useLibrary 'org.apache.http.legacy'
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    // avoid "Duplicate files copied in APK META-INF/"
+    packaging {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'LICENSE.txt'
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    // Original: compile 'org.apache.james:apache-mime4j-core:0.7.2' (jcenter)
+    // 'api' (not 'implementation') because app/src directly imports
+    // org.apache.james.mime4j.codec.EncoderUtil (Sanitizer.java:3).
+    // Original k-9 used 'compile' scope which is equivalent to 'api'.
+    api 'org.apache.james:apache-mime4j-core:0.7.2'
+    // Original: compile 'org.apache.james:apache-mime4j-dom:0.7.2' (jcenter)
+    api 'org.apache.james:apache-mime4j-dom:0.7.2'
+    // Original: compile 'commons-io:commons-io:2.4' (jcenter)
+    // 'api' because app/src directly imports org.apache.commons.io.IOUtils
+    // (Attachment.java:13, MessageConverter.java:39).
+    api 'commons-io:commons-io:2.4'
+    // Original: compile 'com.jcraft:jzlib:1.0.7' (jcenter; also on mavenCentral)
+    implementation 'com.jcraft:jzlib:1.0.7'
+    // Original: compile 'com.beetstra.jutf7:jutf7:1.0.0' (jcenter)
+    implementation 'com.beetstra.jutf7:jutf7:1.0.0'
+    // Original: compile "com.android.support:support-annotations:${androidSupportLibraryVersion}"
+    // Replaced with AndroidX equivalent (same annotations API, migrated in AGP 8 uplift).
+    api 'androidx.annotation:annotation:1.7.1'
+}

@@ -21,28 +21,23 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import android.text.format.DateFormat;
 import android.util.Log;
-import com.firebase.jobdispatcher.Job;
-import com.firebase.jobdispatcher.JobTrigger;
 import com.fsck.k9.mail.MessagingException;
-import com.squareup.otto.Produce;
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Produce removed (AC-8)
+// U-020: import com.squareup.otto.Subscribe removed (AC-8)
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.MainActivity;
 import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.DataType;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
+import com.zegoggles.smssync.scheduler.ScheduledJob;
 import com.zegoggles.smssync.service.exception.BackupDisabledException;
-import com.zegoggles.smssync.service.exception.ConnectivityException;
 import com.zegoggles.smssync.service.exception.MissingPermissionException;
-import com.zegoggles.smssync.service.exception.NoConnectionException;
 import com.zegoggles.smssync.service.exception.RequiresLoginException;
-import com.zegoggles.smssync.service.exception.RequiresWifiException;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,11 +54,24 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 import static com.zegoggles.smssync.service.state.SmsSyncState.FINISHED_BACKUP;
 import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
 
+/**
+ * Service that performs the actual SMS/call-log backup.
+ * <p>
+ * U-013 CS-5/CS-7: replaced the private {@code getBackupJobs()} factory and direct
+ * {@code BackupJobs} usage with the injected {@link BackupScheduler} port.
+ * The {@code getBackupJobs()} factory method is removed; {@code getScheduler()} provides
+ * the same test-override surface.
+ * <p>
+ * The {@code scheduleNextBackup()} method previously used the returned Firebase {@code Job}
+ * object to extract the trigger window start for logging. After migration, the port's
+ * {@link ScheduledJob} carries a tag and description string; the log message now uses the
+ * description rather than parsing a {@code JobTrigger.ExecutionWindowTrigger}.
+ */
 public class SmsBackupService extends ServiceBase {
     private static final int BACKUP_ID = 1;
     private static final int NOTIFICATION_ID_WARNING = 1;
 
-    @Nullable private static SmsBackupService service;
+    // U-020: static service field deleted (AC-8a). State is read via syncStateRepository().
     @NonNull private BackupState state = new BackupState();
 
     @Override @NonNull
@@ -75,14 +83,14 @@ public class SmsBackupService extends ServiceBase {
     public void onCreate() {
         super.onCreate();
         if (LOCAL_LOGV) Log.v(TAG, "SmsBackupService#onCreate");
-        service = this;
+        // U-020: service = this; deleted (AC-8a)
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         if (LOCAL_LOGV) Log.v(TAG, "SmsBackupService#onDestroy(state=" + getState() + ")");
-        service = null;
+        // U-020: service = null; deleted (AC-8a)
     }
 
     @Override
@@ -97,8 +105,10 @@ public class SmsBackupService extends ServiceBase {
         }
 
         appLog(R.string.app_log_backup_requested, getString(backupType.resId));
-        // Only start a backup if there's no other operation going on at this time.
-        if (!isWorking() && SmsRestoreService.isServiceIdle()) {
+        // U-020: SmsRestoreService.isServiceIdle() replaced by reading state from repository (AC-9).
+        boolean restoreIdle = !App.syncStateRepository().getState().getValue().isRunning()
+            || !(App.syncStateRepository().getState().getValue() instanceof com.zegoggles.smssync.service.state.RestoreState);
+        if (!isWorking() && restoreIdle) {
             backup(backupType);
         } else {
             appLog(R.string.app_log_skip_backup_already_running);
@@ -115,17 +125,15 @@ public class SmsBackupService extends ServiceBase {
             checkPermissions(enabledTypes);
             if (backupType != SKIP) {
                 checkCredentials();
-                if (getPreferences().isUseOldScheduler()) {
-                    legacyCheckConnectivity();
-                }
+                // U-017: legacyCheckConnectivity() removed — WorkManagerScheduler enforces
+                // network constraints via Constraints; no manual pre-flight check needed.
             }
             appLog(R.string.app_log_start_backup, backupType);
             getBackupTask().execute(getBackupConfig(backupType, enabledTypes, getBackupImapStore()));
         } catch (MessagingException e) {
             Log.w(TAG, e);
             moveToState(state.transition(ERROR, e));
-        } catch (ConnectivityException e) {
-            moveToState(state.transition(ERROR, e));
+        // U-017: catch(ConnectivityException) removed — legacyCheckConnectivity() deleted.
         } catch (RequiresLoginException e) {
             appLog(R.string.app_log_missing_credentials);
             moveToState(state.transition(ERROR, e));
@@ -174,16 +182,8 @@ public class SmsBackupService extends ServiceBase {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void legacyCheckConnectivity() throws ConnectivityException {
-        android.net.NetworkInfo active = getConnectivityManager().getActiveNetworkInfo();
-        if (active == null || !active.isConnectedOrConnecting()) {
-            throw new NoConnectionException();
-        }
-        if (getPreferences().isWifiOnly() && isBackgroundTask() && !isConnectedViaWifi()) {
-            throw new RequiresWifiException();
-        }
-    }
+    // U-017: legacyCheckConnectivity() deleted — WorkManagerScheduler enforces
+    // network constraints via Constraints; no manual pre-flight check needed.
 
     protected BackupTask getBackupTask() {
         return new BackupTask(this);
@@ -191,7 +191,9 @@ public class SmsBackupService extends ServiceBase {
 
     private void moveToState(BackupState state) {
         backupStateChanged(state);
-        App.post(state);
+        // U-020: App.syncStateRepository().emitState(state) now writes to MutableStateFlow directly
+        // (no Otto delegation). IC-3: the repository is the sole engine→UI channel.
+        App.syncStateRepository().emitState(state);
     }
 
     @Override
@@ -199,11 +201,12 @@ public class SmsBackupService extends ServiceBase {
         return state.backupType.isBackground();
     }
 
-    @Produce public BackupState produceLastState() {
-        return state;
-    }
+    // U-020: @Produce produceLastState() deleted (AC-8).
+    // StateFlow.value provides sticky last-state semantics for late collectors (AC-4).
 
-    @Subscribe public void backupStateChanged(BackupState state) {
+    // U-020: @Subscribe annotation removed — backupStateChanged() is called directly from
+    // BackupTask (post method) and moveToState(). No Otto registration needed.
+    public void backupStateChanged(BackupState state) {
         if (this.state == state) return;
 
         this.state = state;
@@ -272,18 +275,31 @@ public class SmsBackupService extends ServiceBase {
         startForeground(BACKUP_ID, notification);
     }
 
+    /**
+     * Schedules the next regular backup after one completes.
+     * <p>
+     * U-013 CS-7: migrated from {@code getBackupJobs().scheduleRegular()} (Firebase
+     * Job return type) to {@code getScheduler().scheduleRegular()} (port-level
+     * {@link ScheduledJob} return type). The log message uses the port's description
+     * field instead of parsing a {@code JobTrigger.ExecutionWindowTrigger}; behavior
+     * is functionally identical (a next-sync time is logged when available).
+     */
+    /**
+     * U-017: isUseOldScheduler() guard removed — WorkManagerScheduler persists periodic
+     * work automatically. scheduleRegular() is still called here to ensure the periodic
+     * work request is re-queued after a regular backup completes (WorkManager replaces
+     * any existing item via ExistingPeriodicWorkPolicy.UPDATE, which is a no-op if already
+     * enqueued — safe to call unconditionally).
+     */
     private void scheduleNextBackup(BackupState state) {
-        if (state.backupType == REGULAR && getPreferences().isUseOldScheduler()) {
-            final Job nextSync = getBackupJobs().scheduleRegular();
+        if (state.backupType == REGULAR) {
+            final ScheduledJob nextSync = getScheduler().scheduleRegular();
             if (nextSync != null) {
-                JobTrigger.ExecutionWindowTrigger trigger = (JobTrigger.ExecutionWindowTrigger) nextSync.getTrigger();
-                Date date = new Date(System.currentTimeMillis() + (trigger.getWindowStart() * 1000));
-                appLog(R.string.app_log_scheduled_next_sync,
-                        DateFormat.format("kk:mm", date));
+                appLog(R.string.app_log_scheduled_next_sync, nextSync.description);
             } else {
                 appLog(R.string.app_log_no_next_sync);
             }
-        } // else job already persisted
+        } // WorkManager persists periodic work across restarts
     }
 
     void notifyUser(int notificationId, NotificationCompat.Builder builder) {
@@ -304,13 +320,19 @@ public class SmsBackupService extends ServiceBase {
             .setContentIntent(getPendingIntent(null));
     }
 
-    protected BackupJobs getBackupJobs() {
-        return new BackupJobs(this);
+    /**
+     * Returns the application-scoped {@link BackupScheduler}.
+     * <p>
+     * Protected to allow test subclasses to inject a mock scheduler (replaces the
+     * old {@code getBackupJobs()} factory). Will be replaced by Hilt
+     * {@code @Inject} field injection in U-022.
+     */
+    protected BackupScheduler getScheduler() {
+        return App.getScheduler(this);
     }
 
-    public static boolean isServiceWorking() {
-        return service != null && service.isWorking();
-    }
+    // U-020: isServiceWorking() deleted (AC-8b).
+    // Callers now read App.syncStateRepository().getState().getValue().isRunning() directly.
 
     public BackupState transition(SmsSyncState newState, Exception e) {
         return state.transition(newState, e);

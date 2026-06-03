@@ -30,25 +30,37 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.StrictMode;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import android.util.Log;
 import com.fsck.k9.mail.K9MailLib;
-import com.squareup.otto.Bus;
-import com.squareup.otto.Subscribe;
-import com.zegoggles.smssync.activity.events.AutoBackupSettingsChangedEvent;
 import com.zegoggles.smssync.compat.GooglePlayServices;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.receiver.BootReceiver;
 import com.zegoggles.smssync.receiver.SmsBroadcastReceiver;
-import com.zegoggles.smssync.service.BackupJobs;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
+import com.zegoggles.smssync.scheduler.WorkManagerScheduler;
+import com.zegoggles.smssync.service.state.FlowSyncStateRepository;
+import com.zegoggles.smssync.service.state.SyncStateRepository;
 
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
 import static android.content.pm.PackageManager.DONT_KILL_APP;
 
+/**
+ * Application class.
+ *
+ * U-020: Otto bus (Bus field, register/unregister/post helpers, @Subscribe handler)
+ * removed. SyncStateRepository is now a live FlowSyncStateRepository backed by
+ * MutableStateFlow + MutableSharedFlow. The autoBackupSettingsChanged handler is
+ * collected in an application-scoped coroutine via FlowCollectHelper.
+ *
+ * AC-6: App.bus field, register(), unregister(), post() are deleted.
+ * AC-6(d): autoBackupSettingsChanged @Subscribe migrated to Flow collection.
+ */
 public class App extends Application {
     private static final boolean DEBUG = BuildConfig.DEBUG;
     public static final boolean LOCAL_LOGV = DEBUG;
@@ -56,17 +68,39 @@ public class App extends Application {
     public static final String LOG = "sms_backup_plus.log";
     public static final String CHANNEL_ID = "sms_backup_plus";
 
-    private static final Bus bus = new Bus();
+    // U-020: FlowSyncStateRepository replaces DefaultSyncStateRepository (Otto-delegating).
+    // AC-18: manual-DI singleton — NOT wired via Hilt @Singleton (deferred to U-022).
+    // TODO U-022/MU-007: replace manual singleton with Hilt @Singleton
+    private static SyncStateRepository syncStateRepositoryInstance;
+
     /** Google Play Services present on this device? */
     public static boolean gcmAvailable;
 
     private Preferences preferences;
-    private BackupJobs backupJobs;
+
+    /**
+     * Application-scoped {@link BackupScheduler} singleton.
+     * U-013: replaced BackupJobs field with this port-level field.
+     * U-017: binding flipped from LegacyScheduler to WorkManagerScheduler.
+     * TODO U-022: replace with Hilt @Inject BackupScheduler.
+     */
+    private BackupScheduler scheduler;
+
+    @NonNull
+    public static BackupScheduler getScheduler(@NonNull Context context) {
+        return ((App) context.getApplicationContext()).scheduler;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
         setupStrictMode();
+
+        // U-020: FlowSyncStateRepository replaces DefaultSyncStateRepository.
+        // Constructed before any component reaches syncStateRepository().
+        // AC-3: MutableStateFlow + MutableSharedFlow(replay=0, extraBufferCapacity=1).
+        syncStateRepositoryInstance = new FlowSyncStateRepository();
+
         gcmAvailable = GooglePlayServices.isAvailable(this);
         preferences = new Preferences(this);
         preferences.migrate();
@@ -75,14 +109,15 @@ public class App extends Application {
             createNotificationChannel();
         }
 
-        backupJobs = new BackupJobs(this);
+        // U-017: binding flipped to WorkManagerScheduler (Gate G3).
+        // The legacy scheduling classes have been deleted per AC-3/AC-4/AC-5.
+        // WorkManagerScheduler is now the sole production BackupScheduler implementation.
+        scheduler = new WorkManagerScheduler(this, preferences);
 
-        if (gcmAvailable) {
-            setBroadcastReceiversEnabled(false);
-        } else {
-            Log.v(TAG, "Google Play Services not available, forcing use of old scheduler");
-            preferences.setUseOldScheduler(true);
-        }
+        // U-017: SmsBroadcastReceiver / BootReceiver enable/disable logic simplified:
+        // WorkManagerScheduler owns all scheduling; legacy GCM/AlarmManager toggle removed.
+        // Receivers remain enabled (WorkManager does not need manual component toggling).
+        setBroadcastReceiversEnabled(preferences.isAutoBackupEnabled());
 
         K9MailLib.setDebugStatus(new K9MailLib.DebugStatus() {
             @Override
@@ -102,35 +137,37 @@ public class App extends Application {
                 getContentResolver().registerContentObserver(Consts.CALLLOG_PROVIDER, true, new LoggingContentObserver());
             }
         }
-        register(this);
+
+        // U-020: replaces @Subscribe autoBackupSettingsChanged + register(this).
+        // Collects SyncEvent.AutoBackupSettingsChanged in an Application-scoped coroutine.
+        // TODO U-022/MU-007: replace manual scope with ProcessLifecycleOwner scope.
+        FlowCollectHelper.collectAutoBackupSettings(
+            syncStateRepositoryInstance,
+            new Runnable() {
+                @Override public void run() {
+                    if (LOCAL_LOGV) {
+                        Log.v(TAG, "autoBackupSettingsChanged()");
+                    }
+                    // U-017: isUseOldScheduler() check removed; WorkManagerScheduler is now sole impl.
+                    setBroadcastReceiversEnabled(preferences.isAutoBackupEnabled());
+                    rescheduleJobs();
+                }
+            }
+        );
     }
 
-    @Subscribe public void autoBackupSettingsChanged(final AutoBackupSettingsChangedEvent event) {
-        if (LOCAL_LOGV) {
-            Log.v(TAG, "autoBackupSettingsChanged("+event+")");
-        }
-        setBroadcastReceiversEnabled(preferences.isUseOldScheduler() && preferences.isAutoBackupEnabled());
-        rescheduleJobs();
-    }
+    // U-020: register(), unregister(), post() deleted (AC-6a,b,c).
+    // All call sites migrated to App.syncStateRepository().emitState/tryEmitEvent/emitEvent.
 
-    public static void register(Object listener) {
-        try {
-            bus.register(listener);
-        } catch (IllegalArgumentException ignored) {
-            Log.w(TAG, ignored);
-        }
-     }
-
-    public static void unregister(Object listener) {
-        try {
-            bus.unregister(listener);
-        } catch (IllegalArgumentException ignored) {
-            Log.w(TAG, ignored);
-        }
-    }
-
-    public static void post(Object event) {
-        bus.post(event);
+    /**
+     * U-019: Application-scoped SyncStateRepository accessor.
+     * U-020: now returns FlowSyncStateRepository (Flow-backed, no Otto delegation).
+     * Constructed in onCreate; non-null for the lifetime of the application process.
+     * IC-1: reachable from all production consumers (services, activities, workers).
+     * TODO U-022/MU-007: replace with @Inject SyncStateRepository.
+     */
+    public static SyncStateRepository syncStateRepository() {
+        return syncStateRepositoryInstance;
     }
 
     @Nullable
@@ -185,21 +222,22 @@ public class App extends Application {
         if (LOCAL_LOGV) {
             Log.v(TAG, "enableOrDisableComponent("+enabled+", "+component.getSimpleName()+")");
         }
-        // NB: changes made via setComponentEnabledSetting are persisted across reboots
         getPackageManager().setComponentEnabledSetting(
             new ComponentName(this, component),
             enabled ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DISABLED,
-            DONT_KILL_APP /* apply setting without restart */);
+            DONT_KILL_APP);
     }
 
     private void rescheduleJobs() {
-        backupJobs.cancelAll();
+        scheduler.cancelAll();
 
         if (preferences.isAutoBackupEnabled()) {
-            backupJobs.scheduleRegular();
+            scheduler.scheduleRegular();
 
-            if (preferences.getIncomingTimeoutSecs() > 0 && !preferences.isUseOldScheduler()) {
-                backupJobs.scheduleContentTriggerJob();
+            // U-017: isUseOldScheduler() guard removed; WorkManagerScheduler handles
+            // API-level branching internally (content-URI triggers on API 24+).
+            if (preferences.getIncomingTimeoutSecs() > 0) {
+                scheduler.scheduleContentTrigger();
             }
         }
     }
@@ -213,6 +251,7 @@ public class App extends Application {
             .build());
     }
 
+    @SuppressWarnings("deprecation")
     private static class LoggingContentObserver extends ContentObserver {
         LoggingContentObserver() {
             super(new Handler());

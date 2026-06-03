@@ -3,6 +3,7 @@ package com.zegoggles.smssync.activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
+import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -15,20 +16,18 @@ import android.widget.TextView;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceViewHolder;
 
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed (AC-15)
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.activity.events.MissingPermissionsEvent;
 import com.zegoggles.smssync.activity.events.PerformAction;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
-import com.zegoggles.smssync.service.CancelEvent;
-import com.zegoggles.smssync.service.SmsBackupService;
-import com.zegoggles.smssync.service.SmsRestoreService;
+// U-020: CancelEvent, SmsBackupService.isServiceWorking(), SmsRestoreService.isServiceIdle() removed
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.RestoreState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 import com.zegoggles.smssync.service.state.State;
+import com.zegoggles.smssync.service.state.SyncEvent;
 import com.zegoggles.smssync.utils.Drawables;
 
 import java.text.DateFormat;
@@ -37,10 +36,16 @@ import java.util.List;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
+import static com.zegoggles.smssync.service.state.SyncEvent.Cancel.Origin.USER;
 import static com.zegoggles.smssync.activity.events.PerformAction.Actions.Backup;
 import static com.zegoggles.smssync.activity.events.PerformAction.Actions.Restore;
 
 public class StatusPreference extends Preference implements View.OnClickListener {
+    /** Discriminator for the status icon — maps to one of the four static drawables. */
+    enum IconKind {
+        IDLE, DONE, ERROR, SYNCING
+    }
+
     private Button backupButton;
     private Button restoreButton;
 
@@ -59,6 +64,19 @@ public class StatusPreference extends Preference implements View.OnClickListener
     private static final int idleDrawable = doneDrawable;
     private static final int errorDrawable = R.drawable.ic_syncing_problem;
     private static final int syncingDrawable = R.drawable.ic_syncing;
+
+    // Tracking fields for serialisable view state (updated whenever color/icon change).
+    // Package-private visibility to allow direct access from same-package unit tests.
+    int currentStatusColor;
+    IconKind currentIconKind = IconKind.IDLE;
+
+    // Snapshot stored by onRestoreInstanceState; consumed (and cleared) in onBindViewHolder.
+    // Package-private visibility to allow verification from same-package unit tests.
+    SavedState restoredState = null;
+
+    // U-020: coroutine scope for state/event Flow collection; cancelled in onDetached (AC-15).
+    // TODO U-022/MU-007: replace with @Inject SyncStateRepository.
+    private kotlinx.coroutines.CoroutineScope collectionScope = null;
 
     @SuppressWarnings("unused")
     public StatusPreference(Context context) {
@@ -89,12 +107,20 @@ public class StatusPreference extends Preference implements View.OnClickListener
         done = Drawables.getTinted(context.getResources(), doneDrawable, doneColor);
         error = Drawables.getTinted(context.getResources(), errorDrawable, errorColor);
         syncing = Drawables.getTinted(context.getResources(),syncingDrawable, syncingColor);
+
+        // Initialise tracking fields to the default (idle) state.
+        currentStatusColor = idleColor;
+        currentIconKind = IconKind.IDLE;
     }
 
     @Override
     public void onDetached() {
         super.onDetached();
-        App.unregister(this);
+        // U-020: App.unregister(this) removed (AC-15). Cancel the collection scope.
+        if (collectionScope != null) {
+            StatusPreferenceFlowHelper.cancelScope(collectionScope);
+            collectionScope = null;
+        }
     }
 
     @Override
@@ -122,24 +148,51 @@ public class StatusPreference extends Preference implements View.OnClickListener
         syncDetailsLabel = syncDetails.findViewById(R.id.details_sync_label);
         progressBar = syncDetails.findViewById(R.id.details_sync_progress);
 
-        idle();
+        if (restoredState != null) {
+            // A configuration change (e.g. rotation) occurred while a backup/restore was shown.
+            // Apply the snapshot instead of calling idle() so the row repaints to the
+            // pre-rotation state without a visible flash.
+            applyRestoredState(restoredState);
+            restoredState = null;
+        } else {
+            idle();
+        }
 
-        App.register(this);
+        // U-020: App.register(this) replaced by Flow collection (AC-15).
+        if (collectionScope != null) {
+            StatusPreferenceFlowHelper.cancelScope(collectionScope);
+        }
+        collectionScope = StatusPreferenceFlowHelper.startCollection(App.syncStateRepository(), this);
     }
 
     @Override
     public Parcelable onSaveInstanceState() {
-        // TODO implement
-        return super.onSaveInstanceState();
+        final Parcelable superState = super.onSaveInstanceState();
+        final SavedState s = new SavedState(superState);
+        s.statusText    = statusLabel     == null ? null : statusLabel.getText();
+        s.statusColor   = currentStatusColor;
+        s.detailsText   = syncDetailsLabel == null ? null : syncDetailsLabel.getText();
+        s.progress      = progressBar     == null ? 0    : progressBar.getProgress();
+        s.max           = progressBar     == null ? 0    : progressBar.getMax();
+        s.indeterminate = progressBar     != null && progressBar.isIndeterminate();
+        s.iconKind      = currentIconKind.ordinal();
+        return s;
     }
 
     @Override
     public void onRestoreInstanceState(Parcelable state) {
-        // TODO implement
-        super.onRestoreInstanceState(state);
+        if (state == null || !state.getClass().equals(SavedState.class)) {
+            super.onRestoreInstanceState(state);
+            return;
+        }
+        final SavedState s = (SavedState) state;
+        super.onRestoreInstanceState(s.getSuperState());
+        // Cache the snapshot; re-apply in onBindViewHolder once views are bound.
+        this.restoredState = s;
     }
 
-    @Subscribe public void restoreStateChanged(final RestoreState newState) {
+    // U-020: @Subscribe removed — called by StatusPreferenceFlowHelper (AC-15).
+    void restoreStateChanged(final RestoreState newState) {
         if (App.LOCAL_LOGV) Log.v(TAG, "restoreStateChanged:" + newState);
 
         stateChanged(newState);
@@ -171,7 +224,8 @@ public class StatusPreference extends Preference implements View.OnClickListener
         }
     }
 
-    @Subscribe public void backupStateChanged(final BackupState newState) {
+    // U-020: @Subscribe removed — called by StatusPreferenceFlowHelper (AC-15).
+    void backupStateChanged(final BackupState newState) {
         if (App.LOCAL_LOGV) Log.v(TAG, "backupStateChanged:"+newState);
         if (newState.backupType.isBackground()) return;
 
@@ -199,31 +253,60 @@ public class StatusPreference extends Preference implements View.OnClickListener
         }
     }
 
-    @Subscribe public void onMissingPermissions(MissingPermissionsEvent event) {
-        displayMissingPermissions(event.permissions);
+    // U-020: @Subscribe removed — called by StatusPreferenceFlowHelper (AC-15).
+    void onMissingPermissions(SyncEvent.MissingPermissions event) {
+        displayMissingPermissions(event.getPermissions());
     }
 
     private void onBackup() {
-        if (!SmsBackupService.isServiceWorking()) {
+        // U-020: SmsBackupService.isServiceWorking() replaced by repository state check (AC-8b)
+        boolean backupRunning = App.syncStateRepository() != null
+            && App.syncStateRepository().getState().getValue().isRunning()
+            && App.syncStateRepository().getState().getValue() instanceof BackupState;
+        if (!backupRunning) {
             if (LOCAL_LOGV) Log.v(TAG, "user requested sync");
-            App.post(new PerformAction(Backup, preferences.confirmAction()));
+            // U-020: App.post(new PerformAction(...)) replaced by tryEmitEvent (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.PerformActionRequested(Backup, preferences.confirmAction()));
+                if (!emitted) Log.w(TAG, "onBackup: tryEmitEvent(PerformAction) returned false");
+            }
         } else {
             if (LOCAL_LOGV) Log.v(TAG, "user requested cancel");
             // Sync button will be restored on next status update.
             backupButton.setText(R.string.ui_sync_button_label_canceling);
             backupButton.setEnabled(false);
-            App.post(new CancelEvent());
+            // U-020: App.post(new CancelEvent()) replaced by tryEmitEvent(Cancel(USER)) (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.Cancel(USER));
+                if (!emitted) Log.w(TAG, "onBackup cancel: tryEmitEvent(Cancel) returned false");
+            }
         }
     }
 
     private void onRestore() {
         if (LOCAL_LOGV) Log.v(TAG, "restore");
-        if (SmsRestoreService.isServiceIdle()) {
-            App.post(new PerformAction(Restore, preferences.confirmAction()));
+        // U-020: SmsRestoreService.isServiceIdle() replaced by repository state check (AC-9b)
+        boolean restoreRunning = App.syncStateRepository() != null
+            && App.syncStateRepository().getState().getValue().isRunning()
+            && App.syncStateRepository().getState().getValue() instanceof RestoreState;
+        if (!restoreRunning) {
+            // U-020: App.post(new PerformAction(...)) replaced by tryEmitEvent (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.PerformActionRequested(Restore, preferences.confirmAction()));
+                if (!emitted) Log.w(TAG, "onRestore: tryEmitEvent(PerformAction) returned false");
+            }
         } else {
             restoreButton.setText(R.string.ui_sync_button_label_canceling);
             restoreButton.setEnabled(false);
-            App.post(new CancelEvent());
+            // U-020: App.post(new CancelEvent()) replaced by tryEmitEvent(Cancel(USER)) (AC-15c)
+            if (App.syncStateRepository() != null) {
+                boolean emitted = App.syncStateRepository().tryEmitEvent(
+                    new SyncEvent.Cancel(USER));
+                if (!emitted) Log.w(TAG, "onRestore cancel: tryEmitEvent(Cancel) returned false");
+            }
         }
     }
 
@@ -260,13 +343,17 @@ public class StatusPreference extends Preference implements View.OnClickListener
         }
         syncDetailsLabel.setText(text);
         statusLabel.setText(R.string.status_done);
+        currentStatusColor = doneColor;
         statusLabel.setTextColor(doneColor);
+        currentIconKind = IconKind.DONE;
         statusIcon.setImageDrawable(done);
     }
 
     private void finishedRestore(RestoreState newState) {
+        currentStatusColor = doneColor;
         statusLabel.setTextColor(doneColor);
         statusLabel.setText(R.string.status_done);
+        currentIconKind = IconKind.DONE;
         statusIcon.setImageDrawable(done);
         syncDetailsLabel.setText(getQuantityString(
                 R.plurals.status_restore_done_details,
@@ -278,7 +365,9 @@ public class StatusPreference extends Preference implements View.OnClickListener
     private void idle() {
         syncDetailsLabel.setText(getLastSyncText(preferences.getDataTypePreferences().getMostRecentSyncedDate()));
         statusLabel.setText(R.string.status_idle);
+        currentStatusColor = idleColor;
         statusLabel.setTextColor(idleColor);
+        currentIconKind = IconKind.IDLE;
         statusIcon.setImageDrawable(idle);
     }
 
@@ -323,23 +412,52 @@ public class StatusPreference extends Preference implements View.OnClickListener
             case CALC:
             case BACKUP:
             case RESTORE:
+                currentStatusColor = syncingColor;
                 statusLabel.setTextColor(syncingColor);
+                currentIconKind = IconKind.SYNCING;
                 statusIcon.setImageDrawable(syncing);
                 break;
             case ERROR:
                 progressBar.setProgress(0);
                 progressBar.setIndeterminate(false);
+                currentStatusColor = errorColor;
                 statusLabel.setTextColor(errorColor);
+                currentIconKind = IconKind.ERROR;
                 statusIcon.setImageDrawable(error);
                 setButtonsToDefault();
                 break;
             default:
                 progressBar.setProgress(0);
                 progressBar.setIndeterminate(false);
+                currentStatusColor = idleColor;
                 statusLabel.setTextColor(idleColor);
+                currentIconKind = IconKind.IDLE;
                 statusIcon.setImageDrawable(idle);
                 setButtonsToDefault();
                 break;
+        }
+    }
+
+    /** Apply a previously-saved state snapshot to the (now-bound) views. */
+    private void applyRestoredState(SavedState s) {
+        if (s.statusText != null) {
+            statusLabel.setText(s.statusText);
+        }
+        currentStatusColor = s.statusColor;
+        statusLabel.setTextColor(s.statusColor);
+        if (s.detailsText != null) {
+            syncDetailsLabel.setText(s.detailsText);
+        }
+        progressBar.setIndeterminate(s.indeterminate);
+        progressBar.setMax(s.max);
+        progressBar.setProgress(s.progress);
+        final IconKind kind = IconKind.values()[s.iconKind];
+        currentIconKind = kind;
+        switch (kind) {
+            case DONE:    statusIcon.setImageDrawable(done);    break;
+            case ERROR:   statusIcon.setImageDrawable(error);   break;
+            case SYNCING: statusIcon.setImageDrawable(syncing); break;
+            default:      statusIcon.setImageDrawable(idle);    break;
         }
     }
 
@@ -356,5 +474,66 @@ public class StatusPreference extends Preference implements View.OnClickListener
 
     private String getQuantityString(int resourceId, int quantity, Object... formatArgs) {
         return getContext().getResources().getQuantityString(resourceId, quantity, formatArgs);
+    }
+
+    // -----------------------------------------------------------------------
+    // Instance-state save/restore
+    // -----------------------------------------------------------------------
+
+    /**
+     * Carries the transient view state of {@link StatusPreference} across
+     * configuration changes (e.g. screen rotation).  Implements the standard
+     * {@link Preference.BaseSavedState} pattern.
+     */
+    static final class SavedState extends Preference.BaseSavedState {
+
+        CharSequence statusText;
+        int          statusColor;
+        CharSequence detailsText;
+        int          progress;
+        int          max;
+        boolean      indeterminate;
+        /** Ordinal of {@link IconKind}. */
+        int          iconKind;
+
+        SavedState(Parcelable superState) {
+            super(superState);
+        }
+
+        private SavedState(Parcel source) {
+            super(source);
+            statusText    = source.readString();
+            statusColor   = source.readInt();
+            detailsText   = source.readString();
+            progress      = source.readInt();
+            max           = source.readInt();
+            indeterminate = source.readInt() != 0;
+            iconKind      = source.readInt();
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            super.writeToParcel(dest, flags);
+            dest.writeString(statusText   == null ? null : statusText.toString());
+            dest.writeInt(statusColor);
+            dest.writeString(detailsText  == null ? null : detailsText.toString());
+            dest.writeInt(progress);
+            dest.writeInt(max);
+            dest.writeInt(indeterminate ? 1 : 0);
+            dest.writeInt(iconKind);
+        }
+
+        public static final Parcelable.Creator<SavedState> CREATOR =
+                new Parcelable.Creator<SavedState>() {
+                    @Override
+                    public SavedState createFromParcel(Parcel source) {
+                        return new SavedState(source);
+                    }
+
+                    @Override
+                    public SavedState[] newArray(int size) {
+                        return new SavedState[size];
+                    }
+                };
     }
 }

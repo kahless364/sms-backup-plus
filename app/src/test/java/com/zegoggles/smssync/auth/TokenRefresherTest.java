@@ -18,8 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.AUTH_TOKEN_TYPE;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.GOOGLE_TYPE;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class TokenRefresherTest {
@@ -30,7 +31,7 @@ public class TokenRefresherTest {
     TokenRefresher refresher;
 
     @Before public void before() {
-        initMocks(this);
+        openMocks(this);
         refresher = new TokenRefresher(accountManager, oauth2Client, authPreferences);
     }
 
@@ -48,12 +49,12 @@ public class TokenRefresherTest {
         when(authPreferences.getOauth2Token()).thenReturn("token");
         when(authPreferences.getOauth2Username()).thenReturn("username");
 
-        when(accountManager.getAuthToken(notNull(Account.class),
+        when(accountManager.getAuthToken(notNull(),
                 anyString(),
-                isNull(Bundle.class),
+                isNull(),
                 anyBoolean(),
-                any(AccountManagerCallback.class),
-                any(Handler.class))).thenReturn(mock(AccountManagerFuture.class));
+                nullable(AccountManagerCallback.class),
+                nullable(Handler.class))).thenReturn(mock(AccountManagerFuture.class));
 
         try {
             refresher.refreshOAuth2Token();
@@ -70,12 +71,12 @@ public class TokenRefresherTest {
 
 
         AccountManagerFuture<Bundle> future = mock(AccountManagerFuture.class);
-        when(accountManager.getAuthToken(notNull(Account.class),
+        when(accountManager.getAuthToken(notNull(),
                 anyString(),
-                isNull(Bundle.class),
+                isNull(),
                 anyBoolean(),
-                any(AccountManagerCallback.class),
-                any(Handler.class))).thenReturn(future);
+                nullable(AccountManagerCallback.class),
+                nullable(Handler.class))).thenReturn(future);
         AuthenticatorException exception = new AuthenticatorException();
         when(future.getResult()).thenThrow(exception);
 
@@ -84,7 +85,7 @@ public class TokenRefresherTest {
             fail("expected exception");
         } catch (TokenRefreshException e) {
 
-            assertThat(e.getCause()).isSameAs(exception);
+            assertThat(e.getCause()).isSameInstanceAs(exception);
         }
 
         verify(accountManager).invalidateAuthToken(GOOGLE_TYPE, "token");
@@ -134,5 +135,66 @@ public class TokenRefresherTest {
         refresher.refreshOAuth2Token();
 
         verify(authPreferences).setOauth2Token("username", "newToken", "newRefresh");
+    }
+
+    // U-006 coverage additions for TokenRefresher
+
+    @Test public void shouldThrowWhenNoTokenSet() {
+        when(authPreferences.getOauth2Token()).thenReturn(null);
+
+        try {
+            refresher.refreshOAuth2Token();
+            fail("Expected TokenRefreshException for null token");
+        } catch (TokenRefreshException e) {
+            assertThat(e.getMessage()).contains("no current token set");
+        }
+    }
+
+    @Test public void shouldThrowWhenAccountManagerIsNull() throws Exception {
+        // Create refresher with null accountManager to cover that branch.
+        // Cast to AccountManager explicitly to resolve constructor ambiguity.
+        AccountManager nullAm = null;
+        TokenRefresher nullAmRefresher = new TokenRefresher(nullAm, oauth2Client, authPreferences);
+        when(authPreferences.getOauth2Token()).thenReturn("token");
+        when(authPreferences.getOauth2Username()).thenReturn("username");
+
+        try {
+            nullAmRefresher.refreshOAuth2Token();
+            fail("Expected TokenRefreshException for null account manager");
+        } catch (TokenRefreshException e) {
+            assertThat(e.getMessage()).contains("account manager is null");
+        }
+    }
+
+    @Test public void invalidateToken_withNullAccountManager_returnsFalse() throws Exception {
+        AccountManager nullAm = null;
+        TokenRefresher nullAmRefresher = new TokenRefresher(nullAm, oauth2Client, authPreferences);
+        assertThat(nullAmRefresher.invalidateToken("token")).isFalse();
+    }
+
+    @Test public void publicConstructor_withContext_createsRefresher() throws Exception {
+        // Covers the public TokenRefresher(Context, OAuth2Client, AuthPreferences) constructor.
+        // The public constructor calls AccountManager.get(context) which works in Robolectric.
+        TokenRefresher contextRefresher = new TokenRefresher(
+            org.robolectric.RuntimeEnvironment.application,
+            oauth2Client,
+            authPreferences
+        );
+        assertThat(contextRefresher).isNotNull();
+    }
+
+    @Test public void shouldThrowWhenOAuth2ClientFails() throws Exception {
+        when(authPreferences.getOauth2Token()).thenReturn("token");
+        when(authPreferences.getOauth2RefreshToken()).thenReturn("refresh");
+        when(authPreferences.getOauth2Username()).thenReturn("username");
+
+        when(oauth2Client.refreshToken("refresh")).thenThrow(new java.io.IOException("network error"));
+
+        try {
+            refresher.refreshOAuth2Token();
+            fail("Expected TokenRefreshException when oauth2client fails");
+        } catch (TokenRefreshException e) {
+            assertThat(e.getCause()).isInstanceOf(java.io.IOException.class);
+        }
     }
 }

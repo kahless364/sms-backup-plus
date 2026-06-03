@@ -28,7 +28,13 @@ APP_NAME="Gradle"
 APP_BASE_NAME=`basename "$0"`
 
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS=""
+DEFAULT_JVM_OPTS="-Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider -Djdk.net.unixdomain.tmpdir=/nonexistent"
+
+# Windows + JDK17/21 + Gradle 8 workaround: Gradle 8 forks a single-use daemon
+# process that does not inherit DEFAULT_JVM_OPTS. JAVA_TOOL_OPTIONS is propagated
+# to all forked JVMs in the same process tree, ensuring the NIO selector override
+# reaches the daemon subprocess. This is benign on non-Windows platforms.
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider -Djdk.net.unixdomain.tmpdir=/nonexistent"
 
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD="maximum"

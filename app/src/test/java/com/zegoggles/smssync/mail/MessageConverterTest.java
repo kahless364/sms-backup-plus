@@ -24,10 +24,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class MessageConverterTest {
@@ -38,7 +39,7 @@ public class MessageConverterTest {
 
     @Before
     public void setUp() throws Exception {
-        initMocks(this);
+        openMocks(this);
         BinaryTempFileBody.setTempDirectory(RuntimeEnvironment.application.getCacheDir());
         messageConverter = new MessageConverter(RuntimeEnvironment.application,
                 preferences, "foo@example.com", personLookup, contactAccessor);
@@ -111,7 +112,7 @@ public class MessageConverterTest {
 
         PersonRecord record = mock(PersonRecord.class);
         when(personLookup.lookupPerson(any(String.class))).thenReturn(record);
-        when(record.getAddress(any(AddressStyle.class))).thenReturn(new Address("foo"));
+        when(record.getAddress(nullable(AddressStyle.class))).thenReturn(new Address("foo"));
         when(preferences.getMarkAsReadType()).thenReturn(MarkAsReadTypes.MESSAGE_STATUS);
 
         messageConverter = new MessageConverter(RuntimeEnvironment.application,
@@ -133,7 +134,7 @@ public class MessageConverterTest {
 
         PersonRecord record = mock(PersonRecord.class);
         when(personLookup.lookupPerson(any(String.class))).thenReturn(record);
-        when(record.getAddress(any(AddressStyle.class))).thenReturn(new Address("foo"));
+        when(record.getAddress(nullable(AddressStyle.class))).thenReturn(new Address("foo"));
         when(preferences.getMarkAsReadType()).thenReturn(MarkAsReadTypes.UNREAD);
 
         messageConverter = new MessageConverter(RuntimeEnvironment.application,
@@ -155,7 +156,7 @@ public class MessageConverterTest {
 
         PersonRecord record = mock(PersonRecord.class);
         when(personLookup.lookupPerson(any(String.class))).thenReturn(record);
-        when(record.getAddress(any(AddressStyle.class))).thenReturn(new Address("foo"));
+        when(record.getAddress(nullable(AddressStyle.class))).thenReturn(new Address("foo"));
         when(preferences.getMarkAsReadType()).thenReturn(MarkAsReadTypes.READ);
 
         messageConverter = new MessageConverter(RuntimeEnvironment.application,

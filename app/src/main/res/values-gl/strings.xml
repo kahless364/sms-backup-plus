@@ -84,8 +84,7 @@
 
   <string name="ui_protocol_label">Seguridade</string>
 
-  <string name="ui_protocol_trust_all_certificates_label">Confiar en todos os certificados</string>
-  <string name="ui_protocol_trust_all_certificates_desc">Non se recomenda. Activar para un servidor con certificado autoasinado.</string>
+
 
   <string name="ui_authentication_label">Autenticación</string>
   <string name="plain">Texto plano</string>

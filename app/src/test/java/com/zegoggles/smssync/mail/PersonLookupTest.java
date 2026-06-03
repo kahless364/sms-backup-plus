@@ -12,9 +12,9 @@ import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(RobolectricTestRunner.class)
 public class PersonLookupTest {
@@ -24,7 +24,7 @@ public class PersonLookupTest {
 
     @Before
     public void before() {
-        initMocks(this);
+        openMocks(this);
         lookup = new PersonLookup(resolver);
     }
 
