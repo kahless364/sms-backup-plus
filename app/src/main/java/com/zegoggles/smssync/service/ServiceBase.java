@@ -33,11 +33,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import android.util.Log;
+import android.net.Uri;
 import com.fsck.k9.mail.MessagingException;
+import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
+import com.fsck.k9.mail.ssl.TrustedSocketFactory;
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.MainActivity;
 import com.zegoggles.smssync.mail.BackupImapStore;
+import com.zegoggles.smssync.mail.PinnedCertStore;
+import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
+import com.zegoggles.smssync.mail.TlsTrustPolicy;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.service.state.State;
@@ -99,9 +105,32 @@ public abstract class ServiceBase extends Service {
     protected BackupImapStore getBackupImapStore() throws MessagingException {
         final String uri = getAuthPreferences().getStoreUri();
         if (!BackupImapStore.isValidUri(uri)) {
-            throw new MessagingException("No valid IMAP URI: "+uri);
+            throw new MessagingException("No valid IMAP URI: " + uri);
         }
-        return new BackupImapStore(getApplicationContext(), uri, getAuthPreferences().isTrustAllCertificates());
+
+        // Resolve host and port from the URI for per-host certificate lookup.
+        final Uri parsed = Uri.parse(uri);
+        final String host = parsed.getHost();
+        final int port = parsed.getPort();
+
+        // 1. Resolve the TLS trust policy for this host:port via PinnedCertStore.
+        //    SYSTEM_VALIDATED is the unconditional default when no cert is enrolled.
+        final PinnedCertStore pinnedCertStore = new PinnedCertStore(getApplicationContext());
+        final TlsTrustPolicy policy = pinnedCertStore.getTlsTrustPolicy(host, port);
+
+        // 2. Build the concrete TrustedSocketFactory for the resolved policy.
+        //    Never trust-all; fail closed on any resolution failure.
+        //    (CNTR-MODERNIZATION-001 Invariants 1-3, 5)
+        final TrustedSocketFactory factory;
+        if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
+            factory = new PinnedCertificateSocketFactory(
+                    getApplicationContext(), host, pinnedCertStore.get(host, port));
+        } else {
+            factory = new DefaultTrustedSocketFactory(getApplicationContext());
+        }
+
+        // 3. Pass the resolved factory to BackupImapStore — it never re-decides trust.
+        return new BackupImapStore(getApplicationContext(), uri, factory);
     }
 
     protected AuthPreferences getAuthPreferences() {
