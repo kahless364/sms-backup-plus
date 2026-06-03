@@ -8,8 +8,8 @@ import androidx.annotation.Nullable;
 import android.util.Log;
 import com.fsck.k9.mail.MessagingException;
 import com.fsck.k9.mail.internet.BinaryTempFileBody;
-import com.squareup.otto.Produce;
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Produce removed (AC-9)
+// U-020: import com.squareup.otto.Subscribe removed (AC-9)
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.auth.OAuth2Client;
@@ -36,8 +36,8 @@ public class SmsRestoreService extends ServiceBase {
     private static final int RESTORE_ID = 2;
 
 
+    // U-020: static service field deleted (AC-9a).
     @NonNull private RestoreState state = new RestoreState();
-    @Nullable private static SmsRestoreService service;
 
     @Override @NonNull
     public RestoreState getState() {
@@ -49,14 +49,14 @@ public class SmsRestoreService extends ServiceBase {
         super.onCreate();
         asyncClearCache();
         BinaryTempFileBody.setTempDirectory(getCacheDir());
-        service = this;
+        // U-020: service = this; deleted (AC-9a)
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         if (LOCAL_LOGV) Log.v(TAG, "SmsRestoreService#onDestroy(state"+getState()+")");
-        service = null;
+        // U-020: service = null; deleted (AC-9a)
     }
 
     /**
@@ -82,7 +82,8 @@ public class SmsRestoreService extends ServiceBase {
                 return;
             }
 
-            MessageConverter converter = new MessageConverter(service,
+            // U-020: 'service' was the old static self-ref; replaced with 'this' after static field deletion
+            MessageConverter converter = new MessageConverter(this,
                     getPreferences(),
                     getAuthPreferences().getUserEmail(),
                     new PersonLookup(getContentResolver()),
@@ -101,7 +102,7 @@ public class SmsRestoreService extends ServiceBase {
 
             final AuthPreferences authPreferences = new AuthPreferences(this);
             new RestoreTask(this, converter, getContentResolver(),
-                    new TokenRefresher(service, new OAuth2Client(authPreferences.getOAuth2ClientId()), authPreferences)).execute(config);
+                    new TokenRefresher(this, new OAuth2Client(authPreferences.getOAuth2ClientId()), authPreferences)).execute(config);
 
         } catch (MessagingException e) {
             postError(e);
@@ -109,7 +110,10 @@ public class SmsRestoreService extends ServiceBase {
     }
 
     private void postError(Exception exception) {
-        App.post(state.transition(ERROR, exception));
+        // U-020: App.post() replaced by repository.emitState() (IC-3)
+        RestoreState errorState = state.transition(ERROR, exception);
+        restoreStateChanged(errorState);
+        App.syncStateRepository().emitState(errorState);
     }
 
     private void asyncClearCache() {
@@ -136,8 +140,9 @@ public class SmsRestoreService extends ServiceBase {
         }
     }
 
+    // U-020: @Subscribe removed — restoreStateChanged() is called directly from RestoreTask.
     @SuppressWarnings("deprecation")
-    @Subscribe public void restoreStateChanged(final RestoreState state) {
+    public void restoreStateChanged(final RestoreState state) {
         this.state = state;
         if (this.state.isInitialState()) return;
 
@@ -156,9 +161,11 @@ public class SmsRestoreService extends ServiceBase {
         }
     }
 
-    @Produce public RestoreState produceLastState() {
-        return state;
-    }
+    // U-020: @Produce produceLastState() deleted (AC-9).
+    // StateFlow.value provides sticky last-state semantics for late collectors (AC-4).
+
+    // U-020: isServiceIdle() deleted (AC-9b).
+    // Callers read App.syncStateRepository().getState().getValue().isRunning() instead.
 
     @SuppressWarnings("deprecation")
     @Override protected int wakeLockType() {
@@ -171,7 +178,4 @@ public class SmsRestoreService extends ServiceBase {
         }
     }
 
-    public static boolean isServiceIdle() {
-        return service == null || !service.isWorking();
-    }
 }

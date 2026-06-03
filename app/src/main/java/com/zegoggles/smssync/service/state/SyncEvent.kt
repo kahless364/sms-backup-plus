@@ -90,4 +90,12 @@ sealed class SyncEvent {
      * reading the source reveals no payload, so object is the correct form.
      */
     object ThemeChanged : SyncEvent()
+
+    /**
+     * U-020: Replaces RedirectReceiverActivity.BrowserAuthResult inner class.
+     * Carries the OAuth2 browser redirect result (code/error) from
+     * RedirectReceiverActivity to OAuth2WebAuthActivity.
+     * The inner BrowserAuthResult class is deleted; consumers collect this event.
+     */
+    data class BrowserAuthResult(val code: String?, val error: String?) : SyncEvent()
 }

@@ -17,15 +17,10 @@ import androidx.preference.Preference;
 import androidx.preference.Preference.OnPreferenceChangeListener;
 import androidx.preference.TwoStatePreference;
 
-import com.squareup.otto.Subscribe;
+// U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.activity.events.AccountAddedEvent;
-import com.zegoggles.smssync.activity.events.AccountConnectionChangedEvent;
-import com.zegoggles.smssync.activity.events.AccountRemovedEvent;
-import com.zegoggles.smssync.activity.events.AutoBackupSettingsChangedEvent;
-import com.zegoggles.smssync.activity.events.SettingsResetEvent;
-import com.zegoggles.smssync.activity.events.ThemeChangedEvent;
+import com.zegoggles.smssync.service.state.SyncEvent;
 import com.zegoggles.smssync.calendar.CalendarAccessor;
 import com.zegoggles.smssync.contacts.ContactAccessor;
 import com.zegoggles.smssync.contacts.Group;
@@ -60,27 +55,38 @@ import static com.zegoggles.smssync.preferences.Preferences.Keys.MAX_ITEMS_PER_S
 import static com.zegoggles.smssync.utils.ListPreferenceHelper.initListPreference;
 
 public abstract class AdvancedSettings extends SMSBackupPreferenceFragment {
+    // U-020: @Subscribe handlers replaced by Flow collection via AdvancedSettingsFlowHelper.
     public static class Main extends SMSBackupPreferenceFragment {
         private AuthPreferences authPreferences;
         private TwoStatePreference connected;
+        // U-020: coroutine job for flow collection; cancelled in onStop.
+        private kotlinx.coroutines.Job flowCollectionJob = null;
 
         @Override
         public void onStart() {
             super.onStart();
-            App.register(this);
-
+            // U-020: App.register(this) replaced by Flow collection
+            if (App.syncStateRepository() != null) {
+                flowCollectionJob = AdvancedSettingsFlowHelper.startCollection(
+                    App.syncStateRepository(), this);
+            }
         }
+
         @Override
         public void onStop() {
             super.onStop();
-            App.unregister(this);
+            // U-020: App.unregister(this) replaced by cancelling the flow collection
+            if (flowCollectionJob != null) {
+                flowCollectionJob.cancel(null);
+                flowCollectionJob = null;
+            }
         }
 
         @Override
         public void onResume() {
             super.onResume();
             updateConnected();
-            addPreferenceListener(new ThemeChangedEvent(), DARK_THEME.key);
+            addPreferenceListener(SyncEvent.ThemeChanged.INSTANCE, DARK_THEME.key);
         }
 
         @Override
@@ -104,21 +110,31 @@ public abstract class AdvancedSettings extends SMSBackupPreferenceFragment {
             });
             connected.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 public boolean onPreferenceChange(Preference preference, Object change) {
-                    App.post(new AccountConnectionChangedEvent((Boolean) change));
+                    // U-020: App.post(new AccountConnectionChangedEvent(...)) replaced.
+                    // AccountConnectionChanged is now a payload-less object (U-019 AC-13).
+                    // The change to the "connected" preference triggers the event.
+                    if (App.syncStateRepository() != null) {
+                        boolean emitted = App.syncStateRepository().tryEmitEvent(
+                            SyncEvent.AccountConnectionChanged.INSTANCE);
+                        if (!emitted) android.util.Log.w(App.TAG, "connected pref: tryEmitEvent returned false");
+                    }
                     return false; // will be set later
                 }
             });
         }
 
-        @Subscribe public void onAccountAdded(AccountAddedEvent event) {
+        // U-020: called by AdvancedSettingsFlowHelper (was @Subscribe onAccountAdded)
+        void onAccountAdded() {
             updateConnected();
         }
 
-        @Subscribe public void onAccountRemoved(AccountRemovedEvent event) {
+        // U-020: called by AdvancedSettingsFlowHelper (was @Subscribe onAccountRemoved)
+        void onAccountRemoved() {
             updateConnected();
         }
 
-        @Subscribe public void onSettingsReset(SettingsResetEvent event) {
+        // U-020: called by AdvancedSettingsFlowHelper (was @Subscribe onSettingsReset)
+        void onSettingsReset() {
             updateConnected();
         }
 
@@ -185,7 +201,11 @@ public abstract class AdvancedSettings extends SMSBackupPreferenceFragment {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
             if (requestCode == REQUEST_CALL_LOG_PERMISSIONS && allGranted(grantResults)) {
                 callLogPreference.setChecked(true);
-                App.post(new AutoBackupSettingsChangedEvent());
+                // U-020: App.post(new AutoBackupSettingsChangedEvent()) replaced
+                if (App.syncStateRepository() != null) {
+                    boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.AutoBackupSettingsChanged.INSTANCE);
+                    if (!emitted) android.util.Log.w(App.TAG, "calllog perms: tryEmitEvent returned false");
+                }
             }
         }
 
