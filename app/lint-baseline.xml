@@ -246,17 +246,6 @@
     <issue
         id="ObsoleteSdkInt"
         message="Unnecessary; SDK_INT is always >= 21"
-        errorLine1="        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN ? new String[]{ READ_CONTACTS, READ_CALL_LOG } : new String[]{ READ_CONTACTS }"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/zegoggles/smssync/mail/DataType.java"
-            line="21"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; SDK_INT is always >= 21"
         errorLine1="                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -351,28 +340,6 @@
             file="src/main/java/com/zegoggles/smssync/service/SmsRestoreService.java"
             line="165"
             column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; SDK_INT is always >= 21"
-        errorLine1="        if (Build.VERSION.SDK_INT >= 14) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/zegoggles/smssync/auth/TokenRefresher.java"
-            line="82"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; SDK_INT is always >= 14"
-        errorLine1="    @TargetApi(ICE_CREAM_SANDWICH)"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/zegoggles/smssync/auth/TokenRefresher.java"
-            line="100"
-            column="5"/>
     </issue>
 
     <issue

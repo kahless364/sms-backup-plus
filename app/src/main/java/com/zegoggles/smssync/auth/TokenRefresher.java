@@ -3,9 +3,7 @@ package com.zegoggles.smssync.auth;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountsException;
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import android.util.Log;
@@ -13,7 +11,6 @@ import com.zegoggles.smssync.preferences.AuthPreferences;
 
 import java.io.IOException;
 
-import static android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
 import static android.text.TextUtils.isEmpty;
 import static com.zegoggles.smssync.App.TAG;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.AUTH_TOKEN_TYPE;
@@ -79,26 +76,6 @@ public class TokenRefresher {
     }
 
     private Bundle getAuthToken(Account account) throws AccountsException, IOException {
-        if (Build.VERSION.SDK_INT >= 14) {
-            return getAuthTokenApi14(account);
-        } else {
-            return getAuthTokenPreApi14(account);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private Bundle getAuthTokenPreApi14(Account account) throws AccountsException, IOException {
-        return accountManager.getAuthToken(
-                account,
-                AUTH_TOKEN_TYPE,
-                true,
-                null,
-                null
-        ).getResult();
-    }
-
-    @TargetApi(ICE_CREAM_SANDWICH)
-    private Bundle getAuthTokenApi14(Account account) throws AccountsException, IOException {
         return accountManager.getAuthToken(account,
                 AUTH_TOKEN_TYPE,
                 null,

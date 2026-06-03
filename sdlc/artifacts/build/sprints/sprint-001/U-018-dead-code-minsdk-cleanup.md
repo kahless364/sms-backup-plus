@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 sprint: "000001"
 artifact_type: user-story
 priority: medium

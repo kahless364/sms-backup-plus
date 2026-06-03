@@ -1,7 +1,6 @@
 package com.zegoggles.smssync.calendar;
 
 import android.content.ContentResolver;
-import android.os.Build;
 import androidx.annotation.NonNull;
 
 import java.util.Date;
@@ -43,17 +42,8 @@ public interface CalendarAccessor {
         private Get() {}
 
         public static CalendarAccessor instance(ContentResolver resolver) {
-            final  int sdkVersion = Build.VERSION.SDK_INT;
             if (calendarAccessor == null) {
-                try {
-                    if (sdkVersion < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-                        calendarAccessor = new CalendarAccessorPre40(resolver);
-                    } else {
-                        calendarAccessor = new CalendarAccessorPost40(resolver);
-                    }
-                } catch (Exception e) {
-                    throw new IllegalStateException(e);
-                }
+                calendarAccessor = new CalendarAccessorPost40(resolver);
             }
             return calendarAccessor;
         }
