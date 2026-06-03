@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -25,6 +25,8 @@ title: Introduce BackupScheduler port and LegacyScheduler adapter (branch-by-abs
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T03:16:38.379Z'
+resolution: done
 ---
 
 # U-013: Introduce BackupScheduler port and LegacyScheduler adapter (branch-by-abstraction seam)

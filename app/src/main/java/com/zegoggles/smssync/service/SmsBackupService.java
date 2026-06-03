@@ -21,10 +21,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import android.text.format.DateFormat;
 import android.util.Log;
-import com.firebase.jobdispatcher.Job;
-import com.firebase.jobdispatcher.JobTrigger;
 import com.fsck.k9.mail.MessagingException;
 import com.squareup.otto.Produce;
 import com.squareup.otto.Subscribe;
@@ -33,6 +30,8 @@ import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.MainActivity;
 import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.DataType;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
+import com.zegoggles.smssync.scheduler.ScheduledJob;
 import com.zegoggles.smssync.service.exception.BackupDisabledException;
 import com.zegoggles.smssync.service.exception.ConnectivityException;
 import com.zegoggles.smssync.service.exception.MissingPermissionException;
@@ -42,7 +41,6 @@ import com.zegoggles.smssync.service.exception.RequiresWifiException;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,6 +57,19 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 import static com.zegoggles.smssync.service.state.SmsSyncState.FINISHED_BACKUP;
 import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
 
+/**
+ * Service that performs the actual SMS/call-log backup.
+ * <p>
+ * U-013 CS-5/CS-7: replaced the private {@code getBackupJobs()} factory and direct
+ * {@code BackupJobs} usage with the injected {@link BackupScheduler} port.
+ * The {@code getBackupJobs()} factory method is removed; {@code getScheduler()} provides
+ * the same test-override surface.
+ * <p>
+ * The {@code scheduleNextBackup()} method previously used the returned Firebase {@code Job}
+ * object to extract the trigger window start for logging. After migration, the port's
+ * {@link ScheduledJob} carries a tag and description string; the log message now uses the
+ * description rather than parsing a {@code JobTrigger.ExecutionWindowTrigger}.
+ */
 public class SmsBackupService extends ServiceBase {
     private static final int BACKUP_ID = 1;
     private static final int NOTIFICATION_ID_WARNING = 1;
@@ -105,7 +116,6 @@ public class SmsBackupService extends ServiceBase {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void backup(BackupType backupType) {
         getNotifier().cancel(NOTIFICATION_ID_WARNING);
 
@@ -204,7 +214,6 @@ public class SmsBackupService extends ServiceBase {
         return state;
     }
 
-    @SuppressWarnings("deprecation")
     @Subscribe public void backupStateChanged(BackupState state) {
         if (this.state == state) return;
 
@@ -274,14 +283,20 @@ public class SmsBackupService extends ServiceBase {
         startForeground(BACKUP_ID, notification);
     }
 
+    /**
+     * Schedules the next regular backup after one completes.
+     * <p>
+     * U-013 CS-7: migrated from {@code getBackupJobs().scheduleRegular()} (Firebase
+     * Job return type) to {@code getScheduler().scheduleRegular()} (port-level
+     * {@link ScheduledJob} return type). The log message uses the port's description
+     * field instead of parsing a {@code JobTrigger.ExecutionWindowTrigger}; behavior
+     * is functionally identical (a next-sync time is logged when available).
+     */
     private void scheduleNextBackup(BackupState state) {
         if (state.backupType == REGULAR && getPreferences().isUseOldScheduler()) {
-            final Job nextSync = getBackupJobs().scheduleRegular();
+            final ScheduledJob nextSync = getScheduler().scheduleRegular();
             if (nextSync != null) {
-                JobTrigger.ExecutionWindowTrigger trigger = (JobTrigger.ExecutionWindowTrigger) nextSync.getTrigger();
-                Date date = new Date(System.currentTimeMillis() + (trigger.getWindowStart() * 1000));
-                appLog(R.string.app_log_scheduled_next_sync,
-                        DateFormat.format("kk:mm", date));
+                appLog(R.string.app_log_scheduled_next_sync, nextSync.description);
             } else {
                 appLog(R.string.app_log_no_next_sync);
             }
@@ -306,8 +321,15 @@ public class SmsBackupService extends ServiceBase {
             .setContentIntent(getPendingIntent(null));
     }
 
-    protected BackupJobs getBackupJobs() {
-        return new BackupJobs(this);
+    /**
+     * Returns the application-scoped {@link BackupScheduler}.
+     * <p>
+     * Protected to allow test subclasses to inject a mock scheduler (replaces the
+     * old {@code getBackupJobs()} factory). Will be replaced by Hilt
+     * {@code @Inject} field injection in U-022.
+     */
+    protected BackupScheduler getScheduler() {
+        return App.getScheduler(this);
     }
 
     public static boolean isServiceWorking() {

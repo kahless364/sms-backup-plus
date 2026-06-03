@@ -22,6 +22,7 @@ import com.firebase.jobdispatcher.JobService;
 import com.squareup.otto.Subscribe;
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.preferences.Preferences;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
 import com.zegoggles.smssync.service.state.BackupState;
 
 import java.util.HashMap;
@@ -33,6 +34,20 @@ import static com.zegoggles.smssync.service.BackupType.REGULAR;
 import static com.zegoggles.smssync.service.CancelEvent.Origin.SYSTEM;
 
 
+/**
+ * Firebase JobDispatcher entry point that bridges job callbacks to
+ * {@link SmsBackupService}.
+ * <p>
+ * U-013 CS-4/IC-3: replaced the private {@code getBackupJobs()} factory and all
+ * direct {@code BackupJobs} usage with the injected {@link BackupScheduler} port.
+ * The {@code getScheduler()} protected factory method provides the same
+ * test-override surface that {@code getBackupJobs()} previously offered.
+ * <p>
+ * IC-3 compliance: {@code SmsJobService} holds no direct reference to
+ * {@code BackupJobs} after this story. Both {@code shouldRun()}'s
+ * {@code cancelRegular()} call and the content-trigger
+ * {@code scheduleIncoming()} call are routed through the port.
+ */
 public class SmsJobService extends JobService {
     /** job parameters keyed by job tag / {@link BackupType} */
     private Map<String, JobParameters> jobs = new HashMap<String, JobParameters>();
@@ -73,7 +88,9 @@ public class SmsJobService extends JobService {
             if (LOCAL_LOGV) {
                 Log.v(TAG, "scheduling follow-up job for content triggered job "+jobParameters);
             }
-            getBackupJobs().scheduleIncoming();
+            // AC-4 / INV-4 two-stage debounce: content-URI trigger enqueues a
+            // delayed incoming backup rather than backing up on the raw content change.
+            getScheduler().scheduleIncoming();
             return false;
         } else if (shouldRun(jobParameters)) {
             // Since API level 26, an app in background cannot start a background service,
@@ -134,8 +151,8 @@ public class SmsJobService extends JobService {
             final Preferences prefs = new Preferences(this);
             final boolean autoBackupEnabled = prefs.isAutoBackupEnabled();
             if (!autoBackupEnabled) {
-                // was disabled in meantime, cancel
-                getBackupJobs().cancelRegular();
+                // was disabled in meantime, cancel via port (IC-3)
+                getScheduler().cancelRegular();
             }
             return autoBackupEnabled;
         } else {
@@ -143,7 +160,14 @@ public class SmsJobService extends JobService {
         }
     }
 
-    private BackupJobs getBackupJobs() {
-        return new BackupJobs(this);
+    /**
+     * Returns the application-scoped {@link BackupScheduler}.
+     * <p>
+     * Protected to allow test subclasses to inject a mock scheduler (replaces the
+     * old {@code getBackupJobs()} factory). Will be replaced by Hilt
+     * {@code @Inject} field injection in U-022.
+     */
+    protected BackupScheduler getScheduler() {
+        return App.getScheduler(this);
     }
 }

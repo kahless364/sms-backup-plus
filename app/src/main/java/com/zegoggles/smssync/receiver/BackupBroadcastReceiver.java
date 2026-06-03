@@ -18,12 +18,23 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.preferences.Preferences;
-import com.zegoggles.smssync.service.BackupJobs;
+import com.zegoggles.smssync.scheduler.BackupScheduler;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
 
+/**
+ * Receives the public {@code com.zegoggles.smssync.BACKUP} broadcast.
+ * <p>
+ * CNTR-MODERNIZATION-005: the action string {@link #BACKUP_ACTION}, the receiver
+ * class name, the manifest intent-filter, and the {@code isAllow3rdPartyIntegration()}
+ * guard are all frozen and must not change. The only change in U-013 is the
+ * replacement of {@code new BackupJobs(context).scheduleImmediate()} with
+ * {@code scheduler.scheduleImmediate()} (CS-1). All other behavior is byte-for-byte
+ * identical to the pre-U-013 version.
+ */
 public class BackupBroadcastReceiver extends BroadcastReceiver {
     public static final String BACKUP_ACTION = "com.zegoggles.smssync.BACKUP";
 
@@ -39,9 +50,21 @@ public class BackupBroadcastReceiver extends BroadcastReceiver {
     private void backupRequested(Context context, Intent intent) {
         if (new Preferences(context).isAllow3rdPartyIntegration()) {
             Log.d(TAG, "backup requested via broadcast intent");
-            new BackupJobs(context).scheduleImmediate();
+            // U-013 CS-1: was new BackupJobs(context).scheduleImmediate()
+            getScheduler(context).scheduleImmediate();
         } else {
             Log.d(TAG, "backup requested via broadcast intent but ignored");
         }
+    }
+
+    /**
+     * Returns the application-scoped {@link BackupScheduler}.
+     * <p>
+     * Protected to allow test subclasses to inject a mock scheduler without
+     * depending on the Application singleton (replaces the old getBackupJobs factory).
+     * Will be replaced by {@code @AndroidEntryPoint} field injection in U-022.
+     */
+    protected BackupScheduler getScheduler(Context context) {
+        return App.getScheduler(context);
     }
 }
