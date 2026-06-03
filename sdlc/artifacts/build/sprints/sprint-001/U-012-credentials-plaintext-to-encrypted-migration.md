@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -24,6 +24,8 @@ title: Idempotent plaintext-to-encrypted credential migration on first launch af
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T15:18:34.916Z'
+resolution: done
 ---
 
 # U-012: Idempotent Plaintext-to-Encrypted Credential Migration on First Launch After Upgrade

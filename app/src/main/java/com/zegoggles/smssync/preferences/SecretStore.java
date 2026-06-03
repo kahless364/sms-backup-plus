@@ -45,4 +45,26 @@ public interface SecretStore {
      * Removes all entries from the store.
      */
     void clear();
+
+    /**
+     * One-time, idempotent, rollback-safe migration of legacy plaintext credentials
+     * to the encrypted store.
+     *
+     * Implementations MUST follow the rollback-safe step ordering defined in
+     * CNTR-MODERNIZATION-003 §Validation Rules §One-time migration semantics:
+     *
+     * 1. If the {@code __secretstore_migration_complete__} marker is present, return immediately.
+     * 2. Read the three legacy plaintext values ({@code login_password}, {@code oauth2_token},
+     *    {@code oauth2_refresh_token}) into memory.
+     * 3. Write each present value as ciphertext, then write the marker, then commit
+     *    synchronously (the durability barrier).
+     * 4. ONLY after step-3 commit succeeds: clear the legacy plaintext entries.
+     *
+     * Safety invariant: plaintext is NEVER cleared until ciphertext is durably committed.
+     * A process kill between step 3 and step 4 leaves the marker in the encrypted store,
+     * so the next launch short-circuits at step 1 — the user is never unable to authenticate.
+     *
+     * Contract: CNTR-MODERNIZATION-003 §Migration entry point
+     */
+    void migrateFromPlaintext();
 }

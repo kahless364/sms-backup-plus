@@ -13,10 +13,8 @@ import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.auth.OAuth2Client;
 import com.zegoggles.smssync.auth.TokenRefresher;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.security.GeneralSecurityException;
 import java.util.Locale;
 
 import static android.util.Base64.NO_WRAP;
@@ -123,27 +121,20 @@ public class AuthPreferences {
     }
 
     /**
-     * Attempts to construct EncryptedPrefsSecretStore. Falls back to
-     * PlaintextSharedPrefsSecretStore if the Android Keystore is unavailable —
-     * which occurs in Robolectric unit-test environments (AC-11 / U-011 Tech Notes).
+     * Constructs an EncryptedPrefsSecretStore with lazy initialization.
      *
-     * In production on a real Android device the AndroidKeyStore provider is always
-     * present and this method always returns an EncryptedPrefsSecretStore.
+     * The EncryptedPrefsSecretStore constructor is trivial (just stores the context);
+     * the actual EncryptedSharedPreferences backing store is opened lazily on first use.
+     * This means the construction here never throws — any Keystore failure surfaces at
+     * the first get/put/contains/etc. call, where it is caught and surfaced as null (reads)
+     * or a RuntimeException (writes).
      *
-     * The fallback is logged at WARN level so it is visible in CI logs but does not
-     * crash tests that do not exercise credential I/O (e.g. RestoreStateTest).
+     * Under Robolectric (AC-11 / U-011 Tech Notes), the AndroidKeyStore JCA provider is
+     * unavailable. Tests that exercise credential I/O must use the two-arg constructor
+     * with InMemorySecretStore injection rather than the single-arg constructor.
      */
     private static SecretStore buildEncryptedStoreSafe(Context context) {
-        try {
-            return new EncryptedPrefsSecretStore(context);
-        } catch (GeneralSecurityException | IOException e) {
-            // Keystore unavailable — expected under Robolectric (AC-11 / U-011 Tech Notes).
-            // In production this path is never taken.
-            Log.w(TAG, "EncryptedPrefsSecretStore unavailable (Keystore provider missing?), "
-                    + "falling back to PlaintextSharedPrefsSecretStore for test compatibility. "
-                    + "Cause: " + e.getMessage());
-            return new PlaintextSharedPrefsSecretStore(context);
-        }
+        return new EncryptedPrefsSecretStore(context);
     }
 
     public String getOauth2Token() {
@@ -344,6 +335,16 @@ public class AuthPreferences {
     void migrate() {
         // DES-MODERNIZATION-002 Decision 6 — rewritten by U-007 to eliminate the
         // silent trust-all downgrade (ARCH-008 / SEC-001 / CWE-295).
+
+        // U-012: one-time plaintext-to-encrypted credential migration.
+        // Called BEFORE the useXOAuth() early-return so that OAuth2 users' tokens
+        // (oauth2_token / oauth2_refresh_token) are also migrated. Placing this call
+        // after the early-return would silently leave OAuth2 users' plaintext tokens
+        // un-migrated, causing all OAuth2 users to be logged out after upgrading.
+        // The call is idempotent: guarded by the __secretstore_migration_complete__
+        // marker so subsequent launches are no-ops (CNTR-MODERNIZATION-003 §Migration).
+        secretStore.migrateFromPlaintext();
+
         if (useXOAuth()) {
             return;
         }

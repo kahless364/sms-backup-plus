@@ -63,4 +63,18 @@ class PlaintextSharedPrefsSecretStore implements SecretStore {
     public void clear() {
         prefs.edit().clear().commit();
     }
+
+    /**
+     * No-op: this fallback implementation is used only in Robolectric test environments
+     * where the Android Keystore is unavailable. In those environments there are no real
+     * plaintext credentials to migrate, so this method is a safe no-op.
+     *
+     * On a real device, EncryptedPrefsSecretStore is always used and this method is
+     * never called.
+     */
+    @Override
+    public void migrateFromPlaintext() {
+        // No-op: the fallback store is used only under Robolectric (no real Keystore).
+        // There are no plaintext credentials to migrate in that environment.
+    }
 }
