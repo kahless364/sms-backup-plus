@@ -213,7 +213,7 @@ in the shipping binary accepts an unvalidated TLS certificate. `AuthPreferences.
 proven non-downgrading by the green characterization and rewrite test suite. Phase 2
 substrate-swap work (MU-008 and later) may proceed once G0 and G2 are also declared.
 
-Git commit SHA at gate declaration: [recorded after commit]
+Git commit SHA at gate declaration: `1bb32a4947927abbb9430e30083b9139b3f76f79`
 
 ## Notes
 
