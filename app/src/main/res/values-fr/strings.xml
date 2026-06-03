@@ -305,8 +305,6 @@
   <string name="permission_read_call_log">Accès au journal d\'appels</string>
   <string name="permission_read_contacts">Accès aux contacts</string>
   <string name="permission_unknown">Inconnu</string>
-    <string name="ui_protocol_trust_all_certificates_desc">Déconseillé. A utiliser pour des certificats auto-signés.
-    </string>
   <string name="ui_backup_calllog_after_call_label">Sauvegarder après un appel</string>
   <string name="ui_backup_calllog_after_call_desc">Effectuer automatiquement une sauvegarde après un appel
     entrant/sortant.
@@ -319,7 +317,6 @@
   <string name="donation_unspecified_error">erreur générale: %1$d</string>
   <string name="error_no_sms_default_package">Aucune application SMS par défaut</string>
   <string name="pref_use_old_scheduler_no_gcm_summary">Le service \"Google Play\" n\'est pas disponible</string>
-  <string name="ui_protocol_trust_all_certificates_label">Faire confiance à tous les certificats</string>
   <string name="pref_use_old_scheduler">Ancien planificateur de sauvegarde</string>
   <string name="pref_use_old_scheduler_summary">Forcer l\'utilisation de l\'ancien planificateur.</string>
 </resources>

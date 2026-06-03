@@ -4,9 +4,11 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.preference.CheckBoxPreference;
@@ -29,6 +31,7 @@ import com.zegoggles.smssync.contacts.ContactAccessor;
 import com.zegoggles.smssync.contacts.Group;
 import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.DataType;
+import com.zegoggles.smssync.mail.PinnedCertStore;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
 
@@ -345,18 +348,24 @@ public abstract class AdvancedSettings extends SMSBackupPreferenceFragment {
     }
 
     public static class Server extends SMSBackupPreferenceFragment {
+        private static final String KEY_PIN_CERT = "pin_server_certificate";
+        private static final String KEY_REMOVE_PIN = "remove_pinned_certificate";
+
         private AuthPreferences authPreferences;
+        private PinnedCertStore pinnedCertStore;
 
         @Override
         public void onCreatePreferences(Bundle bundle, String rootKey) {
             super.onCreatePreferences(bundle, rootKey);
             authPreferences = new AuthPreferences(getContext());
+            pinnedCertStore = new PinnedCertStore(getContext());
         }
 
         @Override
         public void onResume() {
             super.onResume();
 
+            // Preserve existing IMAP_PASSWORD listener (existing behavior, must not be removed).
             findPreference(AuthPreferences.IMAP_PASSWORD)
                     .setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
                         public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -364,6 +373,120 @@ public abstract class AdvancedSettings extends SMSBackupPreferenceFragment {
                             return true;
                         }
                     });
+
+            // IC-1: wire the pin-certificate preference click listener in this fragment class body.
+            final Preference pinPref = findPreference(KEY_PIN_CERT);
+            if (pinPref != null) {
+                pinPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        launchEnrollmentFlow();
+                        return true;
+                    }
+                });
+            }
+
+            // Wire the "Remove pinned certificate" preference (IC-3: only call site for clear).
+            final Preference removePref = findPreference(KEY_REMOVE_PIN);
+            if (removePref != null) {
+                removePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        final String serverAddress = getPreferenceManager()
+                                .getSharedPreferences()
+                                .getString(AuthPreferences.SERVER_ADDRESS, "");
+                        final String host = PinCertificateEnrollmentFlow.parseHost(serverAddress)
+                                .toLowerCase(java.util.Locale.US);
+                        final int port = PinCertificateEnrollmentFlow.parsePort(serverAddress);
+                        pinnedCertStore.remove(host, port);
+                        updatePinCertIndicator();
+                        return true;
+                    }
+                });
+            }
+
+            // AC-6/story: refresh the persistent indicator on every onResume() (indicator must
+            // reflect current PinnedCertStore state after user navigates away and returns).
+            updatePinCertIndicator();
+        }
+
+        /**
+         * Launches the certificate enrollment flow for the currently configured server.
+         */
+        private void launchEnrollmentFlow() {
+            final String serverAddress = getPreferenceManager()
+                    .getSharedPreferences()
+                    .getString(AuthPreferences.SERVER_ADDRESS, "");
+            if (serverAddress.isEmpty()) {
+                Toast.makeText(getContext(),
+                        R.string.ui_protocol_pin_certificate_fetch_error,
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            final String displayHost = PinCertificateEnrollmentFlow.parseHost(serverAddress);
+
+            new PinCertificateEnrollmentFlow(
+                    getContext(),
+                    pinnedCertStore,
+                    new PinCertificateEnrollmentFlow.Listener() {
+                        @Override
+                        public void onEnrolled(String host, int port) {
+                            updatePinCertIndicator();
+                        }
+
+                        @Override
+                        public void onCancelled() {
+                            // No store write; indicator unchanged.
+                        }
+
+                        @Override
+                        public void onFetchError(String message) {
+                            Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+                        }
+                    }
+            ).start(serverAddress, new PinCertificateEnrollmentFlow.DialogShower() {
+                @Override
+                public void show(AlertDialog dialog) {
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        dialog.show();
+                    }
+                }
+            });
+        }
+
+        /**
+         * Refreshes the {@code pin_server_certificate} summary and the visibility of the
+         * "Remove" preference to reflect the current {@link PinnedCertStore} state.
+         *
+         * <p>Must be called after any enrollment or removal action, and in
+         * {@link #onResume()} so the indicator is accurate when returning to this screen.
+         */
+        void updatePinCertIndicator() {
+            final String serverAddress = getPreferenceManager()
+                    .getSharedPreferences()
+                    .getString(AuthPreferences.SERVER_ADDRESS, "");
+            final String host = PinCertificateEnrollmentFlow.parseHost(serverAddress)
+                    .toLowerCase(java.util.Locale.US);
+            final int port = PinCertificateEnrollmentFlow.parsePort(serverAddress);
+            final boolean isPinned = pinnedCertStore.getTlsTrustPolicy(host, port)
+                    == com.zegoggles.smssync.mail.TlsTrustPolicy.PINNED_CERTIFICATE;
+
+            final Preference pinPref = findPreference(KEY_PIN_CERT);
+            if (pinPref != null) {
+                if (isPinned) {
+                    pinPref.setSummary(getString(
+                            R.string.ui_protocol_pin_certificate_active,
+                            host.isEmpty() ? serverAddress : host));
+                } else {
+                    pinPref.setSummary(R.string.ui_protocol_pin_certificate_action_desc);
+                }
+            }
+
+            final Preference removePref = findPreference(KEY_REMOVE_PIN);
+            if (removePref != null) {
+                removePref.setVisible(isPinned);
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -26,6 +26,8 @@ title: 'TLS enrollment UI: pin-cert preference action, one-time security notice,
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T14:40:35.532Z'
+resolution: done
 ---
 
 # U-009: TLS Enrollment UI — Pin-Cert Preference Action, One-Time Security Notice, and String Cleanup

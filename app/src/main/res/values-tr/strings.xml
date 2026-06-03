@@ -85,8 +85,7 @@
 
   <string name="ui_protocol_label">Güvenlik</string>
 
-    <string name="ui_protocol_trust_all_certificates_label">Tüm sertifikalara güven</string>
-  <string name="ui_protocol_trust_all_certificates_desc">Önerilmez. Yarı-imzalı sertifikaya sahip sunucular için etkinleştirin.</string>
+
 
   <string name="ui_authentication_label">Kimlik Denetleme</string>
     <string name="plain">Düz yazı</string>

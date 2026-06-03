@@ -85,8 +85,7 @@
 
   <string name="ui_protocol_label">安全性</string>
 
-  <string name="ui_protocol_trust_all_certificates_label">信任所有憑證</string>
-  <string name="ui_protocol_trust_all_certificates_desc">不推薦。用以允許一個使用自簽憑證的伺服器。</string>
+
 
   <string name="ui_authentication_label">身份驗證</string>
   <string name="plain">明文</string>

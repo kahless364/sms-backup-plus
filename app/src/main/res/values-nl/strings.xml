@@ -87,8 +87,7 @@
 
   <string name="ui_protocol_label">Beveiliging</string>
 
-  <string name="ui_protocol_trust_all_certificates_label">Alle certificaten vertrouwen</string>
-  <string name="ui_protocol_trust_all_certificates_desc">Niet aanbevolen. Zet aan voor een server met zelf-getekend certificaat.</string>
+
 
   <string name="ui_authentication_label">Authenticatie</string>
   <string name="plain">Gewone tekst</string>

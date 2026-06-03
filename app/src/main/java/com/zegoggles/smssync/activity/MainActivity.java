@@ -158,6 +158,14 @@ public class MainActivity extends ThemeActivity implements
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // AC-8: consume the one-time transport-security notice if pending.
+        // Shows the notice exactly once for the affected cohort; does nothing for others (AC-9).
+        TransportSecurityNoticeHelper.consumeTransportSecurityNotice(this);
+    }
+
+    @Override
     protected void onStop() {
         App.unregister(this);
         super.onStop();
