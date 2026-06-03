@@ -3,29 +3,27 @@ package com.zegoggles.smssync.auth;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
-import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
+
+import com.zegoggles.smssync.BuildConfig;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
 import java.net.URL;
 
 import static com.zegoggles.smssync.App.TAG;
 
 /**
  * https://developers.google.com/identity/protocols/OAuth2UserAgent
+ *
+ * <p>Exchanges OAuth 2.0 authorization codes for tokens and refreshes access tokens.
+ * Account-email resolution ("username") is delegated to a {@link ContactsPort}
+ * (default: {@link PeopleApiContactsAdapter}). Resolution is best-effort; a null
+ * username is valid (CNTR-MODERNIZATION-008 VR-3).
  */
 public class OAuth2Client {
     private static final String AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
@@ -99,12 +97,14 @@ public class OAuth2Client {
      */
     private static final String INCLUDE_GRANTED_SCOPES = "include_granted_scopes";
 
-    // Scopes as defined in http://code.google.com/apis/accounts/docs/OAuth.html#prepScope
-    private static final String GMAIL_SCOPE = "https://mail.google.com/";
-    private static final String CONTACTS_SCOPE = "https://www.google.com/m8/feeds/";
-    private static final String DEFAULT_SCOPE  = GMAIL_SCOPE + " " + CONTACTS_SCOPE;
-
-    private static final String CONTACTS_URL = "https://www.google.com/m8/feeds/contacts/default/thin?max-results=1";
+    // Scopes — DES-MODERNIZATION-011 Decision 3 / CNTR-MODERNIZATION-008
+    // GMAIL_SCOPE: preserved verbatim (backup/restore dependency).
+    // EMAIL_SCOPE + OPENID_SCOPE: replace the withdrawn GData contacts scope.
+    // DEFAULT_SCOPE: emitted by requestUrl() into the OAuth consent screen.
+    private static final String GMAIL_SCOPE   = "https://mail.google.com/";
+    private static final String EMAIL_SCOPE   = "https://www.googleapis.com/auth/userinfo.email";
+    private static final String OPENID_SCOPE  = "openid";
+    private static final String DEFAULT_SCOPE = GMAIL_SCOPE + " " + EMAIL_SCOPE + " " + OPENID_SCOPE;
 
     /**
      * As defined in the OAuth 2.0 specification, this field must contain a value of authorization_code.
@@ -116,15 +116,43 @@ public class OAuth2Client {
      */
     private static final String CODE = "code";
     private static final String REFRESH_TOKEN = "refresh_token";
-    private static final String ERROR = "error";
 
     private final String clientId;
 
-    public OAuth2Client(String clientId) {
+    /**
+     * Port that resolves the signed-in account's email from an access token.
+     * Best-effort: never throws; may return null (CNTR-MODERNIZATION-008 VR-2/VR-3).
+     */
+    private final ContactsPort contactsPort;
+
+    /**
+     * Primary constructor. Allows the {@link ContactsPort} adapter to be supplied
+     * explicitly — used in tests and for the binding-flip reversibility path
+     * (DES-MODERNIZATION-011 §Reversibility; IC-3/IC-4).
+     *
+     * @param clientId     OAuth 2.0 client identifier; must not be empty.
+     * @param contactsPort account-email resolution port; must not be null.
+     */
+    public OAuth2Client(String clientId, ContactsPort contactsPort) {
         if (TextUtils.isEmpty(clientId)) {
             throw new IllegalArgumentException("empty client id");
         }
+        if (contactsPort == null) {
+            throw new IllegalArgumentException("contactsPort must not be null");
+        }
         this.clientId = clientId;
+        this.contactsPort = contactsPort;
+    }
+
+    /**
+     * Convenience constructor. Self-supplies {@link PeopleApiContactsAdapter} as the
+     * {@link ContactsPort}. Keeps all five existing construction sites source-compatible
+     * without modification (DES-MODERNIZATION-011 §Integration Design; AC-7/IC-4).
+     *
+     * @param clientId OAuth 2.0 client identifier; must not be empty.
+     */
+    public OAuth2Client(String clientId) {
+        this(clientId, new PeopleApiContactsAdapter());
     }
 
     public Uri requestUrl() {
@@ -141,9 +169,14 @@ public class OAuth2Client {
         final int responseCode = connection.getResponseCode();
         if (responseCode == HttpsURLConnection.HTTP_OK) {
             OAuth2Token token = parseResponse(connection.getInputStream());
-            String username = getUsernameFromContacts(token);
-            Log.d(TAG, "got token " + token.getTokenForLogging()+ ", username="+username);
-
+            // Resolve account email via ContactsPort (best-effort; null is acceptable).
+            // CNTR-MODERNIZATION-008: never-throw contract — any exception inside
+            // resolveAccountEmail is absorbed by the adapter; username is null on failure.
+            String username = contactsPort.resolveAccountEmail(token.accessToken);
+            // AC-8 / ARCH-010: resolved email is account PII; gate behind BuildConfig.DEBUG.
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "got token " + token.getTokenForLogging() + ", username=" + username);
+            }
             return new OAuth2Token(token.accessToken, token.tokenType, token.refreshToken, token.expiresIn, username);
         } else {
             Log.e(TAG, "error: " + responseCode);
@@ -206,84 +239,5 @@ public class OAuth2Client {
             .appendQueryParameter(CLIENT_ID, clientId)
             .build();
         return uri.getEncodedQuery();
-    }
-
-    // Retrieves the google email account address using the contacts API
-    private String getUsernameFromContacts(OAuth2Token token) {
-        try {
-            HttpsURLConnection connection = (HttpsURLConnection) new URL(CONTACTS_URL).openConnection();
-            connection.addRequestProperty("Authorization", "Bearer "+token.accessToken);
-            if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                final InputStream inputStream = connection.getInputStream();
-                String email = extractEmail(inputStream);
-                inputStream.close();
-                return email;
-            } else {
-                Log.w(TAG, String.format("unexpected server response: %d (%s)",
-                        connection.getResponseCode(), connection.getResponseMessage()));
-                return null;
-            }
-
-        } catch (SAXException e) {
-            Log.e(TAG, ERROR, e);
-            return null;
-        } catch (IOException e) {
-            Log.e(TAG, ERROR, e);
-            return null;
-        } catch (ParserConfigurationException e) {
-            Log.e(TAG, ERROR, e);
-            return null;
-        }
-    }
-
-    private String extractEmail(InputStream inputStream) throws ParserConfigurationException, SAXException, IOException {
-        final XMLReader xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
-        final FeedHandler feedHandler = new FeedHandler();
-        xmlReader.setContentHandler(feedHandler);
-        xmlReader.parse(new InputSource(inputStream));
-        return feedHandler.getEmail();
-    }
-
-    private static class FeedHandler extends DefaultHandler {
-        private static final String EMAIL = "email";
-        private static final String AUTHOR = "author";
-        private final StringBuilder email = new StringBuilder();
-        private boolean inEmail;
-        private boolean inAuthor;
-
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts) {
-            inEmail = EMAIL.equals(qName);
-            if (AUTHOR.equals(qName)) {
-                inAuthor = true;
-            }
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-            if (inAuthor && AUTHOR.equals(qName)) {
-                inAuthor = false;
-            }
-        }
-
-        @Override
-        public void characters(char[] c, int start, int length) {
-            if (inAuthor && inEmail) {
-                email.append(c, start, length);
-            }
-        }
-
-        @Override
-        public void error(SAXParseException e) throws SAXException {
-            Log.e(TAG, "error during parsing", e);
-        }
-
-        @Override public void warning(SAXParseException e) throws SAXException {
-            Log.w(TAG, "error during parsing", e);
-        }
-
-        public String getEmail() {
-            return email.toString().trim();
-        }
     }
 }
