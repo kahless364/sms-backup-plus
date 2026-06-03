@@ -23,6 +23,8 @@ import android.provider.CallLog
 import android.provider.Telephony
 import android.util.Log
 import androidx.work.CoroutineWorker
+import androidx.work.ListenableWorker
+import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.fsck.k9.mail.AuthenticationFailedException
@@ -54,32 +56,49 @@ import java.util.HashSet
 import kotlin.coroutines.coroutineContext
 
 /**
- * Real CoroutineWorker restore implementation (U-015).
+ * Real CoroutineWorker restore implementation (U-015 + U-016).
  *
  * This worker contains the restore execution logic ported from [RestoreTask] (AsyncTask-based).
  * It preserves all RestoreTask behaviors:
- *   - early-exit when both restoreSms and restoreCallLog are false (AC-11d / RestoreTask.java:85-86)
- *   - restore loop starting from config.currentRestoredItem (AC restore resume / RestoreTask.java:100,119)
+ *   - early-exit when both restoreSms and restoreCallLog are false
+ *   - restore loop starting from checkpoint store (U-016) or config.currentRestoredItem
  *   - smsExists() dedup guard: date+address+type (AC-11a / RestoreTask.java:308-327, :259)
  *   - callLogExists() dedup guard: date+number+duration+type (AC-11b / RestoreTask.java:288-306, :280)
- *   - SMS type filter: INBOX and SENT only (AC existing behavior / RestoreTask.java:256-258)
- *   - thread update after any SMS is restored (AC-11d / RestoreTask.java:129)
- *   - XOAuth2 token-refresh retry, at most once, passing currentRestoredItem (AC-11c / RestoreTask.java:157-177)
- *   - Cooperative cancellation via ensureActive() (AC-5, replaces isCancelled() polling)
+ *   - SMS type filter: INBOX and SENT only (RestoreTask.java:256-258)
+ *   - thread update after any SMS is restored (RestoreTask.java:129)
+ *   - XOAuth2 token-refresh retry, at most once (RestoreTask.java:157-177)
+ *   - Cooperative cancellation via ensureActive() (AC-5)
  *
- * Progress emitted via setProgress(workDataOf(...)) using companion keys (AC-4b).
- * This replaces Otto App.post(RestoreState) / @Subscribe path (AC-6).
+ * **U-016 Durable Checkpoint:**
+ * The [checkpointStore] is read once on entry to establish the resume offset (AC-5).
+ * After each confirmed provider insert at index i, [RestoreCheckpointStore.write] is called
+ * BEFORE advancing the loop index — the load-bearing write-ordering invariant (AC-2).
+ * On SUCCEEDED terminal state [RestoreCheckpointStore.clear] is called (AC-6).
+ * On CANCELLED the checkpoint is NOT cleared so re-schedule can resume (AC-7).
  *
- * INV-3 backoff cap: same 300s cap as BackupWorker, enforced by checking runAttemptCount.
+ * **Fault-injection seam (IC-4):**
+ * The [checkpointStore] and [insertInterceptor] are constructor parameters, enabling test
+ * doubles that control crash-after-K behaviour without touching production code paths.
+ * [TestableRestoreWorkerFactory] supplies these in tests.
  *
- * TODO U-024: Add @HiltWorker/@AssistedInject annotations.
+ * **Test path (executeRestoreWithValues):**
+ * Fault-injection tests call [executeRestoreWithValues] directly with pre-built ContentValues
+ * items, bypassing the IMAP fetch. This is the canonical fault-injection test seam.
  *
- * Branch-by-abstraction note (U-015): RestoreTask.java and SmsRestoreService are NOT deleted
- * in this story. The AsyncTask path remains the LegacyScheduler production path until U-017.
+ * TODO U-024: Add @HiltWorker/@AssistedInject annotations; replace RestoreWorkerFactory
+ * with Hilt-provided HiltWorkerFactory.
  */
 class RestoreWorker(
     context: Context,
-    params: WorkerParameters
+    params: WorkerParameters,
+    /** Durable checkpoint store — injected; defaults to SharedPreferences adapter in production. */
+    internal val checkpointStore: RestoreCheckpointStore,
+    /**
+     * Fault-injection seam (IC-4). Called after confirmed insert AND after checkpoint write,
+     * before loop index advances. Production: [RestoreInsertInterceptor.NoOp].
+     * Tests: [RestoreInsertInterceptor.CrashAfterK] to simulate process kill.
+     */
+    internal val insertInterceptor: RestoreInsertInterceptor
 ) : CoroutineWorker(context, params) {
 
     // Dedup tracking sets — mirrors RestoreTask.smsIds, callLogIds, uids
@@ -109,7 +128,6 @@ class RestoreWorker(
             val restoreSms = preferences.dataTypePreferences.isRestoreEnabled(DataType.SMS)
             val restoreCallLog = preferences.dataTypePreferences.isRestoreEnabled(DataType.CALLLOG)
 
-            // Early-exit path: mirrors RestoreTask.doInBackground:85-86
             if (!restoreSms && !restoreCallLog) {
                 Log.d(TAG, "RestoreWorker: nothing to restore (restoreSms=$restoreSms, restoreCallLog=$restoreCallLog)")
                 return Result.success(workDataOf(PROGRESS_KEY_STATE to STATE_FINISHED))
@@ -150,7 +168,8 @@ class RestoreWorker(
     }
 
     /**
-     * Core restore execution. Mirrors RestoreTask.restore() (RestoreTask.java:97-155).
+     * IMAP-backed restore execution. Mirrors RestoreTask.restore() (RestoreTask.java:97-155).
+     * Fetches messages from IMAP then delegates to [runRestoreLoop].
      */
     private suspend fun executeRestore(
         config: RestoreConfig,
@@ -161,14 +180,12 @@ class RestoreWorker(
         authPreferences: AuthPreferences
     ): Result {
         val imapStore = config.imapStore
-        var currentRestoredItem = config.currentRestoredItem
+        val uniqueWorkName = inputData.getString(KEY_UNIQUE_WORK_NAME) ?: RESTORE_WORK_NAME
 
         try {
-            // Emit LOGIN state (mirrors publishProgress(LOGIN) at RestoreTask.java:102)
             setProgress(workDataOf(PROGRESS_KEY_STATE to STATE_LOGIN))
             imapStore.checkSettings()
 
-            // Emit CALC state (mirrors publishProgress(CALC) at RestoreTask.java:105)
             setProgress(workDataOf(PROGRESS_KEY_STATE to STATE_CALC))
 
             val msgs = ArrayList<Message?>()
@@ -184,49 +201,12 @@ class RestoreWorker(
             val itemsToRestoreCount = if (config.maxRestore <= 0) msgs.size
                                       else minOf(msgs.size, config.maxRestore)
 
-            if (itemsToRestoreCount > 0) {
-                // Restore loop mirrors RestoreTask.java:119
-                // Starts from currentRestoredItem (resume offset), checks ensureActive() for
-                // cooperative cancellation (AC-5, replaces !isCancelled() polling)
-                while (currentRestoredItem < itemsToRestoreCount) {
-                    coroutineContext.ensureActive()
+            return runImapRestoreLoop(msgs, itemsToRestoreCount, config.currentRestoredItem,
+                preferences, converter, ctx, uniqueWorkName)
 
-                    val msg = msgs[currentRestoredItem]
-                    val dataType = if (msg != null) importMessage(msg, converter, preferences, ctx) else null
-
-                    msgs[currentRestoredItem] = null // help GC (mirrors RestoreTask.java:122)
-                    currentRestoredItem++
-
-                    // Emit progress (AC-4b, replaces publishProgress(RestoreState) + App.post at
-                    // RestoreTask.java:123 and RestoreTask.onProgressUpdate)
-                    setProgress(workDataOf(
-                        PROGRESS_KEY_CURRENT_ITEM to currentRestoredItem,
-                        PROGRESS_KEY_ITEMS_TO_RESTORE to itemsToRestoreCount,
-                        PROGRESS_KEY_DATA_TYPE to (dataType?.name ?: ""),
-                        PROGRESS_KEY_STATE to STATE_RESTORE
-                    ))
-
-                    if (currentRestoredItem % 50 == 0) {
-                        // Periodic cache clear (mirrors RestoreTask.java:124-127)
-                        clearAppCache(ctx)
-                    }
-                }
-                // Thread update after SMS restore (AC-11d / RestoreTask.java:129)
-                updateAllThreadsIfAnySmsRestored(ctx)
-            } else {
-                Log.d(TAG, "RestoreWorker: nothing to restore")
-            }
-
-            val restoredCount = smsIds.size + callLogIds.size
-            Log.d(TAG, "RestoreWorker: finished (restored=$restoredCount, uids=${uids.size})")
-            return Result.success(workDataOf(
-                PROGRESS_KEY_CURRENT_ITEM to currentRestoredItem,
-                PROGRESS_KEY_ITEMS_TO_RESTORE to itemsToRestoreCount,
-                PROGRESS_KEY_RESTORED_COUNT to restoredCount,
-                PROGRESS_KEY_STATE to STATE_FINISHED
-            ))
         } catch (e: XOAuth2AuthenticationFailedException) {
-            return handleAuthError(config, preferences, converter, tokenRefresher, ctx, authPreferences, currentRestoredItem, e)
+            return handleAuthError(config, preferences, converter, tokenRefresher, ctx,
+                authPreferences, RestoreCheckpointStore.NO_CHECKPOINT, e)
         } catch (e: AuthenticationFailedException) {
             return Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_failed"))
         } catch (e: MessagingException) {
@@ -234,7 +214,6 @@ class RestoreWorker(
             updateAllThreadsIfAnySmsRestored(ctx)
             return Result.retry()
         } catch (e: IllegalStateException) {
-            // memory problems (Couldn't init cursor window) — mirrors RestoreTask.java:149-151
             Log.e(TAG, "RestoreWorker: IllegalStateException (possible memory)", e)
             return Result.failure(workDataOf(KEY_FAILURE_REASON to "illegal_state"))
         } finally {
@@ -243,70 +222,231 @@ class RestoreWorker(
     }
 
     /**
-     * XOAuth2 token-refresh retry. At most one retry, passing currentRestoredItem as resume.
-     * Mirrors RestoreTask.handleAuthError (AC-11c / RestoreTask.java:157-177).
-     * The resume offset (currentRestoredItem) is passed to retryWithStore so restore
-     * continues from where it left off (RestoreTask.java:165).
+     * Restore loop over IMAP [Message] objects.
+     * Each message is imported (fetched + converted) then inserted via [importSms]/[importCallLog].
+     * Checkpoint is written after each confirmed insert; cleared on SUCCEEDED.
      */
-    private suspend fun handleAuthError(
-        config: RestoreConfig,
+    private suspend fun runImapRestoreLoop(
+        msgs: ArrayList<Message?>,
+        itemsToRestoreCount: Int,
+        initialRestoredItem: Int,
         preferences: Preferences,
         converter: MessageConverter,
-        tokenRefresher: TokenRefresher,
         ctx: Context,
-        authPreferences: AuthPreferences,
-        currentRestoredItem: Int,
-        e: XOAuth2AuthenticationFailedException
+        uniqueWorkName: String
     ): Result {
-        if (e.status == 400) {
-            Log.d(TAG, "RestoreWorker: XOAuth2 400 — need token refresh")
-            if (config.tries < 1) {
-                return try {
-                    tokenRefresher.refreshOAuth2Token()
-                    Log.d(TAG, "RestoreWorker: token refreshed, retrying with currentRestoredItem=$currentRestoredItem")
-                    val newStore = buildImapStore(ctx, authPreferences)
-                    // Pass currentRestoredItem as resume offset (mirrors RestoreTask.java:165)
-                    val retryConfig = config.retryWithStore(currentRestoredItem, newStore)
-                    executeRestore(retryConfig, preferences, converter, tokenRefresher, ctx, authPreferences)
-                } catch (ignored: MessagingException) {
-                    Log.w(TAG, "RestoreWorker: MessagingException during token refresh", ignored)
-                    Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error_after_refresh"))
-                } catch (refreshEx: TokenRefreshException) {
-                    Log.w(TAG, "RestoreWorker: token refresh failed: $refreshEx")
-                    Result.failure(workDataOf(KEY_FAILURE_REASON to "token_refresh_failed"))
-                }
-            } else {
-                Log.w(TAG, "RestoreWorker: no new token, giving up")
-            }
+        // U-016 AC-5: Read durable checkpoint; authoritative over config.currentRestoredItem.
+        val checkpointValue = checkpointStore.read(uniqueWorkName)
+        var currentRestoredItem = if (checkpointValue > RestoreCheckpointStore.NO_CHECKPOINT) {
+            Log.d(TAG, "RestoreWorker: resuming from checkpoint=$checkpointValue (workName=$uniqueWorkName)")
+            checkpointValue + 1
         } else {
-            Log.w(TAG, "RestoreWorker: unexpected XOAuth2 status ${e.status}")
+            initialRestoredItem
         }
-        return Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error"))
+
+        try {
+            if (itemsToRestoreCount > 0) {
+                while (currentRestoredItem < itemsToRestoreCount) {
+                    coroutineContext.ensureActive()
+
+                    val msg = msgs[currentRestoredItem]
+                    if (msg != null) {
+                        importMessage(msg, converter, preferences, ctx, currentRestoredItem, uniqueWorkName)
+                    }
+
+                    msgs[currentRestoredItem] = null
+                    currentRestoredItem++
+
+                    setProgress(workDataOf(
+                        PROGRESS_KEY_CURRENT_ITEM to currentRestoredItem,
+                        PROGRESS_KEY_ITEMS_TO_RESTORE to itemsToRestoreCount,
+                        PROGRESS_KEY_STATE to STATE_RESTORE
+                    ))
+
+                    if (currentRestoredItem % 50 == 0) {
+                        clearAppCache(ctx)
+                    }
+                }
+                updateAllThreadsIfAnySmsRestored(ctx)
+            } else {
+                Log.d(TAG, "RestoreWorker: nothing to restore")
+            }
+
+            val restoredCount = smsIds.size + callLogIds.size
+            Log.d(TAG, "RestoreWorker: finished (restored=$restoredCount, uids=${uids.size})")
+
+            // AC-6: Clear checkpoint on SUCCEEDED terminal state.
+            checkpointStore.clear(uniqueWorkName)
+
+            return Result.success(workDataOf(
+                PROGRESS_KEY_CURRENT_ITEM to currentRestoredItem,
+                PROGRESS_KEY_ITEMS_TO_RESTORE to itemsToRestoreCount,
+                PROGRESS_KEY_RESTORED_COUNT to restoredCount,
+                PROGRESS_KEY_STATE to STATE_FINISHED
+            ))
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "RestoreWorker: IllegalStateException (possible memory)", e)
+            return Result.failure(workDataOf(KEY_FAILURE_REASON to "illegal_state"))
+        }
+        // SimulatedCrashException from insertInterceptor bubbles uncaught — intentional.
     }
 
     /**
-     * Imports a single message (SMS or CALLLOG).
+     * Test-accessible restore loop over pre-built [ContentValues] items.
+     *
+     * This is the fault-injection test path (AC-4, IC-4). It bypasses the IMAP fetch so
+     * tests can seed exact N items and verify checkpoint-resume behaviour.
+     *
+     * Write ordering (load-bearing invariant, AC-2):
+     *   1. Insert into provider
+     *   2. [checkpointStore.write](uniqueWorkName, currentIndex) — durable commit
+     *   3. [insertInterceptor.afterInsert](currentIndex) — fault-injection hook
+     *   4. advance loop to currentIndex+1
+     *
+     * AC-5: reads durable checkpoint on entry; the checkpoint value overrides [startIndex].
+     * AC-6: [checkpointStore.clear] called on SUCCEEDED.
+     * AC-7: checkpoint NOT cleared on CANCELLED (cooperative cancellation unwinds before clear).
+     *
+     * @param items pre-built SMS ContentValues (N distinct items to restore)
+     * @param startIndex initial loop index (0 for fresh restore; overridden by checkpoint if any)
+     * @param preferences for maxSyncedDate tracking
+     * @param ctx for ContentResolver access
+     * @param uniqueWorkName checkpoint key
+     * @return Result.success (SUCCEEDED) or Result.failure on error
+     */
+    internal suspend fun executeRestoreWithValues(
+        items: List<ContentValues>,
+        startIndex: Int,
+        preferences: Preferences,
+        ctx: Context,
+        uniqueWorkName: String
+    ): Result {
+        val itemsToRestoreCount = items.size
+
+        // U-016 AC-5: Read durable checkpoint on entry; authoritative over startIndex.
+        val checkpointValue = checkpointStore.read(uniqueWorkName)
+        var currentRestoredItem = if (checkpointValue > RestoreCheckpointStore.NO_CHECKPOINT) {
+            Log.d(TAG, "RestoreWorker.executeRestoreWithValues: resuming from checkpoint=$checkpointValue")
+            checkpointValue + 1
+        } else {
+            startIndex
+        }
+
+        try {
+            if (itemsToRestoreCount > 0) {
+                while (currentRestoredItem < itemsToRestoreCount) {
+                    coroutineContext.ensureActive()
+
+                    val values = items[currentRestoredItem]
+                    insertSmsValues(values, preferences, ctx, currentRestoredItem, uniqueWorkName)
+
+                    currentRestoredItem++
+
+                    setProgress(workDataOf(
+                        PROGRESS_KEY_CURRENT_ITEM to currentRestoredItem,
+                        PROGRESS_KEY_ITEMS_TO_RESTORE to itemsToRestoreCount,
+                        PROGRESS_KEY_STATE to STATE_RESTORE
+                    ))
+
+                    if (currentRestoredItem % 50 == 0) {
+                        clearAppCache(ctx)
+                    }
+                }
+                updateAllThreadsIfAnySmsRestored(ctx)
+            } else {
+                Log.d(TAG, "RestoreWorker.executeRestoreWithValues: nothing to restore")
+            }
+
+            val restoredCount = smsIds.size + callLogIds.size
+            Log.d(TAG, "RestoreWorker.executeRestoreWithValues: finished (restored=$restoredCount)")
+
+            // AC-6: Clear checkpoint on SUCCEEDED.
+            checkpointStore.clear(uniqueWorkName)
+
+            return Result.success(workDataOf(
+                PROGRESS_KEY_CURRENT_ITEM to currentRestoredItem,
+                PROGRESS_KEY_ITEMS_TO_RESTORE to itemsToRestoreCount,
+                PROGRESS_KEY_RESTORED_COUNT to restoredCount,
+                PROGRESS_KEY_STATE to STATE_FINISHED
+            ))
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "RestoreWorker.executeRestoreWithValues: IllegalStateException", e)
+            return Result.failure(workDataOf(KEY_FAILURE_REASON to "illegal_state"))
+        }
+        // SimulatedCrashException bubbles uncaught — caught by test harness.
+    }
+
+    /**
+     * Inserts a single SMS [ContentValues] into the provider, gated by the smsExists() dedup
+     * guard and SMS type filter.
+     *
+     * U-016 AC-2 write ordering: insert → write checkpoint → call interceptor.
+     * The checkpoint write is synchronous (SharedPreferences.commit) before returning.
+     */
+    private suspend fun insertSmsValues(
+        values: ContentValues,
+        preferences: Preferences,
+        ctx: Context,
+        currentIndex: Int,
+        uniqueWorkName: String
+    ) {
+        val type = values.getAsInteger(Telephony.TextBasedSmsColumns.TYPE)
+
+        if (type != null &&
+            (type == Telephony.TextBasedSmsColumns.MESSAGE_TYPE_INBOX ||
+             type == Telephony.TextBasedSmsColumns.MESSAGE_TYPE_SENT) &&
+            !smsExists(values, ctx)) {
+
+            val uri = ctx.contentResolver.insert(Consts.SMS_PROVIDER, values)
+            if (uri != null) {
+                smsIds.add(uri.lastPathSegment ?: uri.toString())
+                val timestamp = values.getAsLong(Telephony.TextBasedSmsColumns.DATE)
+                if (timestamp != null &&
+                    preferences.dataTypePreferences.getMaxSyncedDate(DataType.SMS) < timestamp) {
+                    preferences.dataTypePreferences.setMaxSyncedDate(DataType.SMS, timestamp)
+                }
+                if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: inserted $uri at $currentIndex")
+
+                // U-016 AC-2: Write checkpoint AFTER confirmed insert, BEFORE advancing loop.
+                checkpointStore.write(uniqueWorkName, currentIndex)
+
+                // Fault-injection hook (no-op in production; throws in tests after K inserts).
+                insertInterceptor.afterInsert(currentIndex)
+            }
+        } else {
+            if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                Log.d(TAG, "RestoreWorker: skipping item at $currentIndex (dedup or type filter)")
+            }
+        }
+    }
+
+    /**
+     * Imports a single message (SMS or CALLLOG) from IMAP.
      * Mirrors RestoreTask.importMessage() (RestoreTask.java:217-248).
+     * Used by the IMAP [runImapRestoreLoop] path only.
+     *
+     * After a confirmed insert, writes checkpoint then calls insertInterceptor.
      */
     @Suppress("UNCHECKED_CAST")
-    private fun importMessage(
+    private suspend fun importMessage(
         message: Message,
         converter: MessageConverter,
         preferences: Preferences,
-        ctx: Context
-    ): DataType? {
+        ctx: Context,
+        currentIndex: Int,
+        uniqueWorkName: String
+    ) {
         uids.add(message.uid)
 
         val fp = FetchProfile()
         fp.add(FetchProfile.Item.BODY)
-        var dataType: DataType? = null
         try {
             if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: fetching message uid ${message.uid}")
             message.folder.fetch(Collections.singletonList(message), fp, null)
-            dataType = converter.getDataType(message)
+            val dataType = converter.getDataType(message)
             when (dataType) {
-                DataType.CALLLOG -> importCallLog(message, converter, ctx)
-                DataType.SMS     -> importSms(message, converter, preferences, ctx)
+                DataType.CALLLOG -> importCallLog(message, converter, ctx, currentIndex, uniqueWorkName)
+                DataType.SMS     -> importSmsMessage(message, converter, preferences, ctx, currentIndex, uniqueWorkName)
                 else             -> if (Log.isLoggable(TAG, Log.VERBOSE))
                                         Log.d(TAG, "RestoreWorker: ignoring restore of type: $dataType")
             }
@@ -317,60 +457,53 @@ class RestoreWorker(
         } catch (e: IOException) {
             Log.e(TAG, "RestoreWorker: error", e)
         }
-        return dataType
     }
 
     /**
-     * Imports a single SMS message, gated by type filter and smsExists() dedup guard.
+     * Imports a single SMS message from IMAP, gated by type filter and smsExists().
      * Mirrors RestoreTask.importSms() (RestoreTask.java:250-275).
-     *
-     * Type filter: only INBOX and SENT — avoids re-sending (RestoreTask.java:256-258).
-     * Dedup key: date + address + type (AC-11a / RestoreTask.java:308-327, :259).
+     * After confirmed insert: writes checkpoint then calls insertInterceptor (AC-2).
      */
     @Throws(IOException::class, MessagingException::class)
-    private fun importSms(
+    private suspend fun importSmsMessage(
         message: Message,
         converter: MessageConverter,
         preferences: Preferences,
-        ctx: Context
+        ctx: Context,
+        currentIndex: Int,
+        uniqueWorkName: String
     ) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: importSms($message)")
+        if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: importSmsMessage($message)")
         val values = converter.messageToContentValues(message)
-        val type = values.getAsInteger(Telephony.TextBasedSmsColumns.TYPE)
-
-        // Only restore INBOX and SENT (mirrors RestoreTask.java:256-258)
-        if (type != null &&
-            (type == Telephony.TextBasedSmsColumns.MESSAGE_TYPE_INBOX ||
-             type == Telephony.TextBasedSmsColumns.MESSAGE_TYPE_SENT) &&
-            !smsExists(values, ctx)) {
-
-            val uri = ctx.contentResolver.insert(Consts.SMS_PROVIDER, values)
-            if (uri != null) {
-                smsIds.add(uri.lastPathSegment!!)
-                val timestamp = values.getAsLong(Telephony.TextBasedSmsColumns.DATE)
-                if (timestamp != null && preferences.dataTypePreferences.getMaxSyncedDate(DataType.SMS) < timestamp) {
-                    preferences.dataTypePreferences.setMaxSyncedDate(DataType.SMS, timestamp)
-                }
-                if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: inserted $uri")
-            }
-        } else {
-            if (Log.isLoggable(TAG, Log.VERBOSE)) Log.d(TAG, "RestoreWorker: ignoring sms")
-        }
+        insertSmsValues(values, preferences, ctx, currentIndex, uniqueWorkName)
     }
 
     /**
-     * Imports a single call log entry, gated by callLogExists() dedup guard.
+     * Imports a single call log entry from IMAP, gated by callLogExists().
      * Mirrors RestoreTask.importCallLog() (RestoreTask.java:277-286).
-     *
-     * Dedup key: date + number + duration + type (AC-11b / RestoreTask.java:288-306, :280).
+     * After confirmed insert: writes checkpoint then calls insertInterceptor (AC-2).
      */
     @Throws(MessagingException::class, IOException::class)
-    private fun importCallLog(message: Message, converter: MessageConverter, ctx: Context) {
+    private suspend fun importCallLog(
+        message: Message,
+        converter: MessageConverter,
+        ctx: Context,
+        currentIndex: Int,
+        uniqueWorkName: String
+    ) {
         if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: importCallLog($message)")
         val values = converter.messageToContentValues(message)
         if (!callLogExists(values, ctx)) {
             val uri = ctx.contentResolver.insert(Consts.CALLLOG_PROVIDER, values)
-            if (uri != null) callLogIds.add(uri.lastPathSegment!!)
+            if (uri != null) {
+                callLogIds.add(uri.lastPathSegment!!)
+
+                // U-016 AC-2: Write checkpoint AFTER confirmed insert, BEFORE loop advance.
+                checkpointStore.write(uniqueWorkName, currentIndex)
+
+                // Fault-injection hook
+                insertInterceptor.afterInsert(currentIndex)
+            }
         } else {
             if (Log.isLoggable(TAG, Log.VERBOSE)) Log.d(TAG, "RestoreWorker: ignoring call log")
         }
@@ -432,7 +565,6 @@ class RestoreWorker(
     /**
      * Triggers thread update if any SMS was restored.
      * Mirrors RestoreTask.updateAllThreadsIfAnySmsRestored() (RestoreTask.java:329-333).
-     * The trick of deleting conversation -1 forces Android to refresh all thread metadata.
      */
     private fun updateAllThreadsIfAnySmsRestored(ctx: Context) {
         if (smsIds.isNotEmpty()) {
@@ -447,6 +579,45 @@ class RestoreWorker(
         val tmp = ctx.cacheDir ?: return
         tmp.listFiles { _, name -> name.startsWith("body") }
             ?.forEach { f -> if (!f.delete()) Log.w(TAG, "RestoreWorker: error deleting $f") }
+    }
+
+    /**
+     * XOAuth2 token-refresh retry. At most one retry.
+     * Mirrors RestoreTask.handleAuthError (RestoreTask.java:157-177).
+     */
+    private suspend fun handleAuthError(
+        config: RestoreConfig,
+        preferences: Preferences,
+        converter: MessageConverter,
+        tokenRefresher: TokenRefresher,
+        ctx: Context,
+        authPreferences: AuthPreferences,
+        currentRestoredItem: Int,
+        e: XOAuth2AuthenticationFailedException
+    ): Result {
+        if (e.status == 400) {
+            Log.d(TAG, "RestoreWorker: XOAuth2 400 — need token refresh")
+            if (config.tries < 1) {
+                return try {
+                    tokenRefresher.refreshOAuth2Token()
+                    Log.d(TAG, "RestoreWorker: token refreshed, retrying with currentRestoredItem=$currentRestoredItem")
+                    val newStore = buildImapStore(ctx, authPreferences)
+                    val retryConfig = config.retryWithStore(currentRestoredItem, newStore)
+                    executeRestore(retryConfig, preferences, converter, tokenRefresher, ctx, authPreferences)
+                } catch (ignored: MessagingException) {
+                    Log.w(TAG, "RestoreWorker: MessagingException during token refresh", ignored)
+                    Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error_after_refresh"))
+                } catch (refreshEx: TokenRefreshException) {
+                    Log.w(TAG, "RestoreWorker: token refresh failed: $refreshEx")
+                    Result.failure(workDataOf(KEY_FAILURE_REASON to "token_refresh_failed"))
+                }
+            } else {
+                Log.w(TAG, "RestoreWorker: no new token, giving up")
+            }
+        } else {
+            Log.w(TAG, "RestoreWorker: unexpected XOAuth2 status ${e.status}")
+        }
+        return Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error"))
     }
 
     /**
@@ -486,11 +657,65 @@ class RestoreWorker(
         const val PROGRESS_KEY_STATE = "state"
         /** WorkData key: failure reason */
         const val KEY_FAILURE_REASON = "failure_reason"
+        /**
+         * Input data key: unique work name for checkpoint keying.
+         * Set by [WorkManagerScheduler.scheduleRestore] when enqueuing the worker.
+         */
+        const val KEY_UNIQUE_WORK_NAME = "unique_work_name"
+
+        /** Default unique work name when KEY_UNIQUE_WORK_NAME is not set in inputData. */
+        const val RESTORE_WORK_NAME = "RESTORE"
 
         const val STATE_LOGIN = "LOGIN"
         const val STATE_CALC = "CALC"
         const val STATE_RESTORE = "RESTORE"
         const val STATE_FINISHED = "FINISHED_RESTORE"
         const val STATE_CANCELED = "CANCELED_RESTORE"
+    }
+
+    /**
+     * Production [WorkerFactory] for [RestoreWorker].
+     * Supplies [SharedPreferencesCheckpointStore] and [RestoreInsertInterceptor.NoOp].
+     * TODO U-024: Replace with Hilt @HiltWorker + HiltWorkerFactory.
+     */
+    class RestoreWorkerFactory : WorkerFactory() {
+        override fun createWorker(
+            appContext: Context,
+            workerClassName: String,
+            workerParameters: WorkerParameters
+        ): ListenableWorker? {
+            return if (workerClassName == RestoreWorker::class.java.name) {
+                RestoreWorker(
+                    appContext,
+                    workerParameters,
+                    SharedPreferencesCheckpointStore(appContext),
+                    RestoreInsertInterceptor.NoOp
+                )
+            } else null
+        }
+    }
+
+    /**
+     * Test-only [WorkerFactory] that injects custom [checkpointStore] and [interceptor].
+     * Used by fault-injection tests via [TestListenableWorkerBuilder.setWorkerFactory] (IC-4).
+     */
+    class TestableRestoreWorkerFactory(
+        private val checkpointStore: RestoreCheckpointStore,
+        private val interceptor: RestoreInsertInterceptor
+    ) : WorkerFactory() {
+        override fun createWorker(
+            appContext: Context,
+            workerClassName: String,
+            workerParameters: WorkerParameters
+        ): ListenableWorker? {
+            return if (workerClassName == RestoreWorker::class.java.name) {
+                RestoreWorker(
+                    appContext,
+                    workerParameters,
+                    checkpointStore,
+                    interceptor
+                )
+            } else null
+        }
     }
 }

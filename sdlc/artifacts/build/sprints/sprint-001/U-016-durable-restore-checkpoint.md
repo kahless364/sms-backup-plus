@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: high
@@ -29,6 +29,8 @@ title: Durable Restore Checkpoint — Resumable Restore Worker with Fault-Inject
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T18:02:22.857Z'
+resolution: done
 ---
 
 # U-016: Durable Restore Checkpoint — Resumable Restore Worker with Fault-Injection Verification

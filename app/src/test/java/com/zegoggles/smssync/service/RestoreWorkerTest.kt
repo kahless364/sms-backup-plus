@@ -28,6 +28,9 @@ import java.util.concurrent.Executors
  *
  * Note: Full end-to-end restore logic requires a live IMAP store + SMS/CallLog providers.
  * These unit tests verify the worker's structural contract and INV-3 cap enforcement.
+ *
+ * U-016: Worker constructor now requires checkpointStore + insertInterceptor; tests use
+ * [RestoreWorker.TestableRestoreWorkerFactory] with [InMemoryCheckpointStore] and NoOp interceptor.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
@@ -39,12 +42,23 @@ class RestoreWorkerTest {
     fun setUp() {
         context = RuntimeEnvironment.application
 
+        // U-016: include the RestoreWorkerFactory so WorkManager can instantiate the worker.
+        // Without a factory, WorkManager cannot construct the 4-parameter constructor and
+        // the enqueue integration tests would observe FAILED state.
+        val factory = RestoreWorker.RestoreWorkerFactory()
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
             .setExecutor(Executors.newSingleThreadExecutor())
+            .setWorkerFactory(factory)
             .build()
         WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
     }
+
+    /** Production-equivalent factory for tests that don't need checkpoint injection. */
+    private fun productionFactory() = RestoreWorker.TestableRestoreWorkerFactory(
+        InMemoryCheckpointStore(),
+        RestoreInsertInterceptor.NoOp
+    )
 
     // -----------------------------------------------------------------------
     // INV-3: Backoff cap enforcement — Result.failure when effective delay > 300s
@@ -57,6 +71,7 @@ class RestoreWorkerTest {
     @Test
     fun inv3_backoffCap_atAttempt4_returnsFailure() {
         val worker = TestListenableWorkerBuilder<RestoreWorker>(context)
+            .setWorkerFactory(productionFactory())
             .setRunAttemptCount(4)
             .build()
 
@@ -75,6 +90,7 @@ class RestoreWorkerTest {
     @Test
     fun inv3_backoffCap_atAttempt3_doesNotCapYet() {
         val worker = TestListenableWorkerBuilder<RestoreWorker>(context)
+            .setWorkerFactory(productionFactory())
             .setRunAttemptCount(3)
             .build()
 
@@ -98,6 +114,7 @@ class RestoreWorkerTest {
     @Test
     fun worker_firstAttempt_returnsResultNotException() {
         val worker = TestListenableWorkerBuilder<RestoreWorker>(context)
+            .setWorkerFactory(productionFactory())
             .setRunAttemptCount(0)
             .build()
 
@@ -116,7 +133,9 @@ class RestoreWorkerTest {
      */
     @Test
     fun ac6_workerClass_hasOttoFreePackage() {
-        val worker = TestListenableWorkerBuilder<RestoreWorker>(context).build()
+        val worker = TestListenableWorkerBuilder<RestoreWorker>(context)
+            .setWorkerFactory(productionFactory())
+            .build()
         assertThat(worker.javaClass.name)
             .isEqualTo("com.zegoggles.smssync.service.RestoreWorker")
     }
@@ -222,5 +241,44 @@ class RestoreWorkerTest {
         val workInfos = wm.getWorkInfoById(request.id).get()
         assertThat(workInfos).isNotNull()
         assertThat(workInfos!!.state).isEqualTo(WorkInfo.State.CANCELLED)
+    }
+
+    // -----------------------------------------------------------------------
+    // U-016: Checkpoint store is injected and accessible
+    // -----------------------------------------------------------------------
+
+    /**
+     * U-016: Worker exposes the injected checkpointStore for testing.
+     */
+    @Test
+    fun u016_checkpointStore_isInjectedAndAccessible() {
+        val store = InMemoryCheckpointStore()
+        val factory = RestoreWorker.TestableRestoreWorkerFactory(store, RestoreInsertInterceptor.NoOp)
+        val worker = TestListenableWorkerBuilder<RestoreWorker>(context)
+            .setWorkerFactory(factory)
+            .build() as RestoreWorker
+        assertThat(worker.checkpointStore).isSameInstanceAs(store)
+    }
+
+    /**
+     * U-016: Worker exposes the injected insertInterceptor for testing.
+     */
+    @Test
+    fun u016_insertInterceptor_isInjectedAndAccessible() {
+        val interceptor = RestoreInsertInterceptor.NoOp
+        val factory = RestoreWorker.TestableRestoreWorkerFactory(InMemoryCheckpointStore(), interceptor)
+        val worker = TestListenableWorkerBuilder<RestoreWorker>(context)
+            .setWorkerFactory(factory)
+            .build() as RestoreWorker
+        assertThat(worker.insertInterceptor).isSameInstanceAs(interceptor)
+    }
+
+    /**
+     * U-016: Checkpoint store key constant is stable.
+     */
+    @Test
+    fun u016_checkpointKeyConstant_isStable() {
+        assertThat(RestoreWorker.KEY_UNIQUE_WORK_NAME).isEqualTo("unique_work_name")
+        assertThat(RestoreWorker.RESTORE_WORK_NAME).isEqualTo("RESTORE")
     }
 }
