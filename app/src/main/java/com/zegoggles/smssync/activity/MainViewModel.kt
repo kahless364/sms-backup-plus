@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * TODO U-022/MU-007: replace manual factory with @HiltViewModel and @Inject constructor
  */
+// TODO @HiltViewModel — retrofit in MU-007 (U-022): replace MainViewModelFactory with @Inject constructor
 class MainViewModel(
     private val repository: SyncStateRepository
 ) : ViewModel() {
