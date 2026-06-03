@@ -45,6 +45,8 @@ import com.zegoggles.smssync.scheduler.BackupScheduler;
 import com.zegoggles.smssync.scheduler.WorkManagerScheduler;
 import com.zegoggles.smssync.service.state.FlowSyncStateRepository;
 import com.zegoggles.smssync.service.state.SyncStateRepository;
+import dagger.hilt.android.HiltAndroidApp;
+import javax.inject.Inject;
 
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
@@ -60,7 +62,13 @@ import static android.content.pm.PackageManager.DONT_KILL_APP;
  *
  * AC-6: App.bus field, register(), unregister(), post() are deleted.
  * AC-6(d): autoBackupSettingsChanged @Subscribe migrated to Flow collection.
+ *
+ * U-022: @HiltAndroidApp triggers code generation of the Hilt application component.
+ * Hilt generates Hilt_App which this class extends (transparently, via the plugin).
+ * The @Inject Preferences field is populated by Hilt before the onCreate() body runs
+ * (Hilt_App.onCreate() calls inject(this) then super.onCreate()).
  */
+@HiltAndroidApp
 public class App extends Application {
     private static final boolean DEBUG = BuildConfig.DEBUG;
     public static final boolean LOCAL_LOGV = DEBUG;
@@ -76,7 +84,10 @@ public class App extends Application {
     /** Google Play Services present on this device? */
     public static boolean gcmAvailable;
 
-    private Preferences preferences;
+    // U-022: @Inject replaces the manual 'new Preferences(this)' call at the old line 105.
+    // PreferencesModule.providePreferences(@ApplicationContext) supplies this singleton.
+    // Hilt populates this field before onCreate() body executes (AC-3).
+    @Inject Preferences preferences;
 
     /**
      * Application-scoped {@link BackupScheduler} singleton.
@@ -102,7 +113,9 @@ public class App extends Application {
         syncStateRepositoryInstance = new FlowSyncStateRepository();
 
         gcmAvailable = GooglePlayServices.isAvailable(this);
-        preferences = new Preferences(this);
+        // U-022: 'preferences' is now an @Inject field populated by Hilt before this
+        // line executes (PreferencesModule.providePreferences via SingletonComponent).
+        // 'new Preferences(this)' removed per AC-3.
         preferences.migrate();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

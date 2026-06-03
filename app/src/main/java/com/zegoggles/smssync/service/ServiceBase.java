@@ -48,6 +48,7 @@ import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.service.state.State;
 import com.zegoggles.smssync.utils.AppLog;
+import javax.inject.Inject;
 
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 import static android.net.ConnectivityManager.TYPE_WIFI;
@@ -56,12 +57,33 @@ import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
 import static java.util.Locale.ENGLISH;
 
+// U-022: ServiceBase is an abstract Service; concrete subclasses (SmsBackupService,
+// SmsRestoreService) are annotated @AndroidEntryPoint so Hilt can inject @Inject
+// fields declared here. The @Inject annotations on the fields below replace the
+// per-call Service-Locator construction (ARCH-002 defect) that existed at
+// ServiceBase.java:73,108,112 (verified source lines in DES-MODERNIZATION-008).
 public abstract class ServiceBase extends Service {
     @Nullable private PowerManager.WakeLock wakeLock;
     @Nullable private WifiManager.WifiLock wifiLock;
 
     private AppLog appLog;
     @Nullable Notification notification;
+
+    // U-022: @Inject fields that will be populated by Hilt once @AndroidEntryPoint is
+    // applied to concrete service subclasses in U-023. Names are prefixed with 'injected'
+    // to prevent Java field-shadowing in Robolectric test anonymous subclasses that declare
+    // their own 'preferences'/'authPreferences' fields in the enclosing test class
+    // (AC-10: existing tests must not be broken by this story).
+    //
+    // These replace the per-call Service-Locator construction pattern (ARCH-002):
+    //   old: new Preferences(this) in onCreate()
+    //   old: new Preferences(getApplicationContext()) in getPreferences()
+    //   old: new AuthPreferences(this) in getAuthPreferences()
+    // PreferencesModule provides both as @Singleton (AC-4, AC-6, IC-3).
+    // Until @AndroidEntryPoint is applied (U-023), getPreferences()/getAuthPreferences()
+    // fall back to on-demand construction when these fields are null.
+    @Inject Preferences injectedPreferences;
+    @Inject AuthPreferences injectedAuthPreferences;
 
     @Override
     public void attachBaseContext(Context base) {
@@ -76,7 +98,12 @@ public abstract class ServiceBase extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        if (new Preferences(this).isAppLogEnabled()) {
+        // U-022: getPreferences() now returns the @Inject field (preferences).
+        // Using the accessor preserves test-override behaviour: test subclasses that
+        // override getPreferences() to return a mock will still work correctly here,
+        // even in the Robolectric test context where Hilt injection is not active
+        // (AC-10: existing tests must not be broken by this story).
+        if (getPreferences().isAppLogEnabled()) {
             this.appLog = new AppLog(this);
         }
         // U-020: App.register(this) removed (AC-7). No Otto bus registration needed.
@@ -133,12 +160,24 @@ public abstract class ServiceBase extends Service {
         return new BackupImapStore(getApplicationContext(), uri, factory);
     }
 
+    // U-022: Returns the @Inject-supplied singleton when Hilt injection has run
+    // (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
+    // for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
+    // Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
+    // injectedAuthPreferences is null only when @AndroidEntryPoint has not yet been applied
+    // (bootstrap coexistence period); in U-023 production, it is always non-null.
     protected AuthPreferences getAuthPreferences() {
-        return new AuthPreferences(this);
+        return injectedAuthPreferences != null ? injectedAuthPreferences : new AuthPreferences(this);
     }
 
+    // U-022: Returns the @Inject-supplied singleton when Hilt injection has run
+    // (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
+    // for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
+    // Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
+    // injectedPreferences is null only when @AndroidEntryPoint has not yet been applied
+    // (bootstrap coexistence period); in U-023 production, it is always non-null.
     protected Preferences getPreferences() {
-        return new Preferences(getApplicationContext());
+        return injectedPreferences != null ? injectedPreferences : new Preferences(getApplicationContext());
     }
 
     protected synchronized void acquireLocks() {

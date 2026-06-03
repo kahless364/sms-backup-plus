@@ -32,6 +32,12 @@ import static com.zegoggles.smssync.mail.DataType.CALLLOG;
 import static com.zegoggles.smssync.mail.DataType.SMS;
 import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 
+// U-022: @AndroidEntryPoint deferred to U-023. ServiceBase declares @Inject fields
+// (Preferences, AuthPreferences) but injection fires only when @AndroidEntryPoint is
+// applied to the concrete service. Adding @AndroidEntryPoint here would break Robolectric
+// tests that create anonymous service subclasses without a Hilt test component (AC-10).
+// U-023 migrates those tests to @HiltAndroidTest and activates injection.
+// TODO(U-023): add @AndroidEntryPoint here once tests are migrated to @HiltAndroidTest.
 public class SmsRestoreService extends ServiceBase {
     private static final int RESTORE_ID = 2;
 
@@ -100,9 +106,10 @@ public class SmsRestoreService extends ServiceBase {
                 0
             );
 
-            final AuthPreferences authPreferences = new AuthPreferences(this);
+            // U-022: use the @Inject-supplied authPreferences field from ServiceBase (IC-3).
+            // 'new AuthPreferences(this)' removed per AC-4 / IC-3.
             new RestoreTask(this, converter, getContentResolver(),
-                    new TokenRefresher(this, new OAuth2Client(authPreferences.getOAuth2ClientId()), authPreferences)).execute(config);
+                    new TokenRefresher(this, new OAuth2Client(getAuthPreferences().getOAuth2ClientId()), getAuthPreferences())).execute(config);
 
         } catch (MessagingException e) {
             postError(e);

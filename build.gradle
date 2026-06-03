@@ -7,6 +7,11 @@ buildscript {
         classpath 'com.android.tools.build:gradle:8.7.3'
         // U-019: Kotlin plugin needed for SyncStateRepository/SyncEvent Kotlin files
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25'
+        // U-022: Hilt Gradle plugin (must precede app/build.gradle application of
+        // 'com.google.dagger.hilt.android'). Version aligned with hilt-android/hilt-compiler
+        // dependencies below. 2.51.1 is the last stable release compatible with AGP 8.7.3 +
+        // Kotlin 1.9.25 + JDK 17 without requiring Java-17-bytecode dagger internals (2.52+).
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.51.1'
     }
 }
 
