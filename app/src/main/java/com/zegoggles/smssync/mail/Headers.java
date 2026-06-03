@@ -8,7 +8,7 @@ public final class Headers {
     static final String ID             = "X-smssync-id";
     static final String ADDRESS        = "X-smssync-address";
     /** {@link DataType} SMS, MMS, CALLLOG */
-    static final String DATATYPE       = "X-smssync-datatype";
+    public static final String DATATYPE = "X-smssync-datatype";
     /** Subtype, value is datatype specific  */
     public static final String TYPE           = "X-smssync-type";
     public static final String DATE           = "X-smssync-date";
