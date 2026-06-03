@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -25,6 +25,8 @@ title: Introduce SecretStore port, EncryptedPrefsSecretStore adapter, and InMemo
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-03T06:18:27.571Z'
+resolution: done
 ---
 
 # U-011: Introduce SecretStore Port, EncryptedPrefsSecretStore Adapter, and InMemorySecretStore Fake; Wire into AuthPreferences via Manual Construction

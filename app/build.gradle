@@ -105,6 +105,11 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.core:core-role:1.0.0-beta01'
+    // U-011: EncryptedSharedPreferences adapter for SecretStore port (CNTR-MODERNIZATION-003).
+    // Pinned to 1.1.0-alpha06 for MasterKey.Builder API with setRequestStrongBoxBacked().
+    // DES-MODERNIZATION-004 §ADR: 1.0.0 stable uses deprecated MasterKeys.getOrCreate() and
+    // does not expose StrongBox best-effort configuration; 1.1.x alpha is required for AC-2.
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
 
     // U-019: coroutines test helpers for SyncStateRepository tests
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'

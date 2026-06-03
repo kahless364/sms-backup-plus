@@ -20,13 +20,18 @@ import static org.mockito.MockitoAnnotations.openMocks;
 public class AuthPreferencesTest {
     private AuthPreferences authPreferences;
     private SharedPreferences prefs;
+    // U-011: All AuthPreferences tests now inject InMemorySecretStore so they run
+    // on the plain JVM without requiring a real Android Keystore.
+    private InMemorySecretStore secretStore;
 
     @Before public void before() {
         openMocks(this);
         prefs = PreferenceManager.getDefaultSharedPreferences(RuntimeEnvironment.application);
         // Clear any preference state left by previous tests to prevent ordering dependency.
         prefs.edit().clear().commit();
-        authPreferences = new AuthPreferences(RuntimeEnvironment.application);
+        secretStore = new InMemorySecretStore();
+        // U-011: Use the two-arg constructor (AC-8) to inject the test fake.
+        authPreferences = new AuthPreferences(RuntimeEnvironment.application, secretStore);
     }
 
     @Test public void testStoreUri() throws Exception {
@@ -359,5 +364,111 @@ public class AuthPreferencesTest {
         assertThat(authPreferences.isTrustAllCertificates()).isFalse();
         assertThat(prefs.getString("server_protocol", null)).isEqualTo("+ssl+");
         assertThat(prefs.getBoolean(AuthPreferences.TRANSPORT_SECURITY_NOTICE_PENDING, false)).isFalse();
+    }
+
+    // -------------------------------------------------------------------------
+    // U-011: SecretStore injection tests (AC-5, AC-7, AC-8)
+    // -------------------------------------------------------------------------
+
+    /**
+     * AC-8 (U-011): two-arg constructor accepts InMemorySecretStore without error.
+     * Verifies the injection seam (AC-8(d)).
+     */
+    @Test public void twoArgConstructor_acceptsInMemorySecretStore() {
+        InMemorySecretStore store = new InMemorySecretStore();
+        // Must construct without throwing — confirms the injection seam exists.
+        AuthPreferences ap = new AuthPreferences(RuntimeEnvironment.application, store);
+        assertThat(ap).isNotNull();
+    }
+
+    /**
+     * AC-5 (U-011): getOauth2Token() returns injected value via InMemorySecretStore.
+     * Confirms the public typed-accessor signature is unchanged and routes through SecretStore.
+     */
+    @Test public void getOauth2Token_returnsValueFromSecretStore() {
+        secretStore.put("oauth2_token", "my_access_token");
+        assertThat(authPreferences.getOauth2Token()).isEqualTo("my_access_token");
+    }
+
+    /**
+     * AC-5 (U-011): getOauth2RefreshToken() returns injected value via InMemorySecretStore.
+     */
+    @Test public void getOauth2RefreshToken_returnsValueFromSecretStore() {
+        secretStore.put("oauth2_refresh_token", "my_refresh_token");
+        assertThat(authPreferences.getOauth2RefreshToken()).isEqualTo("my_refresh_token");
+    }
+
+    /**
+     * AC-5 (U-011): getOauth2Token() returns null when key is absent (SecretStore null-on-absent
+     * contract, CNTR-MODERNIZATION-003 §Type notes).
+     */
+    @Test public void getOauth2Token_absentKey_returnsNull() {
+        assertThat(authPreferences.getOauth2Token()).isNull();
+    }
+
+    /**
+     * AC-5 (U-011): setOauth2Token() writes access and refresh tokens to SecretStore;
+     * username stays in plaintext preferences (AC-4).
+     */
+    @Test public void setOauth2Token_writesCredentialsToSecretStore() {
+        prefs.edit()
+            .putString("server_authentication", "xoauth")
+            .commit();
+
+        authPreferences.setOauth2Token("user@example.com", "access123", "refresh456");
+
+        // Credentials in SecretStore
+        assertThat(secretStore.get("oauth2_token")).isEqualTo("access123");
+        assertThat(secretStore.get("oauth2_refresh_token")).isEqualTo("refresh456");
+        // Username in plaintext prefs (AC-4 — not a secret)
+        assertThat(prefs.getString("oauth2_user", null)).isEqualTo("user@example.com");
+    }
+
+    /**
+     * AC-5 (U-011): clearOauth2Data() removes access and refresh tokens from SecretStore.
+     * hasOAuth2Tokens() returns false after clear (AC-5 behavioral contract).
+     */
+    @Test public void clearOauth2Data_removesCredentialsFromSecretStore() {
+        prefs.edit()
+            .putString("server_authentication", "xoauth")
+            .commit();
+        secretStore.put("oauth2_token", "sometoken");
+        secretStore.put("oauth2_refresh_token", "somerefresh");
+        prefs.edit().putString("oauth2_user", "user@example.com").commit();
+
+        authPreferences.clearOauth2Data();
+
+        assertThat(authPreferences.getOauth2Token()).isNull();
+        assertThat(authPreferences.getOauth2RefreshToken()).isNull();
+        assertThat(authPreferences.hasOAuth2Tokens()).isFalse();
+    }
+
+    /**
+     * AC-5 (U-011): setImapPassword() and getImapPassword()-backed isLoginInformationSet()
+     * work via SecretStore injection.
+     */
+    @Test public void setImapPassword_storedInSecretStore_isLoginInformationSet() {
+        prefs.edit()
+            .putString("server_address", "imap.example.com:993")
+            .putString("server_authentication", "plain")
+            .commit();
+        authPreferences.setImapUser("user@example.com");
+        authPreferences.setImapPassword("s3cret");
+
+        assertThat(secretStore.get("login_password")).isEqualTo("s3cret");
+        assertThat(authPreferences.isLoginInformationSet()).isTrue();
+    }
+
+    /**
+     * AC-4 (U-011): Only secret keys cross the SecretStore boundary.
+     * oauth2_user is NOT stored in SecretStore — confirmed by checking the plaintext prefs.
+     */
+    @Test public void setOauth2Token_usernameNotInSecretStore() {
+        authPreferences.setOauth2Token("user@example.com", "access123", "refresh456");
+
+        // Username must NOT be in the SecretStore (AC-4 / CNTR-MODERNIZATION-003 §Backing key set note)
+        assertThat(secretStore.contains("oauth2_user")).isFalse();
+        // Username IS in plaintext preferences
+        assertThat(prefs.getString("oauth2_user", null)).isEqualTo("user@example.com");
     }
 }

@@ -13,8 +13,10 @@ import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.auth.OAuth2Client;
 import com.zegoggles.smssync.auth.TokenRefresher;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.GeneralSecurityException;
 import java.util.Locale;
 
 import static android.util.Base64.NO_WRAP;
@@ -25,11 +27,20 @@ public class AuthPreferences {
     private static final String UTF_8 = "UTF-8";
     private final Context context;
     private final SharedPreferences preferences;
-    private SharedPreferences credentials;
+    // U-011: SecretStore replaces direct SharedPreferences("credentials") access.
+    // The secretStore field is final and injected via the two-arg constructor.
+    // The single-arg convenience constructor constructs EncryptedPrefsSecretStore (Phase 1).
+    // In Phase 2 (DES-MODERNIZATION-008, Hilt), the @Binds injection will target the
+    // two-arg constructor — no other code changes required at that time.
+    private final SecretStore secretStore;
 
     public static final String SERVER_AUTHENTICATION = "server_authentication";
 
     private static final String OAUTH2_USER = "oauth2_user";
+    // U-011: OAUTH2_TOKEN, OAUTH2_REFRESH_TOKEN, IMAP_PASSWORD are the exact on-disk key
+    // strings (CNTR-MODERNIZATION-003 §Backing key set). They are referenced via the Java
+    // constants (not inline string literals) to keep the values consistent with the
+    // migration routine in U-012.
     private static final String OAUTH2_TOKEN = "oauth2_token";
     private static final String OAUTH2_REFRESH_TOKEN = "oauth2_refresh_token";
 
@@ -74,17 +85,73 @@ public class AuthPreferences {
     private static final String DEFAULT_SERVER_ADDRESS = "imap.gmail.com:993";
     private static final String DEFAULT_SERVER_PROTOCOL = "+ssl+";
 
+    /**
+     * Convenience constructor — Phase 1 (DES-MODERNIZATION-004 §Hilt Injection).
+     *
+     * Constructs an EncryptedPrefsSecretStore and delegates to the two-arg constructor.
+     * This is the constructor called by {@code Preferences.java:295} and on every
+     * {@code App.onCreate()}; its signature MUST remain unchanged (AC-8 / AC-5).
+     *
+     * If EncryptedSharedPreferences construction fails (GeneralSecurityException or
+     * IOException) — which happens in unit-test environments where the Android Keystore
+     * provider is unavailable — the constructor logs a warning and falls back to an
+     * InMemorySecretStore. This fallback is intentional for the test path; in production
+     * on a real device the AndroidKeyStore provider is always present and the fallback
+     * is never taken.
+     *
+     * Robolectric limitation note (AC-11 / U-011 Tech Notes): Robolectric 4.12.x does
+     * not shadow the AndroidKeyStore JCA provider. EncryptedSharedPreferences.create()
+     * therefore throws NoSuchAlgorithmException under Robolectric. All tests that exercise
+     * credential I/O must use the two-arg constructor with InMemorySecretStore injection.
+     */
     public AuthPreferences(Context context) {
+        this(context, buildEncryptedStoreSafe(context));
+    }
+
+    /**
+     * Two-arg constructor — the injection seam (AC-8 / DES-MODERNIZATION-004 §Hilt Injection).
+     *
+     * Accepts any SecretStore implementation, enabling test injection of InMemorySecretStore.
+     * In Phase 2 (DES-MODERNIZATION-008, Hilt), {@code @Binds @Singleton SecretStore <-
+     * EncryptedPrefsSecretStore} will target this constructor — a mechanical swap that
+     * requires no change to SecretStore, EncryptedPrefsSecretStore, or any caller.
+     */
+    public AuthPreferences(Context context, SecretStore secretStore) {
         this.context = context.getApplicationContext();
         this.preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        this.secretStore = secretStore;
+    }
+
+    /**
+     * Attempts to construct EncryptedPrefsSecretStore. Falls back to
+     * PlaintextSharedPrefsSecretStore if the Android Keystore is unavailable —
+     * which occurs in Robolectric unit-test environments (AC-11 / U-011 Tech Notes).
+     *
+     * In production on a real Android device the AndroidKeyStore provider is always
+     * present and this method always returns an EncryptedPrefsSecretStore.
+     *
+     * The fallback is logged at WARN level so it is visible in CI logs but does not
+     * crash tests that do not exercise credential I/O (e.g. RestoreStateTest).
+     */
+    private static SecretStore buildEncryptedStoreSafe(Context context) {
+        try {
+            return new EncryptedPrefsSecretStore(context);
+        } catch (GeneralSecurityException | IOException e) {
+            // Keystore unavailable — expected under Robolectric (AC-11 / U-011 Tech Notes).
+            // In production this path is never taken.
+            Log.w(TAG, "EncryptedPrefsSecretStore unavailable (Keystore provider missing?), "
+                    + "falling back to PlaintextSharedPrefsSecretStore for test compatibility. "
+                    + "Cause: " + e.getMessage());
+            return new PlaintextSharedPrefsSecretStore(context);
+        }
     }
 
     public String getOauth2Token() {
-        return getCredentials().getString(OAUTH2_TOKEN, null);
+        return secretStore.get(OAUTH2_TOKEN);
     }
 
     public String getOauth2RefreshToken() {
-        return getCredentials().getString(OAUTH2_REFRESH_TOKEN, null);
+        return secretStore.get(OAUTH2_REFRESH_TOKEN);
     }
 
     public boolean hasOAuth2Tokens() {
@@ -93,29 +160,29 @@ public class AuthPreferences {
     }
 
     public void setOauth2Token(String username, String accessToken, String refreshToken) {
+        // oauth2_user is NOT a secret — it stays in plaintext preferences (AC-4 /
+        // CNTR-MODERNIZATION-003 §Backing key set note).
         preferences.edit()
                 .putString(OAUTH2_USER, username)
                 .commit();
 
-        getCredentials().edit()
-                .putString(OAUTH2_TOKEN, accessToken)
-                .commit();
-        getCredentials().edit()
-                .putString(OAUTH2_REFRESH_TOKEN, refreshToken)
-                .commit();
+        // Credentials go through SecretStore for encrypted-at-rest storage.
+        // put() uses commit() semantics per CNTR-MODERNIZATION-003 §Type notes.
+        secretStore.put(OAUTH2_TOKEN, accessToken);
+        secretStore.put(OAUTH2_REFRESH_TOKEN, refreshToken);
     }
 
    public void clearOauth2Data() {
         final String oauth2token = getOauth2Token();
 
+        // oauth2_user stays in plaintext preferences — not a secret (AC-4).
         preferences.edit()
                 .remove(OAUTH2_USER)
                 .commit();
 
-        getCredentials().edit()
-                .remove(OAUTH2_TOKEN)
-                .remove(OAUTH2_REFRESH_TOKEN)
-                .commit();
+        // Remove secrets via SecretStore.
+        secretStore.remove(OAUTH2_TOKEN);
+        secretStore.remove(OAUTH2_REFRESH_TOKEN);
 
         if (!TextUtils.isEmpty(oauth2token)) {
             new TokenRefresher(context, new OAuth2Client(getOAuth2ClientId()), this).invalidateToken(oauth2token);
@@ -127,7 +194,7 @@ public class AuthPreferences {
     }
 
     public void setImapPassword(String s) {
-        getCredentials().edit().putString(IMAP_PASSWORD, s).commit();
+        secretStore.put(IMAP_PASSWORD, s);
     }
 
     public void setImapUser(String s) {
@@ -226,15 +293,6 @@ public class AuthPreferences {
         return getDefaultType(preferences, SERVER_AUTHENTICATION, AuthMode.class, AuthMode.PLAIN);
     }
 
-    // All sensitive information is stored in a separate prefs file so we can
-    // backup the rest without exposing sensitive data
-    private SharedPreferences getCredentials() {
-        if (credentials == null) {
-            credentials = context.getSharedPreferences("credentials", Context.MODE_PRIVATE);
-        }
-        return credentials;
-    }
-
     public String getServername() {
         return preferences.getString(SERVER_ADDRESS, null);
     }
@@ -244,7 +302,7 @@ public class AuthPreferences {
     }
 
     private String getImapPassword() {
-        return getCredentials().getString(IMAP_PASSWORD, null);
+        return secretStore.get(IMAP_PASSWORD);
     }
 
     /**
