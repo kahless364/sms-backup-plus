@@ -3,6 +3,7 @@ package com.zegoggles.smssync.activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.drawable.Drawable;
+import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -41,6 +42,11 @@ import static com.zegoggles.smssync.activity.events.PerformAction.Actions.Backup
 import static com.zegoggles.smssync.activity.events.PerformAction.Actions.Restore;
 
 public class StatusPreference extends Preference implements View.OnClickListener {
+    /** Discriminator for the status icon — maps to one of the four static drawables. */
+    enum IconKind {
+        IDLE, DONE, ERROR, SYNCING
+    }
+
     private Button backupButton;
     private Button restoreButton;
 
@@ -59,6 +65,15 @@ public class StatusPreference extends Preference implements View.OnClickListener
     private static final int idleDrawable = doneDrawable;
     private static final int errorDrawable = R.drawable.ic_syncing_problem;
     private static final int syncingDrawable = R.drawable.ic_syncing;
+
+    // Tracking fields for serialisable view state (updated whenever color/icon change).
+    // Package-private visibility to allow direct access from same-package unit tests.
+    int currentStatusColor;
+    IconKind currentIconKind = IconKind.IDLE;
+
+    // Snapshot stored by onRestoreInstanceState; consumed (and cleared) in onBindViewHolder.
+    // Package-private visibility to allow verification from same-package unit tests.
+    SavedState restoredState = null;
 
     @SuppressWarnings("unused")
     public StatusPreference(Context context) {
@@ -89,6 +104,10 @@ public class StatusPreference extends Preference implements View.OnClickListener
         done = Drawables.getTinted(context.getResources(), doneDrawable, doneColor);
         error = Drawables.getTinted(context.getResources(), errorDrawable, errorColor);
         syncing = Drawables.getTinted(context.getResources(),syncingDrawable, syncingColor);
+
+        // Initialise tracking fields to the default (idle) state.
+        currentStatusColor = idleColor;
+        currentIconKind = IconKind.IDLE;
     }
 
     @Override
@@ -122,21 +141,43 @@ public class StatusPreference extends Preference implements View.OnClickListener
         syncDetailsLabel = syncDetails.findViewById(R.id.details_sync_label);
         progressBar = syncDetails.findViewById(R.id.details_sync_progress);
 
-        idle();
+        if (restoredState != null) {
+            // A configuration change (e.g. rotation) occurred while a backup/restore was shown.
+            // Apply the snapshot instead of calling idle() so the row repaints to the
+            // pre-rotation state without a visible flash.
+            applyRestoredState(restoredState);
+            restoredState = null;
+        } else {
+            idle();
+        }
 
         App.register(this);
     }
 
     @Override
     public Parcelable onSaveInstanceState() {
-        // TODO implement
-        return super.onSaveInstanceState();
+        final Parcelable superState = super.onSaveInstanceState();
+        final SavedState s = new SavedState(superState);
+        s.statusText    = statusLabel     == null ? null : statusLabel.getText();
+        s.statusColor   = currentStatusColor;
+        s.detailsText   = syncDetailsLabel == null ? null : syncDetailsLabel.getText();
+        s.progress      = progressBar     == null ? 0    : progressBar.getProgress();
+        s.max           = progressBar     == null ? 0    : progressBar.getMax();
+        s.indeterminate = progressBar     != null && progressBar.isIndeterminate();
+        s.iconKind      = currentIconKind.ordinal();
+        return s;
     }
 
     @Override
     public void onRestoreInstanceState(Parcelable state) {
-        // TODO implement
-        super.onRestoreInstanceState(state);
+        if (state == null || !state.getClass().equals(SavedState.class)) {
+            super.onRestoreInstanceState(state);
+            return;
+        }
+        final SavedState s = (SavedState) state;
+        super.onRestoreInstanceState(s.getSuperState());
+        // Cache the snapshot; re-apply in onBindViewHolder once views are bound.
+        this.restoredState = s;
     }
 
     @Subscribe public void restoreStateChanged(final RestoreState newState) {
@@ -260,13 +301,17 @@ public class StatusPreference extends Preference implements View.OnClickListener
         }
         syncDetailsLabel.setText(text);
         statusLabel.setText(R.string.status_done);
+        currentStatusColor = doneColor;
         statusLabel.setTextColor(doneColor);
+        currentIconKind = IconKind.DONE;
         statusIcon.setImageDrawable(done);
     }
 
     private void finishedRestore(RestoreState newState) {
+        currentStatusColor = doneColor;
         statusLabel.setTextColor(doneColor);
         statusLabel.setText(R.string.status_done);
+        currentIconKind = IconKind.DONE;
         statusIcon.setImageDrawable(done);
         syncDetailsLabel.setText(getQuantityString(
                 R.plurals.status_restore_done_details,
@@ -278,7 +323,9 @@ public class StatusPreference extends Preference implements View.OnClickListener
     private void idle() {
         syncDetailsLabel.setText(getLastSyncText(preferences.getDataTypePreferences().getMostRecentSyncedDate()));
         statusLabel.setText(R.string.status_idle);
+        currentStatusColor = idleColor;
         statusLabel.setTextColor(idleColor);
+        currentIconKind = IconKind.IDLE;
         statusIcon.setImageDrawable(idle);
     }
 
@@ -323,23 +370,52 @@ public class StatusPreference extends Preference implements View.OnClickListener
             case CALC:
             case BACKUP:
             case RESTORE:
+                currentStatusColor = syncingColor;
                 statusLabel.setTextColor(syncingColor);
+                currentIconKind = IconKind.SYNCING;
                 statusIcon.setImageDrawable(syncing);
                 break;
             case ERROR:
                 progressBar.setProgress(0);
                 progressBar.setIndeterminate(false);
+                currentStatusColor = errorColor;
                 statusLabel.setTextColor(errorColor);
+                currentIconKind = IconKind.ERROR;
                 statusIcon.setImageDrawable(error);
                 setButtonsToDefault();
                 break;
             default:
                 progressBar.setProgress(0);
                 progressBar.setIndeterminate(false);
+                currentStatusColor = idleColor;
                 statusLabel.setTextColor(idleColor);
+                currentIconKind = IconKind.IDLE;
                 statusIcon.setImageDrawable(idle);
                 setButtonsToDefault();
                 break;
+        }
+    }
+
+    /** Apply a previously-saved state snapshot to the (now-bound) views. */
+    private void applyRestoredState(SavedState s) {
+        if (s.statusText != null) {
+            statusLabel.setText(s.statusText);
+        }
+        currentStatusColor = s.statusColor;
+        statusLabel.setTextColor(s.statusColor);
+        if (s.detailsText != null) {
+            syncDetailsLabel.setText(s.detailsText);
+        }
+        progressBar.setIndeterminate(s.indeterminate);
+        progressBar.setMax(s.max);
+        progressBar.setProgress(s.progress);
+        final IconKind kind = IconKind.values()[s.iconKind];
+        currentIconKind = kind;
+        switch (kind) {
+            case DONE:    statusIcon.setImageDrawable(done);    break;
+            case ERROR:   statusIcon.setImageDrawable(error);   break;
+            case SYNCING: statusIcon.setImageDrawable(syncing); break;
+            default:      statusIcon.setImageDrawable(idle);    break;
         }
     }
 
@@ -356,5 +432,66 @@ public class StatusPreference extends Preference implements View.OnClickListener
 
     private String getQuantityString(int resourceId, int quantity, Object... formatArgs) {
         return getContext().getResources().getQuantityString(resourceId, quantity, formatArgs);
+    }
+
+    // -----------------------------------------------------------------------
+    // Instance-state save/restore
+    // -----------------------------------------------------------------------
+
+    /**
+     * Carries the transient view state of {@link StatusPreference} across
+     * configuration changes (e.g. screen rotation).  Implements the standard
+     * {@link Preference.BaseSavedState} pattern.
+     */
+    static final class SavedState extends Preference.BaseSavedState {
+
+        CharSequence statusText;
+        int          statusColor;
+        CharSequence detailsText;
+        int          progress;
+        int          max;
+        boolean      indeterminate;
+        /** Ordinal of {@link IconKind}. */
+        int          iconKind;
+
+        SavedState(Parcelable superState) {
+            super(superState);
+        }
+
+        private SavedState(Parcel source) {
+            super(source);
+            statusText    = source.readString();
+            statusColor   = source.readInt();
+            detailsText   = source.readString();
+            progress      = source.readInt();
+            max           = source.readInt();
+            indeterminate = source.readInt() != 0;
+            iconKind      = source.readInt();
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            super.writeToParcel(dest, flags);
+            dest.writeString(statusText   == null ? null : statusText.toString());
+            dest.writeInt(statusColor);
+            dest.writeString(detailsText  == null ? null : detailsText.toString());
+            dest.writeInt(progress);
+            dest.writeInt(max);
+            dest.writeInt(indeterminate ? 1 : 0);
+            dest.writeInt(iconKind);
+        }
+
+        public static final Parcelable.Creator<SavedState> CREATOR =
+                new Parcelable.Creator<SavedState>() {
+                    @Override
+                    public SavedState createFromParcel(Parcel source) {
+                        return new SavedState(source);
+                    }
+
+                    @Override
+                    public SavedState[] newArray(int size) {
+                        return new SavedState[size];
+                    }
+                };
     }
 }
