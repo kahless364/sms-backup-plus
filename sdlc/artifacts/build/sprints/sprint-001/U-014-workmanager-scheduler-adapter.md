@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: high
 complexity: high
@@ -31,6 +31,8 @@ id: U-014
 title: 'WorkManagerScheduler: production BackupScheduler adapter with REPLACE semantics, EXPONENTIAL 30s/300s backoff, per-type network constraints, and content-URI trigger'
 pipeline: modernization
 domain: modernization
+updated_at: '2026-06-03T07:06:55.868Z'
+resolution: done
 ---
 
 # U-014: WorkManagerScheduler — Production BackupScheduler Adapter

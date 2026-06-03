@@ -69,7 +69,7 @@ artifact_type: sprint-plan
 | wave-5 | U-029 | Replace deprecated GData contacts call with ContactsPort + People API adapter | developer | sonnet | lead | U-003 | planned | low |
 | wave-6 | U-008 | Introduce TlsTrustPolicy enum, PinnedCertificateSocketFactory, PinnedCertStore, rewrite factory selection | developer | sonnet | lead | U-007, U-003 | done | critical |
 | wave-6 | U-011 | Introduce SecretStore port, EncryptedPrefsSecretStore adapter, InMemorySecretStore fake | developer | sonnet | lead | U-006, U-007 | done | high |
-| wave-6 | U-014 | WorkManagerScheduler: production BackupScheduler adapter with REPLACE semantics and backoff | developer | sonnet | lead | U-013, U-003 | planned | high |
+| wave-6 | U-014 | WorkManagerScheduler: production BackupScheduler adapter with REPLACE semantics and backoff | developer | sonnet | lead | U-013, U-003 | done | high |
 | wave-6 | U-025 | Define MailTransport port, app-owned ACL types, and reshape BackupImapStore into K9MailTransport adapter | developer | sonnet | lead | U-007 | planned | medium |
 | wave-7 | U-009 | TLS enrollment UI: pin-cert preference action, one-time security notice, and string cleanup | developer | sonnet | lead | U-008 | planned | high |
 | wave-7 | U-012 | Idempotent plaintext-to-encrypted credential migration on first launch after upgrade | developer | sonnet | lead | U-011 | planned | high |
