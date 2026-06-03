@@ -24,8 +24,9 @@ import androidx.work.PeriodicWorkRequest
 import com.zegoggles.smssync.Consts
 import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.service.BackupType
+import com.zegoggles.smssync.service.BackupWorker
+import com.zegoggles.smssync.service.RestoreWorker
 import com.zegoggles.smssync.worker.BackupTriggerWorker
-import com.zegoggles.smssync.worker.BackupWorker
 import java.util.concurrent.TimeUnit
 
 /**
@@ -283,13 +284,28 @@ class WorkManagerScheduler(
     }
 
     /**
-     * Stub restore scheduler — full durable checkpoint implementation is U-016.
-     * Returns a ScheduledJob so callers do not need null-handling until U-016.
+     * Schedules a one-off restore job backed by [RestoreWorker].
+     *
+     * The full durable-checkpoint implementation (persist cursor after each insert,
+     * resume from checkpointKey on re-execution) is U-016. This implementation enqueues
+     * the real [RestoreWorker] so the restore executes via WorkManager; U-016 adds
+     * durability/resumability on top without changing this enqueue call.
+     *
+     * INV-1: REPLACE semantics via [ExistingWorkPolicy.REPLACE].
+     * No network constraint for restore (restore is user-initiated, not background-triggered).
      */
     override fun scheduleRestore(config: RestoreSchedulerConfig): ScheduledJob? {
-        Log.i(TAG, "WorkManagerScheduler.scheduleRestore: stub — full implementation is U-016. config=$config")
-        // U-016 will implement a real durable OneTimeWorkRequest with checkpointKey.
-        return ScheduledJob(config.uniqueName, "WorkManagerScheduler:restore(stub)")
+        val request = OneTimeWorkRequest.Builder(RestoreWorker::class.java)
+            .setConstraints(Constraints.NONE)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+            .addTag(config.uniqueName)
+            .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(config.uniqueName, ExistingWorkPolicy.REPLACE, request)
+
+        Log.d(TAG, "WorkManagerScheduler.scheduleRestore: enqueued RestoreWorker for ${config.uniqueName}")
+        return ScheduledJob(config.uniqueName, "WorkManagerScheduler:restore(${config.uniqueName})")
     }
 
     // -----------------------------------------------------------------------

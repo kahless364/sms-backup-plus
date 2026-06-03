@@ -23,6 +23,7 @@ import androidx.work.WorkerParameters
 import androidx.work.Worker
 import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.service.BackupType
+import com.zegoggles.smssync.service.BackupWorker
 import java.util.concurrent.TimeUnit
 
 /**
