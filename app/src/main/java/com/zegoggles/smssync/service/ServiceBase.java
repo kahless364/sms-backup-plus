@@ -57,10 +57,16 @@ import static com.zegoggles.smssync.App.TAG;
 import static java.util.Locale.ENGLISH;
 
 // U-022: ServiceBase is an abstract Service; concrete subclasses (SmsBackupService,
-// SmsRestoreService) are annotated @AndroidEntryPoint so Hilt can inject @Inject
+// SmsRestoreService) are annotated @AndroidEntryPoint so Hilt injects @Inject
 // fields declared here. The @Inject annotations on the fields below replace the
 // per-call Service-Locator construction (ARCH-002 defect) that existed at
 // ServiceBase.java:73,108,112 (verified source lines in DES-MODERNIZATION-008).
+// U-032: @AndroidEntryPoint applied to SmsBackupService/SmsRestoreService; null-check
+// coexistence shims removed from getPreferences()/getAuthPreferences(); fields renamed
+// from injectedPreferences/injectedAuthPreferences to preferences/authPreferences per
+// EPIC-MODERNIZATION-005 Success Criterion 6 (grep-zero on injected* names).
+// The field-shadowing hazard motivating the prefix is resolved by migrating the
+// Robolectric tests off the anonymous-subclass pattern (DES-MODERNIZATION-012 §REQ-014).
 public abstract class ServiceBase extends Service {
     @Nullable private PowerManager.WakeLock wakeLock;
     @Nullable private WifiManager.WifiLock wifiLock;
@@ -68,21 +74,12 @@ public abstract class ServiceBase extends Service {
     private AppLog appLog;
     @Nullable Notification notification;
 
-    // U-022: @Inject fields that will be populated by Hilt once @AndroidEntryPoint is
-    // applied to concrete service subclasses in U-023. Names are prefixed with 'injected'
-    // to prevent Java field-shadowing in Robolectric test anonymous subclasses that declare
-    // their own 'preferences'/'authPreferences' fields in the enclosing test class
-    // (AC-10: existing tests must not be broken by this story).
-    //
-    // These replace the per-call Service-Locator construction pattern (ARCH-002):
-    //   old: new Preferences(this) in onCreate()
-    //   old: new Preferences(getApplicationContext()) in getPreferences()
-    //   old: new AuthPreferences(this) in getAuthPreferences()
-    // PreferencesModule provides both as @Singleton (AC-4, AC-6, IC-3).
-    // Until @AndroidEntryPoint is applied (U-023), getPreferences()/getAuthPreferences()
-    // fall back to on-demand construction when these fields are null.
-    @Inject Preferences injectedPreferences;
-    @Inject AuthPreferences injectedAuthPreferences;
+    // U-022: @Inject fields populated by Hilt member injection when @AndroidEntryPoint
+    // fires in SmsBackupService/SmsRestoreService onCreate() (U-032).
+    // PreferencesModule provides both as @Singleton (AC-4, AC-6, IC-3 of U-022).
+    // U-032: renamed from injectedPreferences/injectedAuthPreferences to satisfy EPIC SC-6.
+    @Inject Preferences preferences;
+    @Inject AuthPreferences authPreferences;
 
     @Override
     public void attachBaseContext(Context base) {
@@ -97,11 +94,10 @@ public abstract class ServiceBase extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        // U-022: getPreferences() now returns the @Inject field (preferences).
-        // Using the accessor preserves test-override behaviour: test subclasses that
-        // override getPreferences() to return a mock will still work correctly here,
-        // even in the Robolectric test context where Hilt injection is not active
-        // (AC-10: existing tests must not be broken by this story).
+        // U-032: getPreferences() returns the @Inject-supplied Preferences singleton.
+        // Hilt member injection on @AndroidEntryPoint services fires in
+        // Hilt_SmsBackupService/Hilt_SmsRestoreService.onCreate() before the
+        // super-chain reaches this method, so preferences is non-null here.
         if (getPreferences().isAppLogEnabled()) {
             this.appLog = new AppLog(this);
         }
@@ -172,27 +168,23 @@ public abstract class ServiceBase extends Service {
     }
 
     /**
-     * U-022: Returns the @Inject-supplied singleton when Hilt injection has run
-     * (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
-     * for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
-     * Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
-     * injectedAuthPreferences is null only when @AndroidEntryPoint has not yet been applied
-     * (bootstrap coexistence period); in U-023 production, it is always non-null.
+     * U-032: Returns the @Inject-supplied singleton (null-check coexistence shim removed).
+     * With @AndroidEntryPoint live on SmsBackupService/SmsRestoreService, Hilt injects
+     * this field before onCreate() runs. Direct field return; no on-demand fallback.
+     * (U-022: was guarded by injectedAuthPreferences != null ? ... : new AuthPreferences(this))
      */
     protected AuthPreferences getAuthPreferences() {
-        return injectedAuthPreferences != null ? injectedAuthPreferences : new AuthPreferences(this);
+        return authPreferences;
     }
 
     /**
-     * U-022: Returns the @Inject-supplied singleton when Hilt injection has run
-     * (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
-     * for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
-     * Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
-     * injectedPreferences is null only when @AndroidEntryPoint has not yet been applied
-     * (bootstrap coexistence period); in U-023 production, it is always non-null.
+     * U-032: Returns the @Inject-supplied singleton (null-check coexistence shim removed).
+     * With @AndroidEntryPoint live on SmsBackupService/SmsRestoreService, Hilt injects
+     * this field before onCreate() runs. Direct field return; no on-demand fallback.
+     * (U-022: was guarded by injectedPreferences != null ? ... : new Preferences(getApplicationContext()))
      */
     protected Preferences getPreferences() {
-        return injectedPreferences != null ? injectedPreferences : new Preferences(getApplicationContext());
+        return preferences;
     }
 
     protected synchronized void acquireLocks() {

@@ -52,14 +52,21 @@ import static org.robolectric.Shadows.shadowOf;
  * U-031: BackupTask mock and getBackupTask() override removed (BackupTask deleted).
  * backup() now dispatches via getScheduler().scheduleManual(backupType).
  * Tests updated to verify scheduler.scheduleManual() instead of backupTask.execute().
+ * U-032 AC-9/AC-10: Anonymous-subclass pattern retained using Option A (constructor/field
+ * seam). @AndroidEntryPoint is applied to SmsBackupService; to avoid Hilt injection under
+ * Robolectric (which lacks a HiltTestApplication), the anonymous subclass overrides
+ * onCreate() to skip super.onCreate() (bypassing Hilt_SmsBackupService.onCreate()), and
+ * overrides getPreferences()/getAuthPreferences()/getScheduler() to return mocks.
+ * Mock fields renamed to mockPreferences/mockAuthPreferences to avoid shadowing
+ * ServiceBase.preferences/ServiceBase.authPreferences (package-private @Inject fields).
  */
 @RunWith(RobolectricTestRunner.class)
 public class SmsBackupServiceTest {
     SmsBackupService service;
     List<NotificationCompat.Builder> sentNotifications;
 
-    @Mock AuthPreferences authPreferences;
-    @Mock Preferences preferences;
+    @Mock AuthPreferences mockAuthPreferences;
+    @Mock Preferences mockPreferences;
     @Mock DataTypePreferences dataTypePreferences;
     // U-013: BackupJobs mock replaced by BackupScheduler mock (getBackupJobs factory removed)
     // U-031: BackupTask mock removed — BackupTask deleted, dispatch via scheduleManual()
@@ -69,14 +76,22 @@ public class SmsBackupServiceTest {
         openMocks(this);
         sentNotifications = new ArrayList<NotificationCompat.Builder>();
         service = new SmsBackupService() {
+            // U-032 AC-9/AC-10 Option A: override onCreate() to skip Hilt injection.
+            // Hilt_SmsBackupService.onCreate() calls AndroidInjection.inject(this) which
+            // throws IllegalStateException under plain Robolectric Application (no HiltTestApplication).
+            // We skip super.onCreate() and perform only the test-relevant initialization.
+            @Override public void onCreate() {
+                // No super call — bypasses Hilt injection.
+                // AppLog init in ServiceBase.onCreate() is intentionally skipped in tests.
+            }
             @Override public Context getApplicationContext() { return RuntimeEnvironment.application; }
             @Override public Resources getResources() { return getApplicationContext().getResources(); }
             // U-031: getBackupTask() override removed — factory deleted
             // U-013: override getScheduler() instead of getBackupJobs()
             @Override protected BackupScheduler getScheduler() { return scheduler; }
-            @Override protected Preferences getPreferences() { return preferences; }
+            @Override protected Preferences getPreferences() { return mockPreferences; }
             @Override public int checkPermission(String permission, int pid, int uid) { return PERMISSION_GRANTED; }
-            @Override protected AuthPreferences getAuthPreferences() { return authPreferences; }
+            @Override protected AuthPreferences getAuthPreferences() { return mockAuthPreferences; }
             @Override protected void notifyUser(int icon, NotificationCompat.Builder builder) {
                 sentNotifications.add(builder);
             }
@@ -84,11 +99,11 @@ public class SmsBackupServiceTest {
 
         service.onCreate();
 
-        when(authPreferences.getStoreUri()).thenReturn("imap+ssl+://xoauth:foooo@imap.gmail.com:993");
-        when(authPreferences.isLoginInformationSet()).thenReturn(true);
-        when(preferences.getBackupContactGroup()).thenReturn(ContactGroup.EVERYBODY);
+        when(mockAuthPreferences.getStoreUri()).thenReturn("imap+ssl+://xoauth:foooo@imap.gmail.com:993");
+        when(mockAuthPreferences.isLoginInformationSet()).thenReturn(true);
+        when(mockPreferences.getBackupContactGroup()).thenReturn(ContactGroup.EVERYBODY);
         // U-017: isUseOldScheduler() mock removed — method no longer used in service.
-        when(preferences.getDataTypePreferences()).thenReturn(dataTypePreferences);
+        when(mockPreferences.getDataTypePreferences()).thenReturn(dataTypePreferences);
         when(dataTypePreferences.enabled()).thenReturn(EnumSet.of(DataType.SMS));
         // U-031: scheduleManual() stub — returns a ScheduledJob for the happy path.
         when(scheduler.scheduleManual(any(BackupType.class)))
@@ -116,7 +131,7 @@ public class SmsBackupServiceTest {
 
     @Test public void shouldCheckForLoginCredentials() throws Exception {
         Intent intent = new Intent();
-        when(authPreferences.isLoginInformationSet()).thenReturn(false);
+        when(mockAuthPreferences.isLoginInformationSet()).thenReturn(false);
         service.handleIntent(intent);
         // U-031: scheduleManual not called when credentials missing
         verifyNoMoreInteractions(scheduler);
@@ -127,7 +142,7 @@ public class SmsBackupServiceTest {
         when(dataTypePreferences.enabled()).thenReturn(EnumSet.noneOf(DataType.class));
 
         Intent intent = new Intent();
-        when(authPreferences.isLoginInformationSet()).thenReturn(true);
+        when(mockAuthPreferences.isLoginInformationSet()).thenReturn(true);
         service.handleIntent(intent);
         // U-031: scheduleManual not called when no data types enabled
         verifyNoMoreInteractions(scheduler);
@@ -170,8 +185,8 @@ public class SmsBackupServiceTest {
         // The service calls scheduleManual() and the worker validates the store at runtime.
         // This test now verifies that an "invalid" store URI does NOT prevent scheduleManual()
         // being called (credentials check is isLoginInformationSet(), not URI format).
-        when(authPreferences.getStoreUri()).thenReturn("invalid");
-        when(authPreferences.isLoginInformationSet()).thenReturn(true);
+        when(mockAuthPreferences.getStoreUri()).thenReturn("invalid");
+        when(mockAuthPreferences.isLoginInformationSet()).thenReturn(true);
         Intent intent = new Intent(MANUAL.name());
 
         service.handleIntent(intent);

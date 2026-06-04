@@ -11,7 +11,6 @@ import com.zegoggles.smssync.mail.PersonRecord;
 
 import java.util.Date;
 import java.util.Map;
-import javax.inject.Inject;
 
 import static com.zegoggles.smssync.App.TAG;
 
@@ -23,13 +22,13 @@ class CalendarSyncer {
     private boolean syncEnabled;
 
     /**
-     * U-023: @Inject constructor — enables Hilt to build CalendarSyncer when requested.
-     * CalendarAccessor, calendarId, PersonLookup, and CallFormatter are provided
-     * by EngineModule. Tests continue to call this constructor directly with mocks
-     * (CalendarSyncerTest.java:38-43). long calendarId is supplied as
-     * @Named("calendarId") long in EngineModule.
+     * U-032: @Inject annotation removed from this constructor.
+     * BackupTask (the only @Inject-mediated consumer via Lazy<CalendarSyncer>) was deleted
+     * in U-031. The Hilt graph never needs to construct CalendarSyncer — BackupWorker and
+     * CalendarSyncerTest both construct it directly (DES-MODERNIZATION-012 §REQ-014
+     * CalendarSyncer binding fix). Keeping @Inject with an unbound raw 'long calendarId'
+     * parameter would cause [Dagger/MissingBinding] once @AndroidEntryPoint is applied.
      */
-    @Inject
     CalendarSyncer(CalendarAccessor calendarAccessor,
                    long calendarId,
                    PersonLookup personLookup,

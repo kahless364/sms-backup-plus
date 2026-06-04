@@ -24,6 +24,7 @@ import com.zegoggles.smssync.scheduler.ScheduledJob;
 import com.zegoggles.smssync.service.exception.SmsProviderNotWritableException;
 import com.zegoggles.smssync.service.state.RestoreState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
+import dagger.hilt.android.AndroidEntryPoint;
 import kotlinx.coroutines.Job;
 
 import java.io.File;
@@ -38,13 +39,12 @@ import static com.zegoggles.smssync.mail.DataType.CALLLOG;
 import static com.zegoggles.smssync.mail.DataType.SMS;
 import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 
-// U-022: @AndroidEntryPoint deferred to U-023. ServiceBase declares @Inject fields
-// (Preferences, AuthPreferences) but injection fires only when @AndroidEntryPoint is
-// applied to the concrete service. Adding @AndroidEntryPoint here would break Robolectric
-// tests that create anonymous service subclasses without a Hilt test component (AC-10).
-// U-023 migrates those tests to @HiltAndroidTest and activates injection.
-// TODO(U-023): add @AndroidEntryPoint here once tests are migrated to @HiltAndroidTest.
 /**
+ * U-032: @AndroidEntryPoint applied (deferred from U-023). Hilt member injection fires
+ * in Hilt_SmsRestoreService.onCreate() — ServiceBase.preferences and
+ * ServiceBase.authPreferences are populated before SmsRestoreService.onCreate() runs.
+ * Robolectric service tests migrated off anonymous-subclass/setupService pattern (AC-9/AC-10).
+ *
  * Service that performs the actual SMS/call-log restore from IMAP.
  *
  * <p>U-026 AC-6: k-9 MessagingException and BinaryTempFileBody imports removed.
@@ -65,6 +65,7 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
  * {@code WorkManager.cancelUniqueWork()} via {@link WorkManagerCancelCollector} (R-4 mitigation).
  * {@code getRestoreTask()} factory and {@code RestoreTask} class are deleted.
  */
+@AndroidEntryPoint
 public class SmsRestoreService extends ServiceBase {
     private static final int RESTORE_ID = 2;
 
