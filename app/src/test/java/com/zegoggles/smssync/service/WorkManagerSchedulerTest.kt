@@ -54,10 +54,13 @@ class WorkManagerSchedulerTest {
         context = RuntimeEnvironment.application
 
         // Initialize WorkManager with a single-thread executor (test harness).
-        // SynchronousExecutor is recommended by WorkManager docs for testing.
+        // U-024: BackupWorker now uses @HiltWorker/@AssistedInject; default reflective
+        // factory cannot construct it. Provide TestableBackupWorkerFactory so that work
+        // enqueued by the scheduler can be instantiated (otherwise work state = FAILED).
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
             .setExecutor(Executors.newSingleThreadExecutor())
+            .setWorkerFactory(BackupWorker.TestableBackupWorkerFactory())
             .build()
         WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
 

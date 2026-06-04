@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import com.zegoggles.smssync.service.state.SyncEvent
 import com.zegoggles.smssync.service.state.SyncState
 import com.zegoggles.smssync.service.state.SyncStateRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -11,12 +13,15 @@ import kotlinx.coroutines.flow.StateFlow
  * U-020: ViewModel that exposes SyncStateRepository flows to MainActivity.
  *
  * AC-14: holds an injected SyncStateRepository; exposes state and events flows.
- * AC-18: manual-DI (no @HiltViewModel) — constructed via MainViewModelFactory.
  *
- * TODO U-022/MU-007: replace manual factory with @HiltViewModel and @Inject constructor
+ * U-024: @HiltViewModel + @Inject constructor — replaces the manual MainViewModelFactory.
+ * Hilt validates at compile time that SyncStateRepository is bound in the component graph
+ * (it is — EventModule.provideSyncStateRepository() is @Singleton in SingletonComponent,
+ * accessible from ActivityRetainedComponent via parent component inheritance).
+ * Callers obtain this ViewModel via by viewModels() (no explicit factory needed).
  */
-// TODO @HiltViewModel — retrofit in MU-007 (U-022): replace MainViewModelFactory with @Inject constructor
-class MainViewModel(
+@HiltViewModel
+class MainViewModel @Inject constructor(
     private val repository: SyncStateRepository
 ) : ViewModel() {
 

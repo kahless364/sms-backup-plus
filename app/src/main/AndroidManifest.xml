@@ -220,5 +220,24 @@
         <meta-data
             android:name="com.google.android.backup.api_key"
             android:value="@string/backup_api_key"/>
+
+        <!--
+            U-024: Disable WorkManager auto-initialization via androidx.startup.
+            WorkManager 2.6+ uses InitializationProvider (androidx-startup) to auto-init
+            before Application.onCreate(). This must be removed so WorkManager does NOT
+            initialize before Hilt has injected HiltWorkerFactory into App.
+            App.onCreate() calls WorkManager.initialize(this, getWorkManagerConfiguration())
+            explicitly after super.onCreate() (which triggers Hilt injection).
+            Per androidx.hilt:hilt-work documentation: when using Configuration.Provider,
+            the auto-initializer must be disabled or WorkManager ignores the custom factory.
+
+            Verified: work-runtime-ktx:2.9.1 uses InitializationProvider (not the older
+            standalone WorkManagerInitializer ContentProvider). The authority is
+            ${applicationId}.androidx-startup per WorkManager 2.6+ convention.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove" />
     </application>
 </manifest>

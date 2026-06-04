@@ -18,6 +18,8 @@ package com.zegoggles.smssync.service
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 /**
  * Production [RestoreCheckpointStore] adapter backed by [SharedPreferences] (U-016).
@@ -40,10 +42,12 @@ import android.util.Log
  * Per IC-1 / CNTR-MODERNIZATION-004 §IC-1, this adapter lives in the app module; the
  * [RestoreCheckpointStore] interface (the port) carries no Android types.
  *
- * TODO U-024: When Hilt DI is wired, inject this as the bound implementation of
- * [RestoreCheckpointStore] via a @Binds Hilt module.
+ * U-024: @Inject added so Hilt can provide this as the bound implementation of
+ * [RestoreCheckpointStore] via CheckpointModule.
  */
-class SharedPreferencesCheckpointStore(private val context: Context) : RestoreCheckpointStore {
+class SharedPreferencesCheckpointStore @Inject constructor(
+    @ApplicationContext private val context: Context
+) : RestoreCheckpointStore {
 
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

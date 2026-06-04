@@ -42,10 +42,14 @@ class RestoreWorkerTest {
     fun setUp() {
         context = RuntimeEnvironment.application
 
-        // U-016: include the RestoreWorkerFactory so WorkManager can instantiate the worker.
-        // Without a factory, WorkManager cannot construct the 4-parameter constructor and
-        // the enqueue integration tests would observe FAILED state.
-        val factory = RestoreWorker.RestoreWorkerFactory()
+        // U-024: RestoreWorkerFactory (the hand-rolled production factory) has been removed;
+        // HiltWorkerFactory is now the production factory. Tests use TestableRestoreWorkerFactory
+        // which supplies checkpoint + interceptor test doubles and constructs Preferences/
+        // AuthPreferences from context (matching former RestoreWorkerFactory behaviour).
+        val factory = RestoreWorker.TestableRestoreWorkerFactory(
+            InMemoryCheckpointStore(),
+            RestoreInsertInterceptor.NoOp
+        )
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
             .setExecutor(Executors.newSingleThreadExecutor())

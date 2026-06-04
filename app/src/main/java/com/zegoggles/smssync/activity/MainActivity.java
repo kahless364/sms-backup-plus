@@ -42,6 +42,8 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
 // U-020: import com.squareup.otto.Subscribe removed
+// U-024: @AndroidEntryPoint enables Hilt injection + @HiltViewModel ViewModel creation
+import dagger.hilt.android.AndroidEntryPoint;
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.Dialogs.WebConnect;
@@ -101,7 +103,12 @@ import static com.zegoggles.smssync.service.BackupType.SKIP;
 /**
  * This is the main activity showing the status of the SMS Sync service and
  * providing controls to configure it.
+ *
+ * U-024: @AndroidEntryPoint enables Hilt member injection and activates the
+ * @HiltViewModel factory so MainViewModel can be obtained via ViewModelProvider
+ * without an explicit factory parameter.
  */
+@AndroidEntryPoint
 public class MainActivity extends ThemeActivity implements
         PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
         PreferenceFragmentCompat.OnPreferenceStartScreenCallback,
@@ -141,9 +148,11 @@ public class MainActivity extends ThemeActivity implements
         preferenceTitles = new PreferenceTitles(getResources(), R.xml.preferences);
         preferences = new Preferences(this);
 
-        // U-020: Create MainViewModel via manual factory (AC-18, TODO U-022/MU-007)
-        viewModel = new androidx.lifecycle.ViewModelProvider(this,
-            new MainViewModelFactory(App.syncStateRepository()))
+        // U-024: Create MainViewModel via Hilt's ViewModel factory (replaces manual factory).
+        // @AndroidEntryPoint on this activity + @HiltViewModel on MainViewModel activates
+        // Hilt's default ViewModelProvider.Factory, which supplies the SyncStateRepository.
+        // MainViewModelFactory is no longer needed.
+        viewModel = new androidx.lifecycle.ViewModelProvider(this)
             .get(MainViewModel.class);
 
         if (bundle == null) {

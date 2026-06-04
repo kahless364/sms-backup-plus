@@ -39,13 +39,25 @@ class BackupWorkerTest {
     fun setUp() {
         context = RuntimeEnvironment.application
 
-        // Initialize WorkManager test harness
+        // U-024: BackupWorker now has @HiltWorker + @AssistedInject constructor; the default
+        // reflective no-arg factory cannot construct it. TestableBackupWorkerFactory supplies
+        // Preferences and AuthPreferences from context (no real IMAP — unit tests that reach
+        // the backup path will fail with MailException, which is expected).
+        val factory = BackupWorker.TestableBackupWorkerFactory()
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(android.util.Log.DEBUG)
             .setExecutor(Executors.newSingleThreadExecutor())
+            .setWorkerFactory(factory)
             .build()
         WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
     }
+
+    /** Helper: build a BackupWorker via TestableBackupWorkerFactory (required post U-024). */
+    private fun buildWorker(runAttemptCount: Int = 0): BackupWorker =
+        TestListenableWorkerBuilder<BackupWorker>(context)
+            .setWorkerFactory(BackupWorker.TestableBackupWorkerFactory())
+            .setRunAttemptCount(runAttemptCount)
+            .build() as BackupWorker
 
     // -----------------------------------------------------------------------
     // INV-3: Backoff cap enforcement — Result.failure when effective delay > 300s
@@ -63,9 +75,7 @@ class BackupWorkerTest {
     @Test
     fun inv3_backoffCap_atAttempt4_returnsFailure() {
         // Attempt 4: 30 * 2^4 = 480s > 300s cap
-        val worker = TestListenableWorkerBuilder<BackupWorker>(context)
-            .setRunAttemptCount(4)
-            .build()
+        val worker = buildWorker(runAttemptCount = 4)
 
         val result = kotlinx.coroutines.runBlocking { worker.doWork() }
 
@@ -82,9 +92,7 @@ class BackupWorkerTest {
     @Test
     fun inv3_backoffCap_atAttempt3_doesNotCapYet() {
         // Attempt 3: 30 * 2^3 = 240s < 300s — cap should NOT apply
-        val worker = TestListenableWorkerBuilder<BackupWorker>(context)
-            .setRunAttemptCount(3)
-            .build()
+        val worker = buildWorker(runAttemptCount = 3)
 
         val result = kotlinx.coroutines.runBlocking { worker.doWork() }
 
@@ -122,9 +130,7 @@ class BackupWorkerTest {
      */
     @Test
     fun worker_firstAttempt_returnsResultNotException() {
-        val worker = TestListenableWorkerBuilder<BackupWorker>(context)
-            .setRunAttemptCount(0)
-            .build()
+        val worker = buildWorker(runAttemptCount = 0)
 
         // Must complete without throwing
         val result = try {
@@ -146,7 +152,7 @@ class BackupWorkerTest {
     fun ac6_workerClass_hasOttoFreePackage() {
         // BackupWorker is in the service package, not the worker package
         // Its class name confirms correct placement
-        val worker = TestListenableWorkerBuilder<BackupWorker>(context).build()
+        val worker = buildWorker()
         assertThat(worker.javaClass.name)
             .isEqualTo("com.zegoggles.smssync.service.BackupWorker")
     }
