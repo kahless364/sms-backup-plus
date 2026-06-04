@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: planned
 artifact_type: user-story
 priority: medium
 complexity: low
@@ -19,6 +19,7 @@ title: Trust source/javadoc jars in Gradle dependency verification metadata
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-001
+sprint: '000003'
 ---
 
 # U-033: Trust source/javadoc jars in Gradle dependency verification metadata

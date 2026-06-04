@@ -1,0 +1,50 @@
+{
+  "execution_plan": {
+    "version": "1.0.0",
+    "pipeline": "sprint-execution",
+    "instance_id": "sprint-003",
+    "plan_type": "sprint-execution",
+    "variation": null,
+    "variation_rationale": null,
+    "steps": [
+      {
+        "step_id": "U-033",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-003/U-033/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-003/U-033/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-003/U-033/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-003/U-033/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-003/U-033/qa-results.md"
+        ],
+        "gate": { "name": "wave-gate", "verdict_type": "audit_gate", "max_iterations": 1 },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": [],
+        "parallel_group": "wave-1"
+      }
+    ],
+    "checkpoints": [
+      { "checkpoint_id": "wave-1-complete", "after_steps": ["U-033"], "gates": [{ "gate_id": "wave-1-gate", "agent": "deterministic", "severity": "blocking" }] }
+    ],
+    "overrides_applied": {
+      "agent_overrides": {
+        "U-033": {
+          "developer_agent": "developer",
+          "model": "sonnet",
+          "override_reason": "story-build process.yaml not found at project or core paths (planner exit 1); resolved from sdlc/config.yaml defaults.model_routing.developer and sprint-001/sprint-002 precedent"
+        }
+      },
+      "gate_additions": [],
+      "pipeline_override": null
+    },
+    "metadata": {
+      "created_by": "sprint-manager",
+      "created_at": "2026-06-04T00:00:00Z",
+      "context_summary": "Sprint sprint-003 with 1 story across 1 wave (single-story bug-fix maintenance sprint; BUG-001 source/javadoc jar verification)",
+      "plan_revision": 1,
+      "re_consultation_reason": null
+    }
+  }
+}
