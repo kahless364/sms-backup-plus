@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: medium
 complexity: high
@@ -30,6 +30,8 @@ title: 'Engine Rewire to MailTransport: wire BackupTask/RestoreTask/ServiceBase 
 pipeline: ''
 domain: modernization
 requirement_source: authored
+updated_at: '2026-06-04T16:43:53.498Z'
+resolution: done
 ---
 
 # U-026: Engine Rewire to MailTransport — wire BackupTask/RestoreTask/ServiceBase to the MailTransport port, remove all com.fsck.k9.* from service.* and State, pull BinaryTempFileBody behind the adapter, delete State.java:32-34 magic-string block
