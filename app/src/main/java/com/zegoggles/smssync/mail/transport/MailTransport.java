@@ -17,6 +17,7 @@ package com.zegoggles.smssync.mail.transport;
 
 import com.zegoggles.smssync.mail.ConversionResult;
 import com.zegoggles.smssync.mail.DataType;
+import com.zegoggles.smssync.mail.MessageConverter;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
 import com.zegoggles.smssync.service.exception.RequiresLoginException;
 
@@ -114,4 +115,27 @@ public interface MailTransport {
      * discard the block's return value.
      */
     void closeFolders();
+
+    /**
+     * Fetches the full body for the given message handle and converts it to a
+     * {@link MessageImportResult} using the supplied {@link MessageConverter}.
+     *
+     * <p>This operation bridges the bounded-residual {@link MessageConverter} (which uses
+     * k-9 {@code Message} types internally) to the app-owned port boundary: the adapter
+     * accesses the k-9 {@code Message} directly from the opaque {@link MailMessageHandle}
+     * inside {@code mail.transport}, so the engine ({@code service.*}) never imports any
+     * {@code com.fsck.k9.*} type (AC-10 / CNTR-MODERNIZATION-007).
+     *
+     * <p>Replaces the per-message {@code message.getFolder().fetch(...)} + converter-call
+     * pattern in {@code RestoreTask.importMessage()} (RestoreTask.java:240-247).
+     *
+     * @param folder    the folder handle returned by {@link #openFolder}
+     * @param handle    the message handle returned by {@link #getMessages}
+     * @param converter the bounded-residual converter used to extract data type and content values
+     * @return a {@link MessageImportResult} containing the converted content values and data type;
+     *         {@link MessageImportResult#failed} is {@code true} if the fetch or conversion failed
+     */
+    MessageImportResult importMessageBody(BackupFolderHandle folder,
+                                          MailMessageHandle handle,
+                                          MessageConverter converter);
 }

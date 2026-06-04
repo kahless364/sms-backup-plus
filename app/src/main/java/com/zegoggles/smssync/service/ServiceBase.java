@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,17 +34,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import android.util.Log;
-import android.net.Uri;
-import com.fsck.k9.mail.MessagingException;
-import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
-import com.fsck.k9.mail.ssl.TrustedSocketFactory;
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.MainActivity;
-import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.PinnedCertStore;
-import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
 import com.zegoggles.smssync.mail.TlsTrustPolicy;
+import com.zegoggles.smssync.mail.transport.K9MailTransport;
+import com.zegoggles.smssync.mail.transport.MailException;
+import com.zegoggles.smssync.mail.transport.MailTransport;
+import com.zegoggles.smssync.mail.transport.MailTransportConfig;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.service.state.State;
@@ -129,10 +128,25 @@ public abstract class ServiceBase extends Service {
         return getState().isRunning();
     }
 
-    protected BackupImapStore getBackupImapStore() throws MessagingException {
+    /**
+     * U-026 AC-1: Replaces {@code getBackupImapStore()} with an app-owned seam.
+     *
+     * <p>Builds a {@link MailTransportConfig} from the IMAP URI in {@link AuthPreferences}
+     * and the {@link TlsTrustPolicy} resolved for this host via {@link PinnedCertStore}.
+     * Constructs a {@link K9MailTransport} from that config. The k-9
+     * {@code MessagingException} from the K9MailTransport constructor is wrapped in a
+     * {@link MailException} so the engine-side seam only sees app-owned exception types.
+     *
+     * <p>Per AC-1 / IC-1: this is the sole construction point for {@link MailTransport}
+     * in the engine. BackupTask and RestoreTask obtain their transport through this seam —
+     * never by constructing a {@code BackupImapStore} or {@code K9MailTransport} directly.
+     *
+     * @throws MailException if the URI is invalid, or if K9MailTransport construction fails
+     */
+    protected MailTransport getMailTransport() throws MailException {
         final String uri = getAuthPreferences().getStoreUri();
-        if (!BackupImapStore.isValidUri(uri)) {
-            throw new MessagingException("No valid IMAP URI: " + uri);
+        if (!com.zegoggles.smssync.mail.BackupImapStore.isValidUri(uri)) {
+            throw new MailException("No valid IMAP URI: " + uri);
         }
 
         // Resolve host and port from the URI for per-host certificate lookup.
@@ -145,37 +159,42 @@ public abstract class ServiceBase extends Service {
         final PinnedCertStore pinnedCertStore = new PinnedCertStore(getApplicationContext());
         final TlsTrustPolicy policy = pinnedCertStore.getTlsTrustPolicy(host, port);
 
-        // 2. Build the concrete TrustedSocketFactory for the resolved policy.
-        //    Never trust-all; fail closed on any resolution failure.
-        //    (CNTR-MODERNIZATION-001 Invariants 1-3, 5)
-        final TrustedSocketFactory factory;
+        // 2. Build MailTransportConfig — app-owned, no k-9 types.
+        final MailTransportConfig config;
         if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
-            factory = new PinnedCertificateSocketFactory(
-                    getApplicationContext(), host, pinnedCertStore.get(host, port));
+            config = new MailTransportConfig(uri, policy, pinnedCertStore.get(host, port));
         } else {
-            factory = new DefaultTrustedSocketFactory(getApplicationContext());
+            config = new MailTransportConfig(uri, policy);
         }
 
-        // 3. Pass the resolved factory to BackupImapStore — it never re-decides trust.
-        return new BackupImapStore(getApplicationContext(), uri, factory);
+        // 3. Construct K9MailTransport — wraps MessagingException in MailException.
+        try {
+            return new K9MailTransport(getApplicationContext(), config);
+        } catch (com.fsck.k9.mail.MessagingException e) {
+            throw new MailException(e);
+        }
     }
 
-    // U-022: Returns the @Inject-supplied singleton when Hilt injection has run
-    // (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
-    // for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
-    // Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
-    // injectedAuthPreferences is null only when @AndroidEntryPoint has not yet been applied
-    // (bootstrap coexistence period); in U-023 production, it is always non-null.
+    /**
+     * U-022: Returns the @Inject-supplied singleton when Hilt injection has run
+     * (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
+     * for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
+     * Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
+     * injectedAuthPreferences is null only when @AndroidEntryPoint has not yet been applied
+     * (bootstrap coexistence period); in U-023 production, it is always non-null.
+     */
     protected AuthPreferences getAuthPreferences() {
         return injectedAuthPreferences != null ? injectedAuthPreferences : new AuthPreferences(this);
     }
 
-    // U-022: Returns the @Inject-supplied singleton when Hilt injection has run
-    // (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
-    // for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
-    // Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
-    // injectedPreferences is null only when @AndroidEntryPoint has not yet been applied
-    // (bootstrap coexistence period); in U-023 production, it is always non-null.
+    /**
+     * U-022: Returns the @Inject-supplied singleton when Hilt injection has run
+     * (production path via @AndroidEntryPoint in U-023). Falls back to on-demand construction
+     * for Robolectric tests that create anonymous service subclasses without @AndroidEntryPoint
+     * Hilt lifecycle (AC-10 coexistence: existing tests must not be broken).
+     * injectedPreferences is null only when @AndroidEntryPoint has not yet been applied
+     * (bootstrap coexistence period); in U-023 production, it is always non-null.
+     */
     protected Preferences getPreferences() {
         return injectedPreferences != null ? injectedPreferences : new Preferences(getApplicationContext());
     }

@@ -1,7 +1,8 @@
 package com.zegoggles.smssync.service.state;
 
 import android.content.res.Resources;
-import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException;
+// U-026: com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException replaced by app-owned XOAuth2FailedException
+import com.zegoggles.smssync.mail.transport.XOAuth2FailedException;
 import org.mockito.Mockito;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.service.BackupType;
@@ -172,7 +173,8 @@ public class BackupStateCoverageTest {
     }
 
     @Test public void state_isAuthException_forXOAuth2Failure() {
-        XOAuth2AuthenticationFailedException authEx = Mockito.mock(XOAuth2AuthenticationFailedException.class);
+        // U-026: XOAuth2FailedException (app-owned) replaces k-9 XOAuth2AuthenticationFailedException
+        XOAuth2FailedException authEx = Mockito.mock(XOAuth2FailedException.class);
         BackupState state = new BackupState(
             SmsSyncState.ERROR, 0, 0, BackupType.REGULAR, null, authEx
         );

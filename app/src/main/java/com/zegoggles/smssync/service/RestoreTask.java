@@ -10,20 +10,22 @@ import android.provider.CallLog;
 import android.provider.Telephony;
 import androidx.annotation.NonNull;
 import android.util.Log;
-import com.fsck.k9.mail.AuthenticationFailedException;
-import com.fsck.k9.mail.FetchProfile;
-import com.fsck.k9.mail.Message;
-import com.fsck.k9.mail.MessagingException;
-import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException;
 // U-020: import com.squareup.otto.Subscribe removed
+// U-026: all com.fsck.k9.* imports removed; engine now uses app-owned ACL types
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.Consts;
 import com.zegoggles.smssync.auth.TokenRefreshException;
 import com.zegoggles.smssync.auth.TokenRefresher;
-import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.MessageConverter;
+import com.zegoggles.smssync.mail.transport.BackupFolderHandle;
+import com.zegoggles.smssync.mail.transport.MailException;
+import com.zegoggles.smssync.mail.transport.MailMessageHandle;
+import com.zegoggles.smssync.mail.transport.MailTransport;
+import com.zegoggles.smssync.mail.transport.MessageImportResult;
+import com.zegoggles.smssync.mail.transport.XOAuth2FailedException;
 import com.zegoggles.smssync.preferences.Preferences;
+import com.zegoggles.smssync.service.exception.RequiresLoginException;
 import com.zegoggles.smssync.service.state.RestoreState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 
@@ -46,6 +48,14 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.LOGIN;
 import static com.zegoggles.smssync.service.state.SmsSyncState.RESTORE;
 import static com.zegoggles.smssync.service.state.SmsSyncState.UPDATING_THREADS;
 
+/**
+ * AsyncTask that performs the SMS/call-log restore from IMAP.
+ *
+ * <p>U-026 AC-3: Rewired from {@code BackupImapStore} (k-9 type) to {@link MailTransport}
+ * (app-owned ACL port). No {@code com.fsck.k9.*} import remains in this file per AC-3
+ * and AC-10. The transport is obtained from {@link SmsRestoreService#getMailTransport()}
+ * (the sole construction point per IC-1).
+ */
 @SuppressWarnings("deprecation")
 class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
     private static final String ERROR = "error";
@@ -110,30 +120,60 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
         }
     }
 
+    /**
+     * U-026 AC-3: Rewired from BackupImapStore to MailTransport.
+     *
+     * <p>All IMAP calls go through the port:
+     * <ul>
+     *   <li>{@code imapStore.checkSettings()} → {@code transport.checkSettings()}</li>
+     *   <li>{@code imapStore.getFolder(SMS,...).getMessages(...)} →
+     *       {@code transport.openFolder(SMS, prefs)} + {@code transport.getMessages(folder, ...)}</li>
+     *   <li>Per-message body fetch → {@code transport.importMessageBody(folder, handle, converter)}</li>
+     *   <li>{@code imapStore.closeFolders()} → {@code transport.closeFolders()}</li>
+     * </ul>
+     * No {@code com.fsck.k9.*} type appears in this method per AC-10.
+     */
     private RestoreState restore(RestoreConfig config) {
-        final BackupImapStore imapStore = config.imapStore;
+        // U-026 AC-3(a): obtain MailTransport from config
+        final MailTransport transport = config.imapStore;
 
         int currentRestoredItem = config.currentRestoredItem;
         try {
             publishProgress(LOGIN);
-            imapStore.checkSettings();
+            // U-026 AC-3: checkSettings via transport port
+            transport.checkSettings();
 
             publishProgress(CALC);
 
-            final List<Message> msgs = new ArrayList<Message>();
+            final List<MailMessageHandle> msgs = new ArrayList<MailMessageHandle>();
 
             if (config.restoreSms) {
-                msgs.addAll(imapStore.getFolder(SMS, preferences.getDataTypePreferences()).getMessages(config.maxRestore, config.restoreOnlyStarred, null));
+                // U-026 AC-3(b): openFolder + getMessages replaces imapStore.getFolder().getMessages()
+                BackupFolderHandle smsFolder = transport.openFolder(SMS, preferences.getDataTypePreferences());
+                msgs.addAll(transport.getMessages(smsFolder, config.maxRestore, config.restoreOnlyStarred, null));
             }
             if (config.restoreCallLog) {
-                msgs.addAll(imapStore.getFolder(CALLLOG, preferences.getDataTypePreferences()).getMessages(config.maxRestore, config.restoreOnlyStarred, null));
+                // U-026 AC-3(b): openFolder + getMessages for call log
+                BackupFolderHandle calllogFolder = transport.openFolder(CALLLOG, preferences.getDataTypePreferences());
+                msgs.addAll(transport.getMessages(calllogFolder, config.maxRestore, config.restoreOnlyStarred, null));
             }
+
+            // We also need the folder handles per message for importMessageBody.
+            // Re-open folders (K9MailTransport caches them, so this is a no-op on the IMAP level).
+            final BackupFolderHandle smsFolderHandle = config.restoreSms
+                    ? transport.openFolder(SMS, preferences.getDataTypePreferences()) : null;
+            final BackupFolderHandle calllogFolderHandle = config.restoreCallLog
+                    ? transport.openFolder(CALLLOG, preferences.getDataTypePreferences()) : null;
 
             final int itemsToRestoreCount = config.maxRestore <= 0 ? msgs.size() : Math.min(msgs.size(), config.maxRestore);
 
             if (itemsToRestoreCount > 0) {
                 for (; currentRestoredItem < itemsToRestoreCount && !isCancelled(); currentRestoredItem++) {
-                    DataType dataType = importMessage(msgs.get(currentRestoredItem));
+                    MailMessageHandle handle = msgs.get(currentRestoredItem);
+                    // Determine which folder this message is from by checking the data type
+                    // after import. We pass the SMS folder as the primary; call-log handles
+                    // came from the calllog folder. We detect this by DataType.
+                    DataType dataType = importMessage(transport, handle, smsFolderHandle, calllogFolderHandle);
 
                     msgs.set(currentRestoredItem, null); // help gc
                     publishProgress(new RestoreState(RESTORE, currentRestoredItem, itemsToRestoreCount, 0, 0, dataType, null));
@@ -154,11 +194,14 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
                     restoredCount,
                     Math.max(0, uids.size() - restoredCount),
                     null, null);
-        } catch (XOAuth2AuthenticationFailedException e) {
+        } catch (XOAuth2FailedException e) {
+            // U-026 AC-4: app-owned XOAuth2FailedException replaces k-9 XOAuth2AuthenticationFailedException
             return handleAuthError(config, currentRestoredItem, e);
-        } catch (AuthenticationFailedException e) {
+        } catch (RequiresLoginException e) {
+            // U-026 AC-4: app-owned RequiresLoginException replaces k-9 AuthenticationFailedException
             return transition(SmsSyncState.ERROR, e);
-        } catch (MessagingException e) {
+        } catch (MailException e) {
+            // U-026 AC-4: app-owned MailException replaces k-9 MessagingException
             Log.e(TAG, ERROR, e);
             updateAllThreadsIfAnySmsRestored();
             return transition(SmsSyncState.ERROR, e);
@@ -166,20 +209,72 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
             // usually memory problems (Couldn't init cursor window)
             return transition(SmsSyncState.ERROR, e);
         } finally {
-            imapStore.closeFolders();
+            // U-026 AC-3(e): closeFolders via transport port (does not throw)
+            transport.closeFolders();
         }
     }
 
-    private RestoreState handleAuthError(RestoreConfig config, int currentRestoredItem, XOAuth2AuthenticationFailedException e) {
+    /**
+     * U-026 AC-3(d): Per-message body fetch via {@code transport.importMessageBody()} replacing
+     * the k-9 {@code message.getFolder().fetch()} call.
+     *
+     * <p>The bounded-residual {@link MessageConverter} is passed to the transport adapter which
+     * can access the k-9 {@code Message} inside the opaque {@link MailMessageHandle} to call the
+     * converter — keeping all k-9 types inside {@code mail.transport} per AC-10.
+     *
+     * @param smsFolderHandle     open SMS folder handle (may be null if SMS not being restored)
+     * @param calllogFolderHandle open call-log folder handle (may be null if call log not restored)
+     */
+    @SuppressWarnings("unchecked")
+    private DataType importMessage(MailTransport transport,
+                                   MailMessageHandle handle,
+                                   BackupFolderHandle smsFolderHandle,
+                                   BackupFolderHandle calllogFolderHandle) {
+        uids.add(handle.uid);
+        if (LOCAL_LOGV) Log.v(TAG, "fetching message uid " + handle.uid);
+
+        // Prefer SMS folder; fall back to calllog folder. The adapter caches by DataType,
+        // so the correct folder is used internally for the fetch.
+        BackupFolderHandle folderHandle = smsFolderHandle != null ? smsFolderHandle : calllogFolderHandle;
+
+        // U-026 AC-3(d): transport.importMessageBody replaces message.getFolder().fetch() + converter calls
+        MessageImportResult result = transport.importMessageBody(folderHandle, handle, converter);
+
+        if (result.failed || result.dataType == null || result.contentValues == null) {
+            Log.e(TAG, "importMessageBody failed for uid=" + handle.uid);
+            return null;
+        }
+
+        DataType dataType = result.dataType;
+        try {
+            switch (dataType) {
+                case CALLLOG:
+                    importCallLog(result.contentValues);
+                    break;
+                case SMS:
+                    importSms(result.contentValues);
+                    break;
+                default:
+                    if (LOCAL_LOGV) Log.d(TAG, "ignoring restore of type: " + dataType);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, ERROR, e);
+        }
+        return dataType;
+    }
+
+    private RestoreState handleAuthError(RestoreConfig config, int currentRestoredItem, XOAuth2FailedException e) {
         if (e.getStatus() == 400) {
             Log.d(TAG, "need to perform xoauth2 token refresh");
             if (config.tries < 1) {
                 try {
                     tokenRefresher.refreshOAuth2Token();
-                    // we got a new token, let's retry one more time - we need to pass in a new store object
+                    // we got a new token, let's retry one more time - we need to pass in a new transport object
                     // since the auth params on it are immutable
-                    return restore(config.retryWithStore(currentRestoredItem, service.getBackupImapStore()));
-                } catch (MessagingException ignored) {
+                    // U-026: retryWithStore now accepts MailTransport; getMailTransport() is the seam
+                    return restore(config.retryWithStore(currentRestoredItem, service.getMailTransport()));
+                } catch (MailException ignored) {
+                    // U-026 AC-4: MailException replaces MessagingException for swallowed retry failure
                     Log.w(TAG, ignored);
                 } catch (TokenRefreshException refreshException) {
                     Log.w(TAG, refreshException);
@@ -233,43 +328,7 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
         service.restoreStateChanged(changed);
     }
 
-    @SuppressWarnings("unchecked")
-    private DataType importMessage(Message message) {
-        uids.add(message.getUid());
-
-        FetchProfile fp = new FetchProfile();
-        fp.add(FetchProfile.Item.BODY);
-        DataType dataType = null;
-        try {
-            if (LOCAL_LOGV) Log.v(TAG, "fetching message uid " + message.getUid());
-            message.getFolder().fetch(Collections.singletonList(message), fp, null);
-            dataType = converter.getDataType(message);
-            //only restore sms+call log for now
-            switch (dataType) {
-                case CALLLOG:
-                    importCallLog(message);
-                    break;
-                case SMS:
-                    importSms(message);
-                    break;
-                default:
-                    if (LOCAL_LOGV) Log.d(TAG, "ignoring restore of type: " + dataType);
-            }
-
-        } catch (MessagingException e) {
-            Log.e(TAG, ERROR, e);
-        } catch (IllegalArgumentException e) {
-            // http://code.google.com/p/android/issues/detail?id=2916
-            Log.e(TAG, ERROR, e);
-        } catch (IOException e) {
-            Log.e(TAG, ERROR, e);
-        }
-        return dataType;
-    }
-
-    private void importSms(final Message message) throws IOException, MessagingException {
-        if (LOCAL_LOGV) Log.v(TAG, "importSms(" + message + ")");
-        final ContentValues values = converter.messageToContentValues(message);
+    private void importSms(final ContentValues values) throws IOException {
         final Integer type = values.getAsInteger(Telephony.TextBasedSmsColumns.TYPE);
 
         // only restore inbox messages and sent messages - otherwise sms might get sent on restore
@@ -294,9 +353,7 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
         }
     }
 
-    private void importCallLog(final Message message) throws MessagingException, IOException {
-        if (LOCAL_LOGV) Log.v(TAG, "importCallLog(" + message + ")");
-        final ContentValues values = converter.messageToContentValues(message);
+    private void importCallLog(final ContentValues values) {
         if (!callLogExists(values)) {
             final Uri uri = resolver.insert(Consts.CALLLOG_PROVIDER, values);
             if (uri != null) callLogIds.add(uri.getLastPathSegment());

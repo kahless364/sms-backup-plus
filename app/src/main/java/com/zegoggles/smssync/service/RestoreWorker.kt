@@ -27,12 +27,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.fsck.k9.mail.AuthenticationFailedException
-import com.fsck.k9.mail.FetchProfile
-import com.fsck.k9.mail.Message
-import com.fsck.k9.mail.MessagingException
-import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory
-import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException
+// U-026: all com.fsck.k9.* imports removed; engine now uses app-owned ACL types
 import com.zegoggles.smssync.Consts
 import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
@@ -43,20 +38,29 @@ import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.MessageConverter
 import com.zegoggles.smssync.mail.PersonLookup
 import com.zegoggles.smssync.mail.PinnedCertStore
-import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory
 import com.zegoggles.smssync.mail.TlsTrustPolicy
+import com.zegoggles.smssync.mail.transport.BackupFolderHandle
+import com.zegoggles.smssync.mail.transport.K9MailTransport
+import com.zegoggles.smssync.mail.transport.MailException
+import com.zegoggles.smssync.mail.transport.MailMessageHandle
+import com.zegoggles.smssync.mail.transport.MailTransport
+import com.zegoggles.smssync.mail.transport.MailTransportConfig
+import com.zegoggles.smssync.mail.transport.XOAuth2FailedException
 import com.zegoggles.smssync.preferences.AuthPreferences
 import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.scheduler.WorkManagerScheduler
+import com.zegoggles.smssync.service.exception.RequiresLoginException
 import kotlinx.coroutines.ensureActive
-import java.io.IOException
 import java.util.ArrayList
-import java.util.Collections
 import java.util.HashSet
 import kotlin.coroutines.coroutineContext
 
 /**
  * Real CoroutineWorker restore implementation (U-015 + U-016).
+ *
+ * U-026: Rewired from [com.zegoggles.smssync.mail.BackupImapStore] (k-9 type) to
+ * [MailTransport] (app-owned ACL port). No {@code com.fsck.k9.*} import remains in this
+ * file. [buildMailTransport] replaces the former [buildImapStore].
  *
  * This worker contains the restore execution logic ported from [RestoreTask] (AsyncTask-based).
  * It preserves all RestoreTask behaviors:
@@ -124,7 +128,8 @@ class RestoreWorker(
         Log.d(TAG, "RestoreWorker.doWork: starting restore, attempt=$runAttempt")
 
         return try {
-            val imapStore = buildImapStore(ctx, authPreferences)
+            // U-026: buildMailTransport replaces buildImapStore; MailException replaces MessagingException
+            val transport = buildMailTransport(ctx, authPreferences)
             val restoreSms = preferences.dataTypePreferences.isRestoreEnabled(DataType.SMS)
             val restoreCallLog = preferences.dataTypePreferences.isRestoreEnabled(DataType.CALLLOG)
 
@@ -134,7 +139,7 @@ class RestoreWorker(
             }
 
             val config = RestoreConfig(
-                imapStore,
+                transport,
                 0,
                 restoreSms,
                 restoreCallLog,
@@ -158,8 +163,9 @@ class RestoreWorker(
             )
 
             executeRestore(config, preferences, converter, tokenRefresher, ctx, authPreferences)
-        } catch (e: MessagingException) {
-            Log.w(TAG, "RestoreWorker: MessagingException — retrying", e)
+        } catch (e: MailException) {
+            // U-026: MailException replaces MessagingException
+            Log.w(TAG, "RestoreWorker: MailException — retrying", e)
             Result.retry()
         } catch (e: Exception) {
             Log.e(TAG, "RestoreWorker: unrecoverable error", e)
@@ -168,8 +174,20 @@ class RestoreWorker(
     }
 
     /**
+     * Pairs a [MailMessageHandle] with its corresponding open [BackupFolderHandle].
+     * Required because [MailTransport.importMessageBody] needs both the folder and the handle;
+     * the folder handle is used by [K9MailTransport.importMessageBody] to call folder.fetch().
+     */
+    private data class MessageWithFolder(val handle: MailMessageHandle, val folder: BackupFolderHandle)
+
+    /**
      * IMAP-backed restore execution. Mirrors RestoreTask.restore() (RestoreTask.java:97-155).
      * Fetches messages from IMAP then delegates to [runRestoreLoop].
+     *
+     * U-026: uses [MailTransport.openFolder], [MailTransport.getMessages],
+     * [MailTransport.closeFolders] instead of BackupImapStore k-9 types. Tracks
+     * (handle, folderHandle) pairs so [importMessage] can call [MailTransport.importMessageBody]
+     * with the correct folder.
      */
     private suspend fun executeRestore(
         config: RestoreConfig,
@@ -179,57 +197,72 @@ class RestoreWorker(
         ctx: Context,
         authPreferences: AuthPreferences
     ): Result {
-        val imapStore = config.imapStore
+        val transport = config.imapStore
         val uniqueWorkName = inputData.getString(KEY_UNIQUE_WORK_NAME) ?: RESTORE_WORK_NAME
 
         try {
             setProgress(workDataOf(PROGRESS_KEY_STATE to STATE_LOGIN))
-            imapStore.checkSettings()
+            // U-026: checkSettings via transport port
+            transport.checkSettings()
 
             setProgress(workDataOf(PROGRESS_KEY_STATE to STATE_CALC))
 
-            val msgs = ArrayList<Message?>()
+            // U-026: openFolder + getMessages via transport port; no k-9 types cross this seam.
+            // Track (handle, folderHandle) pairs so importMessageBody receives the correct folder.
+            val msgs = ArrayList<MessageWithFolder?>()
             if (config.restoreSms) {
-                msgs.addAll(imapStore.getFolder(DataType.SMS, preferences.dataTypePreferences)
-                    .getMessages(config.maxRestore, config.restoreOnlyStarred, null))
+                val smsFolder: BackupFolderHandle = transport.openFolder(DataType.SMS, preferences.dataTypePreferences)
+                for (handle in transport.getMessages(smsFolder, config.maxRestore, config.restoreOnlyStarred, null)) {
+                    msgs.add(MessageWithFolder(handle, smsFolder))
+                }
             }
             if (config.restoreCallLog) {
-                msgs.addAll(imapStore.getFolder(DataType.CALLLOG, preferences.dataTypePreferences)
-                    .getMessages(config.maxRestore, config.restoreOnlyStarred, null))
+                val calllogFolder: BackupFolderHandle = transport.openFolder(DataType.CALLLOG, preferences.dataTypePreferences)
+                for (handle in transport.getMessages(calllogFolder, config.maxRestore, config.restoreOnlyStarred, null)) {
+                    msgs.add(MessageWithFolder(handle, calllogFolder))
+                }
             }
 
             val itemsToRestoreCount = if (config.maxRestore <= 0) msgs.size
                                       else minOf(msgs.size, config.maxRestore)
 
             return runImapRestoreLoop(msgs, itemsToRestoreCount, config.currentRestoredItem,
-                preferences, converter, ctx, uniqueWorkName)
+                transport, preferences, converter, ctx, uniqueWorkName)
 
-        } catch (e: XOAuth2AuthenticationFailedException) {
+        } catch (e: XOAuth2FailedException) {
+            // U-026: XOAuth2FailedException replaces k-9 XOAuth2AuthenticationFailedException
             return handleAuthError(config, preferences, converter, tokenRefresher, ctx,
                 authPreferences, RestoreCheckpointStore.NO_CHECKPOINT, e)
-        } catch (e: AuthenticationFailedException) {
+        } catch (e: RequiresLoginException) {
+            // U-026: RequiresLoginException replaces k-9 AuthenticationFailedException
             return Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_failed"))
-        } catch (e: MessagingException) {
-            Log.e(TAG, "RestoreWorker: MessagingException", e)
+        } catch (e: MailException) {
+            // U-026: MailException replaces k-9 MessagingException
+            Log.e(TAG, "RestoreWorker: MailException", e)
             updateAllThreadsIfAnySmsRestored(ctx)
             return Result.retry()
         } catch (e: IllegalStateException) {
             Log.e(TAG, "RestoreWorker: IllegalStateException (possible memory)", e)
             return Result.failure(workDataOf(KEY_FAILURE_REASON to "illegal_state"))
         } finally {
-            imapStore.closeFolders()
+            // U-026: closeFolders via transport port (does not throw)
+            transport.closeFolders()
         }
     }
 
     /**
-     * Restore loop over IMAP [Message] objects.
-     * Each message is imported (fetched + converted) then inserted via [importSms]/[importCallLog].
+     * Restore loop over [MessageWithFolder] pairs (IMAP message handle + open folder handle).
+     * Each message is imported (fetched + converted) then inserted via [importSmsValues]/[importCallLogValues].
      * Checkpoint is written after each confirmed insert; cleared on SUCCEEDED.
+     *
+     * U-026: msgs list is now [MessageWithFolder?] instead of k-9 Message?; transport is
+     * passed through for the [importMessage] call to [MailTransport.importMessageBody].
      */
     private suspend fun runImapRestoreLoop(
-        msgs: ArrayList<Message?>,
+        msgs: ArrayList<MessageWithFolder?>,
         itemsToRestoreCount: Int,
         initialRestoredItem: Int,
+        transport: MailTransport,
         preferences: Preferences,
         converter: MessageConverter,
         ctx: Context,
@@ -249,9 +282,9 @@ class RestoreWorker(
                 while (currentRestoredItem < itemsToRestoreCount) {
                     coroutineContext.ensureActive()
 
-                    val msg = msgs[currentRestoredItem]
-                    if (msg != null) {
-                        importMessage(msg, converter, preferences, ctx, currentRestoredItem, uniqueWorkName)
+                    val item = msgs[currentRestoredItem]
+                    if (item != null) {
+                        importMessage(item.handle, item.folder, transport, converter, preferences, ctx, currentRestoredItem, uniqueWorkName)
                     }
 
                     msgs[currentRestoredItem] = null
@@ -421,78 +454,71 @@ class RestoreWorker(
     }
 
     /**
-     * Imports a single message (SMS or CALLLOG) from IMAP.
+     * Imports a single message (SMS or CALLLOG) from IMAP using the MailTransport port.
      * Mirrors RestoreTask.importMessage() (RestoreTask.java:217-248).
      * Used by the IMAP [runImapRestoreLoop] path only.
      *
+     * U-026: replaces the pattern of fetching a k-9 Message body directly. Instead,
+     * calls [MailTransport.importMessageBody] which fetches the body and converts it
+     * to a [com.zegoggles.smssync.mail.transport.MessageImportResult] inside mail.transport,
+     * keeping all k-9 types confined to the ACL adapter. Engine code never imports k-9 types.
+     *
+     * The [folder] parameter must be the [BackupFolderHandle] that was used to fetch this
+     * handle (from [MailTransport.getMessages]). The K9MailTransport adapter uses this folder
+     * to call folder.fetch() to load the message body.
+     *
      * After a confirmed insert, writes checkpoint then calls insertInterceptor.
      */
-    @Suppress("UNCHECKED_CAST")
     private suspend fun importMessage(
-        message: Message,
+        handle: MailMessageHandle,
+        folder: BackupFolderHandle,
+        transport: MailTransport,
         converter: MessageConverter,
         preferences: Preferences,
         ctx: Context,
         currentIndex: Int,
         uniqueWorkName: String
     ) {
-        uids.add(message.uid)
+        uids.add(handle.uid)
 
-        val fp = FetchProfile()
-        fp.add(FetchProfile.Item.BODY)
-        try {
-            if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: fetching message uid ${message.uid}")
-            message.folder.fetch(Collections.singletonList(message), fp, null)
-            val dataType = converter.getDataType(message)
-            when (dataType) {
-                DataType.CALLLOG -> importCallLog(message, converter, ctx, currentIndex, uniqueWorkName)
-                DataType.SMS     -> importSmsMessage(message, converter, preferences, ctx, currentIndex, uniqueWorkName)
-                else             -> if (Log.isLoggable(TAG, Log.VERBOSE))
-                                        Log.d(TAG, "RestoreWorker: ignoring restore of type: $dataType")
-            }
-        } catch (e: MessagingException) {
-            Log.e(TAG, "RestoreWorker: error", e)
-        } catch (e: IllegalArgumentException) {
-            Log.e(TAG, "RestoreWorker: error", e)
-        } catch (e: IOException) {
-            Log.e(TAG, "RestoreWorker: error", e)
+        if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: fetching message uid ${handle.uid}")
+
+        // U-026: importMessageBody fetches the body and converts inside mail.transport package
+        // so no k-9 Message type crosses the port boundary into service.*
+        val importResult = transport.importMessageBody(
+            folder,
+            handle,
+            converter
+        )
+
+        if (importResult == null || importResult.failed) {
+            if (Log.isLoggable(TAG, Log.VERBOSE)) Log.d(TAG, "RestoreWorker: skipping failed import at $currentIndex (uid=${handle.uid})")
+            return
+        }
+
+        when (importResult.dataType) {
+            DataType.CALLLOG -> importCallLogValues(importResult.contentValues!!, ctx, currentIndex, uniqueWorkName)
+            DataType.SMS     -> insertSmsValues(importResult.contentValues!!, preferences, ctx, currentIndex, uniqueWorkName)
+            else             -> if (Log.isLoggable(TAG, Log.VERBOSE))
+                                    Log.d(TAG, "RestoreWorker: ignoring restore of type: ${importResult.dataType}")
         }
     }
 
     /**
-     * Imports a single SMS message from IMAP, gated by type filter and smsExists().
-     * Mirrors RestoreTask.importSms() (RestoreTask.java:250-275).
-     * After confirmed insert: writes checkpoint then calls insertInterceptor (AC-2).
-     */
-    @Throws(IOException::class, MessagingException::class)
-    private suspend fun importSmsMessage(
-        message: Message,
-        converter: MessageConverter,
-        preferences: Preferences,
-        ctx: Context,
-        currentIndex: Int,
-        uniqueWorkName: String
-    ) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: importSmsMessage($message)")
-        val values = converter.messageToContentValues(message)
-        insertSmsValues(values, preferences, ctx, currentIndex, uniqueWorkName)
-    }
-
-    /**
-     * Imports a single call log entry from IMAP, gated by callLogExists().
+     * Inserts a call-log [ContentValues] entry into the provider, gated by callLogExists().
      * Mirrors RestoreTask.importCallLog() (RestoreTask.java:277-286).
      * After confirmed insert: writes checkpoint then calls insertInterceptor (AC-2).
+     *
+     * U-026: takes ContentValues directly instead of k-9 Message — conversion was done
+     * inside mail.transport by [MailTransport.importMessageBody].
      */
-    @Throws(MessagingException::class, IOException::class)
-    private suspend fun importCallLog(
-        message: Message,
-        converter: MessageConverter,
+    private suspend fun importCallLogValues(
+        values: ContentValues,
         ctx: Context,
         currentIndex: Int,
         uniqueWorkName: String
     ) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: importCallLog($message)")
-        val values = converter.messageToContentValues(message)
+        if (Log.isLoggable(TAG, Log.VERBOSE)) Log.v(TAG, "RestoreWorker: importCallLogValues at $currentIndex")
         if (!callLogExists(values, ctx)) {
             val uri = ctx.contentResolver.insert(Consts.CALLLOG_PROVIDER, values)
             if (uri != null) {
@@ -584,6 +610,9 @@ class RestoreWorker(
     /**
      * XOAuth2 token-refresh retry. At most one retry.
      * Mirrors RestoreTask.handleAuthError (RestoreTask.java:157-177).
+     *
+     * U-026: parameter type changed from k-9 XOAuth2AuthenticationFailedException to
+     * app-owned [XOAuth2FailedException]. MailException replaces MessagingException.
      */
     private suspend fun handleAuthError(
         config: RestoreConfig,
@@ -593,7 +622,7 @@ class RestoreWorker(
         ctx: Context,
         authPreferences: AuthPreferences,
         currentRestoredItem: Int,
-        e: XOAuth2AuthenticationFailedException
+        e: XOAuth2FailedException
     ): Result {
         if (e.status == 400) {
             Log.d(TAG, "RestoreWorker: XOAuth2 400 — need token refresh")
@@ -601,11 +630,13 @@ class RestoreWorker(
                 return try {
                     tokenRefresher.refreshOAuth2Token()
                     Log.d(TAG, "RestoreWorker: token refreshed, retrying with currentRestoredItem=$currentRestoredItem")
-                    val newStore = buildImapStore(ctx, authPreferences)
-                    val retryConfig = config.retryWithStore(currentRestoredItem, newStore)
+                    // U-026: buildMailTransport replaces buildImapStore
+                    val newTransport = buildMailTransport(ctx, authPreferences)
+                    val retryConfig = config.retryWithStore(currentRestoredItem, newTransport)
                     executeRestore(retryConfig, preferences, converter, tokenRefresher, ctx, authPreferences)
-                } catch (ignored: MessagingException) {
-                    Log.w(TAG, "RestoreWorker: MessagingException during token refresh", ignored)
+                } catch (ignored: MailException) {
+                    // U-026: MailException replaces MessagingException
+                    Log.w(TAG, "RestoreWorker: MailException during token refresh", ignored)
                     Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error_after_refresh"))
                 } catch (refreshEx: TokenRefreshException) {
                     Log.w(TAG, "RestoreWorker: token refresh failed: $refreshEx")
@@ -621,25 +652,34 @@ class RestoreWorker(
     }
 
     /**
-     * Builds a BackupImapStore with TLS trust policy resolution.
-     * Mirrors ServiceBase.getBackupImapStore().
+     * Builds a [MailTransport] with TLS trust policy resolution.
+     * Mirrors [ServiceBase.getMailTransport] (U-026).
+     *
+     * U-026: replaces the former [buildImapStore] (which returned [BackupImapStore]).
+     * No k-9 types are used here; K9MailTransport wraps them internally.
+     * [BackupImapStore.isValidUri] is still called for validation (bounded residual — the
+     * static URI validation helper lives in mail.* and is NOT a k-9 import).
      */
-    private fun buildImapStore(ctx: Context, authPreferences: AuthPreferences): BackupImapStore {
+    private fun buildMailTransport(ctx: Context, authPreferences: AuthPreferences): MailTransport {
         val uri = authPreferences.storeUri
         if (!BackupImapStore.isValidUri(uri)) {
-            throw MessagingException("No valid IMAP URI: $uri")
+            throw MailException("No valid IMAP URI: $uri")
         }
         val parsed = Uri.parse(uri)
-        val host = parsed.host
+        val host = parsed.host ?: ""
         val port = parsed.port
         val pinnedCertStore = PinnedCertStore(ctx)
         val policy = pinnedCertStore.getTlsTrustPolicy(host, port)
-        val factory = if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
-            PinnedCertificateSocketFactory(ctx, host, pinnedCertStore.get(host, port))
+        val config = if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
+            MailTransportConfig(uri, policy, pinnedCertStore.get(host, port))
         } else {
-            DefaultTrustedSocketFactory(ctx)
+            MailTransportConfig(uri, policy)
         }
-        return BackupImapStore(ctx, uri, factory)
+        return try {
+            K9MailTransport(ctx, config)
+        } catch (e: com.fsck.k9.mail.MessagingException) {
+            throw MailException(e)
+        }
     }
 
     companion object {
