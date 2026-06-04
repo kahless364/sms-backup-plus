@@ -82,7 +82,7 @@ artifact_type: sprint-plan
 | wave-9 | U-021 | Introduce MainViewModel and decompose MainActivity: migrate 9 @Subscribe handlers to Flow collection | developer | sonnet | lead | U-020 | done | high |
 | wave-9 | U-022 | Hilt bootstrap: @HiltAndroidApp on App, Gradle plugin, kapt/ksp, and all SingletonComponent @Module classes | developer | sonnet | lead | U-020, U-003 | done | medium |
 | wave-10 | U-023 | Annotate @Inject constructors on eight BackupTask collaborators, remove manual wiring, migrate tests | developer | sonnet | lead | U-022 | done | medium |
-| wave-10 | U-026 | Engine Rewire to MailTransport: wire BackupTask/RestoreTask/ServiceBase to MailTransport port | developer | sonnet | lead | U-025, U-022 | planned | medium |
+| wave-10 | U-026 | Engine Rewire to MailTransport: wire BackupTask/RestoreTask/ServiceBase to MailTransport port | developer | sonnet | lead | U-025, U-022 | done | medium |
 | wave-11 | U-024 | Wire HiltWorkerFactory into WorkManager Configuration.Provider; annotate BackupWorker/RestoreWorker | developer | sonnet | lead | U-023, U-015 | planned | medium |
 
 ## Wave Summary
