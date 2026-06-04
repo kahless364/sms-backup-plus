@@ -27,7 +27,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-// U-026: all com.fsck.k9.* imports removed; engine now uses app-owned ACL types
+// U-026: all k-9 imports removed; engine now uses app-owned ACL types
 import com.zegoggles.smssync.Consts
 import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
@@ -62,8 +62,8 @@ import kotlin.coroutines.coroutineContext
 /**
  * Real CoroutineWorker restore implementation (U-015 + U-016).
  *
- * U-026: Rewired from [com.zegoggles.smssync.mail.BackupImapStore] (k-9 type) to
- * [MailTransport] (app-owned ACL port). No {@code com.fsck.k9.*} import remains in this
+ * U-026: Rewired from BackupImapStore (k-9 type) to
+ * [MailTransport] (app-owned ACL port). No k-9 transport or MIME import remains in this
  * file. [buildMailTransport] replaces the former [buildImapStore].
  *
  * This worker contains the restore execution logic ported from [RestoreTask] (AsyncTask-based).

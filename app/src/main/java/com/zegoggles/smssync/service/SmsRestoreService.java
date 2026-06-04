@@ -8,8 +8,8 @@ import androidx.annotation.Nullable;
 import android.util.Log;
 // U-020: import com.squareup.otto.Produce removed (AC-9)
 // U-020: import com.squareup.otto.Subscribe removed (AC-9)
-// U-026 AC-6: com.fsck.k9.mail.MessagingException import removed; replaced by MailException
-// U-026 AC-6: com.fsck.k9.mail.internet.BinaryTempFileBody import removed;
+// U-026 AC-6: k-9 MessagingException import removed; replaced by MailException
+// U-026 AC-6: k-9 BinaryTempFileBody import removed;
 //             setTempDirectory() call moved behind K9MailTransport adapter constructor
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
@@ -38,12 +38,11 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 /**
  * Service that performs the actual SMS/call-log restore from IMAP.
  *
- * <p>U-026 AC-6: {@code com.fsck.k9.mail.MessagingException} and
- * {@code com.fsck.k9.mail.internet.BinaryTempFileBody} imports removed.
- * The {@code BinaryTempFileBody.setTempDirectory(getCacheDir())} call has been
- * moved behind the {@code K9MailTransport} adapter constructor (called in
+ * <p>U-026 AC-6: k-9 MessagingException and BinaryTempFileBody imports removed.
+ * The BinaryTempFileBody.setTempDirectory(getCacheDir()) call has been
+ * moved behind the K9MailTransport adapter constructor (called in
  * {@code ServiceBase.getMailTransport()}) per CNTR-MODERNIZATION-007 §Notes.
- * All uses of {@code MessagingException} are replaced by {@link MailException}.
+ * All uses of MessagingException are replaced by {@link MailException}.
  */
 public class SmsRestoreService extends ServiceBase {
     private static final int RESTORE_ID = 2;

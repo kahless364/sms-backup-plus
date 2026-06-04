@@ -3,9 +3,9 @@ package com.zegoggles.smssync.service.state;
 import android.content.res.Resources;
 import androidx.annotation.Nullable;
 import android.text.TextUtils;
-// U-026 AC-7: com.fsck.k9.mail.AuthenticationFailedException import removed
-// U-026 AC-7: com.fsck.k9.mail.MessagingException import removed
-// U-026 AC-7: com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException import removed
+// U-026 AC-7: k-9 auth/messaging exception imports removed (AuthenticationFailedException,
+//             MessagingException, XOAuth2AuthenticationFailedException — all replaced
+//             by app-owned types: RequiresLoginException, MailException, XOAuth2FailedException)
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.transport.XOAuth2FailedException;

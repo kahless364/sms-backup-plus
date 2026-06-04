@@ -111,14 +111,18 @@ public class K9MailTransport implements MailTransport {
      * @param context Android context
      * @param config  app-owned configuration; {@code config.pinnedCert} must be non-null
      *                when {@code config.tlsPolicy == PINNED_CERTIFICATE}
-     * @throws MailException if {@code tlsPolicy == PINNED_CERTIFICATE} but {@code pinnedCert} is null
-     * @throws MessagingException if the k-9 ImapStore rejects the URI
+     * @throws MailException if {@code tlsPolicy == PINNED_CERTIFICATE} but {@code pinnedCert} is null,
+     *                       or if the k-9 ImapStore rejects the URI (cause preserved via getCause())
      */
     public K9MailTransport(Context context, MailTransportConfig config)
-            throws MailException, MessagingException {
+            throws MailException {
         this.resolvedSocketFactory = buildSocketFactory(context, config);
-        this.store = new BackupImapStoreDelegate(context, config.storeUri,
-                this.resolvedSocketFactory);
+        try {
+            this.store = new BackupImapStoreDelegate(context, config.storeUri,
+                    this.resolvedSocketFactory);
+        } catch (com.fsck.k9.mail.MessagingException e) {
+            throw new MailException(e);
+        }
         // Relocate BinaryTempFileBody temp-directory config behind the adapter
         // (CNTR-MODERNIZATION-007 §Notes — MIME residual). The import in
         // SmsRestoreService.java is removed in U-026 when the service is rewired.
