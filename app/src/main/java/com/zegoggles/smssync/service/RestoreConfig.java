@@ -1,7 +1,14 @@
 package com.zegoggles.smssync.service;
 
-import com.zegoggles.smssync.mail.BackupImapStore;
+import com.zegoggles.smssync.mail.transport.MailTransport;
 
+/**
+ * Configuration snapshot for a single restore run.
+ *
+ * <p>U-026: {@code imapStore} field type changed from {@code BackupImapStore} to
+ * {@link MailTransport} (app-owned ACL port). {@code retryWithStore} signature updated
+ * accordingly. All k-9 imports removed from this class.
+ */
 public class RestoreConfig {
     final int tries;
     final boolean restoreSms;
@@ -9,9 +16,9 @@ public class RestoreConfig {
     final boolean restoreOnlyStarred;
     final int maxRestore;
     final int currentRestoredItem;
-    final BackupImapStore imapStore;
+    final MailTransport imapStore;
 
-    public RestoreConfig(BackupImapStore imapStore,
+    public RestoreConfig(MailTransport imapStore,
                          int tries,
                          boolean restoreSms,
                          boolean restoreCallLog,
@@ -28,9 +35,12 @@ public class RestoreConfig {
         this.currentRestoredItem = currentRestoredItem;
     }
 
-    public RestoreConfig retryWithStore(int currentItem, BackupImapStore backupImapStore) {
+    /**
+     * U-026: parameter type updated from {@code BackupImapStore} to {@link MailTransport}.
+     */
+    public RestoreConfig retryWithStore(int currentItem, MailTransport transport) {
         return new RestoreConfig(
-                backupImapStore,
+                transport,
                 tries + 1,
                 restoreSms,
                 restoreCallLog,

@@ -6,12 +6,15 @@ import android.os.PowerManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.Log;
-import com.fsck.k9.mail.MessagingException;
-import com.fsck.k9.mail.internet.BinaryTempFileBody;
 // U-020: import com.squareup.otto.Produce removed (AC-9)
 // U-020: import com.squareup.otto.Subscribe removed (AC-9)
+// U-026 AC-6: com.fsck.k9.mail.MessagingException import removed; replaced by MailException
+// U-026 AC-6: com.fsck.k9.mail.internet.BinaryTempFileBody import removed;
+//             setTempDirectory() call moved behind K9MailTransport adapter constructor
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
+import com.zegoggles.smssync.mail.transport.MailException;
+import com.zegoggles.smssync.mail.transport.MailTransport;
 import com.zegoggles.smssync.service.exception.SmsProviderNotWritableException;
 import com.zegoggles.smssync.service.state.RestoreState;
 
@@ -32,6 +35,16 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 // tests that create anonymous service subclasses without a Hilt test component (AC-10).
 // U-023 migrates those tests to @HiltAndroidTest and activates injection.
 // TODO(U-023): add @AndroidEntryPoint here once tests are migrated to @HiltAndroidTest.
+/**
+ * Service that performs the actual SMS/call-log restore from IMAP.
+ *
+ * <p>U-026 AC-6: {@code com.fsck.k9.mail.MessagingException} and
+ * {@code com.fsck.k9.mail.internet.BinaryTempFileBody} imports removed.
+ * The {@code BinaryTempFileBody.setTempDirectory(getCacheDir())} call has been
+ * moved behind the {@code K9MailTransport} adapter constructor (called in
+ * {@code ServiceBase.getMailTransport()}) per CNTR-MODERNIZATION-007 §Notes.
+ * All uses of {@code MessagingException} are replaced by {@link MailException}.
+ */
 public class SmsRestoreService extends ServiceBase {
     private static final int RESTORE_ID = 2;
 
@@ -48,7 +61,10 @@ public class SmsRestoreService extends ServiceBase {
     public void onCreate() {
         super.onCreate();
         asyncClearCache();
-        BinaryTempFileBody.setTempDirectory(getCacheDir());
+        // U-026 AC-6: BinaryTempFileBody.setTempDirectory(getCacheDir()) removed from here.
+        // The call is now made inside K9MailTransport's constructor (getMailTransport() seam),
+        // ensuring it occurs before the first restore body fetch — behavioral contract preserved.
+        // BinaryTempFileBody type no longer appears in this file.
         // U-020: service = this; deleted (AC-9a)
     }
 
@@ -82,8 +98,10 @@ public class SmsRestoreService extends ServiceBase {
                 return;
             }
 
+            // U-026 AC-6: getMailTransport() replaces getBackupImapStore();
+            // MailException replaces MessagingException
             RestoreConfig config = new RestoreConfig(
-                getBackupImapStore(),
+                getMailTransport(),
                 0,
                 restoreSms,
                 restoreCallLog,
@@ -96,7 +114,8 @@ public class SmsRestoreService extends ServiceBase {
             // Fully-qualified names used so AC-8 grep (short class names) returns zero results.
             getRestoreTask().execute(config);
 
-        } catch (MessagingException e) {
+        } catch (MailException e) {
+            // U-026 AC-6: MailException replaces MessagingException
             postError(e);
         }
     }

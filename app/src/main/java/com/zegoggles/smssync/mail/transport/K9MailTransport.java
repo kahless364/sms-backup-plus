@@ -40,11 +40,13 @@ import com.zegoggles.smssync.mail.BackupStoreConfig;
 import com.zegoggles.smssync.mail.ConversionResult;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.Headers;
+import com.zegoggles.smssync.mail.MessageConverter;
 import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
 import com.zegoggles.smssync.mail.TlsTrustPolicy;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
 import com.zegoggles.smssync.service.exception.RequiresLoginException;
 
+import android.content.ContentValues;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -254,6 +256,47 @@ public class K9MailTransport implements MailTransport {
     @Override
     public void closeFolders() {
         store.closeFolders();
+    }
+
+    /**
+     * U-026: Bounded-residual converter bridge (CNTR-MODERNIZATION-007 §Converter residual).
+     *
+     * <p>Fetches the full message body for the given handle (via k-9 {@code folder.fetch})
+     * then delegates to {@link MessageConverter} — which requires a k-9 {@code Message} — to
+     * produce the {@link MessageImportResult}. Because {@code MailMessageHandle.message} is
+     * package-private to {@code mail.transport}, this method is the only place in the codebase
+     * where the k-9 message is unwrapped from the handle; the engine ({@code service.*}) never
+     * sees the k-9 type.
+     *
+     * <p>Catches all conversion failures (MessagingException, IOException, IllegalArgumentException)
+     * and returns {@link MessageImportResult#failure} so the engine can log and continue.
+     */
+    @Override
+    public MessageImportResult importMessageBody(BackupFolderHandle folder,
+                                                  MailMessageHandle handle,
+                                                  MessageConverter converter) {
+        final String uid = handle.uid;
+        try {
+            // Fetch the full body via k-9 (mirrors RestoreTask.java:240-245 pre-U-026)
+            FetchProfile fp = new FetchProfile();
+            fp.add(FetchProfile.Item.BODY);
+            List<ImapMessage> fetchList = Collections.singletonList(handle.message);
+            folder.folder.fetch(fetchList, fp, null);
+
+            // Delegate to the bounded-residual converter (k-9 Message stays inside mail.transport)
+            DataType dataType = converter.getDataType(handle.message);
+            ContentValues contentValues = converter.messageToContentValues(handle.message);
+            return new MessageImportResult(uid, dataType, contentValues);
+        } catch (MessagingException e) {
+            Log.e(TAG, "importMessageBody: MessagingException for uid=" + uid, e);
+            return MessageImportResult.failure(uid);
+        } catch (IOException e) {
+            Log.e(TAG, "importMessageBody: IOException for uid=" + uid, e);
+            return MessageImportResult.failure(uid);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "importMessageBody: IllegalArgumentException for uid=" + uid, e);
+            return MessageImportResult.failure(uid);
+        }
     }
 
     // -------------------------------------------------------------------------

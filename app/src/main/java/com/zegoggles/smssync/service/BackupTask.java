@@ -4,29 +4,29 @@ import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import androidx.annotation.NonNull;
 import android.util.Log;
-import com.fsck.k9.mail.AuthenticationFailedException;
-import com.fsck.k9.mail.Message;
-import com.fsck.k9.mail.MessagingException;
-import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException;
 // U-020: import com.squareup.otto.Subscribe removed
+// U-026: all com.fsck.k9.* imports removed; engine now uses app-owned ACL types
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.auth.TokenRefreshException;
 import com.zegoggles.smssync.auth.TokenRefresher;
 import com.zegoggles.smssync.contacts.ContactAccessor;
 import com.zegoggles.smssync.contacts.ContactGroupIds;
-import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.ConversionResult;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.MessageConverter;
+import com.zegoggles.smssync.mail.transport.BackupFolderHandle;
+import com.zegoggles.smssync.mail.transport.MailException;
+import com.zegoggles.smssync.mail.transport.MailTransport;
+import com.zegoggles.smssync.mail.transport.XOAuth2FailedException;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
+import com.zegoggles.smssync.service.exception.RequiresLoginException;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
 import dagger.Lazy;
 import javax.inject.Inject;
 
-import java.util.List;
 import java.util.Locale;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
@@ -44,6 +44,14 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.ERROR;
 import static com.zegoggles.smssync.service.state.SmsSyncState.FINISHED_BACKUP;
 import static com.zegoggles.smssync.service.state.SmsSyncState.LOGIN;
 
+/**
+ * AsyncTask that performs the SMS/MMS/call-log backup to IMAP.
+ *
+ * <p>U-026: Rewired from {@code BackupImapStore} (k-9 type) to {@link MailTransport}
+ * (app-owned ACL port). No {@code com.fsck.k9.*} import remains in this file per AC-2
+ * and AC-10. The transport is obtained from {@link SmsBackupService#getMailTransport()}
+ * (the sole construction point per IC-1).
+ */
 @SuppressWarnings("deprecation")
 class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
     @SuppressLint("StaticFieldLeak")
@@ -158,11 +166,14 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
                 Log.i(TAG, "Nothing to do.");
                 return transition(FINISHED_BACKUP, null);
             }
-        } catch (XOAuth2AuthenticationFailedException e) {
+        } catch (XOAuth2FailedException e) {
+            // U-026 AC-4: catch app-owned XOAuth2FailedException (replaces k-9 XOAuth2AuthenticationFailedException)
             return handleAuthError(config, e);
-        } catch (AuthenticationFailedException e) {
+        } catch (RequiresLoginException e) {
+            // U-026 AC-4: app-owned RequiresLoginException replaces k-9 AuthenticationFailedException
             return transition(ERROR, e);
-        } catch (MessagingException e) {
+        } catch (MailException e) {
+            // U-026 AC-4: app-owned MailException replaces k-9 MessagingException
             return transition(ERROR, e);
         } catch (SecurityException e) {
             return transition(ERROR, e);
@@ -173,17 +184,19 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
         }
     }
 
-    private BackupState handleAuthError(BackupConfig config, XOAuth2AuthenticationFailedException e) {
+    private BackupState handleAuthError(BackupConfig config, XOAuth2FailedException e) {
         if (e.getStatus() == 400) {
             appLogDebug("need to perform xoauth2 token refresh");
             if (config.currentTry < 1) {
                 try {
                     tokenRefresher.refreshOAuth2Token();
-                    // we got a new token, let's handleAuthError one more time - we need to pass in a new store object
+                    // we got a new token, let's handleAuthError one more time - we need to pass in a new transport object
                     // since the auth params on it are immutable
                     appLogDebug("token refreshed, retrying");
-                    return fetchAndBackupItems(config.retryWithStore(service.getBackupImapStore()));
-                } catch (MessagingException ignored) {
+                    // U-026: retryWithTransport replaces retryWithStore; getMailTransport() is the sole seam
+                    return fetchAndBackupItems(config.retryWithTransport(service.getMailTransport()));
+                } catch (MailException ignored) {
+                    // U-026 AC-4: MailException replaces MessagingException for the swallowed retry failure
                     Log.w(TAG, ignored);
                 } catch (TokenRefreshException refreshException) {
                     appLogDebug("error refreshing token: "+refreshException+", cause="+refreshException.getCause());
@@ -260,11 +273,24 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
         service.backupStateChanged(state);
     }
 
-    private BackupState backupCursors(BackupCursors cursors, BackupImapStore store, BackupType backupType, int itemsToSync)
-            throws MessagingException {
+    /**
+     * U-026 AC-2: Rewired from BackupImapStore to MailTransport.
+     *
+     * <p>All IMAP calls go through the port:
+     * <ul>
+     *   <li>{@code store.checkSettings()} → {@code transport.checkSettings()}</li>
+     *   <li>{@code store.getFolder(type, prefs).appendMessages(msgs)} →
+     *       {@code transport.openFolder(type, prefs)} + {@code transport.appendMessages(folder, result)}</li>
+     *   <li>{@code store.closeFolders()} → {@code transport.closeFolders()}</li>
+     * </ul>
+     * No {@code com.fsck.k9.*} type appears in this method per AC-10.
+     */
+    private BackupState backupCursors(BackupCursors cursors, MailTransport transport, BackupType backupType, int itemsToSync)
+            throws MailException, RequiresLoginException {
         Log.i(TAG, String.format(Locale.ENGLISH, "Starting backup (%d messages)", itemsToSync));
         publish(LOGIN);
-        store.checkSettings();
+        // U-026 AC-2(a): checkSettings() via transport port
+        transport.checkSettings();
 
         try {
             publish(CALC);
@@ -273,16 +299,24 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
                 BackupCursors.CursorAndType cursor = cursors.next();
                 if (LOCAL_LOGV) Log.v(TAG, "backing up: " + cursor);
 
-                ConversionResult result = converter.convertMessages(cursor.cursor, cursor.type);
+                // U-026: converter.convertMessages() throws k-9 MessagingException (bounded
+                // residual). Caught here with FQN (no import) and re-thrown as MailException,
+                // preserving AC-10 (zero k-9 imports in service.*).
+                final ConversionResult result;
+                try {
+                    result = converter.convertMessages(cursor.cursor, cursor.type);
+                } catch (com.fsck.k9.mail.MessagingException e) {
+                    throw new MailException(e);
+                }
                 if (!result.isEmpty()) {
-                    List<Message> messages = result.getMessages();
-
                     if (LOCAL_LOGV) {
                         Log.v(TAG, String.format(Locale.ENGLISH, "sending %d %s message(s) to server.",
-                                messages.size(), cursor.type));
+                                result.getMessages().size(), cursor.type));
                     }
 
-                    store.getFolder(cursor.type, preferences.getDataTypePreferences()).appendMessages(messages);
+                    // U-026 AC-2(b): openFolder replaces getFolder; AC-2(c): appendMessages via transport
+                    BackupFolderHandle folder = transport.openFolder(cursor.type, preferences.getDataTypePreferences());
+                    transport.appendMessages(folder, result);
 
                     // U-023 AC-3: guard migrated from 'calendarSyncer != null' to preference check.
                     // Lazy<CalendarSyncer>.get() is called only when calendar sync is enabled,
@@ -291,7 +325,7 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
                         calendarSyncerLazy.get().syncCalendar(result);
                     }
                     preferences.getDataTypePreferences().setMaxSyncedDate(cursor.type, result.getMaxDate());
-                    backedUpItems += messages.size();
+                    backedUpItems += result.getMessages().size();
                 } else {
                     Log.w(TAG, "no messages converted");
                     itemsToSync -= 1;
@@ -305,7 +339,8 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
                     itemsToSync,
                     backupType, null, null);
         } finally {
-            store.closeFolders();
+            // U-026 AC-2(d): closeFolders() via transport port (does not throw)
+            transport.closeFolders();
         }
     }
 

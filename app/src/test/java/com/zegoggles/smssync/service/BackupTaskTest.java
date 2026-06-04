@@ -6,16 +6,17 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import com.fsck.k9.mail.Message;
 import com.fsck.k9.mail.internet.MimeMessage;
-import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException;
 import com.zegoggles.smssync.auth.TokenRefreshException;
 import com.zegoggles.smssync.auth.TokenRefresher;
 import com.zegoggles.smssync.contacts.ContactAccessor;
 import com.zegoggles.smssync.contacts.ContactGroup;
 import com.zegoggles.smssync.contacts.ContactGroupIds;
-import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.ConversionResult;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.MessageConverter;
+import com.zegoggles.smssync.mail.transport.BackupFolderHandle;
+import com.zegoggles.smssync.mail.transport.MailTransport;
+import com.zegoggles.smssync.mail.transport.XOAuth2FailedException;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
 import com.zegoggles.smssync.preferences.Preferences;
@@ -57,13 +58,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
+/**
+ * U-026: BackupTaskTest updated — BackupImapStore/BackupFolder mocks replaced with
+ * MailTransport/BackupFolderHandle mocks. All IMAP interactions now go through the
+ * MailTransport port (transport.openFolder, transport.appendMessages, transport.closeFolders).
+ */
 @RunWith(RobolectricTestRunner.class)
 public class BackupTaskTest {
     BackupTask task;
     BackupConfig config;
     Context context;
-    @Mock BackupImapStore store;
-    @Mock BackupImapStore.BackupFolder folder;
+    // U-026: MailTransport replaces BackupImapStore; BackupFolderHandle replaces BackupFolder
+    @Mock MailTransport store;
+    @Mock BackupFolderHandle folder;
     @Mock SmsBackupService service;
     @Mock BackupState state;
     @Mock BackupItemsFetcher fetcher;
@@ -108,8 +115,10 @@ public class BackupTaskTest {
     @Test public void shouldVerifyStoreSettings() throws Exception {
         mockFetch(SMS, 1);
         when(converter.convertMessages(any(Cursor.class), eq(SMS))).thenReturn(result(SMS, 1));
-        when(store.getFolder(SMS, dataTypePreferences)).thenReturn(folder);
+        // U-026: openFolder replaces store.getFolder
+        when(store.openFolder(eq(SMS), same(dataTypePreferences))).thenReturn(folder);
         task.doInBackground(config);
+        // U-026: checkSettings is called via transport port
         verify(store).checkSettings();
     }
 
@@ -117,11 +126,13 @@ public class BackupTaskTest {
         mockFetch(SMS, 1);
 
         when(converter.convertMessages(any(Cursor.class), eq(SMS))).thenReturn(result(SMS, 1));
-        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
+        // U-026: openFolder replaces store.getFolder
+        when(store.openFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
 
         BackupState finalState = task.doInBackground(config);
 
-        verify(folder).appendMessages(anyList());
+        // U-026: appendMessages is called via transport port (not folder.appendMessages directly)
+        verify(store).appendMessages(same(folder), any());
 
         verify(service).transition(SmsSyncState.LOGIN, null);
         verify(service).transition(SmsSyncState.CALC, null);
@@ -137,42 +148,49 @@ public class BackupTaskTest {
     public void shouldBackupMultipleTypes() throws Exception {
         mockFetch(SMS, 1);
         mockFetch(MMS, 2);
-        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
+        // U-026: openFolder replaces store.getFolder
+        when(store.openFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
         when(converter.convertMessages(any(Cursor.class), any(DataType.class))).thenReturn(result(SMS, 1));
 
         BackupState finalState = task.doInBackground(getBackupConfig(EnumSet.of(SMS, MMS)));
 
         assertThat(finalState.currentSyncedItems).isEqualTo(3);
 
-        verify(folder, times(3)).appendMessages(anyList());
+        // U-026: appendMessages via transport (3 times)
+        verify(store, times(3)).appendMessages(any(), any());
     }
 
     @Test public void shouldCreateFoldersLazilyOnlyForNeededTypes() throws Exception {
         mockFetch(SMS, 1);
 
         when(converter.convertMessages(any(Cursor.class), eq(SMS))).thenReturn(result(SMS, 1));
-        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
+        // U-026: openFolder replaces getFolder
+        when(store.openFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
 
         task.doInBackground(config);
 
-        verify(store).getFolder(SMS, dataTypePreferences);
-        verify(store, never()).getFolder(MMS, dataTypePreferences);
-        verify(store, never()).getFolder(CALLLOG, dataTypePreferences);
+        // U-026: openFolder was called for SMS only
+        verify(store).openFolder(SMS, dataTypePreferences);
+        verify(store, never()).openFolder(MMS, dataTypePreferences);
+        verify(store, never()).openFolder(CALLLOG, dataTypePreferences);
     }
 
     @Test public void shouldCloseImapFolderAfterBackup() throws Exception {
         mockFetch(SMS, 1);
         when(converter.convertMessages(any(Cursor.class), eq(SMS))).thenReturn(result(SMS, 1));
-        when(store.getFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
+        // U-026: openFolder replaces getFolder
+        when(store.openFolder(notNull(), same(dataTypePreferences))).thenReturn(folder);
 
         task.doInBackground(config);
 
+        // U-026: closeFolders via transport port
         verify(store).closeFolders();
     }
 
     @Test public void shouldCreateNoFoldersIfNoItemsToBackup() throws Exception {
         mockFetch(SMS, 0);
         task.doInBackground(config);
+        // U-026: no openFolder calls when nothing to backup
         verifyNoInteractions(store);
     }
 
@@ -195,10 +213,12 @@ public class BackupTaskTest {
         mockFetch(SMS, 1);
         when(converter.convertMessages(any(Cursor.class), notNull())).thenReturn(result(SMS, 1));
 
-        XOAuth2AuthenticationFailedException exception = mock(XOAuth2AuthenticationFailedException.class);
+        // U-026: XOAuth2FailedException replaces k-9 XOAuth2AuthenticationFailedException
+        XOAuth2FailedException exception = mock(XOAuth2FailedException.class);
         when(exception.getStatus()).thenReturn(400);
 
-        when(store.getFolder(notNull(), same(dataTypePreferences))).thenThrow(exception);
+        // U-026: openFolder replaces getFolder; throws the app-owned exception
+        when(store.openFolder(notNull(), same(dataTypePreferences))).thenThrow(exception);
 
         doThrow(new TokenRefreshException("failed")).when(tokenRefresher).refreshOAuth2Token();
 
@@ -216,11 +236,14 @@ public class BackupTaskTest {
         mockFetch(SMS, 1);
         when(converter.convertMessages(any(Cursor.class), notNull())).thenReturn(result(SMS, 1));
 
-        XOAuth2AuthenticationFailedException exception = mock(XOAuth2AuthenticationFailedException.class);
+        // U-026: XOAuth2FailedException replaces k-9 XOAuth2AuthenticationFailedException
+        XOAuth2FailedException exception = mock(XOAuth2FailedException.class);
         when(exception.getStatus()).thenReturn(400);
 
-        when(store.getFolder(notNull(), same(dataTypePreferences))).thenThrow(exception);
-        when(service.getBackupImapStore()).thenReturn(store);
+        // U-026: openFolder throws XOAuth2FailedException (replaces getFolder throwing k-9 exception)
+        when(store.openFolder(notNull(), same(dataTypePreferences))).thenThrow(exception);
+        // U-026: getMailTransport() replaces getBackupImapStore()
+        when(service.getMailTransport()).thenReturn(store);
 
         task.doInBackground(config);
 

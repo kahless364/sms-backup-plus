@@ -4,7 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import androidx.core.app.NotificationCompat;
-import com.fsck.k9.mail.MessagingException;
+// U-026: com.fsck.k9.mail.MessagingException import replaced by app-owned MailException
+import com.zegoggles.smssync.mail.transport.MailException;
 import com.zegoggles.smssync.contacts.ContactGroup;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.preferences.AuthPreferences;
@@ -161,7 +162,8 @@ public class SmsBackupServiceTest {
 
         service.handleIntent(intent);
         verifyNoInteractions(backupTask);
-        assertThat(service.getState().exception).isInstanceOf(MessagingException.class);
+        // U-026: MailException replaces k-9 MessagingException as the error type
+        assertThat(service.getState().exception).isInstanceOf(MailException.class);
     }
 
     @Test public void shouldNotifyUserAboutErrorInManualMode() throws Exception {

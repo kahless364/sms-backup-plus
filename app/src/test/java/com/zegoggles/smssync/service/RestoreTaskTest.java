@@ -5,13 +5,15 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.provider.Telephony;
-import com.fsck.k9.mail.MessagingException;
-import com.fsck.k9.mail.store.imap.ImapMessage;
 import com.zegoggles.smssync.Consts;
 import com.zegoggles.smssync.auth.TokenRefresher;
-import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.MessageConverter;
+import com.zegoggles.smssync.mail.transport.BackupFolderHandle;
+import com.zegoggles.smssync.mail.transport.MailMessageHandle;
+import com.zegoggles.smssync.mail.transport.MailTransport;
+import com.zegoggles.smssync.mail.transport.MailTransportTestFactories;
+import com.zegoggles.smssync.mail.transport.MessageImportResult;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.service.state.RestoreState;
@@ -23,6 +25,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -36,12 +39,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
+/**
+ * U-026: RestoreTaskTest updated — BackupImapStore/BackupFolder mocks replaced with
+ * MailTransport/BackupFolderHandle/MailMessageHandle/MessageImportResult.
+ * All IMAP interactions now go through the MailTransport port.
+ * [MailTransportTestFactories] provides package-scoped constructors for handle types.
+ */
 @RunWith(RobolectricTestRunner.class)
 public class RestoreTaskTest {
     RestoreTask task;
     RestoreConfig config;
-    @Mock BackupImapStore store;
-    @Mock BackupImapStore.BackupFolder folder;
+    // U-026: MailTransport replaces BackupImapStore; BackupFolderHandle replaces BackupFolder
+    @Mock MailTransport store;
+    BackupFolderHandle folder;
     @Mock SmsRestoreService service;
     @Mock RestoreState state;
     @Mock MessageConverter converter;
@@ -49,14 +59,20 @@ public class RestoreTaskTest {
     @Mock TokenRefresher tokenRefresher;
 
     @Before
-    public void before() throws MessagingException {
+    public void before() throws Exception {
         openMocks(this);
+        // U-026: BackupFolderHandle created via test factory (package-private constructor)
+        folder = MailTransportTestFactories.createFolderHandle();
         config = new RestoreConfig(store, 0, true, false, false, -1, 0);
         when(service.getApplicationContext()).thenReturn(RuntimeEnvironment.application);
         when(service.getState()).thenReturn(state);
         when(service.getPreferences()).thenReturn(new Preferences(RuntimeEnvironment.application));
 
-        when(store.getFolder(any(DataType.class), any(DataTypePreferences.class))).thenReturn(folder);
+        // U-026: openFolder replaces store.getFolder; returns BackupFolderHandle
+        when(store.openFolder(any(DataType.class), any(DataTypePreferences.class))).thenReturn(folder);
+        // U-026: getMessages returns empty list by default (no-op restore)
+        when(store.getMessages(any(BackupFolderHandle.class), anyInt(), anyBoolean(), nullable(Date.class)))
+                .thenReturn(Collections.<MailMessageHandle>emptyList());
 
         task = new RestoreTask(service, converter, resolver, tokenRefresher);
     }
@@ -69,31 +85,39 @@ public class RestoreTaskTest {
 
     @Test public void shouldVerifyStoreSettings() throws Exception {
         task.doInBackground(config);
+        // U-026: checkSettings called via transport port
         verify(store).checkSettings();
     }
 
     @Test public void shouldCloseFolders() throws Exception {
         task.doInBackground(config);
+        // U-026: closeFolders called via transport port
         verify(store).closeFolders();
     }
 
     @Test
     public void shouldRestoreItems() throws Exception {
         Date now = new Date();
-        List<ImapMessage> messages = new ArrayList<ImapMessage>();
         ContentValues values = new ContentValues();
         values.put(Telephony.TextBasedSmsColumns.TYPE, Telephony.TextBasedSmsColumns.MESSAGE_TYPE_INBOX);
         values.put(Telephony.TextBasedSmsColumns.DATE, now.getTime());
 
-        ImapMessage mockMessage = mock(ImapMessage.class);
-        when(mockMessage.getFolder()).thenReturn(folder);
-        when(converter.getDataType(mockMessage)).thenReturn(DataType.SMS);
-        when(converter.messageToContentValues(mockMessage)).thenReturn(values);
+        // U-026: MailMessageHandle created via test factory (package-private constructor in mail.transport)
+        MailMessageHandle mockHandle = MailTransportTestFactories.createHandle("msg-uid-1");
 
-        messages.add(mockMessage);
+        // Mock getMessages to return our test handle
+        List<MailMessageHandle> messages = new ArrayList<MailMessageHandle>();
+        messages.add(mockHandle);
+        when(store.getMessages(any(BackupFolderHandle.class), anyInt(), anyBoolean(), nullable(Date.class)))
+                .thenReturn(messages);
 
-        // nullable: production code passes null for date (no date filter on restore)
-        when(folder.getMessages(anyInt(), anyBoolean(), nullable(Date.class))).thenReturn(messages);
+        // U-026: importMessageBody returns a MessageImportResult (replaces per-message fetch + converter calls)
+        // The bounded-residual converter is called inside K9MailTransport.importMessageBody; at the service.*
+        // boundary the test stubs the result directly.
+        MessageImportResult importResult = new MessageImportResult("msg-uid-1", DataType.SMS, values);
+        when(store.importMessageBody(any(BackupFolderHandle.class), any(MailMessageHandle.class), any(MessageConverter.class)))
+                .thenReturn(importResult);
+
         when(resolver.insert(Consts.SMS_PROVIDER, values)).thenReturn(Uri.parse("content://sms/123"));
         task.doInBackground(config);
 

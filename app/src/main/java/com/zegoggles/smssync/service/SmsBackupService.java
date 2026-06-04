@@ -22,14 +22,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import android.util.Log;
-import com.fsck.k9.mail.MessagingException;
 // U-020: import com.squareup.otto.Produce removed (AC-8)
 // U-020: import com.squareup.otto.Subscribe removed (AC-8)
+// U-026: import com.fsck.k9.mail.MessagingException removed; replaced by MailException (AC-5)
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.MainActivity;
-import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.DataType;
+import com.zegoggles.smssync.mail.transport.MailException;
+import com.zegoggles.smssync.mail.transport.MailTransport;
 import com.zegoggles.smssync.scheduler.BackupScheduler;
 import com.zegoggles.smssync.scheduler.ScheduledJob;
 import com.zegoggles.smssync.service.exception.BackupDisabledException;
@@ -73,6 +74,10 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
  * tests that create anonymous service subclasses without a Hilt test component (AC-10).
  * U-023 migrates those tests to @HiltAndroidTest and activates injection.
  * TODO(U-023): add @AndroidEntryPoint here once tests are migrated to @HiltAndroidTest.
+ *
+ * <p>U-026: {@code com.fsck.k9.mail.MessagingException} import removed (AC-5).
+ * All uses of {@code MessagingException} in catch/throws declarations are replaced with
+ * {@link MailException} (app-owned).
  */
 public class SmsBackupService extends ServiceBase {
     private static final int BACKUP_ID = 1;
@@ -136,8 +141,10 @@ public class SmsBackupService extends ServiceBase {
                 // network constraints via Constraints; no manual pre-flight check needed.
             }
             appLog(R.string.app_log_start_backup, backupType);
-            getBackupTask().execute(getBackupConfig(backupType, enabledTypes, getBackupImapStore()));
-        } catch (MessagingException e) {
+            // U-026 AC-5: getMailTransport() replaces getBackupImapStore(); MailException replaces MessagingException
+            getBackupTask().execute(getBackupConfig(backupType, enabledTypes, getMailTransport()));
+        } catch (MailException e) {
+            // U-026 AC-5: MailException replaces MessagingException
             Log.w(TAG, e);
             moveToState(state.transition(ERROR, e));
         // U-017: catch(ConnectivityException) removed — legacyCheckConnectivity() deleted.
@@ -163,9 +170,9 @@ public class SmsBackupService extends ServiceBase {
 
     private BackupConfig getBackupConfig(BackupType backupType,
                                          EnumSet<DataType> enabledTypes,
-                                         BackupImapStore imapStore) {
+                                         MailTransport transport) {
         return new BackupConfig(
-            imapStore,
+            transport,
             0,
             getPreferences().getMaxItemsPerSync(),
             getPreferences().getBackupContactGroup(),

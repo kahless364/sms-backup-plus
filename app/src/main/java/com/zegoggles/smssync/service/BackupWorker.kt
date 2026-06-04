@@ -21,26 +21,28 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.fsck.k9.mail.AuthenticationFailedException
-import com.fsck.k9.mail.MessagingException
-import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory
-import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException
+// U-026: all com.fsck.k9.* imports removed; engine now uses app-owned ACL types
 import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
 import com.zegoggles.smssync.calendar.CalendarAccessor
 import com.zegoggles.smssync.contacts.ContactAccessor
-import com.zegoggles.smssync.mail.BackupImapStore
 import com.zegoggles.smssync.mail.CallFormatter
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.MessageConverter
 import com.zegoggles.smssync.mail.PersonLookup
 import com.zegoggles.smssync.mail.PinnedCertStore
-import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory
 import com.zegoggles.smssync.mail.TlsTrustPolicy
+import com.zegoggles.smssync.mail.transport.BackupFolderHandle
+import com.zegoggles.smssync.mail.transport.K9MailTransport
+import com.zegoggles.smssync.mail.transport.MailException
+import com.zegoggles.smssync.mail.transport.MailTransport
+import com.zegoggles.smssync.mail.transport.MailTransportConfig
+import com.zegoggles.smssync.mail.transport.XOAuth2FailedException
 import com.zegoggles.smssync.preferences.AuthPreferences
 import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.scheduler.WorkManagerScheduler
+import com.zegoggles.smssync.service.exception.RequiresLoginException
 import kotlinx.coroutines.ensureActive
 import java.util.EnumSet
 import java.util.Locale
@@ -48,6 +50,10 @@ import kotlin.coroutines.coroutineContext
 
 /**
  * Real CoroutineWorker backup implementation — replaces the BackupWorkerStub from U-014.
+ *
+ * U-026: Rewired from [com.zegoggles.smssync.mail.BackupImapStore] (k-9 type) to
+ * [MailTransport] (app-owned ACL port). No {@code com.fsck.k9.*} import remains in this
+ * file. [buildMailTransport] replaces the former [buildImapStore].
  *
  * This worker contains the backup execution logic ported from [BackupTask] (AsyncTask-based).
  * It preserves all BackupTask behaviors:
@@ -100,11 +106,12 @@ class BackupWorker(
         Log.d(TAG, "BackupWorker.doWork: starting backup, type=$backupType, attempt=$runAttempt")
 
         return try {
-            val imapStore = buildImapStore(ctx, authPreferences)
+            // U-026: buildMailTransport replaces buildImapStore; MailException replaces MessagingException
+            val transport = buildMailTransport(ctx, authPreferences)
             val typesToBackup = getEnabledBackupTypes(preferences)
 
             val config = BackupConfig(
-                imapStore,
+                transport,
                 0,
                 preferences.maxItemsPerSync,
                 preferences.backupContactGroup,
@@ -114,8 +121,9 @@ class BackupWorker(
             )
 
             executeBackup(config, preferences, authPreferences, ctx)
-        } catch (e: MessagingException) {
-            Log.w(TAG, "BackupWorker: MessagingException — retrying", e)
+        } catch (e: MailException) {
+            // U-026: MailException replaces MessagingException
+            Log.w(TAG, "BackupWorker: MailException — retrying", e)
             Result.retry()
         } catch (e: Exception) {
             Log.e(TAG, "BackupWorker: unrecoverable error", e)
@@ -172,6 +180,8 @@ class BackupWorker(
     /**
      * Main fetch-and-backup path. Mirrors BackupTask.fetchAndBackupItems.
      * Handles XOAuth2 token-refresh retry (at most once, AC-10b).
+     *
+     * U-026: catches [XOAuth2FailedException] and [RequiresLoginException] instead of k-9 types.
      */
     private suspend fun fetchAndBackupItems(
         config: BackupConfig,
@@ -225,13 +235,16 @@ class BackupWorker(
                 Log.i(TAG, "BackupWorker: nothing to backup")
                 Result.success(workDataOf(PROGRESS_KEY_BACKED_UP to 0, PROGRESS_KEY_ITEMS_TO_SYNC to 0))
             }
-        } catch (e: XOAuth2AuthenticationFailedException) {
+        } catch (e: XOAuth2FailedException) {
+            // U-026: XOAuth2FailedException replaces k-9 XOAuth2AuthenticationFailedException
             handleAuthError(config, preferences, authPreferences, ctx, e, fetcher, converter, calendarSyncer, tokenRefresher)
-        } catch (e: AuthenticationFailedException) {
-            Log.w(TAG, "BackupWorker: auth failed", e)
+        } catch (e: RequiresLoginException) {
+            // U-026: RequiresLoginException replaces k-9 AuthenticationFailedException
+            Log.w(TAG, "BackupWorker: auth failed (RequiresLoginException)", e)
             Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_failed"))
-        } catch (e: MessagingException) {
-            Log.w(TAG, "BackupWorker: MessagingException — retrying", e)
+        } catch (e: MailException) {
+            // U-026: MailException replaces k-9 MessagingException
+            Log.w(TAG, "BackupWorker: MailException — retrying", e)
             Result.retry()
         } catch (e: SecurityException) {
             Log.w(TAG, "BackupWorker: SecurityException (missing permission)", e)
@@ -245,6 +258,9 @@ class BackupWorker(
      * Core backup loop. Mirrors BackupTask.backupCursors() (BackupTask.java:258-302).
      * Uses ensureActive() for cooperative cancellation (AC-5, replaces isCancelled() polling).
      * Emits setProgress at each iteration (AC-3b, replaces publishProgress + App.post).
+     *
+     * U-026: uses [MailTransport.openFolder] + [MailTransport.appendMessages] instead of
+     * [BackupImapStore.getFolder] + folder.appendMessages.
      */
     private suspend fun backupCursors(
         cursors: BackupCursors,
@@ -256,9 +272,12 @@ class BackupWorker(
     ): Result {
         Log.i(TAG, String.format(Locale.ENGLISH, "BackupWorker: starting backup (%d messages)", itemsToSync))
 
+        val transport = config.imapStore
+
         // Emit LOGIN state (mirrors publish(LOGIN) at BackupTask.java:261)
         setProgress(workDataOf(PROGRESS_KEY_STATE to STATE_LOGIN))
-        config.imapStore.checkSettings()
+        // U-026: checkSettings via transport port
+        transport.checkSettings()
 
         try {
             // Emit CALC state (mirrors publish(CALC) at BackupTask.java:265)
@@ -282,9 +301,9 @@ class BackupWorker(
                         "BackupWorker: sending %d %s message(s) to server.",
                         messages.size, cursor.type))
 
-                    // Append to IMAP folder (mirrors BackupTask.java:280)
-                    config.imapStore.getFolder(cursor.type, preferences.dataTypePreferences)
-                        .appendMessages(messages)
+                    // U-026: openFolder + appendMessages via transport port
+                    val folder: BackupFolderHandle = transport.openFolder(cursor.type, preferences.dataTypePreferences)
+                    transport.appendMessages(folder, result)
 
                     // Calendar sync per CALLLOG batch (AC-10c / BackupTask.java:282-284)
                     if (cursor.type == DataType.CALLLOG && calendarSyncer != null) {
@@ -316,20 +335,23 @@ class BackupWorker(
                 PROGRESS_KEY_STATE to STATE_FINISHED
             ))
         } finally {
-            config.imapStore.closeFolders()
+            // U-026: closeFolders via transport port (does not throw)
+            transport.closeFolders()
         }
     }
 
     /**
      * XOAuth2 token-refresh retry. At most one retry (config.currentTry < 1).
      * Mirrors BackupTask.handleAuthError (AC-10b / BackupTask.java:183-205).
+     *
+     * U-026: catches [MailException] instead of k-9 MessagingException for token-refresh errors.
      */
     private suspend fun handleAuthError(
         config: BackupConfig,
         preferences: Preferences,
         authPreferences: AuthPreferences,
         ctx: Context,
-        e: XOAuth2AuthenticationFailedException,
+        e: XOAuth2FailedException,
         fetcher: BackupItemsFetcher,
         converter: MessageConverter,
         calendarSyncer: CalendarSyncer?,
@@ -340,10 +362,10 @@ class BackupWorker(
             if (config.currentTry < 1) {
                 return try {
                     tokenRefresher.refreshOAuth2Token()
-                    Log.d(TAG, "BackupWorker: token refreshed, retrying with new store")
-                    // new store required because auth params are immutable (BackupTask.java:192)
-                    val newStore = buildImapStore(ctx, authPreferences)
-                    val retryConfig = config.retryWithStore(newStore)
+                    Log.d(TAG, "BackupWorker: token refreshed, retrying with new transport")
+                    // U-026: new MailTransport required because auth params are immutable
+                    val newTransport = buildMailTransport(ctx, authPreferences)
+                    val retryConfig = config.retryWithTransport(newTransport)
                     val retryGroupIds = ContactAccessor().getGroupContactIds(
                         ctx.contentResolver, retryConfig.groupToBackup
                     )
@@ -356,8 +378,9 @@ class BackupWorker(
                     } else {
                         Result.success(workDataOf(PROGRESS_KEY_BACKED_UP to 0, PROGRESS_KEY_ITEMS_TO_SYNC to 0))
                     }
-                } catch (ignored: MessagingException) {
-                    Log.w(TAG, "BackupWorker: MessagingException during token refresh", ignored)
+                } catch (ignored: MailException) {
+                    // U-026: MailException replaces MessagingException
+                    Log.w(TAG, "BackupWorker: MailException during token refresh", ignored)
                     Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error_after_refresh"))
                 } catch (refreshEx: TokenRefreshException) {
                     Log.w(TAG, "BackupWorker: token refresh failed: $refreshEx")
@@ -373,34 +396,45 @@ class BackupWorker(
     }
 
     /**
-     * Builds a BackupImapStore with TLS trust policy resolution.
-     * Mirrors ServiceBase.getBackupImapStore().
+     * Builds a [MailTransport] with TLS trust policy resolution.
+     * Mirrors [ServiceBase.getMailTransport] (U-026).
+     *
+     * U-026: replaces the former [buildImapStore] (which returned [BackupImapStore]).
+     * No k-9 types are imported in this file; K9MailTransport is constructed here
+     * because BackupWorker doesn't extend ServiceBase (it's a CoroutineWorker).
+     * The checked exception from K9MailTransport's constructor is wrapped in [MailException].
      */
-    private fun buildImapStore(ctx: Context, authPreferences: AuthPreferences): BackupImapStore {
+    private fun buildMailTransport(ctx: Context, authPreferences: AuthPreferences): MailTransport {
         val uri = authPreferences.storeUri
-        if (!BackupImapStore.isValidUri(uri)) {
-            throw MessagingException("No valid IMAP URI: $uri")
+        if (!com.zegoggles.smssync.mail.BackupImapStore.isValidUri(uri)) {
+            throw MailException("No valid IMAP URI: $uri")
         }
         val parsed = Uri.parse(uri)
-        val host = parsed.host
+        val host = parsed.host ?: ""
         val port = parsed.port
         val pinnedCertStore = PinnedCertStore(ctx)
         val policy = pinnedCertStore.getTlsTrustPolicy(host, port)
-        val factory = if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
-            PinnedCertificateSocketFactory(ctx, host, pinnedCertStore.get(host, port))
+        val config = if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
+            MailTransportConfig(uri, policy, pinnedCertStore.get(host, port))
         } else {
-            DefaultTrustedSocketFactory(ctx)
+            MailTransportConfig(uri, policy)
         }
-        return BackupImapStore(ctx, uri, factory)
+        return try {
+            K9MailTransport(ctx, config)
+        } catch (e: com.fsck.k9.mail.MessagingException) {
+            throw MailException(e)
+        }
     }
 
     /**
      * Returns the set of enabled DataTypes from preferences.
+     *
+     * U-026: throws [MailException] instead of k-9 MessagingException.
      */
     private fun getEnabledBackupTypes(preferences: Preferences): EnumSet<DataType> {
         val enabled = preferences.dataTypePreferences.enabled()
         if (enabled.isEmpty()) {
-            throw MessagingException("No backup types enabled")
+            throw MailException("No backup types enabled")
         }
         return enabled
     }
