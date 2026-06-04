@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import android.util.Log;
 import com.zegoggles.smssync.contacts.ContactGroupIds;
 import com.zegoggles.smssync.mail.DataType;
+import javax.inject.Inject;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
@@ -18,6 +19,12 @@ public class BackupItemsFetcher {
     private final ContentResolver resolver;
     private final BackupQueryBuilder queryBuilder;
 
+    /**
+     * U-023: @Inject constructor — ContentResolver and BackupQueryBuilder are provided
+     * via EngineModule and BackupQueryBuilder's own @Inject constructor respectively.
+     * Tests continue to call this constructor directly.
+     */
+    @Inject
     BackupItemsFetcher(@NonNull ContentResolver resolver,
                        @NonNull BackupQueryBuilder queryBuilder) {
         if (resolver == null) throw new IllegalArgumentException("resolver cannot be null");

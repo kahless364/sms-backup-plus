@@ -11,6 +11,7 @@ import com.zegoggles.smssync.mail.PersonRecord;
 
 import java.util.Date;
 import java.util.Map;
+import javax.inject.Inject;
 
 import static com.zegoggles.smssync.App.TAG;
 
@@ -21,6 +22,14 @@ class CalendarSyncer {
     private final CallFormatter callFormatter;
     private boolean syncEnabled;
 
+    /**
+     * U-023: @Inject constructor — enables Hilt to build CalendarSyncer when requested.
+     * CalendarAccessor, calendarId, PersonLookup, and CallFormatter are provided
+     * by EngineModule. Tests continue to call this constructor directly with mocks
+     * (CalendarSyncerTest.java:38-43). long calendarId is supplied as
+     * @Named("calendarId") long in EngineModule.
+     */
+    @Inject
     CalendarSyncer(CalendarAccessor calendarAccessor,
                    long calendarId,
                    PersonLookup personLookup,

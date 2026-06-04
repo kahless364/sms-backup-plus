@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.zegoggles.smssync.BuildConfig;
 
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -149,8 +150,13 @@ public class OAuth2Client {
      * {@link ContactsPort}. Keeps all five existing construction sites source-compatible
      * without modification (DES-MODERNIZATION-011 §Integration Design; AC-7/IC-4).
      *
+     * U-023: @Inject annotation added so Dagger/Hilt can build OAuth2Client when requested.
+     * The String clientId is provided by EngineModule as @Named("oauth2ClientId").
+     * Tests continue to call this constructor directly (OAuth2ClientTest.java:33-36).
+     *
      * @param clientId OAuth 2.0 client identifier; must not be empty.
      */
+    @Inject
     public OAuth2Client(String clientId) {
         this(clientId, new PeopleApiContactsAdapter());
     }

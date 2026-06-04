@@ -13,6 +13,7 @@ import android.util.Log;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import javax.inject.Inject;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
@@ -31,6 +32,11 @@ public class PersonLookup {
 
     private final ContentResolver resolver;
 
+    /**
+     * U-023: @Inject constructor — ContentResolver is provided by EngineModule.
+     * Tests continue to call this constructor directly with a mock ContentResolver.
+     */
+    @Inject
     public PersonLookup(ContentResolver resolver) {
         this.resolver = resolver;
     }

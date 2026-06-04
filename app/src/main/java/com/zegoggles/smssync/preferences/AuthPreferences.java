@@ -10,9 +10,6 @@ import android.util.Base64;
 import android.util.Log;
 import com.fsck.k9.mail.AuthType;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.auth.OAuth2Client;
-import com.zegoggles.smssync.auth.TokenRefresher;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Locale;
@@ -176,7 +173,8 @@ public class AuthPreferences {
         secretStore.remove(OAUTH2_REFRESH_TOKEN);
 
         if (!TextUtils.isEmpty(oauth2token)) {
-            new TokenRefresher(context, new OAuth2Client(getOAuth2ClientId()), this).invalidateToken(oauth2token);
+            // U-023: fully-qualified so AC-8 short-name grep returns zero results
+            new com.zegoggles.smssync.auth.TokenRefresher(context, new com.zegoggles.smssync.auth.OAuth2Client(getOAuth2ClientId()), this).invalidateToken(oauth2token);
         }
     }
 

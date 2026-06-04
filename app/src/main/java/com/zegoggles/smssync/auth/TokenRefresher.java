@@ -10,6 +10,7 @@ import android.util.Log;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 
 import java.io.IOException;
+import javax.inject.Inject;
 
 import static android.text.TextUtils.isEmpty;
 import static com.zegoggles.smssync.App.TAG;
@@ -21,6 +22,12 @@ public class TokenRefresher {
     private final OAuth2Client oauth2Client;
     private AuthPreferences authPreferences;
 
+    /**
+     * U-023: @Inject constructor — enables Hilt to build TokenRefresher when requested.
+     * Context (@ApplicationContext), OAuth2Client, and AuthPreferences are provided via
+     * EngineModule. Tests continue to call this constructor directly (TokenRefresherTest.java).
+     */
+    @Inject
     public TokenRefresher(Context context, OAuth2Client oauth2Client, AuthPreferences authPreferences) {
         this(AccountManager.get(context), oauth2Client, authPreferences);
     }

@@ -11,6 +11,7 @@ import com.zegoggles.smssync.MmsConsts;
 import com.zegoggles.smssync.contacts.ContactGroupIds;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.preferences.DataTypePreferences;
+import javax.inject.Inject;
 
 import java.util.Locale;
 import java.util.Set;
@@ -35,6 +36,8 @@ class BackupQueryBuilder {
     };
     private final DataTypePreferences preferences;
 
+    /** U-023: @Inject constructor — DataTypePreferences is provided by PreferencesModule. */
+    @Inject
     BackupQueryBuilder(DataTypePreferences preferences) {
         this.preferences = preferences;
     }

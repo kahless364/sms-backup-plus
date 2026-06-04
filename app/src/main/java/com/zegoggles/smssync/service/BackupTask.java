@@ -1,7 +1,6 @@
 package com.zegoggles.smssync.service;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.os.AsyncTask;
 import androidx.annotation.NonNull;
 import android.util.Log;
@@ -12,22 +11,20 @@ import com.fsck.k9.mail.store.imap.XOAuth2AuthenticationFailedException;
 // U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.auth.OAuth2Client;
 import com.zegoggles.smssync.auth.TokenRefreshException;
 import com.zegoggles.smssync.auth.TokenRefresher;
-import com.zegoggles.smssync.calendar.CalendarAccessor;
 import com.zegoggles.smssync.contacts.ContactAccessor;
 import com.zegoggles.smssync.contacts.ContactGroupIds;
 import com.zegoggles.smssync.mail.BackupImapStore;
-import com.zegoggles.smssync.mail.CallFormatter;
 import com.zegoggles.smssync.mail.ConversionResult;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.MessageConverter;
-import com.zegoggles.smssync.mail.PersonLookup;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
+import dagger.Lazy;
+import javax.inject.Inject;
 
 import java.util.List;
 import java.util.Locale;
@@ -53,57 +50,55 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
     private final SmsBackupService service;
     private final BackupItemsFetcher fetcher;
     private final MessageConverter converter;
-    private final CalendarSyncer calendarSyncer;
+    // U-023 AC-3: Lazy<CalendarSyncer> replaces direct CalendarSyncer field.
+    // CalendarSyncer is only constructed when preferences.isCallLogCalendarSyncEnabled()
+    // returns true. When false, lazy.get() is never called — no CalendarSyncer is built.
+    // Behavioral contract preserved: calendar sync runs iff the preference is enabled
+    // and the data type is CALLLOG (replaces the former calendarSyncer != null null-guard).
+    private final Lazy<CalendarSyncer> calendarSyncerLazy;
     private final AuthPreferences authPreferences;
     private final Preferences preferences;
     private final ContactAccessor contactAccessor;
     private final TokenRefresher tokenRefresher;
 
-    BackupTask(@NonNull SmsBackupService service) {
-        final Context context = service.getApplicationContext();
-        this.service = service;
-        this.authPreferences = service.getAuthPreferences();
-        this.preferences = service.getPreferences();
-
-        this.fetcher = new BackupItemsFetcher(
-                context.getContentResolver(),
-                new BackupQueryBuilder(preferences.getDataTypePreferences()));
-
-        PersonLookup personLookup = new PersonLookup(service.getContentResolver());
-
-        this.contactAccessor = new ContactAccessor();
-        this.converter = new MessageConverter(context, service.getPreferences(), authPreferences.getUserEmail(), personLookup, contactAccessor);
-
-        if (preferences.isCallLogCalendarSyncEnabled()) {
-            calendarSyncer = new CalendarSyncer(
-                CalendarAccessor.Get.instance(service.getContentResolver()),
-                preferences.getCallLogCalendarId(),
-                personLookup,
-                new CallFormatter(context.getResources())
-            );
-
-        } else {
-            calendarSyncer = null;
-        }
-        this.tokenRefresher = new TokenRefresher(service, new OAuth2Client(authPreferences.getOAuth2ClientId()), authPreferences);
-    }
-
-    BackupTask(SmsBackupService service,
+    /**
+     * U-023: Single @Inject-annotated constructor (AC-4).
+     *
+     * The primary constructor that manually new'd eight collaborators (BackupTask.java:62-88)
+     * and the 8-parameter test-only constructor (BackupTask.java:90-106) have been merged
+     * into this single constructor. The collaborators are now explicit constructor parameters.
+     *
+     * SmsBackupService is NOT injectable by Hilt (it is an Android Service component managed
+     * by the OS). BackupTask is therefore NOT in the Hilt component graph — it is still built
+     * manually in SmsBackupService and by tests. The @Inject annotation on this constructor
+     * declares Hilt CAPABILITY (Dagger can build BackupTask if asked AND all params can be
+     * satisfied), but the graph is never asked to build BackupTask in the current coexistence
+     * period (U-015 @HiltWorker rewrite is the long-term solution).
+     *
+     * CalendarSyncer is Lazy (AC-3): it is constructed at most once per BackupTask instance
+     * and only when preferences.isCallLogCalendarSyncEnabled() is true (AC-3 behavioral guard).
+     *
+     * DES-MODERNIZATION-008 §Incremental coexistence: SmsBackupService non-injectable type
+     * handled by retaining manual construction in SmsBackupService. This is the documented
+     * coexistence approach per the story's Technical Notes.
+     */
+    @Inject
+    BackupTask(@NonNull SmsBackupService service,
                BackupItemsFetcher fetcher,
-               MessageConverter messageConverter,
-               CalendarSyncer syncer,
+               MessageConverter converter,
+               Lazy<CalendarSyncer> calendarSyncerLazy,
                AuthPreferences authPreferences,
                Preferences preferences,
-               ContactAccessor accessor,
-               TokenRefresher refresher) {
+               ContactAccessor contactAccessor,
+               TokenRefresher tokenRefresher) {
         this.service = service;
         this.fetcher = fetcher;
-        this.converter = messageConverter;
-        this.calendarSyncer = syncer;
+        this.converter = converter;
+        this.calendarSyncerLazy = calendarSyncerLazy;
         this.authPreferences = authPreferences;
         this.preferences = preferences;
-        this.contactAccessor = accessor;
-        this.tokenRefresher = refresher;
+        this.contactAccessor = contactAccessor;
+        this.tokenRefresher = tokenRefresher;
     }
 
     @Override
@@ -289,8 +284,11 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
 
                     store.getFolder(cursor.type, preferences.getDataTypePreferences()).appendMessages(messages);
 
-                    if (cursor.type == CALLLOG && calendarSyncer != null) {
-                        calendarSyncer.syncCalendar(result);
+                    // U-023 AC-3: guard migrated from 'calendarSyncer != null' to preference check.
+                    // Lazy<CalendarSyncer>.get() is called only when calendar sync is enabled,
+                    // preserving the behavior: no CalendarSyncer instance is built when disabled.
+                    if (cursor.type == CALLLOG && preferences.isCallLogCalendarSyncEnabled()) {
+                        calendarSyncerLazy.get().syncCalendar(result);
                     }
                     preferences.getDataTypePreferences().setMaxSyncedDate(cursor.type, result.getMaxDate());
                     backedUpItems += messages.size();
