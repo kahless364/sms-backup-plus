@@ -16,33 +16,33 @@
 package com.zegoggles.smssync.service
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-// U-026: all com.fsck.k9.* imports removed; engine now uses app-owned ACL types
 import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
 import com.zegoggles.smssync.calendar.CalendarAccessor
 import com.zegoggles.smssync.contacts.ContactAccessor
+import com.zegoggles.smssync.di.MailTransportFactory
 import com.zegoggles.smssync.mail.CallFormatter
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.MessageConverter
 import com.zegoggles.smssync.mail.PersonLookup
-import com.zegoggles.smssync.mail.PinnedCertStore
-import com.zegoggles.smssync.mail.TlsTrustPolicy
 import com.zegoggles.smssync.mail.transport.BackupFolderHandle
-import com.zegoggles.smssync.mail.transport.K9MailTransport
 import com.zegoggles.smssync.mail.transport.MailException
 import com.zegoggles.smssync.mail.transport.MailTransport
-import com.zegoggles.smssync.mail.transport.MailTransportConfig
 import com.zegoggles.smssync.mail.transport.XOAuth2FailedException
 import com.zegoggles.smssync.preferences.AuthPreferences
 import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.scheduler.WorkManagerScheduler
 import com.zegoggles.smssync.service.exception.RequiresLoginException
+import androidx.work.ListenableWorker
+import androidx.work.WorkerFactory
+import androidx.hilt.work.HiltWorker
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.ensureActive
 import java.util.EnumSet
 import java.util.Locale
@@ -72,15 +72,27 @@ import kotlin.coroutines.coroutineContext
  * Effective delay at attempt N = BACKOFF_INITIAL_SECS * 2^N. Cap exceeded when N >= 4
  * (30 * 16 = 480 > 300).
  *
- * TODO U-024: Add @HiltWorker/@AssistedInject annotations and replace direct constructor
- * calls with injected collaborators via HiltWorkerFactory.
+ * U-024: Annotated @HiltWorker with @AssistedInject constructor. @Assisted Context and
+ * @Assisted WorkerParameters are supplied by WorkManager via HiltWorkerFactory; the
+ * remaining constructor params (preferences, authPreferences, mailTransportFactory) are
+ * supplied by the Hilt SingletonComponent graph.
+ *
+ * The direct construction of Preferences/AuthPreferences/MailTransport inside doWork() and
+ * fetchAndBackupItems() is replaced by injected fields. The buildMailTransport() helper
+ * is replaced by mailTransportFactory.create() to preserve the per-run construction semantics
+ * (no cached singleton transport — auth-retry path requires a fresh store each time,
+ * per DES-MODERNIZATION-008 §Behavior-preservation guarantees, point 2).
  *
  * U-017: This is now the sole production execution path. The legacy Firebase JobDispatcher
  * path (LegacyScheduler, BackupJobs, the firebase job service) has been deleted (Gate G3).
  */
-class BackupWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class BackupWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val preferences: Preferences,
+    private val authPreferences: AuthPreferences,
+    private val mailTransportFactory: MailTransportFactory
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -99,15 +111,17 @@ class BackupWorker(
         }
 
         val ctx = applicationContext
-        val preferences = Preferences(ctx)
-        val authPreferences = AuthPreferences(ctx)
+        // U-024: preferences and authPreferences are now @AssistedInject-injected fields;
+        // no more manual construction here.
         val backupType = inferBackupType()
 
         Log.d(TAG, "BackupWorker.doWork: starting backup, type=$backupType, attempt=$runAttempt")
 
         return try {
-            // U-026: buildMailTransport replaces buildImapStore; MailException replaces MessagingException
-            val transport = buildMailTransport(ctx, authPreferences)
+            // U-024: mailTransportFactory.create() replaces buildMailTransport() — factory is injected
+            // via Hilt and constructs a fresh K9MailTransport per run (preserves per-run semantics
+            // for the auth-retry path per DES-MODERNIZATION-008 §Behavior-preservation, point 2).
+            val transport = mailTransportFactory.create()
             val typesToBackup = getEnabledBackupTypes(preferences)
 
             val config = BackupConfig(
@@ -237,7 +251,7 @@ class BackupWorker(
             }
         } catch (e: XOAuth2FailedException) {
             // U-026: XOAuth2FailedException replaces k-9 XOAuth2AuthenticationFailedException
-            handleAuthError(config, preferences, authPreferences, ctx, e, fetcher, converter, calendarSyncer, tokenRefresher)
+            handleAuthError(config, preferences, ctx, e, fetcher, converter, calendarSyncer, tokenRefresher)
         } catch (e: RequiresLoginException) {
             // U-026: RequiresLoginException replaces k-9 AuthenticationFailedException
             Log.w(TAG, "BackupWorker: auth failed (RequiresLoginException)", e)
@@ -349,7 +363,6 @@ class BackupWorker(
     private suspend fun handleAuthError(
         config: BackupConfig,
         preferences: Preferences,
-        authPreferences: AuthPreferences,
         ctx: Context,
         e: XOAuth2FailedException,
         fetcher: BackupItemsFetcher,
@@ -363,8 +376,10 @@ class BackupWorker(
                 return try {
                     tokenRefresher.refreshOAuth2Token()
                     Log.d(TAG, "BackupWorker: token refreshed, retrying with new transport")
-                    // U-026: new MailTransport required because auth params are immutable
-                    val newTransport = buildMailTransport(ctx, authPreferences)
+                    // U-024: mailTransportFactory.create() constructs a fresh transport per retry
+                    // (auth params are immutable; the retry path always needs a new transport
+                    // per DES-MODERNIZATION-008 §Behavior-preservation guarantees, point 2).
+                    val newTransport = mailTransportFactory.create()
                     val retryConfig = config.retryWithTransport(newTransport)
                     val retryGroupIds = ContactAccessor().getGroupContactIds(
                         ctx.contentResolver, retryConfig.groupToBackup
@@ -393,37 +408,6 @@ class BackupWorker(
             Log.w(TAG, "BackupWorker: unexpected XOAuth2 status ${e.status}")
         }
         return Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error"))
-    }
-
-    /**
-     * Builds a [MailTransport] with TLS trust policy resolution.
-     * Mirrors [ServiceBase.getMailTransport] (U-026).
-     *
-     * U-026: replaces the former [buildImapStore] (which returned [BackupImapStore]).
-     * No k-9 types are imported in this file; K9MailTransport is constructed here
-     * because BackupWorker doesn't extend ServiceBase (it's a CoroutineWorker).
-     * The checked exception from K9MailTransport's constructor is wrapped in [MailException].
-     */
-    private fun buildMailTransport(ctx: Context, authPreferences: AuthPreferences): MailTransport {
-        val uri = authPreferences.storeUri
-        if (!com.zegoggles.smssync.mail.BackupImapStore.isValidUri(uri)) {
-            throw MailException("No valid IMAP URI: $uri")
-        }
-        val parsed = Uri.parse(uri)
-        val host = parsed.host ?: ""
-        val port = parsed.port
-        val pinnedCertStore = PinnedCertStore(ctx)
-        val policy = pinnedCertStore.getTlsTrustPolicy(host, port)
-        val config = if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
-            MailTransportConfig(uri, policy, pinnedCertStore.get(host, port))
-        } else {
-            MailTransportConfig(uri, policy)
-        }
-        return try {
-            K9MailTransport(ctx, config)
-        } catch (e: com.fsck.k9.mail.MessagingException) {
-            throw MailException(e)
-        }
     }
 
     /**
@@ -470,5 +454,35 @@ class BackupWorker(
         const val STATE_BACKUP = "BACKUP"
         const val STATE_FINISHED = "FINISHED_BACKUP"
         const val STATE_CANCELED = "CANCELED_BACKUP"
+    }
+
+    /**
+     * Test-only [WorkerFactory] for [BackupWorker] unit tests.
+     *
+     * U-024: BackupWorker's @AssistedInject constructor requires Preferences, AuthPreferences,
+     * and MailTransportFactory — none of which are available via the default reflective factory.
+     * Tests use this factory to construct the worker with production-equivalent instances from
+     * context (no real IMAP transport — tests that reach the backup logic will fail with a
+     * MailException due to no IMAP URI, which is the expected behaviour for unit tests).
+     *
+     * Tests that require real transport behaviour or full DI should use the Hilt test harness
+     * (@HiltAndroidTest + HiltAndroidRule) with instrumented tests.
+     */
+    class TestableBackupWorkerFactory : androidx.work.WorkerFactory() {
+        override fun createWorker(
+            appContext: Context,
+            workerClassName: String,
+            workerParameters: WorkerParameters
+        ): androidx.work.ListenableWorker? {
+            return if (workerClassName == BackupWorker::class.java.name) {
+                BackupWorker(
+                    appContext,
+                    workerParameters,
+                    Preferences(appContext),
+                    AuthPreferences(appContext),
+                    MailTransportFactory { throw MailException("TestableBackupWorkerFactory: transport not available in unit tests") }
+                )
+            } else null
+        }
     }
 }

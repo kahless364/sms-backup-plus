@@ -1,7 +1,7 @@
 ---
 type: story
-status: planned
-sprint: "000001"
+status: done
+sprint: '000001'
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -23,6 +23,8 @@ id: U-024
 title: Wire HiltWorkerFactory into WorkManager Configuration.Provider and annotate BackupWorker/RestoreWorker with @HiltWorker + @AssistedInject
 pipeline: ''
 domain: modernization
+updated_at: '2026-06-04T17:41:01.356Z'
+resolution: done
 ---
 
 # U-024: Wire HiltWorkerFactory into WorkManager Configuration.Provider and annotate BackupWorker/RestoreWorker with @HiltWorker + @AssistedInject

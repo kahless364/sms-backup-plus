@@ -33,6 +33,7 @@ import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
 import com.zegoggles.smssync.contacts.ContactAccessor
+import com.zegoggles.smssync.di.MailTransportFactory
 import com.zegoggles.smssync.mail.BackupImapStore
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.MessageConverter
@@ -50,6 +51,9 @@ import com.zegoggles.smssync.preferences.AuthPreferences
 import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.scheduler.WorkManagerScheduler
 import com.zegoggles.smssync.service.exception.RequiresLoginException
+import androidx.hilt.work.HiltWorker
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.ensureActive
 import java.util.ArrayList
 import java.util.HashSet
@@ -89,18 +93,29 @@ import kotlin.coroutines.coroutineContext
  * Fault-injection tests call [executeRestoreWithValues] directly with pre-built ContentValues
  * items, bypassing the IMAP fetch. This is the canonical fault-injection test seam.
  *
- * TODO U-024: Add @HiltWorker/@AssistedInject annotations; replace RestoreWorkerFactory
- * with Hilt-provided HiltWorkerFactory.
+ * U-024: Annotated @HiltWorker with @AssistedInject constructor. @Assisted Context and
+ * @Assisted WorkerParameters are supplied by WorkManager via HiltWorkerFactory; the
+ * remaining constructor params (preferences, authPreferences, mailTransportFactory,
+ * checkpointStore, insertInterceptor) are supplied by the Hilt SingletonComponent graph.
+ *
+ * Fault-injection test seam ([TestableRestoreWorkerFactory]) is retained: tests that need
+ * direct control over [checkpointStore] and [insertInterceptor] (U-016 checkpoint tests)
+ * use [TestListenableWorkerBuilder.setWorkerFactory] with [TestableRestoreWorkerFactory],
+ * which directly constructs RestoreWorker bypassing the Hilt factory. This is the
+ * correct pattern for Robolectric unit tests that need to inject test doubles.
  */
-class RestoreWorker(
-    context: Context,
-    params: WorkerParameters,
-    /** Durable checkpoint store — injected; defaults to SharedPreferences adapter in production. */
+@HiltWorker
+class RestoreWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val preferences: Preferences,
+    private val authPreferences: AuthPreferences,
+    private val mailTransportFactory: MailTransportFactory,
+    /** Durable checkpoint store — injected via Hilt; supplied by CheckpointModule. */
     internal val checkpointStore: RestoreCheckpointStore,
     /**
-     * Fault-injection seam (IC-4). Called after confirmed insert AND after checkpoint write,
-     * before loop index advances. Production: [RestoreInsertInterceptor.NoOp].
-     * Tests: [RestoreInsertInterceptor.CrashAfterK] to simulate process kill.
+     * Fault-injection seam (IC-4). Production: [RestoreInsertInterceptor.NoOp] (bound by
+     * CheckpointModule). Tests use [TestableRestoreWorkerFactory] to inject [CrashAfterK].
      */
     internal val insertInterceptor: RestoreInsertInterceptor
 ) : CoroutineWorker(context, params) {
@@ -122,14 +137,13 @@ class RestoreWorker(
         }
 
         val ctx = applicationContext
-        val preferences = Preferences(ctx)
-        val authPreferences = AuthPreferences(ctx)
+        // U-024: preferences, authPreferences are now @AssistedInject-injected fields.
 
         Log.d(TAG, "RestoreWorker.doWork: starting restore, attempt=$runAttempt")
 
         return try {
-            // U-026: buildMailTransport replaces buildImapStore; MailException replaces MessagingException
-            val transport = buildMailTransport(ctx, authPreferences)
+            // U-024: mailTransportFactory.create() replaces buildMailTransport(); factory is injected.
+            val transport = mailTransportFactory.create()
             val restoreSms = preferences.dataTypePreferences.isRestoreEnabled(DataType.SMS)
             val restoreCallLog = preferences.dataTypePreferences.isRestoreEnabled(DataType.CALLLOG)
 
@@ -630,8 +644,8 @@ class RestoreWorker(
                 return try {
                     tokenRefresher.refreshOAuth2Token()
                     Log.d(TAG, "RestoreWorker: token refreshed, retrying with currentRestoredItem=$currentRestoredItem")
-                    // U-026: buildMailTransport replaces buildImapStore
-                    val newTransport = buildMailTransport(ctx, authPreferences)
+                    // U-024: mailTransportFactory.create() — fresh transport per retry (no singleton)
+                    val newTransport = mailTransportFactory.create()
                     val retryConfig = config.retryWithStore(currentRestoredItem, newTransport)
                     executeRestore(retryConfig, preferences, converter, tokenRefresher, ctx, authPreferences)
                 } catch (ignored: MailException) {
@@ -649,37 +663,6 @@ class RestoreWorker(
             Log.w(TAG, "RestoreWorker: unexpected XOAuth2 status ${e.status}")
         }
         return Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error"))
-    }
-
-    /**
-     * Builds a [MailTransport] with TLS trust policy resolution.
-     * Mirrors [ServiceBase.getMailTransport] (U-026).
-     *
-     * U-026: replaces the former [buildImapStore] (which returned [BackupImapStore]).
-     * No k-9 types are used here; K9MailTransport wraps them internally.
-     * [BackupImapStore.isValidUri] is still called for validation (bounded residual — the
-     * static URI validation helper lives in mail.* and is NOT a k-9 import).
-     */
-    private fun buildMailTransport(ctx: Context, authPreferences: AuthPreferences): MailTransport {
-        val uri = authPreferences.storeUri
-        if (!BackupImapStore.isValidUri(uri)) {
-            throw MailException("No valid IMAP URI: $uri")
-        }
-        val parsed = Uri.parse(uri)
-        val host = parsed.host ?: ""
-        val port = parsed.port
-        val pinnedCertStore = PinnedCertStore(ctx)
-        val policy = pinnedCertStore.getTlsTrustPolicy(host, port)
-        val config = if (policy == TlsTrustPolicy.PINNED_CERTIFICATE) {
-            MailTransportConfig(uri, policy, pinnedCertStore.get(host, port))
-        } else {
-            MailTransportConfig(uri, policy)
-        }
-        return try {
-            K9MailTransport(ctx, config)
-        } catch (e: com.fsck.k9.mail.MessagingException) {
-            throw MailException(e)
-        }
     }
 
     companion object {
@@ -714,30 +697,16 @@ class RestoreWorker(
     }
 
     /**
-     * Production [WorkerFactory] for [RestoreWorker].
-     * Supplies [SharedPreferencesCheckpointStore] and [RestoreInsertInterceptor.NoOp].
-     * TODO U-024: Replace with Hilt @HiltWorker + HiltWorkerFactory.
-     */
-    class RestoreWorkerFactory : WorkerFactory() {
-        override fun createWorker(
-            appContext: Context,
-            workerClassName: String,
-            workerParameters: WorkerParameters
-        ): ListenableWorker? {
-            return if (workerClassName == RestoreWorker::class.java.name) {
-                RestoreWorker(
-                    appContext,
-                    workerParameters,
-                    SharedPreferencesCheckpointStore(appContext),
-                    RestoreInsertInterceptor.NoOp
-                )
-            } else null
-        }
-    }
-
-    /**
-     * Test-only [WorkerFactory] that injects custom [checkpointStore] and [interceptor].
-     * Used by fault-injection tests via [TestListenableWorkerBuilder.setWorkerFactory] (IC-4).
+     * Test-only [WorkerFactory] for fault-injection tests (U-016, IC-4).
+     *
+     * U-024: Updated to supply the new @AssistedInject constructor params.
+     * [preferences] and [authPreferences] are constructed from context (matching the
+     * former production behaviour). [mailTransportFactory] defaults to a no-op factory
+     * since fault-injection tests drive [executeRestoreWithValues] directly and never
+     * call buildMailTransport. Tests that need real transport behaviour should use the
+     * Hilt test harness (@HiltAndroidTest + HiltAndroidRule).
+     *
+     * Used by checkpoint-resume tests via [TestListenableWorkerBuilder.setWorkerFactory] (IC-4).
      */
     class TestableRestoreWorkerFactory(
         private val checkpointStore: RestoreCheckpointStore,
@@ -752,6 +721,9 @@ class RestoreWorker(
                 RestoreWorker(
                     appContext,
                     workerParameters,
+                    Preferences(appContext),
+                    AuthPreferences(appContext),
+                    MailTransportFactory { throw MailException("TestableRestoreWorkerFactory: transport not available in unit tests") },
                     checkpointStore,
                     interceptor
                 )

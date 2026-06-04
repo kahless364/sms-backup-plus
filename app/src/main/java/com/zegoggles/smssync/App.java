@@ -35,6 +35,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.hilt.work.HiltWorkerFactory;
+import androidx.work.Configuration;
 import android.util.Log;
 import com.fsck.k9.mail.K9MailLib;
 import com.zegoggles.smssync.compat.GooglePlayServices;
@@ -67,9 +69,19 @@ import static android.content.pm.PackageManager.DONT_KILL_APP;
  * Hilt generates Hilt_App which this class extends (transparently, via the plugin).
  * The @Inject Preferences field is populated by Hilt before the onCreate() body runs
  * (Hilt_App.onCreate() calls inject(this) then super.onCreate()).
+ *
+ * U-024: App implements Configuration.Provider so WorkManager uses HiltWorkerFactory
+ * instead of the default reflective no-arg factory. WorkManager auto-initialization via
+ * androidx.startup.InitializationProvider is disabled in AndroidManifest.xml
+ * (tools:node="remove") to prevent WorkManager from initializing before Hilt can inject
+ * the HiltWorkerFactory. WorkManager is initialized explicitly in onCreate() via
+ * WorkManager.initialize(this, getWorkManagerConfiguration()) after Hilt injection.
+ *
+ * IC-1 (DES-MODERNIZATION-008): HiltWorkerFactory must be a field-injected member,
+ * not a constructor parameter — @HiltAndroidApp only supports field injection on App.
  */
 @HiltAndroidApp
-public class App extends Application {
+public class App extends Application implements Configuration.Provider {
     private static final boolean DEBUG = BuildConfig.DEBUG;
     public static final boolean LOCAL_LOGV = DEBUG;
     public static final String TAG = "SMSBackup+";
@@ -90,6 +102,18 @@ public class App extends Application {
     @Inject Preferences preferences;
 
     /**
+     * U-024: HiltWorkerFactory injected by Hilt (field injection only — @HiltAndroidApp
+     * does not support constructor injection on Application). This field is populated by
+     * Hilt_App.onCreate() before this class's onCreate() runs.
+     *
+     * Used in {@link #getWorkManagerConfiguration()} to configure WorkManager with the
+     * Hilt-managed factory. Must be non-null by the time getWorkManagerConfiguration()
+     * is called (ensured by calling WorkManager.initialize() inside onCreate() after
+     * super.onCreate() completes Hilt injection).
+     */
+    @Inject HiltWorkerFactory hiltWorkerFactory;
+
+    /**
      * Application-scoped {@link BackupScheduler} singleton.
      * U-013: replaced BackupJobs field with this port-level field.
      * U-017: binding flipped from LegacyScheduler to WorkManagerScheduler.
@@ -100,6 +124,26 @@ public class App extends Application {
     @NonNull
     public static BackupScheduler getScheduler(@NonNull Context context) {
         return ((App) context.getApplicationContext()).scheduler;
+    }
+
+    /**
+     * U-024: Configuration.Provider implementation — returns WorkManager configuration
+     * that uses Hilt's managed factory instead of the default reflective factory.
+     *
+     * WorkManager calls this method once during initialization. The hiltWorkerFactory
+     * field must be non-null at call time; it is populated by Hilt_App.onCreate() before
+     * this class's onCreate() body executes, ensuring non-null state when
+     * WorkManager.initialize(this, getWorkManagerConfiguration()) is called below.
+     *
+     * AC-3 (DES-MODERNIZATION-008): HiltWorkerFactory is the sole WorkerFactory in
+     * production. No DefaultWorkerFactory or hand-rolled WorkerFactory survives here.
+     */
+    @NonNull
+    @Override
+    public Configuration getWorkManagerConfiguration() {
+        return new Configuration.Builder()
+                .setWorkerFactory(hiltWorkerFactory)
+                .build();
     }
 
     @Override
@@ -117,6 +161,32 @@ public class App extends Application {
         // line executes (PreferencesModule.providePreferences via SingletonComponent).
         // 'new Preferences(this)' removed per AC-3.
         preferences.migrate();
+
+        // U-024: Explicitly initialize WorkManager with Hilt's configuration so the
+        // HiltWorkerFactory is registered. Auto-initialization is disabled in
+        // AndroidManifest.xml (tools:node="remove" on InitializationProvider).
+        // This call must happen after super.onCreate() (which runs Hilt injection) so
+        // hiltWorkerFactory is non-null.
+        //
+        // Guard: In Robolectric unit tests, WorkManagerTestInitHelper.initializeTestWorkManager()
+        // may have already initialized WorkManager before App.onCreate() runs. Since
+        // WorkManager.initialize() throws IllegalStateException if called twice, we guard
+        // with a try-catch to allow both production (manual init) and test (already inited)
+        // paths to coexist. hiltWorkerFactory may be null in tests (Hilt not active in
+        // Robolectric non-@HiltAndroidTest tests), so only call initialize if non-null.
+        if (hiltWorkerFactory != null) {
+            try {
+                androidx.work.WorkManager.initialize(this, getWorkManagerConfiguration());
+            } catch (IllegalStateException alreadyInitialized) {
+                Log.d(TAG, "WorkManager already initialized (test environment), skipping: " + alreadyInitialized.getMessage());
+            }
+        } else {
+            // In non-Hilt test environments (Robolectric without HiltAndroidTest), hiltWorkerFactory
+            // is null because Hilt injection does not run. WorkManager initialization via
+            // Configuration.Provider is not available; WorkManager should have been initialized
+            // by the test setUp via WorkManagerTestInitHelper.initializeTestWorkManager().
+            Log.d(TAG, "hiltWorkerFactory is null — skipping WorkManager.initialize() (test environment without Hilt)");
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel();
