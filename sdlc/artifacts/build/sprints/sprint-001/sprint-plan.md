@@ -1,5 +1,5 @@
 ---
-status: active
+status: completed
 execution_mode: parallel
 id: sprint-001
 sprint: '000001'
