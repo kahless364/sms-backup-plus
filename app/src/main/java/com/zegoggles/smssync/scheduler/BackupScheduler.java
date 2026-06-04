@@ -33,7 +33,7 @@ import com.zegoggles.smssync.service.BackupType;
  * SmsBackupService, App) are routed through this port.
  * U-017: binding flipped from LegacyScheduler to WorkManagerScheduler (Gate G3).
  * <p>
- * <strong>Contract: CNTR-MODERNIZATION-004</strong> — all nine operations below,
+ * <strong>Contract: CNTR-MODERNIZATION-004 v2</strong> — all ten operations below,
  * the {@link ScheduledJob} return type, and the {@link SchedulerObservable} observable
  * state surface are binding clauses of that contract.
  */
@@ -101,6 +101,30 @@ public interface BackupScheduler {
      */
     @Nullable
     ScheduledJob scheduleImmediate();
+
+    /**
+     * Schedules an immediate one-off manual backup carrying the engine {@link BackupType}.
+     * <p>
+     * U-031 / CNTR-MODERNIZATION-004 v2 (Validation Rule 8): dispatches the manual backup
+     * or skip initiated from {@code SmsBackupService} (originally from {@code MainActivity}).
+     * Preserves {@code MANUAL} vs {@code SKIP} semantics (notification, foreground, early-return
+     * path) by tagging the worker with {@code backupType.name()}, so
+     * {@code BackupWorker.inferBackupType()} resolves the correct type.
+     * <p>
+     * Constraint-identical to {@link #scheduleImmediate()} ({@code Constraints.NONE},
+     * {@code REPLACE}, {@code EXPONENTIAL}/30s, no delay) but uses
+     * {@code backupType.name()} as the unique-work name — distinct from
+     * {@code "BROADCAST_INTENT"} so a manual run and an automation-broadcast run do NOT
+     * replace each other.
+     * <p>
+     * Accepts only {@link BackupType#MANUAL} or {@link BackupType#SKIP}; passing any
+     * other type is a contract violation.
+     *
+     * @param backupType {@link BackupType#MANUAL} or {@link BackupType#SKIP}
+     * @return the enqueued job, or {@code null}
+     */
+    @Nullable
+    ScheduledJob scheduleManual(@NonNull BackupType backupType);
 
     /**
      * Schedules a one-off restore job.

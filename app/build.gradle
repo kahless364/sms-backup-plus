@@ -220,16 +220,7 @@ def jacocoFileFilter = [
         '**/BackupWorker$*.class',
         '**/RestoreWorker.class',
         '**/RestoreWorker$*.class',
-        // U-017: BackupTask and RestoreTask are legacy AsyncTask-based execution classes
-        // retained for the SmsBackupService / SmsRestoreService legacy path (which is now
-        // dead code since WorkManagerScheduler routes all backups through BackupWorker /
-        // RestoreWorker). These classes have the same IMAP-dependency constraint as
-        // BackupWorker/RestoreWorker — full coverage requires a live IMAP store.
-        // They will be deleted in the dead-code sweep (U-018 / MU-006).
-        '**/BackupTask.class',
-        '**/BackupTask$*.class',
-        '**/RestoreTask.class',
-        '**/RestoreTask$*.class'
+        // U-031: BackupTask and RestoreTask deleted — exclusion entries removed.
 ]
 
 // Configure testDebugUnitTest to emit JaCoCo execution data (U-005).

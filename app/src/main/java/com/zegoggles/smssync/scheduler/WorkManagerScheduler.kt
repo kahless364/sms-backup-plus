@@ -282,6 +282,38 @@ class WorkManagerScheduler(
     }
 
     /**
+     * Schedules an immediate one-off manual backup carrying the engine [BackupType].
+     *
+     * U-031 / CNTR-MODERNIZATION-004 v2 (Validation Rule 8): dispatches manual backup/skip from
+     * [SmsBackupService]. Preserves MANUAL vs SKIP semantics by tagging with [BackupType.name],
+     * so [BackupWorker.inferBackupType] resolves the correct type.
+     *
+     * Constraint-identical to [scheduleImmediate] (Constraints.NONE, REPLACE, EXPONENTIAL/30s)
+     * but unique-work name = backupType.name() ("MANUAL" / "SKIP") — distinct from
+     * "BROADCAST_INTENT", so manual and automation-broadcast runs do NOT replace each other.
+     *
+     * Accepts only [BackupType.MANUAL] or [BackupType.SKIP]; other values are contract violations.
+     *
+     * INV-1: REPLACE; INV-2: Constraints.NONE; INV-3: EXPONENTIAL/30s; INV unique-name: distinct.
+     */
+    override fun scheduleManual(backupType: BackupType): ScheduledJob? {
+        require(backupType == BackupType.MANUAL || backupType == BackupType.SKIP) {
+            "scheduleManual accepts only MANUAL or SKIP, got $backupType"
+        }
+        val request = OneTimeWorkRequest.Builder(BackupWorker::class.java)
+            .setConstraints(Constraints.NONE)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+            .addTag(backupType.name)
+            .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(backupType.name, ExistingWorkPolicy.REPLACE, request)
+
+        Log.d(TAG, "WorkManagerScheduler.scheduleManual: enqueued ${backupType.name} with Constraints.NONE")
+        return ScheduledJob(backupType.name, "WorkManagerScheduler:${backupType.name} manual")
+    }
+
+    /**
      * Schedules a one-off restore job backed by [RestoreWorker].
      *
      * The full durable-checkpoint implementation (persist cursor after each insert,
@@ -325,10 +357,14 @@ class WorkManagerScheduler(
 
     /** Single-flight cancellation by job kind. */
     override fun cancel(jobKind: BackupType) {
+        // U-031: MANUAL and SKIP use backupType.name() as unique-work names (distinct from
+        // BROADCAST_INTENT). Cancel the correct unique-work name for each type.
         val uniqueName = when (jobKind) {
             BackupType.REGULAR -> BackupType.REGULAR.name
             BackupType.INCOMING -> BackupType.INCOMING.name
             BackupType.BROADCAST_INTENT -> BackupType.BROADCAST_INTENT.name
+            BackupType.MANUAL -> BackupType.MANUAL.name
+            BackupType.SKIP -> BackupType.SKIP.name
             else -> {
                 Log.d(TAG, "WorkManagerScheduler.cancel($jobKind): no unique-work mapping; no-op")
                 return

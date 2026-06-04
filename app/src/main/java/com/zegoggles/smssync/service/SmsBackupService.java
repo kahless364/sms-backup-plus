@@ -21,16 +21,19 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.lifecycle.Observer;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
 import android.util.Log;
 // U-020: import com.squareup.otto.Produce removed (AC-8)
 // U-020: import com.squareup.otto.Subscribe removed (AC-8)
 // U-026: k-9 MessagingException import removed; replaced by MailException (AC-5)
+// U-031: BackupTask import removed (AC-7) — class deleted
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.MainActivity;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.mail.transport.MailException;
-import com.zegoggles.smssync.mail.transport.MailTransport;
 import com.zegoggles.smssync.scheduler.BackupScheduler;
 import com.zegoggles.smssync.scheduler.ScheduledJob;
 import com.zegoggles.smssync.service.exception.BackupDisabledException;
@@ -38,9 +41,11 @@ import com.zegoggles.smssync.service.exception.MissingPermissionException;
 import com.zegoggles.smssync.service.exception.RequiresLoginException;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
+import kotlinx.coroutines.Job;
 
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static android.R.drawable.stat_sys_warning;
@@ -78,6 +83,15 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
  * <p>U-026: k-9 MessagingException import removed (AC-5).
  * All uses of MessagingException in catch/throws declarations are replaced with
  * {@link MailException} (app-owned).
+ *
+ * <p>U-031: AsyncTask execution path removed.
+ * {@code backup()} now calls {@code getScheduler().scheduleManual(backupType)} instead of
+ * constructing/executing {@code BackupTask}. A {@link WorkInfo} observer bridge is registered
+ * immediately after enqueue to drive the existing {@code backupStateChanged()} foreground/stop
+ * driver from worker progress/terminal state (DES-MODERNIZATION-012 §Integration Design, Option b1).
+ * The {@code getBackupTask()} factory and {@code BackupTask} class are deleted.
+ * Cancel rewired: {@code SyncEvent.Cancel(USER)} from the repository reaches
+ * {@code WorkManager.cancelUniqueWork()} via {@link WorkManagerCancelCollector} (R-4 mitigation).
  */
 public class SmsBackupService extends ServiceBase {
     private static final int BACKUP_ID = 1;
@@ -85,6 +99,12 @@ public class SmsBackupService extends ServiceBase {
 
     // U-020: static service field deleted (AC-8a). State is read via syncStateRepository().
     @NonNull private BackupState state = new BackupState();
+
+    // U-031: WorkInfo observer reference — held so it can be removed on terminal state.
+    @Nullable private Observer<List<WorkInfo>> workInfoObserver;
+
+    // U-031: Cancel collector job — collects SyncEvent.Cancel from repository and routes to WM.
+    @Nullable private Job cancelCollectorJob;
 
     @Override @NonNull
     public BackupState getState() {
@@ -103,6 +123,7 @@ public class SmsBackupService extends ServiceBase {
         super.onDestroy();
         if (LOCAL_LOGV) Log.v(TAG, "SmsBackupService#onDestroy(state=" + getState() + ")");
         // U-020: service = null; deleted (AC-8a)
+        tearDownObserverAndCollector(null);
     }
 
     @Override
@@ -141,13 +162,26 @@ public class SmsBackupService extends ServiceBase {
                 // network constraints via Constraints; no manual pre-flight check needed.
             }
             appLog(R.string.app_log_start_backup, backupType);
-            // U-026 AC-5: getMailTransport() replaces getBackupImapStore(); MailException replaces MessagingException
-            getBackupTask().execute(getBackupConfig(backupType, enabledTypes, getMailTransport()));
-        } catch (MailException e) {
-            // U-026 AC-5: MailException replaces MessagingException
-            Log.w(TAG, e);
-            moveToState(state.transition(ERROR, e));
-        // U-017: catch(ConnectivityException) removed — legacyCheckConnectivity() deleted.
+
+            // U-031 AC-2/AC-3: Dispatch to WorkManager via scheduleManual.
+            // Replaces getBackupTask().execute(getBackupConfig(backupType, enabledTypes, getMailTransport())).
+            // CNTR-MODERNIZATION-004 v2 Validation Rule 8: scheduleManual carries MANUAL/SKIP type.
+            ScheduledJob job = getScheduler().scheduleManual(backupType);
+            if (job != null) {
+                Log.d(TAG, "SmsBackupService.backup: enqueued via scheduleManual, uniqueWork=" + job.tag);
+                // U-031 Step 2a (AC-1): register WorkInfo observer bridge.
+                // Drives backupStateChanged() from worker progress/terminal WorkInfo state.
+                // DES-MODERNIZATION-012 §Integration Design Option (b1).
+                registerBackupWorkInfoObserver(backupType.name(), backupType);
+                // U-031 R-4 (AC-5): register cancel collector to route SyncEvent.Cancel to WM.
+                registerCancelCollector(backupType.name());
+            } else {
+                Log.w(TAG, "SmsBackupService.backup: scheduleManual returned null for " + backupType);
+                moveToState(state.transition(ERROR, new MailException("scheduleManual returned null")));
+            }
+        // U-031: MailException catch removed — getBackupConfig()/getMailTransport() deleted;
+        // no caller in backup() throws MailException anymore. Error-result states are
+        // surfaced via moveToState(state.transition(ERROR, ...)) in the specific catch branches.
         } catch (RequiresLoginException e) {
             appLog(R.string.app_log_missing_credentials);
             moveToState(state.transition(ERROR, e));
@@ -155,6 +189,132 @@ public class SmsBackupService extends ServiceBase {
             moveToState(state.transition(FINISHED_BACKUP, e));
         } catch (MissingPermissionException e) {
             moveToState(state.transition(ERROR, e));
+        }
+    }
+
+    /**
+     * U-031 Step 2a (AC-1): Registers a WorkInfo observer that bridges worker setProgress state
+     * into the existing backupStateChanged() foreground/stop driver.
+     * <p>
+     * DES-MODERNIZATION-012 §Integration Design Option (b1): the service observes the worker
+     * via WorkManager.getWorkInfosForUniqueWorkLiveData() and re-invokes backupStateChanged()
+     * to drive startForeground/stopForeground/stopSelf. This keeps the worker byte-unchanged
+     * and reuses the verbatim foreground/teardown/notification logic.
+     *
+     * @param uniqueWorkName the unique-work name used by scheduleManual ("MANUAL" or "SKIP")
+     * @param backupType     the BackupType enum value (for constructing BackupState)
+     */
+    private void registerBackupWorkInfoObserver(final String uniqueWorkName,
+                                                final BackupType backupType) {
+        // Remove any existing observer first (defensive)
+        if (workInfoObserver != null) {
+            WorkManager.getInstance(getApplicationContext())
+                .getWorkInfosForUniqueWorkLiveData(uniqueWorkName)
+                .removeObserver(workInfoObserver);
+            workInfoObserver = null;
+        }
+
+        workInfoObserver = new Observer<List<WorkInfo>>() {
+            @Override
+            public void onChanged(List<WorkInfo> workInfoList) {
+                if (workInfoList == null || workInfoList.isEmpty()) return;
+                WorkInfo workInfo = workInfoList.get(0);
+                if (workInfo == null) return;
+                BackupState newState = mapWorkInfoToBackupState(workInfo, backupType);
+                if (newState != null) {
+                    backupStateChanged(newState);
+                }
+                // On terminal state, tear down observer (backupStateChanged's !isRunning branch
+                // handles stopForeground/stopSelf; we tear down here to prevent further callbacks)
+                if (workInfo.getState().isFinished()) {
+                    tearDownObserverAndCollector(uniqueWorkName);
+                }
+            }
+        };
+
+        // observeForever requires main thread; Service.handleIntent() is called on main thread.
+        WorkManager.getInstance(getApplicationContext())
+            .getWorkInfosForUniqueWorkLiveData(uniqueWorkName)
+            .observeForever(workInfoObserver);
+
+        Log.d(TAG, "SmsBackupService: registered WorkInfo observer for " + uniqueWorkName);
+    }
+
+    /**
+     * Maps a WorkInfo to a BackupState by reading PROGRESS_KEY_STATE from progress data.
+     * Terminal WorkInfo.State values are mapped to SmsSyncState terminal states.
+     *
+     * @return a BackupState to drive backupStateChanged(), or null if no change needed
+     */
+    @Nullable
+    BackupState mapWorkInfoToBackupState(WorkInfo workInfo, BackupType backupType) {
+        WorkInfo.State wmState = workInfo.getState();
+
+        if (wmState == WorkInfo.State.SUCCEEDED) {
+            return new BackupState(SmsSyncState.FINISHED_BACKUP, 0, 0, backupType, null, null);
+        } else if (wmState == WorkInfo.State.FAILED) {
+            return new BackupState(SmsSyncState.ERROR, 0, 0, backupType, null,
+                new MailException("BackupWorker failed"));
+        } else if (wmState == WorkInfo.State.CANCELLED) {
+            return new BackupState(SmsSyncState.CANCELED_BACKUP, 0, 0, backupType, null, null);
+        } else if (wmState == WorkInfo.State.RUNNING) {
+            String progressState = workInfo.getProgress().getString(BackupWorker.PROGRESS_KEY_STATE);
+            if (progressState == null) return null;
+            SmsSyncState smsSyncState = mapProgressStateToSmsSyncState(progressState);
+            if (smsSyncState == null) return null;
+            int backedUp = workInfo.getProgress().getInt(BackupWorker.PROGRESS_KEY_BACKED_UP, 0);
+            int toSync = workInfo.getProgress().getInt(BackupWorker.PROGRESS_KEY_ITEMS_TO_SYNC, 0);
+            String dataTypeName = workInfo.getProgress().getString(BackupWorker.PROGRESS_KEY_DATA_TYPE);
+            DataType dataType = null;
+            if (dataTypeName != null && !dataTypeName.isEmpty()) {
+                try { dataType = DataType.valueOf(dataTypeName); } catch (Exception ignored) {}
+            }
+            return new BackupState(smsSyncState, backedUp, toSync, backupType, dataType, null);
+        }
+        return null;
+    }
+
+    @Nullable
+    private SmsSyncState mapProgressStateToSmsSyncState(String progressState) {
+        switch (progressState) {
+            case BackupWorker.STATE_LOGIN:    return SmsSyncState.LOGIN;
+            case BackupWorker.STATE_CALC:     return SmsSyncState.CALC;
+            case BackupWorker.STATE_BACKUP:   return SmsSyncState.BACKUP;
+            case BackupWorker.STATE_FINISHED: return SmsSyncState.FINISHED_BACKUP;
+            case BackupWorker.STATE_CANCELED: return SmsSyncState.CANCELED_BACKUP;
+            default: return null;
+        }
+    }
+
+    /**
+     * U-031 R-4 (AC-5): Registers a cancel collector that routes SyncEvent.Cancel(USER)
+     * from the SyncStateRepository to WorkManager.cancelUniqueWork(uniqueWorkName).
+     * The worker's cooperative ensureActive() handles the interrupt at the next suspension point.
+     * The AC-1 WorkInfo observer drives stopForeground/stopSelf on the CANCELLED terminal state.
+     */
+    private void registerCancelCollector(final String uniqueWorkName) {
+        if (cancelCollectorJob != null) {
+            cancelCollectorJob.cancel(null);
+            cancelCollectorJob = null;
+        }
+        cancelCollectorJob = WorkManagerCancelCollector.collect(
+            getApplicationContext(), App.syncStateRepository(), uniqueWorkName);
+        Log.d(TAG, "SmsBackupService: registered cancel collector for " + uniqueWorkName);
+    }
+
+    private void tearDownObserverAndCollector(@Nullable String uniqueWorkName) {
+        if (workInfoObserver != null && uniqueWorkName != null) {
+            WorkManager.getInstance(getApplicationContext())
+                .getWorkInfosForUniqueWorkLiveData(uniqueWorkName)
+                .removeObserver(workInfoObserver);
+            workInfoObserver = null;
+        } else if (workInfoObserver != null) {
+            // uniqueWorkName not available (onDestroy path) — just null the reference
+            workInfoObserver = null;
+        }
+        if (cancelCollectorJob != null) {
+            cancelCollectorJob.cancel(null);
+            cancelCollectorJob = null;
         }
     }
 
@@ -166,20 +326,6 @@ public class SmsBackupService extends ServiceBase {
         if (!missing.isEmpty()) {
             throw new MissingPermissionException(missing);
         }
-    }
-
-    private BackupConfig getBackupConfig(BackupType backupType,
-                                         EnumSet<DataType> enabledTypes,
-                                         MailTransport transport) {
-        return new BackupConfig(
-            transport,
-            0,
-            getPreferences().getMaxItemsPerSync(),
-            getPreferences().getBackupContactGroup(),
-            backupType,
-            enabledTypes,
-            getPreferences().isAppLogDebug()
-        );
     }
 
     private EnumSet<DataType> getEnabledBackupTypes() throws BackupDisabledException {
@@ -199,45 +345,8 @@ public class SmsBackupService extends ServiceBase {
     // U-017: legacyCheckConnectivity() deleted — WorkManagerScheduler enforces
     // network constraints via Constraints; no manual pre-flight check needed.
 
-    protected BackupTask getBackupTask() {
-        // U-023: Primary BackupTask constructor removed (manual new-wiring deleted per AC-2).
-        // SmsBackupService supplies itself and manually builds each collaborator so that the
-        // service's ContentResolver/context is used. This mirrors the previous primary ctor
-        // body but is now explicit rather than hidden inside BackupTask.
-        // SmsBackupService cannot be injected by Hilt (it is an Android Service); the
-        // DI coexistence approach is: manually build here until U-015 @HiltWorker removes
-        // BackupTask entirely (DES-MODERNIZATION-008 §Incremental coexistence).
-        final android.content.Context context = getApplicationContext();
-        final com.zegoggles.smssync.preferences.AuthPreferences auth = getAuthPreferences();
-        final com.zegoggles.smssync.preferences.Preferences prefs = getPreferences();
-        final com.zegoggles.smssync.mail.PersonLookup personLookup =
-                new com.zegoggles.smssync.mail.PersonLookup(getContentResolver());
-        final com.zegoggles.smssync.contacts.ContactAccessor contactAccessor =
-                new com.zegoggles.smssync.contacts.ContactAccessor();
-        final com.zegoggles.smssync.service.BackupQueryBuilder queryBuilder =
-                new com.zegoggles.smssync.service.BackupQueryBuilder(prefs.getDataTypePreferences());
-        final com.zegoggles.smssync.service.BackupItemsFetcher fetcher =
-                new com.zegoggles.smssync.service.BackupItemsFetcher(getContentResolver(), queryBuilder);
-        final com.zegoggles.smssync.mail.MessageConverter converter =
-                new com.zegoggles.smssync.mail.MessageConverter(
-                        context, prefs, auth.getUserEmail(), personLookup, contactAccessor);
-        final com.zegoggles.smssync.auth.OAuth2Client oauth2Client =
-                new com.zegoggles.smssync.auth.OAuth2Client(auth.getOAuth2ClientId());
-        final com.zegoggles.smssync.auth.TokenRefresher tokenRefresher =
-                new com.zegoggles.smssync.auth.TokenRefresher(this, oauth2Client, auth);
-        // Lazy<CalendarSyncer>: only build CalendarSyncer when isCallLogCalendarSyncEnabled().
-        // Mirrors the conditional construction that was at BackupTask.java:76-86.
-        final dagger.Lazy<com.zegoggles.smssync.service.CalendarSyncer> calendarSyncerLazy = () -> {
-            return new com.zegoggles.smssync.service.CalendarSyncer(
-                    com.zegoggles.smssync.calendar.CalendarAccessor.Get.instance(getContentResolver()),
-                    prefs.getCallLogCalendarId(),
-                    personLookup,
-                    new com.zegoggles.smssync.mail.CallFormatter(context.getResources())
-            );
-        };
-        return new BackupTask(this, fetcher, converter, calendarSyncerLazy,
-                auth, prefs, contactAccessor, tokenRefresher);
-    }
+    // U-031: getBackupTask() factory deleted (AC-7).
+    // SmsBackupService now dispatches via getScheduler().scheduleManual(backupType).
 
     private void moveToState(BackupState state) {
         backupStateChanged(state);
@@ -255,7 +364,7 @@ public class SmsBackupService extends ServiceBase {
     // StateFlow.value provides sticky last-state semantics for late collectors (AC-4).
 
     // U-020: @Subscribe annotation removed — backupStateChanged() is called directly from
-    // BackupTask (post method) and moveToState(). No Otto registration needed.
+    // the WorkInfo observer (U-031) and moveToState(). No Otto registration needed.
     public void backupStateChanged(BackupState state) {
         if (this.state == state) return;
 
@@ -274,6 +383,7 @@ public class SmsBackupService extends ServiceBase {
             appLogDebug(state.toString());
             appLog(state.isCanceled() ? R.string.app_log_backup_canceled : R.string.app_log_backup_finished);
             scheduleNextBackup(state);
+            tearDownObserverAndCollector(null);
             stopForeground(true);
             stopSelf();
         }
@@ -333,13 +443,10 @@ public class SmsBackupService extends ServiceBase {
      * {@link ScheduledJob} return type). The log message uses the port's description
      * field instead of parsing a {@code JobTrigger.ExecutionWindowTrigger}; behavior
      * is functionally identical (a next-sync time is logged when available).
-     */
-    /**
+     * <p>
      * U-017: isUseOldScheduler() guard removed — WorkManagerScheduler persists periodic
      * work automatically. scheduleRegular() is still called here to ensure the periodic
-     * work request is re-queued after a regular backup completes (WorkManager replaces
-     * any existing item via ExistingPeriodicWorkPolicy.UPDATE, which is a no-op if already
-     * enqueued — safe to call unconditionally).
+     * work request is re-queued after a regular backup completes.
      */
     private void scheduleNextBackup(BackupState state) {
         if (state.backupType == REGULAR) {
