@@ -2,8 +2,10 @@
 status: approved
 artifact_type: interface-contract
 consumers: []
-related_requirements: []
-related_design_docs: []
+related_requirements:
+  - REQ-MODERNIZATION-012
+related_design_docs:
+  - DES-MODERNIZATION-012
 related_stories: []
 change_records: []
 id: CNTR-MODERNIZATION-007
@@ -225,8 +227,107 @@ to `MailException`, so no k-9 type can escape.
 > (`ServiceBase.java:102`). Under this contract the seam returns a `MailTransport` and throws
 > `MailException` instead; the k-9 import at `ServiceBase.java:36` is removed.
 
+### Adapter-construction & converter-boundary clauses (v2 — REQ-MODERNIZATION-012)
+
+> These two clauses move the **remaining** k-9 exception translation **below** the ACL boundary,
+> so that **zero** `com.fsck.k9.*` type is named (import, FQN catch, FQN `throws`, FQN local) in
+> any `service.*` class — the literal grep-zero CNTR Validation Rule 1 demands. They do **not**
+> touch the `MailTransport` **interface**: every port method signature and `throws` clause in
+> §"Interface: `MailTransport`" is **byte-unchanged** (REQ-MODERNIZATION-012 AC-8). The changes are
+> on the **producer/adapter construction** side and on a **related mail-conversion collaborator**,
+> both of which already legitimately import k-9 inside `mail.*` / `mail.transport.*`. Verified
+> against source this session.
+
+**Clause C-1 — `K9MailTransport` public-constructor `throws` narrowing (adapter construction).**
+The public adapter constructor today is
+`public K9MailTransport(Context context, MailTransportConfig config) throws MailException, MessagingException`
+(`K9MailTransport.java:117-118`, verified). The `com.fsck.k9.mail.MessagingException` arises from
+`new BackupImapStoreDelegate(context, config.storeUri, resolvedSocketFactory)` at
+`K9MailTransport.java:120-121`. Under this contract the constructor MUST:
+
+- **Narrow its `throws` clause to `throws MailException` only** — `com.fsck.k9.mail.MessagingException`
+  is removed from the constructor signature.
+- **Translate the `MessagingException` inside the constructor body**: wrap the delegate
+  construction in `try { … } catch (com.fsck.k9.mail.MessagingException e) { throw new MailException(e); }`.
+  The `com.fsck.k9.mail.MessagingException` **import stays in `K9MailTransport.java`** (a permitted
+  k-9 zone, `mail.transport.*`); it is removed only from the *signature*, not the file.
+- **Preserve the `BinaryTempFileBody.setTempDirectory(context.getCacheDir())` call**
+  (`K9MailTransport.java:125`) inside the constructor, after the delegate is built — it is unaffected
+  by the catch relocation (the MIME-residual relocation per §Notes is independent of this narrowing).
+- **Preserve the cause chain:** the wrapped exception MUST be the original `MessagingException`
+  (`new MailException(e)` → `MailException.getCause()` returns it; verified `MailException(Throwable)`
+  at `MailException.java:44`). This keeps `State.getDetailedErrorMessage()` ("underlying=" suffix,
+  reads `exception.getCause().toString()`, `State.java`) working unchanged (AC-5 cause-chain).
+- **Effect on the consumer side:** the consumer-side FQN catch
+  `catch (com.fsck.k9.mail.MessagingException e) { throw new MailException(e); }` at
+  `ServiceBase.java:171-175` (around `return new K9MailTransport(getApplicationContext(), config);`)
+  collapses to a direct `return new K9MailTransport(getApplicationContext(), config);` whose only
+  declared `throws` is `MailException` — the second of the two surviving `service.*` k-9 **code**
+  catches is eliminated. (The redundant wrap in `MailModule.kt:93-97`, the workers' factory lambda,
+  MAY be simplified to a plain ctor call but is not required by this clause.)
+- **The package-private test constructor** `K9MailTransport(BackupImapStoreDelegate, TrustedSocketFactory)`
+  (`K9MailTransport.java:93`) is **unchanged** — it takes a pre-built delegate and throws nothing;
+  `MailTransportTestFactories` depends on it.
+
+**Clause C-2 — `MessageConverter.convertMessages` thrown-type narrowing (converter boundary).**
+`MessageConverter` is a **mail-conversion collaborator** in `mail.*`, **not** the `MailTransport`
+port and **not** the `K9MailTransport` adapter; this is therefore a *related-boundary* clause
+recorded here (the converter's thrown type is the **first** of the two `service.*` k-9 leaks, via
+`BackupTask.java:306-310`). `MessageConverter.convertMessages(Cursor, DataType)` today declares
+`throws com.fsck.k9.mail.MessagingException` (`MessageConverter.java:120-121`, verified). Under
+REQ-MODERNIZATION-012 it MUST:
+
+- **Throw an app-owned exception instead of `com.fsck.k9.mail.MessagingException`** so no `service.*`
+  caller names a k-9 type. The chosen app-owned type is **`mail.transport.MailException`** (the
+  existing ACL base; `extends Exception implements LocalizableException`, `MailException.java:36`),
+  carrying the original `MessagingException` as `getCause()` via `new MailException(e)`. (A dedicated
+  `MessageConversionException extends MailException` is an acceptable equivalent **only if** it
+  preserves the same cause chain and `LocalizableException` shape; `MailException` is the
+  contract-preferred minimal choice. The internal k-9 `Message`/`Flag` usage inside `convertMessages`
+  is permitted — `mail.*` is a k-9-allowed zone, DES-MODERNIZATION-009 ADR-009-B — only the *thrown*
+  type changes.) This requires `MessageConverter.java` to import `com.zegoggles.smssync.mail.transport.MailException`
+  (an app-owned type; an allowed `mail.* → mail.transport.*` dependency).
+- **Preserve the cause chain:** `convertMessages` MUST wrap as `new MailException(originalMessagingException)`
+  so `MailException.getCause()` is the original `MessagingException` (AC-5 cause-chain, same diagnostic
+  contract as Clause C-1).
+- **Effect on the consumer side:** the FQN catch at `BackupTask.java:306-310`
+  (`catch (com.fsck.k9.mail.MessagingException e) { throw new MailException(e); }` around
+  `result = converter.convertMessages(...)`) collapses to a direct `result = converter.convertMessages(...)`
+  caught by the existing outer `catch (MailException e)`. The other live caller,
+  `BackupWorker.kt:310` (`val result = converter.convertMessages(...)`), already runs inside a
+  `try` that catches `MailException` (`BackupWorker.kt:138`) and already imports `MailException`
+  (`BackupWorker.kt:34`) — so the narrowing is compile-safe at both call sites. (`BackupTask` is
+  deleted by REQ-MODERNIZATION-013, but REQ-012 lands first, so both call sites must compile under
+  the new signature.)
+- **Auth-escalation safety (AC-5):** `convertMessages` performs **no** IMAP/transport operation
+  (`MessageConverter.java:120-131` calls only `messageGenerator.messageForDataType(...)` and
+  `m.setFlag(...)`), so it cannot originate an `XOAuth2AuthenticationFailedException` /
+  `AuthenticationFailedException`; wrapping its `MessagingException` as `MailException` cannot swallow
+  an auth-failure type. Auth translation remains exclusively in the `K9MailTransport` adapter methods
+  (`:152-247`, subtype-first ordering), which Clause C-1 does **not** touch.
+
+> **Invariant strengthening, not weakening.** Clauses C-1 and C-2 are **narrowing** (a `throws`
+> clause loses a type) and **additive** (an in-body catch is added). They do not remove, relax, or
+> contradict any existing Validation Rule. They make Validation Rule 1 ("no `com.fsck.k9.*` crosses
+> `MailTransport`" / grep `com.fsck.k9` in `service/` → 0) hold **unconditionally** by sealing the
+> two surviving FQN-catch code leaks. Validation Rules 2–5, the exception-translation table, the
+> opaque-handle rule, and the `MailException` backstop are all unchanged. The `MailTransport`
+> interface (§"Interface: `MailTransport`") is not edited.
+
 ## Versioning
-- **Current version:** v1.
+- **Current version:** v2 (amended in place by DES-MODERNIZATION-012 / REQ-MODERNIZATION-012; v1 introduced by MU-008 / DES-MODERNIZATION-009). Amended in place — not yet implemented against the v2 surface; `status` remains `approved`. The amendment is below-the-port (adapter construction + converter collaborator) and **non-breaking for consumers** (it narrows `throws` clauses and strengthens the ACL invariant; no port signature changes).
+
+### Changelog
+
+- **v2 — 2026-06-04 (DES-MODERNIZATION-012 / REQ-MODERNIZATION-012).** Added §"Adapter-construction & converter-boundary clauses (v2)" capturing the relocation of the two surviving `service.*` k-9 exception leaks **below** the ACL boundary:
+  1. **Clause C-1** — `K9MailTransport`'s public constructor narrows from `throws MailException, MessagingException` to `throws MailException` only; the `com.fsck.k9.mail.MessagingException` from `new BackupImapStoreDelegate(...)` is translated **inside** the constructor body (`new MailException(e)`, cause preserved). The k-9 import stays in `K9MailTransport.java` (permitted zone); only the *signature* narrows. The `ServiceBase.java:171-175` FQN catch collapses. `BinaryTempFileBody.setTempDirectory(...)` is preserved. The package-private test constructor is unchanged.
+  2. **Clause C-2** (related-boundary, converter) — `MessageConverter.convertMessages` narrows from `throws com.fsck.k9.mail.MessagingException` to throwing app-owned `mail.transport.MailException` (cause preserved), so the `BackupTask.java:306-310` FQN catch collapses; `BackupWorker.kt:310` already catches `MailException`. Auth-escalation (AC-5) is unaffected (the converter performs no transport op).
+  3. **Cause-chain preservation** (`MailException.getCause()` == original `MessagingException`) reaffirmed at both new translation sites for `State.getDetailedErrorMessage()` ("underlying=" suffix).
+  4. The `MailTransport` **interface is byte-unchanged** (AC-8). Both clauses are **narrowing/additive** — they strengthen Validation Rule 1 to hold unconditionally and weaken no existing rule.
+  5. **Frontmatter:** added `REQ-MODERNIZATION-012` to `related_requirements` and `DES-MODERNIZATION-012` to `related_design_docs`.
+- **v1 — introduced by MU-008 / DES-MODERNIZATION-009.** Initial `MailTransport` ACL port, app-owned exception hierarchy, exhaustive translation table.
+
+### Breaking change policy
 - **Breaking change policy:** Adding a new k-9 throwable on the producer side that maps to a
   **new** app-owned exception subtype is a breaking change for `State` (a new `instanceof`
   branch may be required) — it requires a contract revision and a `State` update. Adding a new
@@ -355,5 +456,6 @@ DataType dataType = converter.getDataType(/* adapter-resolved message */);   // 
   port. The Preserved-Core MIME *converters* (`MessageConverter` &c) keep their k-9 value-type
   imports inside `mail.*` — a documented, bounded residual (DES-009 ADR-009-B), NOT a violation
   of this port's invariant (they do not cross `MailTransport`).
-- **One-line note:** Contract content draft for CNTR-MODERNIZATION-007; frontmatter is
-  Artifact-Librarian-owned and untouched; NOT finalized.
+- **One-line note:** Contract content for CNTR-MODERNIZATION-007; v2 amended in place per
+  DES-MODERNIZATION-012 / REQ-MODERNIZATION-012 (adapter-construction + converter-boundary clauses;
+  `MailTransport` interface unchanged). Status: approved.

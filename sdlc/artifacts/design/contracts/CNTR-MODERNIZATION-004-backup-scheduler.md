@@ -2,8 +2,10 @@
 status: approved
 artifact_type: interface-contract
 consumers: []
-related_requirements: []
-related_design_docs: []
+related_requirements:
+  - REQ-MODERNIZATION-013
+related_design_docs:
+  - DES-MODERNIZATION-012
 related_stories: []
 change_records: []
 id: CNTR-MODERNIZATION-004
@@ -66,6 +68,20 @@ Methods:
   scheduleImmediate(): Unit
       // immediate one-off, BackupType.BROADCAST_INTENT; NO NETWORK CONSTRAINT
       // (Constraints.NONE); REPLACE. (BackupJobs.java:99, jobConstraints :197)
+      // UNCHANGED by the v2 amendment — third-party/automation BACKUP-broadcast
+      // semantics preserved byte-for-byte (CNTR-MODERNIZATION-005 feed).
+  scheduleManual(backupType: BackupType): Unit          // NEW (v2; DES-MODERNIZATION-012 / REQ-MODERNIZATION-013)
+      // immediate one-off carrying the ENGINE backup type so the manual
+      // MainActivity→SmsBackupService dispatch (migrated off startService→AsyncTask
+      // onto the scheduler) preserves the MANUAL-vs-SKIP distinction at the worker.
+      // Accepts ONLY BackupType.MANUAL or BackupType.SKIP (see Validation Rule 8).
+      // NO NETWORK CONSTRAINT (Constraints.NONE, identical to scheduleImmediate);
+      // REPLACE; no initial delay; unique-work name = backupType.name()
+      // ("MANUAL" / "SKIP"); the type is carried to the worker via the worker TAG
+      // (addTag(backupType.name())), which BackupWorker.inferBackupType() reads via
+      // BackupType.fromName(tag). SKIP therefore reaches BackupWorker.executeSkip()
+      // (BackupWorker.kt:161-162); MANUAL reaches the normal IMAP path. Does NOT
+      // replace scheduleImmediate() — BROADCAST_INTENT keeps its own unique name.
   scheduleRestore(config: RestoreSchedulerConfig): Unit
       // one-off restore; resumable via durable WorkManager checkpoint (NEW —
       // there is no restore scheduler in current source). (DES-005 AC-6)
@@ -91,24 +107,44 @@ Methods:
 
 The job-kind discriminator. Source of truth: the existing `BackupType` enum read via `setTag(backupType.name())` (`BackupJobs.java:190`) and the `isRecurring()` / `Trigger.NOW` branching (`:162-163`). Carried verbatim so unique-work names and recurrence remain byte-stable.
 
+> **Single-enum reconciliation (v2 correction; verified against source `BackupType.java`).** There is exactly **one** `BackupType` enum in the codebase — `com.zegoggles.smssync.service.BackupType` (`app/src/main/java/com/zegoggles/smssync/service/BackupType.java:6-12`, verified this session). It is shared by the scheduler (`WorkManagerScheduler.kt`, which imports `com.zegoggles.smssync.service.BackupType` at `:26`) AND the engine/service layer (`BackupWorker.kt`, `BackupTask`, `SmsBackupService`). v1 of this contract enumerated only the **three values the scheduler discriminator used at the time** (`REGULAR`/`INCOMING`/`BROADCAST_INTENT`); the actual enum has **six** members. There is **no** separate "engine-level backup type" enum — the MANUAL/SKIP distinction the manual-dispatch migration (REQ-MODERNIZATION-013) must preserve is carried by **additional members of this same enum**. v2 enumerates them and adds the `scheduleManual(BackupType)` operation that carries `MANUAL`/`SKIP` to the worker. The recurrence/network model of the original three members is **unchanged**.
+
 ```
-Enum: BackupType
+Enum: BackupType        // com.zegoggles.smssync.service.BackupType (verified BackupType.java:6-12)
 Values:
+  // --- the three scheduler-discriminator members (v1; unchanged) ---
   REGULAR           // recurring=true  — periodic scheduled backup
   INCOMING          // recurring=false — delayed follow-up after an SMS arrives
   BROADCAST_INTENT  // recurring=false — immediate, user/automation-triggered;
                     //                   NO network constraint (Constraints.NONE)
+  // --- the remaining members (always present in source; enumerated in v2) ---
+  UNKNOWN           // fromName()/fromIntent() fallback (BackupType.java:10,24,34);
+                    //                   inferBackupType() treats it as "no tag matched"
+  MANUAL            // user-initiated backup from MainActivity (engine type);
+                    //                   isBackground()==false (BackupType.java:38)
+  SKIP              // user-initiated "mark-as-backed-up without IMAP"; routes to
+                    //                   BackupWorker.executeSkip() (BackupType.java:12;
+                    //                   BackupWorker.kt:161-162); isBackground()==false
 Derived:
-  isRecurring(): Boolean   // REGULAR -> true; INCOMING/BROADCAST_INTENT -> false
-                           // (mirrors BackupJobs.java:163)
+  isRecurring(): Boolean   // REGULAR -> true; all others -> false
+                           // (verified BackupType.java:41 — `this == REGULAR`)
+  isBackground(): Boolean  // false for MANUAL and SKIP; true for all others
+                           // (verified BackupType.java:37-39) — the property that
+                           // distinguishes the manual path from the scheduled path.
 Notes:
   - The content-trigger job is recurring (setRecurring(true), BackupJobs.java:171)
     and is identified by a stable tag CONTENT_TRIGGER_TAG (BackupJobs.java:57),
-    distinct from the three BackupType values above.
+    distinct from the BackupType values above.
   - RESTORE is NOT a BackupType value — restore is a separate one-off via
     scheduleRestore(config); it is excluded from the backup recurrence model.
-  - uniqueName per kind: REGULAR / INCOMING / BROADCAST_INTENT + the
-    CONTENT_TRIGGER_TAG tag + a restore unique name.
+  - uniqueName per kind: REGULAR / INCOMING / BROADCAST_INTENT / MANUAL / SKIP +
+    the CONTENT_TRIGGER_TAG tag + a restore unique name. MANUAL and SKIP get their
+    OWN unique-work names (backupType.name()), distinct from BROADCAST_INTENT, so a
+    manual run and an automation-broadcast run do not REPLACE each other.
+  - The worker resolves the carried type from its tag: BackupWorker.inferBackupType()
+    (BackupWorker.kt:430-436) iterates tags and returns BackupType.fromName(tag);
+    an unrecognized/absent tag falls back to BROADCAST_INTENT. This is the exact
+    mechanism scheduleManual(backupType) relies on — it MUST addTag(backupType.name()).
 ```
 
 ### Value object: `SchedulerConfig` (core) — constraint + backoff configuration
@@ -206,7 +242,20 @@ These four invariants are **binding clauses**. The producer (`WorkManagerSchedul
 
 ## Versioning
 
-- **Current version:** v1 (introduced by MU-005 / DES-MODERNIZATION-005).
+- **Current version:** v2 (amended in place by DES-MODERNIZATION-012 / REQ-MODERNIZATION-013; v1 introduced by MU-005 / DES-MODERNIZATION-005). Amended in place — the contract has not been implemented against the v2 surface yet, so no consumer migration is required; `status` remains `approved`.
+
+### Changelog
+
+- **v2 — 2026-06-04 (DES-MODERNIZATION-012 / REQ-MODERNIZATION-013).** Additive amendment for the manual backup/restore dispatch migration off `startService(...)`→`AsyncTask` onto the scheduler.
+  1. **Added port operation `scheduleManual(backupType: BackupType): Unit`** — an immediate one-off that carries the engine `BackupType` (`MANUAL` or `SKIP`) to the worker via the work tag (`addTag(backupType.name())`), so `BackupWorker.inferBackupType()` resolves it and `SKIP` reaches `executeSkip()`. Constraint-identical to `scheduleImmediate` (`Constraints.NONE`, REPLACE, EXPONENTIAL/30s, no delay) but with its own unique-work name (`backupType.name()`), so a manual run and a `BROADCAST_INTENT` automation run do not REPLACE each other. `scheduleImmediate()` is **unchanged** — existing callers and the `BROADCAST_INTENT` automation path are not broken. Net operation count: **nine → ten**.
+  2. **Single-enum reconciliation.** Corrected the `BackupType` enum documentation: there is exactly **one** `BackupType` enum (`com.zegoggles.smssync.service.BackupType`, verified `BackupType.java:6-12`) shared by the scheduler and the engine; v1 documented only the three discriminator members (`REGULAR`/`INCOMING`/`BROADCAST_INTENT`). v2 enumerates the full member set (`+ UNKNOWN, MANUAL, SKIP`) and the `isBackground()` derived property. There is **no** separate engine-level backup-type enum; `MANUAL`/`SKIP` are members of this same enum.
+  3. **Added Validation Rule 8** governing `scheduleManual` (type-carrying, accepts only `MANUAL`/`SKIP`, constraint-identical to `scheduleImmediate`, must not collapse onto `BROADCAST_INTENT`).
+  4. **Added an Example Payload** for `scheduleManual(SKIP)`/`scheduleManual(MANUAL)`.
+  5. **Frontmatter:** added `REQ-MODERNIZATION-013` to `related_requirements` and `DES-MODERNIZATION-012` to `related_design_docs`.
+- **v1 — introduced by MU-005 / DES-MODERNIZATION-005.** Initial `BackupScheduler` port (nine operations, four invariants).
+
+### Breaking change policy
+
 - **Breaking change policy.** Breaking for **consumers** = any change to a method signature, the `BackupType` enum values, or the `SchedulerState` variant set. Breaking for the **behavioral contract** = any change to the four invariants (different `ExistingPolicy`, a network constraint on `BROADCAST_INTENT`, a backoff value other than `EXPONENTIAL`/30s/300s, or losing the content-trigger pre-24 fallback or its debounce). Behavioral breaks are the higher-severity class: they can silently change scheduling semantics without a compile error and MUST be gated by the INV-1..4 tests (DES-005 §Design Validation).
 - **Backward compatibility (non-breaking).** Swapping the bound implementation (`LegacyScheduler` ↔ `WorkManagerScheduler` ↔ `CompositeScheduler`) is non-breaking by construction — the port surface is identical, which is exactly what makes the cutover and rollback a binding flip with **no** call-site change. Adapter-internal changes (the `SDK_INT >= 24` branch, the worker-side 300s cap mechanism) are non-breaking. Adding a new `observe`-only state variant is a breaking change for exhaustive consumers and must be versioned.
 
@@ -221,6 +270,7 @@ Both sides MUST honor:
 5. **Content-trigger debounce preserved.** The content-URI-triggered worker MUST NOT back up on the raw content change; it MUST enqueue the delayed incoming-backup (delay = `getIncomingTimeoutSecs()`). (INV-4, two-stage.)
 6. **Restore is resumable and idempotent.** `scheduleRestore` MUST persist the checkpoint after each successful insert and before cursor advance; the preserved `smsExists`/`callLogExists` write-seam guards enforce no-duplicate-rows across the crash window. Both are required — the window is non-zero (DES-005 §Durable restore checkpoint).
 7. **`cancel` is structured.** It MUST cooperatively cancel the running coroutine (unwinding at the next suspension point) and clear any scheduled retry — not merely poll an `isCancelled()` flag.
+8. **`scheduleManual` carries the engine type and is otherwise constraint-identical to `scheduleImmediate`.** (v2; DES-MODERNIZATION-012 / REQ-MODERNIZATION-013.) It MUST enqueue a `BackupWorker` with `Constraints.NONE` (no network — identical to `scheduleImmediate`, INV-2), `ExistingWorkPolicy.REPLACE` (INV-1), `EXPONENTIAL`/30s backoff (INV-3), **no** initial delay, a unique-work name of `backupType.name()`, and **`addTag(backupType.name())`** so `BackupWorker.inferBackupType()` (`BackupWorker.kt:430-436`, reads `BackupType.fromName(tag)`) resolves the carried type — `SKIP` then reaches `BackupWorker.executeSkip()` (`BackupWorker.kt:161-162`) and `MANUAL` reaches the normal IMAP path. It MUST accept **only** `BackupType.MANUAL` or `BackupType.SKIP`; passing `REGULAR`/`INCOMING`/`BROADCAST_INTENT`/`UNKNOWN` is a contract violation (those have their own dedicated operations or are not a manual trigger). `scheduleManual` MUST NOT change, replace, or remove `scheduleImmediate()` — `BROADCAST_INTENT` keeps its own unique-work name and its byte-for-byte automation semantics (Rule 3 is untouched). Collapsing MANUAL/SKIP onto `scheduleImmediate()`'s `BROADCAST_INTENT` (losing the SKIP early-return and the manual notification/foreground semantics) is the prohibited behavior this amendment exists to prevent (DES-MODERNIZATION-012 §Integration Design; EPIC-MODERNIZATION-005 SC-10).
 
 ## Error Handling
 
@@ -259,6 +309,38 @@ SchedulerConfig(
   recurring        = false,
   contentUriTriggers = null
 )
+```
+
+**Example: manual backup/restore dispatch carrying the engine `BackupType` (v2)**
+
+```kotlin
+// Consumer: SmsBackupService.backup(BackupType), after the REQ-013 dispatch migration
+// (formerly: getBackupTask().execute(getBackupConfig(..., getMailTransport()))).
+// MainActivity.startBackup(MANUAL|SKIP) → startService(action = type) is UNCHANGED.
+override fun backup(type: BackupType) {       // type is MANUAL or SKIP from the intent action
+    // ... pre-flight checks (permissions, credentials, enabled-types) preserved verbatim ...
+    scheduler.scheduleManual(type)            // was scheduleImmediate(); carries MANUAL vs SKIP
+}
+```
+
+The resulting enqueue, expressed as the port's `SchedulerConfig` (what the adapter must produce):
+
+```
+// scheduleManual(BackupType.SKIP):
+SchedulerConfig(
+  networkType      = NONE,                  // identical to scheduleImmediate (INV-2)
+  requiresCharging = false,                 // INV-2
+  backoff          = BackoffConfig(EXPONENTIAL, initial=30s, maximum=300s),  // INV-3
+  existingPolicy   = REPLACE,               // INV-1
+  uniqueName       = "SKIP",                // backupType.name(); distinct from "BROADCAST_INTENT"
+  initialDelaySecs = null,                  // immediate
+  recurring        = false,                 // SKIP.isRecurring() == false
+  contentUriTriggers = null
+)
+// WorkManager realization adds: addTag("SKIP").
+// BackupWorker.inferBackupType() → BackupType.fromName("SKIP") → SKIP →
+//   executeBackup() routes to executeSkip() (no IMAP). For MANUAL, uniqueName/tag = "MANUAL"
+//   and the worker takes the normal IMAP path.
 ```
 
 **Example: a regular Wi-Fi-only scheduled backup**
@@ -317,4 +399,5 @@ SchedulerConfig(
 
 - **Three corrected misreadings carried from DES-MODERNIZATION-005 (verified against `BackupJobs.java`):** (1) `(30, 300)` is **one** exponential strategy — 30s initial, 300s cap — not two separate values and not backup-vs-restore; (2) the immediate `BROADCAST_INTENT` backup has **no** network constraint (`Constraints.NONE`); (3) the execution window is **degenerate** (`executionWindow(s, s)`), so there is no flex window to preserve. A consumer or adapter implemented from a summary rather than this contract is at risk of all three errors.
 - **Open verification items deferred to implementation planning** (flagged in DES-005 as "scope assumed — not verified"): the exact `com.zegoggles.smssync.BACKUP` receiver class + manifest `intent-filter` (owned by CNTR-MODERNIZATION-005), and the full set of external `BackupJobs` call sites that become port consumers. Both MUST be grep-confirmed before this contract's consumer list and the broadcast cross-reference are treated as exhaustive.
-- **Status:** draft — not finalized. All paths relative to repo root (`C:/Code/Android/sms-backup-plus`).
+- **Status:** approved (v2 amended in place per DES-MODERNIZATION-012 / REQ-MODERNIZATION-013). All paths relative to repo root (`C:/Code/Android/sms-backup-plus`).
+- **v2 implementation note (BackupScheduler.java javadoc).** The port interface javadoc (`BackupScheduler.java:36`) currently reads "all **nine** operations below … are binding clauses." When the implementing story adds `scheduleManual(BackupType)` to `BackupScheduler.java` + `WorkManagerScheduler.kt` (+ the debug `LegacyScheduler`/`CompositeScheduler` impls, if still present), it MUST update that javadoc count to **ten** and add the new method's javadoc. This is a source change owned by the REQ-MODERNIZATION-013 story, not by this contract amendment.
