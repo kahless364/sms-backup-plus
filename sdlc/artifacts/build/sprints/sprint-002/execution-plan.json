@@ -1,0 +1,80 @@
+{
+  "execution_plan": {
+    "version": "1.0.0",
+    "pipeline": "sprint-execution",
+    "instance_id": "sprint-002",
+    "plan_type": "sprint-execution",
+    "variation": null,
+    "variation_rationale": null,
+    "steps": [
+      {
+        "step_id": "U-030",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-002/U-030/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-030/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-030/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-030/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-030/qa-results.md"
+        ],
+        "gate": { "name": "wave-gate", "verdict_type": "audit_gate", "max_iterations": 1 },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": [],
+        "parallel_group": "wave-1"
+      },
+      {
+        "step_id": "U-031",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-002/U-031/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-031/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-031/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-031/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-031/qa-results.md"
+        ],
+        "gate": { "name": "wave-gate", "verdict_type": "audit_gate", "max_iterations": 1 },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": ["U-030"],
+        "parallel_group": "wave-2"
+      },
+      {
+        "step_id": "U-032",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-002/U-032/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-032/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-032/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-032/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-002/U-032/qa-results.md"
+        ],
+        "gate": { "name": "wave-gate", "verdict_type": "audit_gate", "max_iterations": 1 },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": ["U-031"],
+        "parallel_group": "wave-3"
+      }
+    ],
+    "checkpoints": [
+      { "checkpoint_id": "wave-1-complete", "after_steps": ["U-030"], "gates": [{ "gate_id": "wave-1-gate", "agent": "deterministic", "severity": "blocking" }] },
+      { "checkpoint_id": "wave-2-complete", "after_steps": ["U-031"], "gates": [{ "gate_id": "wave-2-gate", "agent": "deterministic", "severity": "blocking" }] },
+      { "checkpoint_id": "wave-3-complete", "after_steps": ["U-032"], "gates": [{ "gate_id": "wave-3-gate", "agent": "deterministic", "severity": "blocking" }] }
+    ],
+    "overrides_applied": {
+      "agent_overrides": {},
+      "gate_additions": [],
+      "pipeline_override": "PLANNER-UNAVAILABLE: sdlc plan --process story-build returned process-YAML-not-found (project does not vendor story-build process.yaml). Agent=developer, model=sonnet resolved from sdlc/config.yaml defaults.model_routing.developer + sprint-001 precedent. Wave assignment (3 sequential waves) applied per binding dependency chain U-030->U-031->U-032 in story frontmatter."
+    },
+    "metadata": {
+      "created_by": "sprint-manager",
+      "created_at": "2026-06-04T00:00:00Z",
+      "context_summary": "Sprint sprint-002 with 3 stories across 3 sequential waves (EPIC-MODERNIZATION-005 debt-closure: MailTransport ACL seal -> AsyncTask removal -> Hilt @AndroidEntryPoint)",
+      "plan_revision": 1,
+      "re_consultation_reason": null
+    }
+  }
+}

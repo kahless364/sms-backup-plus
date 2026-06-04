@@ -1,6 +1,6 @@
 ---
 type: story
-status: ready
+status: planned
 artifact_type: user-story
 priority: medium
 complexity: high
@@ -28,6 +28,7 @@ title: Migrate manual backup/restore dispatch to WorkManager and delete legacy A
 pipeline: ''
 domain: modernization
 alignment_audit: passed
+sprint: '000002'
 ---
 
 # U-031: Migrate manual backup/restore dispatch to WorkManager and delete legacy AsyncTask execution path

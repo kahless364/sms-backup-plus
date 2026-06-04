@@ -1,6 +1,6 @@
 ---
 type: story
-status: ready
+status: planned
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -22,6 +22,7 @@ title: 'Complete Hilt service injection: @AndroidEntryPoint + remove coexistence
 pipeline: ''
 domain: modernization
 alignment_audit: passed
+sprint: '000002'
 ---
 
 # U-032: Complete Hilt service injection: @AndroidEntryPoint + remove coexistence shims

@@ -1,6 +1,6 @@
 ---
 type: story
-status: ready
+status: planned
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -22,6 +22,7 @@ title: Seal MailTransport ACL exception boundary — zero k-9 types in service.*
 pipeline: ''
 domain: modernization
 alignment_audit: passed
+sprint: '000002'
 ---
 
 # U-030: Seal MailTransport ACL exception boundary — zero k-9 types in service.*
