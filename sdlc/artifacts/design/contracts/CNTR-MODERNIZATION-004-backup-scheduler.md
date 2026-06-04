@@ -7,7 +7,8 @@ related_requirements:
 related_design_docs:
   - DES-MODERNIZATION-012
 related_stories: []
-change_records: []
+change_records:
+  - CR-001
 id: CNTR-MODERNIZATION-004
 title: ''
 domain: modernization
