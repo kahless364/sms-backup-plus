@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -23,6 +23,8 @@ pipeline: ''
 domain: modernization
 alignment_audit: passed
 sprint: '000002'
+updated_at: '2026-06-04T22:26:12.335Z'
+resolution: done
 ---
 
 # U-032: Complete Hilt service injection: @AndroidEntryPoint + remove coexistence shims

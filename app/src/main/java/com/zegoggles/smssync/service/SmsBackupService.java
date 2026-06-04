@@ -41,6 +41,7 @@ import com.zegoggles.smssync.service.exception.MissingPermissionException;
 import com.zegoggles.smssync.service.exception.RequiresLoginException;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
+import dagger.hilt.android.AndroidEntryPoint;
 import kotlinx.coroutines.Job;
 
 import java.util.EnumSet;
@@ -73,12 +74,10 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
  * {@link ScheduledJob} carries a tag and description string; the log message now uses the
  * description rather than parsing a {@code JobTrigger.ExecutionWindowTrigger}.
  *
- * <p>U-022: @AndroidEntryPoint deferred to U-023. ServiceBase declares @Inject fields
- * (Preferences, AuthPreferences) but injection fires only when @AndroidEntryPoint is
- * applied to the concrete service. Adding @AndroidEntryPoint here would break Robolectric
- * tests that create anonymous service subclasses without a Hilt test component (AC-10).
- * U-023 migrates those tests to @HiltAndroidTest and activates injection.
- * TODO(U-023): add @AndroidEntryPoint here once tests are migrated to @HiltAndroidTest.
+ * <p>U-032: @AndroidEntryPoint applied (deferred from U-023). Hilt member injection
+ * fires in Hilt_SmsBackupService.onCreate() — ServiceBase.preferences and
+ * ServiceBase.authPreferences are populated before SmsBackupService.onCreate() runs.
+ * The Robolectric service tests are migrated off anonymous-subclass pattern (AC-9/AC-10).
  *
  * <p>U-026: k-9 MessagingException import removed (AC-5).
  * All uses of MessagingException in catch/throws declarations are replaced with
@@ -93,6 +92,7 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
  * Cancel rewired: {@code SyncEvent.Cancel(USER)} from the repository reaches
  * {@code WorkManager.cancelUniqueWork()} via {@link WorkManagerCancelCollector} (R-4 mitigation).
  */
+@AndroidEntryPoint
 public class SmsBackupService extends ServiceBase {
     private static final int BACKUP_ID = 1;
     private static final int NOTIFICATION_ID_WARNING = 1;

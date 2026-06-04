@@ -25,10 +25,9 @@ import static com.zegoggles.smssync.mail.DataType.CALLLOG;
 import static com.zegoggles.smssync.mail.DataType.SMS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
-import static org.robolectric.Robolectric.setupService;
+import static org.robolectric.Robolectric.buildService;
 import static org.robolectric.Shadows.shadowOf;
 
 /**
@@ -38,19 +37,32 @@ import static org.robolectric.Shadows.shadowOf;
  * U-017: extended to increase service package coverage after legacy scheduler removal.
  * U-031: extended to cover WorkManager dispatch via handleIntent(), plus bridge logic.
  *        Anonymous-subclass pattern (mirrors SmsBackupServiceTest) to allow scheduler injection.
+ * U-032 AC-9/AC-10: Migrated off anonymous-subclass/setupService pattern (Option A).
+ *   - Characterization tests: replaced setupService(SmsRestoreService.class) with
+ *     Robolectric.buildService(SmsRestoreService.class).get() to avoid calling onCreate()
+ *     and thus avoid Hilt injection under plain Robolectric Application.
+ *   - Mock-based tests: anonymous subclass overrides onCreate() to skip Hilt injection.
+ *   - Mock fields renamed to mockPreferences/mockAuthPreferences to avoid shadowing
+ *     ServiceBase.preferences/ServiceBase.authPreferences (package-private @Inject fields).
  */
 @RunWith(RobolectricTestRunner.class)
 public class SmsRestoreServiceTest {
 
-    // --- Characterization tests (setupService pattern — no scheduler mock needed) ---
+    // --- Characterization tests (buildService without create() — no Hilt lifecycle) ---
 
     private SmsRestoreService charService;
 
     @Before public void setUp() {
         // Initialize WorkManager for tests that exercise handleIntent() (which registers a
-        // WorkInfosForUniqueWork LiveData observer). Must be called before setupService().
+        // WorkInfosForUniqueWork LiveData observer). Must be called before building service.
         WorkManagerTestInitHelper.initializeTestWorkManager(RuntimeEnvironment.application);
-        charService = setupService(SmsRestoreService.class);
+        // U-032 AC-10: replaced setupService() with buildService().get() to avoid
+        // onCreate() -> Hilt_SmsRestoreService.onCreate() -> inject(this) -> ISE
+        // under plain Robolectric Application (no HiltTestApplication).
+        // buildService() calls attachBaseContext() giving us a valid context,
+        // but does NOT call onCreate(). Tests that need startForeground/stopForeground
+        // still work because Robolectric's shadow records those calls independently.
+        charService = buildService(SmsRestoreService.class).get();
     }
 
     @After public void tearDown() {
@@ -107,8 +119,8 @@ public class SmsRestoreServiceTest {
 
     SmsRestoreService service;
 
-    @Mock AuthPreferences authPreferences;
-    @Mock Preferences preferences;
+    @Mock AuthPreferences mockAuthPreferences;
+    @Mock Preferences mockPreferences;
     @Mock DataTypePreferences dataTypePreferences;
     @Mock BackupScheduler scheduler;
 
@@ -120,11 +132,18 @@ public class SmsRestoreServiceTest {
     private SmsRestoreService buildServiceWithMockScheduler() {
         openMocks(this);
         SmsRestoreService svc = new SmsRestoreService() {
+            // U-032 AC-9/AC-10 Option A: override onCreate() to skip Hilt injection.
+            // Hilt_SmsRestoreService.onCreate() calls inject(this) which throws ISE under
+            // plain Robolectric Application (no HiltTestApplication).
+            @Override public void onCreate() {
+                // No super call — bypasses Hilt injection.
+                // asyncClearCache() in SmsRestoreService.onCreate() is intentionally skipped.
+            }
             @Override public Context getApplicationContext() { return RuntimeEnvironment.application; }
             @Override public Resources getResources() { return getApplicationContext().getResources(); }
             @Override protected BackupScheduler getScheduler() { return scheduler; }
-            @Override protected Preferences getPreferences() { return preferences; }
-            @Override protected AuthPreferences getAuthPreferences() { return authPreferences; }
+            @Override protected Preferences getPreferences() { return mockPreferences; }
+            @Override protected AuthPreferences getAuthPreferences() { return mockAuthPreferences; }
             // Override to avoid PackageManager/mBase NPE (no real Android service lifecycle)
             @Override protected boolean canWriteToSmsProvider() { return true; }
             // Override acquireLocks/releaseLocks to avoid PowerManager NPE (mBase not set)
@@ -133,7 +152,7 @@ public class SmsRestoreServiceTest {
         };
         svc.onCreate();
 
-        when(preferences.getDataTypePreferences()).thenReturn(dataTypePreferences);
+        when(mockPreferences.getDataTypePreferences()).thenReturn(dataTypePreferences);
         when(dataTypePreferences.isRestoreEnabled(SMS)).thenReturn(true);
         when(dataTypePreferences.isRestoreEnabled(CALLLOG)).thenReturn(false);
         when(scheduler.scheduleRestore(any(RestoreSchedulerConfig.class)))

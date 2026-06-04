@@ -247,10 +247,24 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
         html.required = true
     }
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
+    // U-032: Hilt @AndroidEntryPoint applies ASM byte-code transformation to service classes
+    // (SmsBackupService, SmsRestoreService, App) at test execution time via
+    // transformDebugUnitTestClassesWithAsm. JaCoCo exec data is from transformed classes;
+    // using only the pre-ASM javac dirs produces "classes do not match" for service classes.
+    // Fix: use both the ASM-transformed dir (for correct service class matching) AND the
+    // original javac/kotlin dirs (for mail/auth/other packages), but EXCLUDE the Hilt-transformed
+    // classes from the javac dir to prevent duplicate entries that cause "do not match" errors.
     // U-019: include Kotlin compiled classes alongside Java classes
     classDirectories.setFrom(files([
+            fileTree(dir: "${buildDir}/intermediates/classes/debugUnitTest/transformDebugUnitTestClassesWithAsm/dirs",
+                     excludes: jacocoFileFilter + ['**/*Test*.class']),
             fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
-                     excludes: jacocoFileFilter),
+                     excludes: jacocoFileFilter + [
+                         // Exclude service/App classes covered by ASM dir to prevent "do not match"
+                         '**/service/SmsBackupService.class',
+                         '**/service/SmsRestoreService.class',
+                         '**/smssync/App.class',
+                     ]),
             fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
                      excludes: jacocoFileFilter)
     ]))
@@ -283,10 +297,22 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
 // once the U-006 characterization tests bring each package to >= 70%.
 task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn: ['testDebugUnitTest']) {
     sourceDirectories.setFrom(files(["${project.projectDir}/src/main/java"]))
+    // U-032: Use combined dirs — same fix as jacocoTestReport above.
+    // ASM-transformed dir: contains the Hilt-transformed service classes that match exec data.
+    // javac dir: provides mail/auth/other classes NOT in the ASM dir (no transformations for those).
+    // Service/App classes in javac dir are EXCLUDED (they would cause "classes do not match"
+    // because exec data was produced against the ASM-transformed versions).
     // U-019: include Kotlin compiled classes alongside Java classes
     classDirectories.setFrom(files([
+            fileTree(dir: "${buildDir}/intermediates/classes/debugUnitTest/transformDebugUnitTestClassesWithAsm/dirs",
+                     excludes: jacocoFileFilter + ['**/*Test*.class']),
             fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
-                     excludes: jacocoFileFilter),
+                     excludes: jacocoFileFilter + [
+                         // Exclude service/App classes covered by ASM dir to prevent "do not match"
+                         '**/service/SmsBackupService.class',
+                         '**/service/SmsRestoreService.class',
+                         '**/smssync/App.class',
+                     ]),
             fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
                      excludes: jacocoFileFilter)
     ]))
