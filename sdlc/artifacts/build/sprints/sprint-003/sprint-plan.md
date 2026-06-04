@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-003
 sprint: '000003'
+end_date: 2026-06-04
+velocity_calculated: true
 ---
 
 # Sprint Plan: 003 — BUG-001 Source/Javadoc Jar Verification Fix (U-033)
@@ -22,7 +24,7 @@ sprint: '000003'
 
 | Wave | Story ID | Title | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |------|----------|-------|-----------|-------|-------------|------------|--------|----------|
-| wave-1 | U-033 | Trust source/javadoc jars in Gradle dependency verification metadata | developer | sonnet | lead | — | planned | medium |
+| wave-1 | U-033 | Trust source/javadoc jars in Gradle dependency verification metadata | developer | sonnet | lead | — | done | medium |
 
 ## Wave Summary
 
