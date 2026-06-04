@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-002
 sprint: '000002'
+end_date: 2026-06-04
+velocity_calculated: true
 ---
 
 # Sprint Plan: 002 — EPIC-MODERNIZATION-005 Debt-Closure Sequence (U-030/U-031/U-032)
@@ -27,7 +29,7 @@ sprint: '000002'
 | Wave | Story ID | Title | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |------|----------|-------|-----------|-------|-------------|------------|--------|----------|
 | wave-1 | U-030 | Seal MailTransport ACL exception boundary — zero k-9 types in service.* | developer | sonnet | lead | — | done | medium |
-| wave-2 | U-031 | Migrate manual backup/restore dispatch to WorkManager and delete legacy AsyncTask execution path | developer | sonnet | lead | U-030 | planned | medium |
+| wave-2 | U-031 | Migrate manual backup/restore dispatch to WorkManager and delete legacy AsyncTask execution path | developer | sonnet | lead | U-030 | done | medium |
 | wave-3 | U-032 | Complete Hilt service injection: @AndroidEntryPoint + remove coexistence shims | developer | sonnet | lead | U-031 | done | medium |
 
 ## Wave Summary
