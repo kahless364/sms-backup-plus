@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -23,6 +23,8 @@ pipeline: ''
 domain: modernization
 alignment_audit: passed
 sprint: '000002'
+updated_at: '2026-06-04T19:52:48.527Z'
+resolution: done
 ---
 
 # U-030: Seal MailTransport ACL exception boundary — zero k-9 types in service.*
@@ -35,7 +37,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
 
 ## Acceptance Criteria
 
-- [ ] **AC-1 — grep-zero (code):** Running
+- [x] **AC-1 — grep-zero (code):** Running
   ```
   grep -rn "com\.fsck\.k9" app/src/main/java/com/zegoggles/smssync/service/
   ```
@@ -46,7 +48,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   `ServiceBase.java:173` (`catch (com.fsck.k9.mail.MessagingException e)` wrapping
   `new K9MailTransport(getApplicationContext(), config)`) — are gone.
 
-- [ ] **AC-2 — grep-zero (comments and javadoc, surviving files):** The same grep command
+- [x] **AC-2 — grep-zero (comments and javadoc, surviving files):** The same grep command
   returns **zero output lines** across the entire `service/` directory tree — including
   `service/state/`, `service/exception/`, and every subdirectory — for all reference forms
   including `{@code com.fsck.k9.*}` javadoc blocks and `//` or `/* */` comments. The 12
@@ -72,7 +74,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   (lines 14, 55, 134) are moot — those files are deleted wholesale by U-031 (REQ-013).
   They do not need to be reworded here; they must not be pre-emptively deleted by this story.
 
-- [ ] **AC-3 — CNTR-007 Clause C-1 — K9MailTransport constructor narrowed:**
+- [x] **AC-3 — CNTR-007 Clause C-1 — K9MailTransport constructor narrowed:**
   `K9MailTransport`'s public constructor signature at `K9MailTransport.java:117-118`
   changes from
   `public K9MailTransport(Context context, MailTransportConfig config) throws MailException, MessagingException`
@@ -86,7 +88,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   `BinaryTempFileBody.setTempDirectory(context.getCacheDir())` call at line 125 must remain
   inside the constructor, positioned after the delegate is built.
 
-- [ ] **AC-4 — CNTR-007 Clause C-2 — MessageConverter.convertMessages thrown type narrowed:**
+- [x] **AC-4 — CNTR-007 Clause C-2 — MessageConverter.convertMessages thrown type narrowed:**
   `MessageConverter.convertMessages(Cursor, DataType)` at `MessageConverter.java:120-121`
   changes its declared `throws` from `com.fsck.k9.mail.MessagingException` to
   `com.zegoggles.smssync.mail.transport.MailException`. Internally the method wraps any
@@ -97,7 +99,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   on their own method signatures are updated to `throws MailException` (or `throws Exception`);
   no result-assertion change is required for those six existing tests.
 
-- [ ] **AC-5 — ServiceBase FQN catch collapses (Clause C-1 consumer-side effect):**
+- [x] **AC-5 — ServiceBase FQN catch collapses (Clause C-1 consumer-side effect):**
   `ServiceBase.java:171-175` — the FQN catch
   `} catch (com.fsck.k9.mail.MessagingException e) { throw new MailException(e); }`
   surrounding `return new K9MailTransport(getApplicationContext(), config)` — is removed.
@@ -105,7 +107,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   `./gradlew :app:compileDebugJavaWithJavac` completes with zero errors and zero k-9-type
   warnings in any `service.*` source file.
 
-- [ ] **AC-6 — BackupTask FQN catch collapses (Clause C-2 consumer-side effect):**
+- [x] **AC-6 — BackupTask FQN catch collapses (Clause C-2 consumer-side effect):**
   `BackupTask.java:305-310` — the inner `try { result = converter.convertMessages(...); } catch (com.fsck.k9.mail.MessagingException e) { throw new MailException(e); }` block — is simplified to a
   direct `result = converter.convertMessages(cursor.cursor, cursor.type);`. The outer
   `catch (MailException e)` at the enclosing try already handles it. The comment above the
@@ -113,12 +115,12 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   that no FQN literal `com.fsck.k9` survives. Both `BackupTask.java` and `BackupWorker.kt:310`
   compile under the new `convertMessages` signature.
 
-- [ ] **AC-7 — MailTransport interface byte-unchanged (REQ-012 AC-8, CNTR-007 v2):**
+- [x] **AC-7 — MailTransport interface byte-unchanged (REQ-012 AC-8, CNTR-007 v2):**
   The file `app/src/main/java/com/zegoggles/smssync/mail/transport/MailTransport.java` is
   not edited. A diff of `MailTransport.java` against the version committed at the close of
   U-025 shows zero changes to method signatures, `throws` declarations, or method count.
 
-- [ ] **AC-8 — Cause-chain preserved — unit test:**
+- [x] **AC-8 — Cause-chain preserved — unit test:**
   A new unit test (in an appropriate test class under `app/src/test/`) verifies the
   `MessagingException → MailException` cause chain at **both** translation sites:
   - **C-1 path (constructor):** given a `BackupImapStoreDelegate` stub / mock whose constructor
@@ -132,7 +134,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
     must satisfy the same assertions with message `"conversion failed"`.
   Both sub-cases must pass; the test may live in one test method or two.
 
-- [ ] **AC-9 — State.getDetailedErrorMessage "underlying=" suffix preserved:**
+- [x] **AC-9 — State.getDetailedErrorMessage "underlying=" suffix preserved:**
   After the changes, `State.getDetailedErrorMessage(resources)` continues to produce a
   string containing `"underlying="` when called with a `MailException` that wraps a
   `MessagingException`. This is verified by reading `State.java:59`
@@ -141,7 +143,7 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   remains reachable via `getCause()` and its `toString()` is non-empty. An existing or new
   unit test on `State` (or `BackupState` / `RestoreState`) asserts this behavior.
 
-- [ ] **AC-10 — Auth-escalation paths unchanged:**
+- [x] **AC-10 — Auth-escalation paths unchanged:**
   The existing unit tests covering the `XOAuth2FailedException` and `RequiresLoginException`
   propagation paths (verifying that an `XOAuth2AuthenticationFailedException` or
   `AuthenticationFailedException` from the k-9 layer surfaces to `service.*` as the correct
@@ -151,17 +153,17 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
   (`XOAuth2AuthenticationFailedException` → `XOAuth2FailedException`, then
   `AuthenticationFailedException` → `RequiresLoginException`) is preserved byte-for-byte.
 
-- [ ] **AC-11 — Package-private test constructor unchanged:**
+- [x] **AC-11 — Package-private test constructor unchanged:**
   The package-private constructor `K9MailTransport(BackupImapStoreDelegate, TrustedSocketFactory)`
   at `K9MailTransport.java:93-96` is not modified. It declares no `throws` clause and is used
   by `MailTransportTestFactories`; `MailTransportTestFactories`-dependent tests must continue
   to compile and pass.
 
-- [ ] **AC-12 — Full test suite green, regression floor holds:**
+- [x] **AC-12 — Full test suite green, regression floor holds:**
   `./gradlew :app:testDebugUnitTest` completes with **zero failures**. The passing test count
   is equal to or greater than 568 (the regression floor at the close of U-026, REQ-012 AC-9).
 
-- [ ] **AC-13 — JaCoCo 70% line-coverage gate holds:**
+- [x] **AC-13 — JaCoCo 70% line-coverage gate holds:**
   `./gradlew :app:jacocoTestReportDebug` (or equivalent coverage task) passes the 70%
   line-coverage gate for the `:app` module (REQ-012 AC-10). The new translation code added
   inside `K9MailTransport.java` and `MessageConverter.java` is covered by the unit test from
@@ -169,14 +171,14 @@ So that the MailTransport ACL is leak-proof and future k-9 coupling cannot creep
 
 ### Integration Criteria
 
-- [ ] **IC-1:** After C-1 lands, `ServiceBase.getMailTransport()` compiles with only
+- [x] **IC-1:** After C-1 lands, `ServiceBase.getMailTransport()` compiles with only
   `throws MailException` on its declaration — confirmed by `./gradlew :app:compileDebugJavaWithJavac`
   with zero errors.
-- [ ] **IC-2:** After C-2 lands, `BackupWorker.kt:310` (`val result = converter.convertMessages(...)`)
+- [x] **IC-2:** After C-2 lands, `BackupWorker.kt:310` (`val result = converter.convertMessages(...)`)
   continues to compile without modification — the `MailException` it can now receive is already
   covered by the enclosing `catch (e: MailException)` at `BackupWorker.kt:138` and
   `MailException` is already imported at line 34.
-- [ ] **IC-3:** After C-2 lands, `BackupTask.java` compiles (or is shown to compile after the
+- [x] **IC-3:** After C-2 lands, `BackupTask.java` compiles (or is shown to compile after the
   inner try/catch at lines 305-310 is simplified to a direct call) — required because U-031
   has not yet deleted that file; both call sites must be valid under the new signature.
 

@@ -167,12 +167,8 @@ public abstract class ServiceBase extends Service {
             config = new MailTransportConfig(uri, policy);
         }
 
-        // 3. Construct K9MailTransport — wraps MessagingException in MailException.
-        try {
-            return new K9MailTransport(getApplicationContext(), config);
-        } catch (com.fsck.k9.mail.MessagingException e) {
-            throw new MailException(e);
-        }
+        // 3. Construct K9MailTransport — constructor throws only MailException (CNTR-007 Clause C-1).
+        return new K9MailTransport(getApplicationContext(), config);
     }
 
     /**

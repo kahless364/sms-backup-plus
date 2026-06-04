@@ -30,6 +30,7 @@ import com.fsck.k9.mail.Message;
 import com.fsck.k9.mail.MessagingException;
 import com.fsck.k9.mail.internet.MimeUtility;
 import com.zegoggles.smssync.App;
+import com.zegoggles.smssync.mail.transport.MailException;
 import com.zegoggles.smssync.contacts.ContactAccessor;
 import com.zegoggles.smssync.contacts.ContactGroup;
 import com.zegoggles.smssync.contacts.ContactGroupIds;
@@ -98,6 +99,25 @@ public class MessageConverter {
                 preferences.getDataTypePreferences());
     }
 
+    /**
+     * Package-private test constructor: injects a pre-built {@link MessageGenerator} so tests
+     * can provide a mock/stub that throws {@link MessagingException} to exercise the
+     * {@code convertMessages} cause-chain translation (AC-8 C-2 path, U-030).
+     */
+    /* package, for testing */
+    MessageConverter(Context context,
+                     Preferences preferences,
+                     String userEmail,
+                     PersonLookup personLookup,
+                     ContactAccessor contactAccessor,
+                     MessageGenerator messageGenerator) {
+        this.context = context;
+        markAsReadType = preferences.getMarkAsReadType();
+        this.personLookup = personLookup;
+        markAsReadOnRestore = preferences.getMarkAsReadOnRestore();
+        this.messageGenerator = messageGenerator;
+    }
+
     private boolean markAsSeen(DataType dataType, Map<String, String> msgMap) {
         switch (markAsReadType) {
             case MESSAGE_STATUS:
@@ -118,17 +138,19 @@ public class MessageConverter {
     }
 
     public @NonNull ConversionResult convertMessages(final Cursor cursor, DataType dataType)
-            throws MessagingException {
-
-        final Map<String, String> msgMap = getMessageMap(cursor);
-        final Message m = messageGenerator.messageForDataType(msgMap, dataType);
-        final ConversionResult result = new ConversionResult(dataType);
-        if (m != null) {
-            m.setFlag(Flag.SEEN, markAsSeen(dataType, msgMap));
-            result.add(m, msgMap);
+            throws MailException {
+        try {
+            final Map<String, String> msgMap = getMessageMap(cursor);
+            final Message m = messageGenerator.messageForDataType(msgMap, dataType);
+            final ConversionResult result = new ConversionResult(dataType);
+            if (m != null) {
+                m.setFlag(Flag.SEEN, markAsSeen(dataType, msgMap));
+                result.add(m, msgMap);
+            }
+            return result;
+        } catch (MessagingException e) {
+            throw new MailException(e);
         }
-
-        return result;
     }
 
 

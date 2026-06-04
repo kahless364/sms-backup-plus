@@ -26,7 +26,7 @@ sprint: '000002'
 
 | Wave | Story ID | Title | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |------|----------|-------|-----------|-------|-------------|------------|--------|----------|
-| wave-1 | U-030 | Seal MailTransport ACL exception boundary — zero k-9 types in service.* | developer | sonnet | lead | — | planned | medium |
+| wave-1 | U-030 | Seal MailTransport ACL exception boundary — zero k-9 types in service.* | developer | sonnet | lead | — | done | medium |
 | wave-2 | U-031 | Migrate manual backup/restore dispatch to WorkManager and delete legacy AsyncTask execution path | developer | sonnet | lead | U-030 | planned | medium |
 | wave-3 | U-032 | Complete Hilt service injection: @AndroidEntryPoint + remove coexistence shims | developer | sonnet | lead | U-031 | planned | medium |
 

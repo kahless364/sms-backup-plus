@@ -51,8 +51,8 @@ import kotlin.coroutines.coroutineContext
 /**
  * Real CoroutineWorker backup implementation — replaces the BackupWorkerStub from U-014.
  *
- * U-026: Rewired from [com.zegoggles.smssync.mail.BackupImapStore] (k-9 type) to
- * [MailTransport] (app-owned ACL port). No {@code com.fsck.k9.*} import remains in this
+ * U-026: Rewired from BackupImapStore (k-9 type) to
+ * [MailTransport] (app-owned ACL port). No k-9 transport or MIME import remains in this
  * file. [buildMailTransport] replaces the former [buildImapStore].
  *
  * This worker contains the backup execution logic ported from [BackupTask] (AsyncTask-based).

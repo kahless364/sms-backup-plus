@@ -299,15 +299,9 @@ class BackupTask extends AsyncTask<BackupConfig, BackupState, BackupState> {
                 BackupCursors.CursorAndType cursor = cursors.next();
                 if (LOCAL_LOGV) Log.v(TAG, "backing up: " + cursor);
 
-                // U-026: converter.convertMessages() throws k-9 MessagingException (bounded
-                // residual). Caught here with FQN (no import) and re-thrown as MailException,
-                // preserving AC-10 (zero k-9 imports in service.*).
-                final ConversionResult result;
-                try {
-                    result = converter.convertMessages(cursor.cursor, cursor.type);
-                } catch (com.fsck.k9.mail.MessagingException e) {
-                    throw new MailException(e);
-                }
+                // U-030: converter.convertMessages() now throws app-owned MailException
+                // (CNTR-007 Clause C-2). Direct call; caught by the outer catch (MailException e).
+                final ConversionResult result = converter.convertMessages(cursor.cursor, cursor.type);
                 if (!result.isEmpty()) {
                     if (LOCAL_LOGV) {
                         Log.v(TAG, String.format(Locale.ENGLISH, "sending %d %s message(s) to server.",

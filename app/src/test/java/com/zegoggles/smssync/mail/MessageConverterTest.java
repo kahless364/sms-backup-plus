@@ -4,12 +4,14 @@ import android.content.ContentValues;
 import android.database.MatrixCursor;
 import android.provider.CallLog;
 import android.provider.Telephony;
+import android.database.Cursor;
 import com.fsck.k9.mail.Address;
 import com.fsck.k9.mail.Flag;
 import com.fsck.k9.mail.MessagingException;
 import com.fsck.k9.mail.internet.BinaryTempFileBody;
 import com.fsck.k9.mail.internet.MimeMessage;
 import com.zegoggles.smssync.contacts.ContactAccessor;
+import com.zegoggles.smssync.mail.transport.MailException;
 import com.zegoggles.smssync.preferences.AddressStyle;
 import com.zegoggles.smssync.preferences.MarkAsReadTypes;
 import com.zegoggles.smssync.preferences.Preferences;
@@ -168,6 +170,46 @@ public class MessageConverterTest {
         cursor.moveToNext();
         res = messageConverter.convertMessages(cursor, DataType.SMS);
         assertThat(res.getMessages().get(0).isSet(Flag.SEEN)).isTrue();
+    }
+
+    // -------------------------------------------------------------------------
+    // AC-8 (U-030): C-2 cause-chain — convertMessages wraps MessagingException as MailException
+    // -------------------------------------------------------------------------
+
+    /**
+     * AC-8 C-2 path: when MessageConverter.convertMessages() triggers its internal
+     * MessagingException catch (via a stub MessageGenerator that throws), the propagated
+     * MailException must preserve the original MessagingException as getCause().
+     */
+    @Test
+    public void convertMessages_messagingExceptionWrappedAsMailException_causeChainPreserved()
+            throws Exception {
+        // Arrange: stub MessageGenerator to throw MessagingException("conversion failed")
+        MessageGenerator stubGenerator = mock(MessageGenerator.class);
+        when(stubGenerator.messageForDataType(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new MessagingException("conversion failed"));
+
+        MessageConverter converterUnderTest = new MessageConverter(
+                RuntimeEnvironment.application,
+                preferences,
+                "foo@example.com",
+                personLookup,
+                contactAccessor,
+                stubGenerator);
+
+        MatrixCursor cursor = new MatrixCursor(new String[]{"address"});
+        cursor.addRow(new Object[]{"foo"});
+        cursor.moveToFirst();
+
+        // Act + Assert
+        try {
+            converterUnderTest.convertMessages(cursor, DataType.SMS);
+            throw new AssertionError("Expected MailException");
+        } catch (MailException e) {
+            assertThat(e.getCause()).isInstanceOf(MessagingException.class);
+            assertThat(e.getCause().getMessage()).isEqualTo("conversion failed");
+        }
     }
 
     private MimeMessage createSMSMessage() throws IOException, MessagingException {

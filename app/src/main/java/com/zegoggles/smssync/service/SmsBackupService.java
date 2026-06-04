@@ -24,7 +24,7 @@ import androidx.core.app.NotificationCompat;
 import android.util.Log;
 // U-020: import com.squareup.otto.Produce removed (AC-8)
 // U-020: import com.squareup.otto.Subscribe removed (AC-8)
-// U-026: import com.fsck.k9.mail.MessagingException removed; replaced by MailException (AC-5)
+// U-026: k-9 MessagingException import removed; replaced by MailException (AC-5)
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.activity.MainActivity;
@@ -75,8 +75,8 @@ import static com.zegoggles.smssync.service.state.SmsSyncState.INITIAL;
  * U-023 migrates those tests to @HiltAndroidTest and activates injection.
  * TODO(U-023): add @AndroidEntryPoint here once tests are migrated to @HiltAndroidTest.
  *
- * <p>U-026: {@code com.fsck.k9.mail.MessagingException} import removed (AC-5).
- * All uses of {@code MessagingException} in catch/throws declarations are replaced with
+ * <p>U-026: k-9 MessagingException import removed (AC-5).
+ * All uses of MessagingException in catch/throws declarations are replaced with
  * {@link MailException} (app-owned).
  */
 public class SmsBackupService extends ServiceBase {

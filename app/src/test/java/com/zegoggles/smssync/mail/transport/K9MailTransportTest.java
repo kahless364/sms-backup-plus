@@ -158,18 +158,59 @@ public class K9MailTransportTest {
                 .isEqualTo("imap://xoauth:XXXXX@imap.gmail.com:456");
     }
 
-    @Test(expected = MessagingException.class)
-    public void shouldThrowExceptionIfUsernameIsMissing() throws Exception {
+    @Test
+    public void shouldThrowMailExceptionIfUsernameIsMissing() throws Exception {
+        // C-1: constructor now throws MailException (wrapping MessagingException) only.
         String uri = "imap://imap.gmail.com:1234";
         MailTransportConfig config = new MailTransportConfig(uri, TlsTrustPolicy.SYSTEM_VALIDATED);
-        new K9MailTransport(RuntimeEnvironment.application, config);
+        try {
+            new K9MailTransport(RuntimeEnvironment.application, config);
+            throw new AssertionError("Expected MailException");
+        } catch (MailException e) {
+            assertThat(e.getCause()).isInstanceOf(MessagingException.class);
+        }
     }
 
-    @Test(expected = MessagingException.class)
-    public void shouldThrowExceptionIfPasswordIsMissing() throws Exception {
+    @Test
+    public void shouldThrowMailExceptionIfPasswordIsMissing() throws Exception {
+        // C-1: constructor now throws MailException (wrapping MessagingException) only.
         String uri = "imap://plain:foo:@imap.gmail.com:1234";
         MailTransportConfig config = new MailTransportConfig(uri, TlsTrustPolicy.SYSTEM_VALIDATED);
-        new K9MailTransport(RuntimeEnvironment.application, config);
+        try {
+            new K9MailTransport(RuntimeEnvironment.application, config);
+            throw new AssertionError("Expected MailException");
+        } catch (MailException e) {
+            assertThat(e.getCause()).isInstanceOf(MessagingException.class);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // AC-8: Cause-chain preservation tests (CNTR-007 Clause C-1 + C-2)
+    // -------------------------------------------------------------------------
+
+    /**
+     * AC-8 C-1 path: given a BackupImapStoreDelegate whose constructor throws
+     * MessagingException("password not set"), the MailException caught by the caller must
+     * preserve the cause chain: getCause() returns the original MessagingException.
+     *
+     * Note: We cannot easily stub the BackupImapStoreDelegate constructor itself (it is
+     * called inside the public K9MailTransport constructor via 'new'). Instead we verify
+     * that when K9MailTransport's public constructor is used with a URI that causes
+     * BackupImapStoreDelegate to throw MessagingException, the resulting MailException
+     * wraps it. We use a URI missing credentials (which triggers MessagingException from k-9)
+     * and confirm getCause() is a MessagingException.
+     */
+    @Test
+    public void causeChain_C1_constructor_messagingExceptionPreservedAsCause() throws Exception {
+        String uri = "imap://imap.gmail.com:1234"; // missing credentials → MessagingException
+        MailTransportConfig config = new MailTransportConfig(uri, TlsTrustPolicy.SYSTEM_VALIDATED);
+        try {
+            new K9MailTransport(RuntimeEnvironment.application, config);
+            throw new AssertionError("Expected MailException");
+        } catch (MailException e) {
+            assertThat(e.getCause()).isInstanceOf(MessagingException.class);
+            assertThat(e.getCause().getMessage()).isNotNull();
+        }
     }
 
     @Test
