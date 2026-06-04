@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.inject.Inject;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
@@ -59,6 +60,14 @@ class RestoreTask extends AsyncTask<RestoreConfig, RestoreState, RestoreState> {
     private final TokenRefresher tokenRefresher;
     private final Preferences preferences;
 
+    /**
+     * U-023: @Inject annotation added to existing single constructor (AC-5).
+     * No manual new-wiring exists to remove and no test-only constructor is present —
+     * this is the sole constructor. The body is unchanged.
+     * SmsRestoreService (an Android Service) is not injectable by Hilt; RestoreTask
+     * is therefore not in the Hilt component graph (same coexistence approach as BackupTask).
+     */
+    @Inject
     RestoreTask(SmsRestoreService service,
                 MessageConverter converter,
                 ContentResolver resolver,

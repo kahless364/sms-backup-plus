@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import javax.inject.Inject;
 
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
@@ -58,6 +59,13 @@ public class MessageConverter {
     private final MessageGenerator messageGenerator;
     private final boolean markAsReadOnRestore;
 
+    /**
+     * U-023: @Inject constructor — enables Hilt to build MessageConverter when requested.
+     * Context (@ApplicationContext), Preferences, String userEmail (@Named("userEmail")),
+     * PersonLookup, and ContactAccessor are provided via EngineModule.
+     * Tests continue to call this constructor directly (MessageConverterTest.java:44-45).
+     */
+    @Inject
     public MessageConverter(Context context,
                             Preferences preferences,
                             String userEmail,

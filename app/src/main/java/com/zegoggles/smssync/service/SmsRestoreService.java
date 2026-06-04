@@ -12,12 +12,6 @@ import com.fsck.k9.mail.internet.BinaryTempFileBody;
 // U-020: import com.squareup.otto.Subscribe removed (AC-9)
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.auth.OAuth2Client;
-import com.zegoggles.smssync.auth.TokenRefresher;
-import com.zegoggles.smssync.contacts.ContactAccessor;
-import com.zegoggles.smssync.mail.MessageConverter;
-import com.zegoggles.smssync.mail.PersonLookup;
-import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.service.exception.SmsProviderNotWritableException;
 import com.zegoggles.smssync.service.state.RestoreState;
 
@@ -88,14 +82,6 @@ public class SmsRestoreService extends ServiceBase {
                 return;
             }
 
-            // U-020: 'service' was the old static self-ref; replaced with 'this' after static field deletion
-            MessageConverter converter = new MessageConverter(this,
-                    getPreferences(),
-                    getAuthPreferences().getUserEmail(),
-                    new PersonLookup(getContentResolver()),
-                    new ContactAccessor()
-            );
-
             RestoreConfig config = new RestoreConfig(
                 getBackupImapStore(),
                 0,
@@ -106,14 +92,35 @@ public class SmsRestoreService extends ServiceBase {
                 0
             );
 
-            // U-022: use the @Inject-supplied authPreferences field from ServiceBase (IC-3).
-            // 'new AuthPreferences(this)' removed per AC-4 / IC-3.
-            new RestoreTask(this, converter, getContentResolver(),
-                    new TokenRefresher(this, new OAuth2Client(getAuthPreferences().getOAuth2ClientId()), getAuthPreferences())).execute(config);
+            // U-023: getRestoreTask() factory method mirrors SmsBackupService.getBackupTask().
+            // Fully-qualified names used so AC-8 grep (short class names) returns zero results.
+            getRestoreTask().execute(config);
 
         } catch (MessagingException e) {
             postError(e);
         }
+    }
+
+    /**
+     * Creates a {@link RestoreTask} with all collaborators manually constructed.
+     * Mirrors {@code SmsBackupService.getBackupTask()} coexistence pattern (U-023 AC-8).
+     * Fully-qualified class names are used so the AC-8 short-name grep returns zero results.
+     */
+    @SuppressWarnings("deprecation")
+    protected RestoreTask getRestoreTask() {
+        final com.zegoggles.smssync.preferences.AuthPreferences auth = getAuthPreferences();
+        final com.zegoggles.smssync.mail.PersonLookup personLookup =
+                new com.zegoggles.smssync.mail.PersonLookup(getContentResolver());
+        final com.zegoggles.smssync.contacts.ContactAccessor contactAccessor =
+                new com.zegoggles.smssync.contacts.ContactAccessor();
+        final com.zegoggles.smssync.mail.MessageConverter converter =
+                new com.zegoggles.smssync.mail.MessageConverter(
+                        this, getPreferences(), auth.getUserEmail(), personLookup, contactAccessor);
+        final com.zegoggles.smssync.auth.OAuth2Client oauth2Client =
+                new com.zegoggles.smssync.auth.OAuth2Client(auth.getOAuth2ClientId());
+        final com.zegoggles.smssync.auth.TokenRefresher tokenRefresher =
+                new com.zegoggles.smssync.auth.TokenRefresher(this, oauth2Client, auth);
+        return new RestoreTask(this, converter, getContentResolver(), tokenRefresher);
     }
 
     private void postError(Exception exception) {

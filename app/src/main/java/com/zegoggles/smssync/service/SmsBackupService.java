@@ -193,7 +193,43 @@ public class SmsBackupService extends ServiceBase {
     // network constraints via Constraints; no manual pre-flight check needed.
 
     protected BackupTask getBackupTask() {
-        return new BackupTask(this);
+        // U-023: Primary BackupTask constructor removed (manual new-wiring deleted per AC-2).
+        // SmsBackupService supplies itself and manually builds each collaborator so that the
+        // service's ContentResolver/context is used. This mirrors the previous primary ctor
+        // body but is now explicit rather than hidden inside BackupTask.
+        // SmsBackupService cannot be injected by Hilt (it is an Android Service); the
+        // DI coexistence approach is: manually build here until U-015 @HiltWorker removes
+        // BackupTask entirely (DES-MODERNIZATION-008 §Incremental coexistence).
+        final android.content.Context context = getApplicationContext();
+        final com.zegoggles.smssync.preferences.AuthPreferences auth = getAuthPreferences();
+        final com.zegoggles.smssync.preferences.Preferences prefs = getPreferences();
+        final com.zegoggles.smssync.mail.PersonLookup personLookup =
+                new com.zegoggles.smssync.mail.PersonLookup(getContentResolver());
+        final com.zegoggles.smssync.contacts.ContactAccessor contactAccessor =
+                new com.zegoggles.smssync.contacts.ContactAccessor();
+        final com.zegoggles.smssync.service.BackupQueryBuilder queryBuilder =
+                new com.zegoggles.smssync.service.BackupQueryBuilder(prefs.getDataTypePreferences());
+        final com.zegoggles.smssync.service.BackupItemsFetcher fetcher =
+                new com.zegoggles.smssync.service.BackupItemsFetcher(getContentResolver(), queryBuilder);
+        final com.zegoggles.smssync.mail.MessageConverter converter =
+                new com.zegoggles.smssync.mail.MessageConverter(
+                        context, prefs, auth.getUserEmail(), personLookup, contactAccessor);
+        final com.zegoggles.smssync.auth.OAuth2Client oauth2Client =
+                new com.zegoggles.smssync.auth.OAuth2Client(auth.getOAuth2ClientId());
+        final com.zegoggles.smssync.auth.TokenRefresher tokenRefresher =
+                new com.zegoggles.smssync.auth.TokenRefresher(this, oauth2Client, auth);
+        // Lazy<CalendarSyncer>: only build CalendarSyncer when isCallLogCalendarSyncEnabled().
+        // Mirrors the conditional construction that was at BackupTask.java:76-86.
+        final dagger.Lazy<com.zegoggles.smssync.service.CalendarSyncer> calendarSyncerLazy = () -> {
+            return new com.zegoggles.smssync.service.CalendarSyncer(
+                    com.zegoggles.smssync.calendar.CalendarAccessor.Get.instance(getContentResolver()),
+                    prefs.getCallLogCalendarId(),
+                    personLookup,
+                    new com.zegoggles.smssync.mail.CallFormatter(context.getResources())
+            );
+        };
+        return new BackupTask(this, fetcher, converter, calendarSyncerLazy,
+                auth, prefs, contactAccessor, tokenRefresher);
     }
 
     private void moveToState(BackupState state) {

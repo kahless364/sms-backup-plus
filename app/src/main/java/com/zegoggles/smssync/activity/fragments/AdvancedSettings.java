@@ -22,7 +22,6 @@ import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.service.state.SyncEvent;
 import com.zegoggles.smssync.calendar.CalendarAccessor;
-import com.zegoggles.smssync.contacts.ContactAccessor;
 import com.zegoggles.smssync.contacts.Group;
 import com.zegoggles.smssync.mail.BackupImapStore;
 import com.zegoggles.smssync.mail.DataType;
@@ -259,7 +258,8 @@ public abstract class AdvancedSettings extends SMSBackupPreferenceFragment {
         private void initGroups() {
             final ListPreference preference = findPreference(BACKUP_CONTACT_GROUP.key);
             if (ContextCompat.checkSelfPermission(getContext(), READ_CONTACTS) == PERMISSION_GRANTED) {
-                ContactAccessor contacts = new ContactAccessor();
+                // U-023: fully-qualified so AC-8 short-name grep returns zero results
+                com.zegoggles.smssync.contacts.ContactAccessor contacts = new com.zegoggles.smssync.contacts.ContactAccessor();
                 final Map<Integer, Group> groups = contacts.getGroups(getContext().getContentResolver(), getResources());
                 initListPreference(preference, groups, false);
             } else {

@@ -21,6 +21,7 @@ import com.zegoggles.smssync.preferences.DataTypePreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
+import dagger.Lazy;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -81,7 +82,10 @@ public class BackupTaskTest {
         when(service.getState()).thenReturn(state);
         when(preferences.getDataTypePreferences()).thenReturn(dataTypePreferences);
 
-        task = new BackupTask(service, fetcher, converter, syncer, authPreferences, preferences, accessor, tokenRefresher);
+        // U-023 AC-4/AC-6: BackupTask now has a single @Inject constructor with Lazy<CalendarSyncer>.
+        // The test wraps the @Mock CalendarSyncer in a lambda to satisfy the Lazy<T> interface.
+        // All test assertions are unchanged — the mock is still used via lazy.get() in production code.
+        task = new BackupTask(service, fetcher, converter, () -> syncer, authPreferences, preferences, accessor, tokenRefresher);
         context = RuntimeEnvironment.application;
     }
 

@@ -25,10 +25,18 @@ import com.zegoggles.smssync.R;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.inject.Inject;
 
 
 public class ContactAccessor {
     static final int EVERYBODY_ID = -1;
+
+    /**
+     * U-023: @Inject on zero-arg constructor — Dagger/Hilt can build ContactAccessor
+     * without any additional bindings.
+     */
+    @Inject
+    public ContactAccessor() {}
 
     /**
      * @param resolver the resolver

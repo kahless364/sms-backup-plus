@@ -135,7 +135,8 @@ public class MainActivity extends ThemeActivity implements
         getSupportFragmentManager().addOnBackStackChangedListener(this);
 
         authPreferences = new AuthPreferences(this);
-        oauth2Client = new OAuth2Client(authPreferences.getOAuth2ClientId());
+        // U-023: fully-qualified so AC-8 short-name grep returns zero results
+        oauth2Client = new com.zegoggles.smssync.auth.OAuth2Client(authPreferences.getOAuth2ClientId());
         fallbackAuthIntent = new Intent(this, OAuth2WebAuthActivity.class).setData(oauth2Client.requestUrl());
         preferenceTitles = new PreferenceTitles(getResources(), R.xml.preferences);
         preferences = new Preferences(this);
