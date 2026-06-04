@@ -1,0 +1,101 @@
+{
+  "artifact_id": "DES-MODERNIZATION-012",
+  "artifact_path": "C:/Code/Android/sms-backup-plus/sdlc/artifacts/design/modernization/DES-MODERNIZATION-012-modernization-debt-closure-design.md",
+  "phase": "design-audit",
+  "agent_role": "design-auditor",
+  "audit_date": "2026-06-04",
+  "audit_iteration": 2,
+  "verdict": "APPROVE",
+  "summary": "Re-audit of the SA's in-place revision. All 9 prior findings are genuinely resolved, each verified against actual source this session (not accepted on claim). The two blocking HIGH findings are fully closed: (DES-AUD-001) the false 'already fire' linchpin assertion is gone; the design now states plainly that backupStateChanged/restoreStateChanged are DIRECT-call methods (verified SmsBackupService:259 called from BackupTask:273; SmsRestoreService:178 from RestoreTask:328), that no syncStateRepository collector exists in either service, and that the workers emit only setProgress — therefore a service-side WorkInfo observer (Option b1) is now a REQUIRED, ordered Step-2a prerequisite of the dispatch migration, fully consistent with the R-2 risk box (no remaining contradiction). (DES-AUD-002) the grep-to-zero scope now includes comment/javadoc; re-greped this session => exactly 20 matches (2 code + 18 comment) matching the design's enumeration line-for-line; the design mandates rewording the 12 surviving residuals and the Design Validation grep criterion explicitly says 'zero output lines, comments and javadoc {@code} included.' The 4 MEDIUM and 3 LOW are all addressed and source-verified (auth trace at K9MailTransport:155-247/372; cancel call-site at StatusPreference:281-283/306-308 with BackupCancelCollector sole consumer; factory-deletion divergence explicitly flagged as REQ-013-owns / REQ-014-verifies; clearCache retained in SmsRestoreService.onCreate verified :63/:161; frontmatter title/type/integration_contracts populated; MessageConverterTest callers enumerated :121-169 with correct no-thrown-assertion finding). Previously-verified-correct content (012->013->014 sequencing, CalendarSyncer MissingBinding chain, CNTR-MODERNIZATION-004 scheduleManual gate) is intact and re-confirmed. One NEW non-blocking MEDIUM inconsistency introduced by the revision: a single stale '9 surviving' count at line 852 contradicts the correct '12' used everywhere load-bearing (Context disposition table, Component Design scrub decision, Design Validation row) and the grep ground-truth (12). Does not reintroduce the DES-AUD-002 root cause and does not block; flagged for a one-token cleanup. No HIGH issue remains or was newly introduced.",
+  "scores": {
+    "applicable_categories": ["1 Architectural Alignment", "2 Data Flow Completeness", "10 Implementation Readiness", "11 Traceability"],
+    "completeness_pct": 99,
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 0
+  },
+  "prior_findings_resolution": [
+    {
+      "id": "DES-AUD-001",
+      "prior_severity": "HIGH",
+      "status": "RESOLVED",
+      "evidence": "Integration Design 'Foreground promotion — GROUND-TRUTH' block (lines 697-752) and R-2 (line 945) now agree. Source re-verified: SmsBackupService.backupStateChanged is a public direct-call method (:259) with comment :257-258 'called directly from BackupTask (post method) and moveToState()'; startForeground :325 (in notifyAboutBackup), stopForeground(true)/stopSelf() :277-278. BackupTask.post() :273 directly calls service.backupStateChanged(state). SmsRestoreService.restoreStateChanged :178, startForeground :189, stopForeground/stopSelf :192-193, called from RestoreTask:328 and postError:148. No 'collect' of syncStateRepository in either service (grep). Workers emit only setProgress. The 'already... continue to fire' wording is removed; Option (b1) WorkInfo observer is mandated as Step 2a BLOCKING PREREQUISITE (Sequencing line 879-888; AC-8 row line 791). No contradiction remains."
+    },
+    {
+      "id": "DES-AUD-002",
+      "prior_severity": "HIGH",
+      "status": "RESOLVED",
+      "evidence": "Re-greped this session: grep -rn 'com\\.fsck\\.k9' service/ => 20 lines = 2 code (BackupTask:308, ServiceBase:173) + 18 comment/javadoc, matching the design's enumeration table (Context lines 92-107) exactly, file-by-file and line-by-line. Design adds a dedicated 'REQ-012 — Comment/javadoc com.fsck.k9 scrub' decision (lines 357-385) mandating rewording the 12 surviving residuals as a REQ-012 (not REQ-013) obligation, with an explicit AC-interpretation-clarification fallback. Context corrected from 'two lines' to '20 matches: 2 compile-coupling FQN catches plus 18 comment/javadoc' (line 84-85). Design Validation grep criterion (line 781) now reads 'zero output lines, comments and javadoc {@code} included (currently 20: 2 code + 18 comment).'"
+    },
+    {
+      "id": "DES-AUD-003",
+      "prior_severity": "MEDIUM",
+      "status": "RESOLVED",
+      "evidence": "AC-5 auth-escalation trace added (Component Design lines 281-289 and 320-346). Source-verified: convertMessages (MessageConverter:120-131) performs only messageForDataType + setFlag (no transport/auth op), so no auth subtype can originate there. K9MailTransport subtype-first auth catches verified at :155-158, :172-175, :190-193, :216-219, :244-247 plus translateAuthException :372. XOAuth2FailedException extends MailException cited. AC-5 row (line 784) traces to the adapter methods."
+    },
+    {
+      "id": "DES-AUD-004",
+      "prior_severity": "MEDIUM",
+      "status": "RESOLVED",
+      "evidence": "Cancel call-site located and verified: StatusPreference emits SyncEvent.Cancel(USER) at :281-283 (onBackup) and :306-308 (onRestore); BackupCancelCollector.collect/collectForRestore are the sole consumers (call task.onCancelRequested). Design REQ-013 decision (lines 432-447) and R-4 (line 947) now mandate rewiring to WorkManager.cancelUniqueWork via the injected BackupScheduler as REQUIRED REQ-013 work (not a generic 'verify'), with a cancel regression test. Minor cosmetic: design cites :279-283/:304-308 (enclosing if-block start) vs actual emit at :281-283/:306-308 — not a defect."
+    },
+    {
+      "id": "DES-AUD-005",
+      "prior_severity": "MEDIUM",
+      "status": "RESOLVED",
+      "evidence": "Factory-deletion ownership divergence now explicitly flagged in three places: Component Design 'INTENTIONAL DIVERGENCE from EPIC/REQ-014 ownership' block (lines 534-550) with unambiguous sprint-planner assignment (REQ-013 deletes; REQ-014 AC-5/AC-6 verification-only); Integration Contracts 'Story-authoring divergences' (lines 846-851); and the per-shared-file table. Matches EPIC text vs design rationale (avoid dead factory referencing deleted classes)."
+    },
+    {
+      "id": "DES-AUD-006",
+      "prior_severity": "MEDIUM",
+      "status": "RESOLVED",
+      "evidence": "clearCache decision added (lines 415-426): clearCache STAYS in SmsRestoreService.onCreate (service retained as foreground shell); timing byte-for-byte preserved; RestoreWorker.clearAppCache untouched. Source-verified: asyncClearCache called from onCreate :63, clearCache :161. Satisfies REQ-013 Notes."
+    },
+    {
+      "id": "DES-AUD-007",
+      "prior_severity": "LOW",
+      "status": "RESOLVED",
+      "evidence": "Front-matter (lines 1-23): title 'Modernization Debt Closure — ACL Purity, Legacy-Path Removal, Hilt Completion' and type 'design-document' populated; integration_contracts now lists CNTR-MODERNIZATION-007 and CNTR-MODERNIZATION-004. related_stories [] acceptable pre-sprint."
+    },
+    {
+      "id": "DES-AUD-008",
+      "prior_severity": "LOW",
+      "status": "RESOLVED",
+      "evidence": "MessageConverterTest convertMessages callers enumerated (lines 269-280): :121,125,143,147,165,169 — re-greped and confirmed; verified none assert a thrown type (all assign ConversionResult). The two @Test(expected=MessagingException.class) at :48/:53 target messageToContentValues, a different method, correctly outside the converter throws-type change. Test-update scope concretized to throws-clause updates only; BackupTaskTest mocks noted as moot (file deleted by REQ-013)."
+    },
+    {
+      "id": "DES-AUD-009",
+      "prior_severity": "LOW",
+      "status": "PRESERVED",
+      "evidence": "012->013->014 sequencing (lines 859-903), CalendarSyncer latent-MissingBinding chain (lines 138-157, 552-573), and CNTR-MODERNIZATION-004 scheduleManual gate (scheduleImmediate hard-codes BROADCAST_INTENT at WorkManagerScheduler:270-281, verified) all intact and re-confirmed. No regression."
+    }
+  ],
+  "new_findings": [
+    {
+      "id": "DES-AUD-010",
+      "severity": "MEDIUM",
+      "category": "Internal Consistency / Traceability",
+      "title": "Stale '9 surviving comment/javadoc residuals' count at line 852 contradicts the correct '12' used everywhere load-bearing",
+      "whats_wrong": "Integration Contracts > 'Story-authoring divergences' (line 852) reads 'REQ-012 ... owns rewording the 9 surviving comment/javadoc com.fsck.k9 residuals.' Every other reference and the grep ground-truth say 12: Context disposition table (lines 102-107: 1 BackupWorker + 2 RestoreWorker + 2 SmsBackupService + 4 SmsRestoreService + 3 State = 12), Component Design comment-scrub decision (lines 366, 379), and Design Validation row (line 781). Re-greped this session: 12 surviving residuals across surviving files. The '9' is a single stale summary number.",
+      "verified_against_source": "grep -rn 'com\\.fsck\\.k9' service/ => 18 comment lines, of which 12 are in files that survive REQ-013 (BackupWorker.kt:55; RestoreWorker.kt:30,66; SmsBackupService.java:27,78; SmsRestoreService.java:11,12,41,42; State.java:6,7,8) and 6 vanish with BackupTask/RestoreTask deletion",
+      "expected": "Change '9 surviving' to '12 surviving' at line 852 to match the rest of the document and the grep. Non-blocking: the binding scrub list (Component Design + Context table + Design Validation row) is correct and enumerates all 12 files, so an implementer following the actual list reaches grep-zero regardless. One-token correction.",
+      "blocking": false
+    }
+  ],
+  "verification_performed_this_session": [
+    "grep -rn 'com\\.fsck\\.k9' service/ => 20 lines (2 code: BackupTask:308, ServiceBase:173; 18 comment/javadoc) — matches design enumeration line-for-line; 12 survive / 6 vanish split confirmed",
+    "SmsBackupService.backupStateChanged direct-call method :259 (comment :257-258 'called directly from BackupTask post + moveToState'); startForeground :325; stopForeground(true)/stopSelf() :277-278; no syncStateRepository.collect — CONFIRMED",
+    "BackupTask.post() :273 service.backupStateChanged(state) direct call; emitState :271 — CONFIRMED",
+    "SmsRestoreService.restoreStateChanged :178; startForeground :189; stopForeground/stopSelf :192-193; called from RestoreTask:328 + postError:148; asyncClearCache from onCreate:63; clearCache :161 — CONFIRMED (resolves DES-AUD-001 + DES-AUD-006)",
+    "StatusPreference Cancel(USER) emit :281-283 (onBackup) / :306-308 (onRestore); BackupCancelCollector.collect/collectForRestore sole consumers calling onCancelRequested — CONFIRMED (resolves DES-AUD-004)",
+    "MessageConverter.convertMessages throws MessagingException :120-121; body only messageForDataType + setFlag (no auth/transport op) — CONFIRMED (resolves DES-AUD-003)",
+    "K9MailTransport public ctor :117-118 throws MailException, MessagingException; BinaryTempFileBody.setTempDirectory at end of ctor; auth catches :155-158/:172-175/:190-193/:216-219/:244-247; translateAuthException :372 — CONFIRMED",
+    "MessageConverterTest convertMessages callers :121,125,143,147,165,169 assign ConversionResult (no thrown-type assertion); @Test(expected=MessagingException.class) at :48/:53 target a different method — CONFIRMED (resolves DES-AUD-008)",
+    "WorkManagerScheduler.scheduleImmediate :270 hard-codes BackupType.BROADCAST_INTENT (:274/:278/:281); scheduleRestore :295 — CONFIRMED (CNTR-004 scheduleManual gate intact)",
+    "Front-matter title/type populated; integration_contracts = [CNTR-MODERNIZATION-007, CNTR-MODERNIZATION-004] — CONFIRMED (resolves DES-AUD-007)"
+  ],
+  "blocking_findings": [],
+  "new_blocking_issue_introduced": false,
+  "decision_rationale": "APPROVE: both prior HIGH blocking findings (DES-AUD-001, DES-AUD-002) are genuinely resolved and source-verified; all 4 MEDIUM and 3 LOW addressed and source-verified; previously-correct analysis preserved. The single new finding (DES-AUD-010) is a non-blocking MEDIUM documentation inconsistency (one stale '9' vs the correct '12' that appears everywhere load-bearing) — it neither reintroduces a prior root cause nor blocks implementation. No HIGH-severity issue remains or was newly introduced."
+}
