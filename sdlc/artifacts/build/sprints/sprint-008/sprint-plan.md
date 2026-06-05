@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-008
 sprint: '000008'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 008 — Bug-Fix Sprint (BUG-009, BUG-010, BUG-011)
@@ -28,7 +30,7 @@ sprint: '000008'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-041 | Request SMS role on Q+ regardless of legacy getDefaultSmsPackage (fix BUG-009) | Android | developer | sonnet | lead | — | planned | high |
+| U-041 | Request SMS role on Q+ regardless of legacy getDefaultSmsPackage (fix BUG-009) | Android | developer | sonnet | lead | — | done | high |
 | U-042 | Advance max_synced_date only after confirmed IMAP append (fix BUG-010) | Android | developer | sonnet | lead | — | done | high |
 | U-043 | Create IMAP SMS folder on first backup to a fresh account (fix BUG-011) | Android | developer | sonnet | lead | — | done | high |
 

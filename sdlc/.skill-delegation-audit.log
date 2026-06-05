@@ -37,3 +37,4 @@
 {"timestamp":"2026-06-05T05:28:19.032Z","event_type":"teardown","child_skill":"create-bug","child_instance_id":"create-bug-20260605-052341","context_file_sha256":"2545e7cef9c9bfe42f75171562746e6b3ba7b883bcecdd8bec41c44dd67b16ce"}
 {"timestamp":"2026-06-05T14:09:15.698Z","event_type":"teardown","child_skill":"create-stories","child_instance_id":"create-stories-20260605-140608","context_file_sha256":"4b51f147fff97b8220e97dcd3a5cf384fab31bfaaf2e44ab238b947c7dbd96c0"}
 {"timestamp":"2026-06-05T14:13:23.406Z","event_type":"teardown","child_skill":"create-sprint","child_instance_id":"create-sprint-20260605-140936","context_file_sha256":"7028f5a8f0e9d74b399ab580beef7aff8e9b9772409b5d7ab45664fc28ca13aa"}
+{"timestamp":"2026-06-05T17:20:24.696Z","event_type":"teardown","child_skill":"execute-sprint","child_instance_id":"execute-sprint-20260605-141420","context_file_sha256":"b514a2d5f3e05e6bf94cf83df963bc58675a3814018b10cd269ca3850200e164"}
