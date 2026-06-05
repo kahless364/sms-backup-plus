@@ -26,6 +26,13 @@ Before working on application code, read the relevant engagement and design arti
 | Database, API, and service endpoints | `sdlc/artifacts/engagement/endpoints.md` |
 | Project configuration | `sdlc/config.yaml` |
 
+### Local Build & Device Notes (Windows / Git Bash)
+
+- **Build JDK:** set `JAVA_HOME` to the JBR 17 before any Gradle command: `export JAVA_HOME="C:/Users/Michael.Horsley/.jdks/jbr-17.0.14"`. Gates: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification` (jacoco enforces per-package LINE ≥ 70%).
+- **Do NOT run `./gradlew` with `MSYS_NO_PATHCONV=1` set.** That variable (needed for `adb` commands using absolute Unix paths like `/sdcard/...`) disables Git Bash path conversion, which breaks the gradle wrapper's classpath and fails with `Could not find or load main class org.gradle.wrapper.GradleWrapperMain`. Scope `MSYS_NO_PATHCONV=1` to adb-only shells; run Gradle in a shell without it.
+- **Authoritative test count** (agents routinely misreport): `git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"`.
+- **adb screenshots:** `adb -s <serial> exec-out screencap -p > out.png` (the `/sdcard` round-trip needs `MSYS_NO_PATHCONV=1`).
+
 ---
 
 @.sdlc/FRAMEWORK.md
