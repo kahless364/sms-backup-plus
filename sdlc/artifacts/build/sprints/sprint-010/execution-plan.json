@@ -1,0 +1,15 @@
+{
+  "execution_plan": {
+    "version": "1.0.0", "pipeline": "sprint-execution", "instance_id": "sprint-010", "plan_type": "sprint-execution",
+    "steps": [
+      { "step_id": "U-045", "agent": "story-build-manager", "agent_model": null,
+        "expected_artifacts": ["sdlc/artifacts/build/sprints/sprint-010/U-045/plan.md","sdlc/artifacts/build/sprints/sprint-010/U-045/implementation-log.md","sdlc/artifacts/build/sprints/sprint-010/U-045/review-code.md","sdlc/artifacts/build/sprints/sprint-010/U-045/review-security.md","sdlc/artifacts/build/sprints/sprint-010/U-045/qa-results.md"],
+        "gate": { "name": "wave-gate", "verdict_type": "audit_gate", "max_iterations": 1 }, "enabled": true, "skip_reason": null, "depends_on": [], "parallel_group": "wave-1" },
+      { "step_id": "U-046", "agent": "story-build-manager", "agent_model": null,
+        "expected_artifacts": ["sdlc/artifacts/build/sprints/sprint-010/U-046/plan.md","sdlc/artifacts/build/sprints/sprint-010/U-046/implementation-log.md","sdlc/artifacts/build/sprints/sprint-010/U-046/review-code.md","sdlc/artifacts/build/sprints/sprint-010/U-046/review-security.md","sdlc/artifacts/build/sprints/sprint-010/U-046/qa-results.md"],
+        "gate": { "name": "wave-gate", "verdict_type": "audit_gate", "max_iterations": 1 }, "enabled": true, "skip_reason": null, "depends_on": [], "parallel_group": "wave-1" }
+    ],
+    "checkpoints": [ { "checkpoint_id": "wave-1-complete", "after_steps": ["U-045","U-046"], "gates": [ { "gate_id": "wave-1-gate", "agent": "deterministic", "severity": "blocking" } ] } ],
+    "metadata": { "created_by": "sprint-manager", "context_summary": "Sprint sprint-010 U-045 + U-046", "plan_revision": 1 }
+  }
+}
