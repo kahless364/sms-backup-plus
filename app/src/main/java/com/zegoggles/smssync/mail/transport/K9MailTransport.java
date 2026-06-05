@@ -492,12 +492,22 @@ public class K9MailTransport implements MailTransport {
         /**
          * Maximum number of open-after-CREATE attempts (BUG-013).
          *
-         * <p>Increased from 3 to 5 to widen the retry budget for Gmail label propagation.
-         * With exponential backoff (1s, 2s, 4s, 8s between attempts 1→2, 2→3, 3→4, 4→5)
-         * the total delay budget is 15 s — sufficient for Gmail label propagation in
-         * the common case while remaining bounded.
+         * <p>Set to 6 for remediation 3 (reconnect-and-retry). Each failed attempt drains the
+         * IMAP connection pool so the next {@code open()} obtains a brand-new connection
+         * (fresh login), which Gmail requires to see a newly-created label.
+         *
+         * <p>Backoff schedule (delays between attempts):
+         * <ul>
+         *   <li>Attempt 1→2: 1 s</li>
+         *   <li>Attempt 2→3: 2 s</li>
+         *   <li>Attempt 3→4: 4 s</li>
+         *   <li>Attempt 4→5: 8 s (cap)</li>
+         *   <li>Attempt 5→6: 8 s (cap)</li>
+         * </ul>
+         * Total inter-attempt delay budget: 1+2+4+8+8 = 23 s; worst-case wall-clock ~25-30 s
+         * including IMAP round-trips.
          */
-        /* package */ static final int MAX_CREATE_OPEN_RETRIES = 5;
+        /* package */ static final int MAX_CREATE_OPEN_RETRIES = 6;
 
         /**
          * Factory method that creates a {@link BackupFolder} for the given data type and label.
@@ -513,8 +523,8 @@ public class K9MailTransport implements MailTransport {
          *
          * <p>Uses exponential backoff: {@code min(1000 × 2^(attempt-1), 8000)} ms.
          * For {@code attempt=1}: 1000 ms; {@code attempt=2}: 2000 ms; {@code attempt=3}: 4000 ms;
-         * {@code attempt=4} and beyond: 8000 ms (cap). This gives a total inter-attempt delay
-         * of 1+2+4+8 = 15 s across 5 attempts (BUG-013 fix).
+         * {@code attempt=4} and beyond: 8000 ms (cap). Across 6 attempts the total inter-attempt
+         * delay budget is 1+2+4+8+8 = 23 s (BUG-013 remediation 3).
          *
          * <p>Package-private to allow test subclasses to zero the delay for fast unit tests.
          *
@@ -527,6 +537,25 @@ public class K9MailTransport implements MailTransport {
             long cap = 8000L;
             long delay = base << (attempt - 1); // 1000 * 2^(attempt-1)
             return Math.min(delay, cap);
+        }
+
+        /**
+         * Closes the given folder (releasing its connection back to the pool) then drains the
+         * pool so the next {@link ImapFolder#open} call is forced to create a brand-new
+         * connection (fresh login).
+         *
+         * <p>Gmail does not expose a newly-created label on an existing session; only a fresh
+         * login sees it. Calling this between retries in {@link #openWithRetryAfterCreate} is
+         * therefore necessary to unblock the create→open sequence without waiting for a full
+         * WorkManager retry (BUG-013 remediation 3).
+         *
+         * <p>Protected to allow test subclasses to override or spy on this seam.
+         *
+         * @param folder the folder whose stale connection should be released before draining
+         */
+        protected void forceFreshConnection(BackupFolder folder) {
+            folder.close();        // releases the stale connection back to the pool
+            closePooledConnections(); // drains the pool so getConnection() creates a fresh one
         }
 
         /**
@@ -589,10 +618,16 @@ public class K9MailTransport implements MailTransport {
          * <p>Both conditions represent a freshly-created Gmail label that is not yet fully
          * SELECTable. All other exceptions are propagated immediately on the first occurrence.
          *
+         * <p>Before each retry, {@link #forceFreshConnection(BackupFolder)} is called to close
+         * the stale connection and drain the pool, forcing the next {@code open()} to establish
+         * a brand-new IMAP session. Gmail only exposes a newly-created label to a fresh login;
+         * retrying on the SAME pooled connection never sees the label (BUG-013 remediation 3).
+         *
          * <p>Uses exponential backoff via {@link #getRetryDelayMs(int)} (BUG-013 fix): delays
-         * between attempts are 1s, 2s, 4s, 8s (capped), giving a total budget of ~15 s.
-         * The wait is interruptible: on {@link InterruptedException} the interrupt flag is
-         * restored and a {@link MessagingException} is thrown immediately (AC-2).
+         * between attempts are 1s, 2s, 4s, 8s, 8s (capped), giving a total inter-attempt
+         * budget of ~23 s across 6 attempts. The wait is interruptible: on
+         * {@link InterruptedException} the interrupt flag is restored and a
+         * {@link MessagingException} is thrown immediately (AC-2).
          *
          * <p>When the folder already exists the caller uses {@code folder.open()} directly;
          * this method is only reached after a successful CREATE — there is NO added latency
@@ -626,7 +661,12 @@ public class K9MailTransport implements MailTransport {
                         long delayMs = getRetryDelayMs(attempt);
                         Log.w(TAG, "Folder '" + folder.getName() +
                                 "' not selectable yet after CREATE (attempt " + attempt + "/" +
-                                MAX_CREATE_OPEN_RETRIES + "); retrying in " + delayMs + " ms");
+                                MAX_CREATE_OPEN_RETRIES + "); draining pool and retrying in " +
+                                delayMs + " ms");
+                        // BUG-013 remediation 3: drain the pool before sleeping so the next
+                        // open() obtains a FRESH connection (new login) — Gmail only sees the
+                        // newly-created label on a connection opened AFTER the CREATE.
+                        forceFreshConnection(folder);
                         try {
                             Thread.sleep(delayMs);
                         } catch (InterruptedException ie) {

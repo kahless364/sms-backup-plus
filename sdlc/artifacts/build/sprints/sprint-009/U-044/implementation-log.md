@@ -188,3 +188,145 @@ After remediation 2, AC-1 is fully met for first-run success:
 - Mixed NONEXISTENT → message-count → success sequence tested explicitly in
   `createAndOpenFolder_mixedNonExistentThenMessageCount_thenSucceeds_noException`.
 - No delay or retry on the folder-already-exists fast path (AC-4 unchanged).
+
+---
+
+## Remediation 3 (reconnect-and-retry: drain connection pool for fresh login)
+
+### Root Cause Confirmed
+
+On-device testing proved that retrying `open()` on the SAME pooled IMAP connection never
+makes Gmail expose a freshly-created label within ~15 s. Only a FRESH connection (new TCP/TLS
+login) sees it. The WorkManager retry works because it builds a brand-new `ImapStore` →
+new pool → fresh login. Within a single WorkManager invocation, the pool returns the same
+stale connection regardless of how many times `open()` is called.
+
+### Fix
+
+Two coordinated changes:
+
+#### 1. `k9mail-vendored/.../store/imap/ImapStore.java` — `closePooledConnections()`
+
+Added a new `public` method to drain all pooled `ImapConnection` objects:
+
+```java
+public void closePooledConnections() {
+    synchronized (connections) {
+        ImapConnection c;
+        while ((c = connections.poll()) != null) {
+            try { c.close(); } catch (Exception ignored) { }
+        }
+    }
+}
+```
+
+- Synchronized on `connections` (same monitor as `pollConnection()` / `releaseConnection()`).
+- Minimal, idiomatic, matches the file's existing style.
+
+#### 2. `app/.../mail/transport/K9MailTransport.java` — reconnect seam + wider budget
+
+**`forceFreshConnection(BackupFolder folder)` (new protected method, lines ~556-559):**
+```java
+protected void forceFreshConnection(BackupFolder folder) {
+    folder.close();           // releases stale connection back to pool
+    closePooledConnections(); // drains pool so next open() gets a fresh login
+}
+```
+Protected visibility enables the test seam override.
+
+**`openWithRetryAfterCreate` updated to call `forceFreshConnection(folder)` before each
+retry** (after detecting a "not-ready-yet" error, before `Thread.sleep(delayMs)`).
+
+**`MAX_CREATE_OPEN_RETRIES`**: increased from 5 to 6.
+
+### Chosen Retry/Reconnect Budget
+
+| Parameter | Remediation 2 (old) | Remediation 3 (new) |
+|---|---|---|
+| `MAX_CREATE_OPEN_RETRIES` | 5 | 6 |
+| Backoff formula | `min(1000L << (attempt-1), 8000L)` | unchanged |
+| Attempt 1→2 delay | 1 s | 1 s |
+| Attempt 2→3 delay | 2 s | 2 s |
+| Attempt 3→4 delay | 4 s | 4 s |
+| Attempt 4→5 delay | 8 s (cap) | 8 s (cap) |
+| Attempt 5→6 delay | — | 8 s (cap) |
+| Total inter-attempt budget | 1+2+4+8 = 15 s | 1+2+4+8+8 = 23 s |
+| Worst-case wall-clock | ~18 s | ~25-30 s |
+| Pool drain before each retry | No | Yes (via `forceFreshConnection`) |
+
+Rationale: each retry now requires a full IMAP reconnect + login (~2-4 s round-trip), so
+adding one more attempt keeps the worst-case wall-clock under ~30 s while providing an extra
+fresh-login opportunity. The overall budget remains comfortably within a WorkManager
+15-minute execution window.
+
+### Files Changed
+
+- **`k9mail-vendored/src/main/java/com/fsck/k9/mail/store/imap/ImapStore.java`**
+  - `closePooledConnections()` added after `releaseConnection()` (~line 357).
+
+- **`app/src/main/java/com/zegoggles/smssync/mail/transport/K9MailTransport.java`**
+  - `MAX_CREATE_OPEN_RETRIES`: 5 → 6 with updated Javadoc.
+  - `getRetryDelayMs` Javadoc updated to reference 6-attempt schedule and remediation 3.
+  - `forceFreshConnection(BackupFolder)`: new protected method.
+  - `openWithRetryAfterCreate`: calls `forceFreshConnection(folder)` before each sleep;
+    log message updated to say "draining pool and retrying in X ms".
+
+- **`app/src/test/java/com/zegoggles/smssync/mail/transport/K9MailTransportCreateOpenTest.java`**
+  - Class Javadoc updated to mention pool-drain tracking.
+  - `getRetryDelayMs_exponentialBackoff_matchesSchedule`: added `attempt 6 → 8000L` assertion.
+  - `TestableBackupImapStoreDelegate`: added `forceFreshConnectionCallCount` field + override
+    of `forceFreshConnection()` (increments counter, does not call super — no real pool).
+  - Five new tests added (see below).
+
+### New Tests (Remediation 3)
+
+| Test | What It Asserts |
+|---|---|
+| `openWithRetryAfterCreate_notReadyOnce_forceFreshConnectionCalledOnce` | 1 failure → 1 pool drain; 2 open() calls total |
+| `openWithRetryAfterCreate_notReadyTwice_forceFreshConnectionCalledTwice` | 2 failures → 2 pool drains; 3 open() calls total |
+| `openWithRetryAfterCreate_allAttemptsFail_forceFreshConnectionCalledPerRetry` | All MAX attempts fail → (MAX-1) pool drains (no drain after last attempt) |
+| `openWithRetryAfterCreate_folderExists_forceFreshConnectionNeverCalled` | Fast path (folder exists) → 0 pool drains, 1 open() call |
+| `openWithRetryAfterCreate_fatalError_forceFreshConnectionNeverCalled` | Fatal (non-retryable) error → 0 pool drains, propagated immediately |
+
+All 18 pre-existing tests remain green. No regressions.
+
+### Build / Coverage Result
+
+```
+BUILD SUCCESSFUL
+:app:assembleDebug
+:app:testDebugUnitTest  — all tests passed, 0 failed
+:app:jacocoTestCoverageVerification  — PASSED (per-package LINE >= 70%)
+```
+
+Total build time: ~4m 56s (full build).
+
+### Authoritative @Test Count
+
+```
+git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
+659
+```
+
+(Previously 650 after remediation 2; 659 reflects +5 new @Test-annotated tests from
+remediation 3 — Java: 553, Kotlin: 106, total: 659.)
+
+### AC Verification (Updated for Remediation 3)
+
+- **AC-1**: Retry budget widened to 6 attempts, 23 s inter-attempt. Pool drained before
+  each retry → each open() uses a fresh login. `forceFreshConnectionCalledOnce`,
+  `CalledTwice`, `CalledPerRetry` tests confirm drain occurs exactly where expected.
+  K9MailTransport.java:669.
+- **AC-2**: Bounded by `MAX_CREATE_OPEN_RETRIES=6`. InterruptedException handling unchanged.
+  K9MailTransport.java:671-677.
+- **AC-3**: `BackupWorker` and watermark logic untouched. U-042 invariant preserved.
+- **AC-4**: Fast path unchanged. `folderExists_forceFreshConnectionNeverCalled` confirms
+  no pool drain on fast path. `fatalError_forceFreshConnectionNeverCalled` confirms
+  non-retryable errors still propagate immediately. K9MailTransport.java:592-594.
+
+### Integration Path
+
+No new entry points. `closePooledConnections()` is called only from `forceFreshConnection()`
+which is called only from `openWithRetryAfterCreate()` → `createAndOpenFolder()` →
+`BackupImapStoreDelegate.openFolder()` → `K9MailTransport.openFolder()`.
+`BackupWorker` watermark logic (U-042) is untouched.
