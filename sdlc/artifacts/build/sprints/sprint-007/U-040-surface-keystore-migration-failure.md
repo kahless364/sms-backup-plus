@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: planned
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -19,6 +19,7 @@ title: Surface Keystore failure during credential migration (fix BUG-008)
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-008
+sprint: '000007'
 ---
 
 # U-040: Surface Keystore failure during credential migration

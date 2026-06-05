@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: planned
 artifact_type: user-story
 priority: medium
 complexity: low
@@ -19,6 +19,7 @@ title: Persist OAuth2 token directly instead of via Intent extra (fix BUG-007)
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-007
+sprint: '000007'
 ---
 
 # U-039: Persist OAuth2 token directly, not via Intent extra
