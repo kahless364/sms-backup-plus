@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-004
 sprint: '000004'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 004 — TLS Pin-Certificate Enrollment Dialog Crash Fix
@@ -26,7 +28,7 @@ sprint: '000004'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-034 | Fix TLS pin-certificate enrollment dialog crash: build AlertDialog with a themed Activity context | Android | developer | sonnet | lead | — | planned | high |
+| U-034 | Fix TLS pin-certificate enrollment dialog crash: build AlertDialog with a themed Activity context | Android | developer | sonnet | lead | — | done | high |
 
 ## Wave Summary
 
