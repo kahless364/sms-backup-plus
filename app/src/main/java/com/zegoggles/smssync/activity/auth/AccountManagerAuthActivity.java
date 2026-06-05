@@ -23,6 +23,7 @@ import com.zegoggles.smssync.activity.Dialogs;
 import com.zegoggles.smssync.activity.Dialogs.AccessTokenProgress;
 import com.zegoggles.smssync.activity.MainActivity;
 import com.zegoggles.smssync.activity.ThemeActivity;
+import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.utils.BundleBuilder;
 
 import java.util.Arrays;
@@ -36,6 +37,13 @@ import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.Acc
 import static com.zegoggles.smssync.utils.Drawables.getTinted;
 
 public class AccountManagerAuthActivity extends ThemeActivity {
+    /**
+     * @deprecated U-039 (BUG-007): EXTRA_TOKEN is no longer populated in the result Intent.
+     * The token is persisted directly via AuthPreferences.setOauth2Token() inside useToken()
+     * before setResult() is called. This constant is kept for binary compatibility only;
+     * callers must not rely on this extra being present.
+     */
+    @Deprecated
     public static final String EXTRA_TOKEN = "token";
     public static final String EXTRA_ERROR = "error";
     private static final String EXTRA_DENIED = "denied";
@@ -49,10 +57,14 @@ public class AccountManagerAuthActivity extends ThemeActivity {
     private static final int REQUEST_GET_ACCOUNTS = 0;
 
     private AccountManager accountManager;
+    // U-039 (BUG-007): AuthPreferences used to persist the token directly in useToken(),
+    // so the raw token never travels in the result Intent extra.
+    private AuthPreferences authPreferences;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         accountManager = AccountManager.get(this);
+        authPreferences = new AuthPreferences(this);
 
         if (needsGetAccountPermission()) {
             requestGetAccountsPermission();
@@ -146,9 +158,14 @@ public class AccountManagerAuthActivity extends ThemeActivity {
 
     private void useToken(Account account, String token) {
         Log.d(TAG, "obtained token for " + account + " from AccountManager");
+        // U-039 (BUG-007): persist the token directly via AuthPreferences BEFORE setResult
+        // so the raw bearer token never travels in the result Intent extra. The token is now
+        // readable by MainActivity via authPreferences.getOauth2Token() rather than via
+        // the EXTRA_TOKEN intent extra, which was inspectable by privileged processes.
+        authPreferences.setOauth2Token(account.name, token, null);
+        // Deliver only the account name so MainActivity can emit AccountAdded; no token extra.
         Intent result = new Intent(ACTION_ADD_ACCOUNT)
-            .putExtra(EXTRA_ACCOUNT, account.name)
-            .putExtra(EXTRA_TOKEN, token);
+            .putExtra(EXTRA_ACCOUNT, account.name);
         setResult(RESULT_OK, result);
         finish();
     }

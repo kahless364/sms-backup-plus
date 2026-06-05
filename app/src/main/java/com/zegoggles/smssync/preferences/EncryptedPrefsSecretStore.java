@@ -48,6 +48,24 @@ public class EncryptedPrefsSecretStore implements SecretStore {
     /** Migration completion marker key — written inside the encrypted store. */
     static final String MIGRATION_COMPLETE_KEY = "__secretstore_migration_complete__";
 
+    /**
+     * Degraded-security flag key — written in PLAINTEXT SharedPreferences (not the encrypted
+     * store) when the encrypted store cannot be opened due to a Keystore failure during
+     * migrateFromPlaintext(). Persisted in the default shared-preferences file so it survives
+     * app restarts and is readable without the encrypted store.
+     *
+     * A later successful migration run MUST clear this flag after writing MIGRATION_COMPLETE_KEY.
+     *
+     * U-040 (BUG-008): replaces silent WARN-only behavior on Keystore failure. The flag:
+     *  1. Is set when getEncrypted() throws in migrateFromPlaintext().
+     *  2. Is NOT set on a successful migration (or on idempotency short-circuit).
+     *  3. Is cleared on successful migration completion (step 3 commit succeeded).
+     *  4. Can be read externally via isEncryptionDegraded() to gate backup or surface UI.
+     *  5. Never triggers MIGRATION_COMPLETE_KEY being written — so a later launch retries
+     *     migration automatically once the Keystore recovers.
+     */
+    static final String ENCRYPTION_DEGRADED_KEY = "__secretstore_encryption_degraded__";
+
     private final Context appContext;
 
     /**
@@ -73,6 +91,9 @@ public class EncryptedPrefsSecretStore implements SecretStore {
      *
      * Thread-safe via double-checked locking on the volatile {@code encrypted} field.
      *
+     * Package-private (not private) so test subclasses can override to inject a throwing
+     * or no-op implementation for unit testing the degraded-security path (U-040 / BUG-008).
+     *
      * @throws RuntimeException wrapping GeneralSecurityException or IOException if the
      *                          Keystore master key or the backing file cannot be opened.
      *                          Construction failure is not silently swallowed because there
@@ -80,7 +101,7 @@ public class EncryptedPrefsSecretStore implements SecretStore {
      *                          requirement. The single-arg AuthPreferences constructor
      *                          catches this via buildEncryptedStoreSafe().
      */
-    private SharedPreferences getEncrypted() {
+    SharedPreferences getEncrypted() {
         if (encrypted == null) {
             synchronized (this) {
                 if (encrypted == null) {
@@ -229,9 +250,15 @@ public class EncryptedPrefsSecretStore implements SecretStore {
         try {
             enc = getEncrypted();
         } catch (RuntimeException e) {
+            // U-040 (BUG-008): Keystore failure — surface a persisted degraded-security signal
+            // rather than silently swallowing the error. The plaintext credentials remain on disk
+            // (safer than clearing them with no encrypted backup). MIGRATION_COMPLETE_KEY is NOT
+            // written, so the next app launch will retry migrateFromPlaintext() automatically
+            // once the Keystore recovers. The degraded flag gates backup and enables future UI.
             Log.w(TAG, "EncryptedPrefsSecretStore.migrateFromPlaintext(): encrypted store "
-                    + "unavailable (Keystore provider missing?), skipping migration. "
-                    + "Will retry on next launch. Cause: " + e.getMessage());
+                    + "unavailable (Keystore failure), skipping migration. "
+                    + "Credentials remain in plaintext. Will retry on next launch. Cause: " + e.getMessage());
+            setEncryptionDegraded(true);
             return;
         }
 
@@ -257,6 +284,54 @@ public class EncryptedPrefsSecretStore implements SecretStore {
               .remove("oauth2_refresh_token")
               .commit();
 
+        // U-040 (BUG-008): Migration succeeded — clear the degraded-security flag if it was
+        // previously set (e.g., Keystore was unavailable on a prior launch but has now recovered).
+        setEncryptionDegraded(false);
+
         Log.i(TAG, "EncryptedPrefsSecretStore: plaintext-to-encrypted credential migration complete.");
+    }
+
+    /**
+     * Returns {@code true} if the Keystore/EncryptedSharedPreferences store was unavailable
+     * during the last migration attempt, leaving credentials in plaintext (U-040 / BUG-008).
+     *
+     * <p>This flag is:
+     * <ul>
+     *   <li>Set ({@code true}) when {@link #getEncrypted()} throws during
+     *       {@link #migrateFromPlaintext()}, indicating a Keystore failure.</li>
+     *   <li>Cleared ({@code false}) after a successful migration completes (the Keystore
+     *       has recovered and credentials are now encrypted).</li>
+     *   <li>Persisted in plaintext SharedPreferences so it survives restarts and is
+     *       readable without requiring the encrypted store to be open.</li>
+     * </ul>
+     *
+     * <p>Callers (e.g., {@code SmsBackupService}) may gate backup operations on this flag
+     * returning {@code false}. Future UI layers may surface a user-visible warning when it
+     * returns {@code true}.
+     *
+     * @return {@code true} iff the last migration attempt failed due to Keystore unavailability
+     *         and credentials may still be in plaintext.
+     */
+    public boolean isEncryptionDegraded() {
+        return appContext
+                .getSharedPreferences(CREDENTIALS_FILE_NAME + "_meta", Context.MODE_PRIVATE)
+                .getBoolean(ENCRYPTION_DEGRADED_KEY, false);
+    }
+
+    /**
+     * Writes or clears the degraded-security flag in plaintext SharedPreferences.
+     *
+     * Uses a separate file ({@code credentials_meta}) rather than the default prefs file so
+     * the flag does not pollute the app's main SharedPreferences namespace and is excluded
+     * from backups by the same file-level exclusion policy applied to {@code credentials.xml}.
+     *
+     * Not exposed publicly — only called by {@link #migrateFromPlaintext()}.
+     */
+    private void setEncryptionDegraded(boolean degraded) {
+        appContext
+                .getSharedPreferences(CREDENTIALS_FILE_NAME + "_meta", Context.MODE_PRIVATE)
+                .edit()
+                .putBoolean(ENCRYPTION_DEGRADED_KEY, degraded)
+                .commit();
     }
 }

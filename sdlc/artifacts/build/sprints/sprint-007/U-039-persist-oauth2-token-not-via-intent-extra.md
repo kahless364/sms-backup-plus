@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: low
@@ -20,6 +20,8 @@ pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-007
 sprint: '000007'
+updated_at: '2026-06-05T04:45:50.525Z'
+resolution: done
 ---
 
 # U-039: Persist OAuth2 token directly, not via Intent extra

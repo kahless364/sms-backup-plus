@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: done
 artifact_type: bug
 severity: medium
 priority: medium

@@ -94,7 +94,8 @@ import static com.zegoggles.smssync.activity.Dialogs.Type.WEB_CONNECT;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.ACTION_ADD_ACCOUNT;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.ACTION_FALLBACK_AUTH;
 import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.EXTRA_ACCOUNT;
-import static com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity.EXTRA_TOKEN;
+// U-039 (BUG-007): EXTRA_TOKEN import removed — token is no longer read from the Intent extra;
+// it is persisted by AccountManagerAuthActivity directly via AuthPreferences.
 import static com.zegoggles.smssync.activity.events.PerformAction.Actions.Backup;
 import static com.zegoggles.smssync.compat.SmsReceiver.isSmsBackupDefaultSmsApp;
 import static com.zegoggles.smssync.service.BackupType.MANUAL;
@@ -492,10 +493,13 @@ public class MainActivity extends ThemeActivity implements
     }
 
     private void handleAccountManagerAuth(@NonNull Intent data) {
-        final String token = data.getStringExtra(EXTRA_TOKEN);
+        // U-039 (BUG-007): token is no longer delivered via EXTRA_TOKEN in the Intent;
+        // AccountManagerAuthActivity.useToken() now persists it directly via AuthPreferences
+        // before calling setResult(). We only need EXTRA_ACCOUNT to confirm which account
+        // was authenticated, then verify the token is present via authPreferences.
         final String account = data.getStringExtra(EXTRA_ACCOUNT);
-        if (!TextUtils.isEmpty(token) && !TextUtils.isEmpty(account)) {
-            authPreferences.setOauth2Token(account, token, null);
+        if (!TextUtils.isEmpty(account) && authPreferences.hasOAuth2Tokens()) {
+            // Token already stored by AccountManagerAuthActivity — emit AccountAdded.
             // U-020: App.post(new AccountAddedEvent()) replaced (AC-14d)
             if (App.syncStateRepository() != null) {
                 boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.AccountAdded.INSTANCE);
