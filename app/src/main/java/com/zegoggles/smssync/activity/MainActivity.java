@@ -229,7 +229,16 @@ public class MainActivity extends ThemeActivity implements
             case REQUEST_CHANGE_DEFAULT_SMS_PACKAGE: {
                 if (resultCode == RESULT_CANCELED) break;
                 preferences.setSeenSmsDefaultPackageChangeDialog();
-                if (preferences.getSmsDefaultPackage() != null) {
+                // BUG-009 / U-041 remediation: on Q+, getSmsDefaultPackage() is never set by
+                // the Q+ branch of startRestore() (only the pre-Q branch writes it), so the
+                // old guard would always fail on Q+ and restore would never run after the role
+                // grant.  Use isSmsBackupDefaultSmsApp() on Q+ — the role-request just
+                // completed so this will be true if the user granted it.  On pre-Q keep the
+                // original getSmsDefaultPackage() != null check.
+                final boolean readyToRestore = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                        ? isSmsBackupDefaultSmsApp(this)
+                        : preferences.getSmsDefaultPackage() != null;
+                if (readyToRestore) {
                     startRestore();
                 }
                 break;

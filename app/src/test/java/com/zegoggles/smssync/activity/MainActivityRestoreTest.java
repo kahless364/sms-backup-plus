@@ -1,11 +1,13 @@
 package com.zegoggles.smssync.activity;
 
+import android.app.Activity;
 import android.app.role.RoleManager;
 import android.content.Intent;
 import android.os.Build;
 
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.preferences.Preferences;
+import com.zegoggles.smssync.service.SmsRestoreService;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -143,6 +145,82 @@ public class MainActivityRestoreTest {
 
         // No startActivityForResult should have been called.
         assertThat(shadowOf(activity).getNextStartedActivityForResult()).isNull();
+    }
+
+    // -----------------------------------------------------------------------
+    // U-041 remediation: onActivityResult Q+ round-trip (BUG-009 re-entry guard)
+    // -----------------------------------------------------------------------
+
+    /**
+     * BUG-009 remediation / onActivityResult Q+ round-trip (positive case):
+     *
+     * <p>After the user grants ROLE_SMS, {@code onActivityResult} is called with
+     * {@code REQUEST_CHANGE_DEFAULT_SMS_PACKAGE} and {@code RESULT_OK}. On Q+, the app now
+     * holds the role so {@code isSmsBackupDefaultSmsApp()} returns true. The fixed guard
+     * must re-enter {@code startRestore()}, which — since the role IS now held — proceeds
+     * directly to {@code startService(SmsRestoreService)}.
+     *
+     * <p>The OLD guard was {@code preferences.getSmsDefaultPackage() != null}, which is always
+     * null on Q+ (the Q+ branch of {@code startRestore()} never writes it). The fix replaces
+     * this with {@code isSmsBackupDefaultSmsApp(this)} on Q+, unblocking the restore.
+     *
+     * <p>This test covers the {@code onActivityResult} re-entry path specifically — the gap
+     * that the existing tests (which call {@code requestDefaultSmsPackageChange()} directly)
+     * did NOT catch.
+     */
+    @Test
+    @Config(sdk = Build.VERSION_CODES.Q)
+    public void bug009_remediation_onActivityResult_resultOk_qPlus_roleHeld_startsRestoreService() {
+        // Grant ROLE_SMS to this test app so isSmsBackupDefaultSmsApp() returns true.
+        ShadowRoleManager shadowRoleManager =
+                shadowOf(RuntimeEnvironment.getApplication().getSystemService(RoleManager.class));
+        shadowRoleManager.addAvailableRole(ROLE_SMS);
+        shadowRoleManager.addHeldRole(ROLE_SMS);
+
+        MainActivity activity = buildMainActivityNoHilt();
+
+        // Simulate the user granting the SMS role: RESULT_OK returned from the role dialog.
+        activity.onActivityResult(
+                MainActivity.REQUEST_CHANGE_DEFAULT_SMS_PACKAGE,
+                Activity.RESULT_OK,
+                null);
+
+        // The guard must now re-enter startRestore(), which reaches startService() because
+        // the role IS held. Verify the SmsRestoreService start intent was issued.
+        Intent nextService = shadowOf(activity).getNextStartedService();
+        assertThat(nextService).isNotNull();
+        assertThat(nextService.getComponent()).isNotNull();
+        assertThat(nextService.getComponent().getClassName())
+                .isEqualTo(SmsRestoreService.class.getName());
+    }
+
+    /**
+     * BUG-009 remediation / onActivityResult Q+ round-trip (negative case — RESULT_CANCELED):
+     *
+     * <p>When the user dismisses the role dialog without granting, {@code onActivityResult} is
+     * called with {@code RESULT_CANCELED}. The early-break must fire and {@code startRestore()}
+     * must NOT be called — no SmsRestoreService start.
+     *
+     * <p>This confirms the RESULT_CANCELED guard is intact after the remediation.
+     */
+    @Test
+    @Config(sdk = Build.VERSION_CODES.Q)
+    public void bug009_remediation_onActivityResult_resultCanceled_qPlus_noRestoreStarted() {
+        ShadowRoleManager shadowRoleManager =
+                shadowOf(RuntimeEnvironment.getApplication().getSystemService(RoleManager.class));
+        shadowRoleManager.addAvailableRole(ROLE_SMS);
+        // Role is NOT held (user cancelled the dialog).
+
+        MainActivity activity = buildMainActivityNoHilt();
+
+        // Simulate the user cancelling the role dialog: RESULT_CANCELED.
+        activity.onActivityResult(
+                MainActivity.REQUEST_CHANGE_DEFAULT_SMS_PACKAGE,
+                Activity.RESULT_CANCELED,
+                null);
+
+        // RESULT_CANCELED must break early — no service start.
+        assertThat(shadowOf(activity).getNextStartedService()).isNull();
     }
 
     // -----------------------------------------------------------------------
