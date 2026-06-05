@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -20,6 +20,8 @@ pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-013
 sprint: '000009'
+updated_at: '2026-06-05T20:00:41.673Z'
+resolution: done
 ---
 
 # U-044: Widen the create→select retry window for fresh IMAP label propagation

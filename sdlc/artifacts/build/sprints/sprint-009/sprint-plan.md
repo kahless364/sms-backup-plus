@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-009
 sprint: '000009'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 009 — Fresh-label retry-window fix (BUG-013)
@@ -24,7 +26,7 @@ sprint: '000009'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-044 | Widen create-then-select retry window for fresh IMAP label propagation (fix BUG-013) | Android | developer | sonnet | lead | — | planned | high |
+| U-044 | Widen create-then-select retry window for fresh IMAP label propagation (fix BUG-013) | Android | developer | sonnet | lead | — | done | high |
 
 ## Wave Summary
 
