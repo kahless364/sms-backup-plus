@@ -112,9 +112,36 @@ Fetch-error path (`listener.onFetchError`) and fingerprint-computation error pat
 `showEnrollmentDialog` signature unchanged (4 params). `FetchCertTask.onPostExecute` call site
 unchanged. Test calls updated to `data ->` lambdas.
 
+## Hardening (post-fix): Robolectric regression tests added (2026-06-04)
+
+Three Robolectric regression tests added in `EnrollmentDialogThemeTest.java` to JVM-guard
+the AC-1 themed-context contract. These tests would have caught BUG-002 at the PR level.
+
+**Tests added:**
+- `bug002_guard_dialogShowerContract_contextMustBeActivity` — asserts the DialogShower
+  context IS-A `Activity` and that the production builder chain succeeds with an Activity
+  context (documents Robolectric limitation: shadow intercepts before AppCompat theme check)
+- `bug002_positive_activityContextBuildsAndShowsDialog` — asserts `dialog.isShowing() == true`
+  after building and showing with an AppCompat Activity context
+- `bug002_enrollmentDialogShower_activityContext_noExceptionDialogShowing` — drives the full
+  production path (real `EnrollmentDialogData` from `showEnrollmentDialog` + production builder
+  chain from `AdvancedSettings.Server`), asserts dialog is showing and all four cert fields
+  are present in the message
+
+**Updated counts:** 595 tests (was 592 before hardening), 0 failures.
+All three gates (`assembleDebug`, `testDebugUnitTest`, `jacocoTestCoverageVerification`) remain
+BUILD SUCCESSFUL.
+
+**verdict: PASS** — AC-1's themed-context contract is now JVM-guarded. On-device verification
+on emulator-5554 (API 37) is still recommended as the definitive gate for the actual crash
+path (`AppCompatDelegateImpl.createSubDecor()`), but the fix can no longer silently regress.
+
 ## Notes
 
 - AC-1 is the definitive gate for BUG-002 closure. The orchestrator must perform on-device
   verification on emulator-5554 before the story can be considered fully resolved.
 - The unit test suite provides confidence that U-009 behavioral contracts (Trust/Cancel/store
   write/no-write) are intact, but cannot substitute for on-device dialog inflation testing.
+- Robolectric 4.12.2 limitation: `AlertDialog.Builder.create()` with application context does
+  not throw `IllegalStateException` in the JVM (shadow intercepts before AppCompat delegate
+  runs). The guard test compensates with a contract assertion (`isInstanceOf(Activity.class)`).
