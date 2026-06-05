@@ -75,6 +75,10 @@ public class SmsRestoreService extends ServiceBase {
     // U-031: WorkInfo observer reference — held so it can be removed on terminal state.
     @Nullable private Observer<List<WorkInfo>> workInfoObserver;
 
+    // U-037 (BUG-005): Cache the LiveData alongside the observer so teardown can always
+    // call removeObserver() regardless of whether uniqueWorkName is available.
+    @Nullable private androidx.lifecycle.LiveData<List<WorkInfo>> workInfoLiveData;
+
     // U-031: Cancel collector job — collects SyncEvent.Cancel from repository and routes to WM.
     @Nullable private Job cancelCollectorJob;
 
@@ -99,7 +103,8 @@ public class SmsRestoreService extends ServiceBase {
         super.onDestroy();
         if (LOCAL_LOGV) Log.v(TAG, "SmsRestoreService#onDestroy(state"+getState()+")");
         // U-031: tear down observer and cancel collector on destroy (cleanup safety net)
-        tearDownObserverAndCollector(null);
+        // U-037 (BUG-005): no-arg teardown calls removeObserver() via cached LiveData.
+        tearDownObserverAndCollector();
         // U-020: service = null; deleted (AC-9a)
     }
 
@@ -171,12 +176,11 @@ public class SmsRestoreService extends ServiceBase {
      * @param uniqueWorkName the unique-work name used by scheduleRestore ("RESTORE")
      */
     private void registerRestoreWorkInfoObserver(final String uniqueWorkName) {
-        // Remove any existing observer first (defensive)
-        if (workInfoObserver != null) {
-            WorkManager.getInstance(getApplicationContext())
-                .getWorkInfosForUniqueWorkLiveData(uniqueWorkName)
-                .removeObserver(workInfoObserver);
+        // Remove any existing observer first (defensive, using cached LiveData — U-037)
+        if (workInfoObserver != null && workInfoLiveData != null) {
+            workInfoLiveData.removeObserver(workInfoObserver);
             workInfoObserver = null;
+            workInfoLiveData = null;
         }
 
         workInfoObserver = new Observer<List<WorkInfo>>() {
@@ -192,15 +196,17 @@ public class SmsRestoreService extends ServiceBase {
                 // On terminal state, tear down observer (restoreStateChanged's !isRunning branch
                 // handles stopForeground/stopSelf; we tear down here to prevent further callbacks)
                 if (workInfo.getState().isFinished()) {
-                    tearDownObserverAndCollector(uniqueWorkName);
+                    tearDownObserverAndCollector();
                 }
             }
         };
 
+        // U-037 (BUG-005): Cache the LiveData reference so teardown can always call
+        // removeObserver() regardless of whether uniqueWorkName is available at teardown time.
         // observeForever requires main thread; Service.handleIntent() is called on main thread.
-        WorkManager.getInstance(getApplicationContext())
-            .getWorkInfosForUniqueWorkLiveData(uniqueWorkName)
-            .observeForever(workInfoObserver);
+        workInfoLiveData = WorkManager.getInstance(getApplicationContext())
+            .getWorkInfosForUniqueWorkLiveData(uniqueWorkName);
+        workInfoLiveData.observeForever(workInfoObserver);
 
         Log.d(TAG, "SmsRestoreService: registered WorkInfo observer for " + uniqueWorkName);
     }
@@ -263,16 +269,19 @@ public class SmsRestoreService extends ServiceBase {
         Log.d(TAG, "SmsRestoreService: registered cancel collector for " + uniqueWorkName);
     }
 
-    private void tearDownObserverAndCollector(@Nullable String uniqueWorkName) {
-        if (workInfoObserver != null && uniqueWorkName != null) {
-            WorkManager.getInstance(getApplicationContext())
-                .getWorkInfosForUniqueWorkLiveData(uniqueWorkName)
-                .removeObserver(workInfoObserver);
-            workInfoObserver = null;
-        } else if (workInfoObserver != null) {
-            // uniqueWorkName not available (onDestroy path) — just null the reference
-            workInfoObserver = null;
+    /**
+     * U-037 (BUG-005): Tears down the WorkInfo observer using the cached LiveData reference.
+     * Previously the onDestroy path nulled the observer without calling removeObserver(),
+     * leaving the observeForever registration alive and causing duplicate callbacks on restart.
+     * Fix: always call removeObserver() via the cached workInfoLiveData field — works on all
+     * paths (terminal state and onDestroy) without needing uniqueWorkName.
+     */
+    private void tearDownObserverAndCollector() {
+        if (workInfoObserver != null && workInfoLiveData != null) {
+            workInfoLiveData.removeObserver(workInfoObserver);
         }
+        workInfoObserver = null;
+        workInfoLiveData = null;
         if (cancelCollectorJob != null) {
             cancelCollectorJob.cancel(null);
             cancelCollectorJob = null;

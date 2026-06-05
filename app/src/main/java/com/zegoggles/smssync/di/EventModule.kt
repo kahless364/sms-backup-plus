@@ -1,6 +1,6 @@
 package com.zegoggles.smssync.di
 
-import com.zegoggles.smssync.service.state.FlowSyncStateRepository
+import com.zegoggles.smssync.App
 import com.zegoggles.smssync.service.state.SyncStateRepository
 import dagger.Module
 import dagger.Provides
@@ -16,12 +16,18 @@ import javax.inject.Singleton
  * does not yet have an @Inject constructor (that's U-023), so @Provides is used rather
  * than @Binds.
  *
- * The @Singleton scope ensures the same repository instance is shared between the engine,
- * services, activities, and workers — consistent with the App.syncStateRepository() static
- * accessor that existed before U-022. The static accessor App.syncStateRepository() continues
- * to return the manually-constructed instance during the coexistence period; the Hilt binding
- * here is the compile-time-verified seam that U-023 will activate once injection sites
- * are wired.
+ * U-036 (BUG-004 fix): Previously this method constructed a second FlowSyncStateRepository
+ * instance, splitting the engine's emission path from the UI's collection path. The fix
+ * returns the App-level static instance (App.syncStateRepository()) so both the engine
+ * (services + workers via App.syncStateRepository()) and the Hilt graph (MainViewModel)
+ * share exactly one instance.
+ *
+ * Race-safety: App.syncStateRepository() is guaranteed non-null by the time Hilt first
+ * instantiates this @Singleton — App.onCreate() assigns syncStateRepositoryInstance
+ * before any Activity/MainViewModel can start. The Hilt SingletonComponent is scoped to
+ * the Application and provideSyncStateRepository() is not called during App's own field
+ * injection (App injects only Preferences and HiltWorkerFactory, not SyncStateRepository),
+ * so the static is always initialized before this method is invoked.
  *
  * DES-MODERNIZATION-008 §Module layout: EventModule | @Binds SyncStateRepository <- DefaultSyncStateRepository.
  * (The implementation class name changed from DefaultSyncStateRepository to FlowSyncStateRepository;
@@ -34,5 +40,5 @@ object EventModule {
 
     @Provides
     @Singleton
-    fun provideSyncStateRepository(): SyncStateRepository = FlowSyncStateRepository()
+    fun provideSyncStateRepository(): SyncStateRepository = App.syncStateRepository()
 }

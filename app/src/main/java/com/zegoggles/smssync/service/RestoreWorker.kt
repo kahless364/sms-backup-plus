@@ -28,24 +28,22 @@ import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 // U-026: all k-9 imports removed; engine now uses app-owned ACL types
+// U-038 (BUG-006): removed five unused adapter/transport imports: BackupImapStore,
+//   PinnedCertStore, TlsTrustPolicy, K9MailTransport, MailTransportConfig.
+//   None appear in any executable expression in this file (KDoc mentions do not count).
 import com.zegoggles.smssync.Consts
 import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
 import com.zegoggles.smssync.contacts.ContactAccessor
 import com.zegoggles.smssync.di.MailTransportFactory
-import com.zegoggles.smssync.mail.BackupImapStore
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.MessageConverter
 import com.zegoggles.smssync.mail.PersonLookup
-import com.zegoggles.smssync.mail.PinnedCertStore
-import com.zegoggles.smssync.mail.TlsTrustPolicy
 import com.zegoggles.smssync.mail.transport.BackupFolderHandle
-import com.zegoggles.smssync.mail.transport.K9MailTransport
 import com.zegoggles.smssync.mail.transport.MailException
 import com.zegoggles.smssync.mail.transport.MailMessageHandle
 import com.zegoggles.smssync.mail.transport.MailTransport
-import com.zegoggles.smssync.mail.transport.MailTransportConfig
 import com.zegoggles.smssync.mail.transport.XOAuth2FailedException
 import com.zegoggles.smssync.preferences.AuthPreferences
 import com.zegoggles.smssync.preferences.Preferences

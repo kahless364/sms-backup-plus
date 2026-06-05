@@ -92,8 +92,12 @@ public class App extends Application implements Configuration.Provider {
     public static final String CHANNEL_ID = "sms_backup_plus";
 
     // U-020: FlowSyncStateRepository replaces DefaultSyncStateRepository (Otto-delegating).
-    // AC-18: manual-DI singleton — NOT wired via Hilt @Singleton (deferred to U-022).
-    // TODO U-022/MU-007: replace manual singleton with Hilt @Singleton
+    // U-036 (BUG-004): This static instance IS the same object as the Hilt @Singleton
+    // SyncStateRepository. EventModule.provideSyncStateRepository() returns
+    // App.syncStateRepository() so engine callers (services, workers) and Hilt consumers
+    // (MainViewModel) share exactly one instance. Initialized in onCreate() before any
+    // consumer can read it; Hilt's SingletonComponent does not instantiate SyncStateRepository
+    // during App's own field injection (App only injects Preferences + HiltWorkerFactory).
     private static SyncStateRepository syncStateRepositoryInstance;
 
     /** Google Play Services present on this device? */
@@ -260,7 +264,6 @@ public class App extends Application implements Configuration.Provider {
 
         // U-020: replaces @Subscribe autoBackupSettingsChanged + register(this).
         // Collects SyncEvent.AutoBackupSettingsChanged in an Application-scoped coroutine.
-        // TODO U-022/MU-007: replace manual scope with ProcessLifecycleOwner scope.
         FlowCollectHelper.collectAutoBackupSettings(
             syncStateRepositoryInstance,
             new Runnable() {
@@ -282,9 +285,11 @@ public class App extends Application implements Configuration.Provider {
     /**
      * U-019: Application-scoped SyncStateRepository accessor.
      * U-020: now returns FlowSyncStateRepository (Flow-backed, no Otto delegation).
+     * U-036 (BUG-004): This static accessor and the Hilt-injected SyncStateRepository
+     * (used by MainViewModel) return THE SAME instance. EventModule.provideSyncStateRepository()
+     * delegates to this method, ensuring a single @Singleton is shared across all callers.
      * Constructed in onCreate; non-null for the lifetime of the application process.
      * IC-1: reachable from all production consumers (services, activities, workers).
-     * TODO U-022/MU-007: replace with @Inject SyncStateRepository.
      */
     public static SyncStateRepository syncStateRepository() {
         return syncStateRepositoryInstance;

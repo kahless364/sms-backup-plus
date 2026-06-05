@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 sprint: '000006'
 artifact_type: user-story
 priority: high

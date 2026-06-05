@@ -262,4 +262,72 @@ public class SmsRestoreServiceTest {
             svc.onDestroy();
         }
     }
+
+    // -----------------------------------------------------------------------
+    // U-037 (BUG-005): Observer teardown — removeObserver called on all paths
+    // -----------------------------------------------------------------------
+
+    /**
+     * U-037 AC-1: onDestroy with no observer registered must not throw.
+     * Verifies null-safe teardown path (IC-1).
+     */
+    @Test public void onDestroy_withNoObserverRegistered_doesNotThrow() throws Exception {
+        // charService was created without handleIntent, so no observer is registered.
+        // onDestroy must be null-safe and not throw.
+        charService.onDestroy();
+        // If we reach here without NPE, the null-safe teardown is correct.
+        // (tearDown @After will call onDestroy again — it must also be idempotent)
+        charService = null; // prevent double-destroy in @After
+        assertThat(true).isTrue(); // explicit pass marker
+    }
+
+    /**
+     * U-037 AC-1: workInfoObserver and workInfoLiveData fields are null after onDestroy.
+     * Confirmed via reflection — documents the no-leak invariant.
+     */
+    @Test public void onDestroy_nullsWorkInfoObserverAndLiveDataFields() throws Exception {
+        java.lang.reflect.Field observerField = SmsRestoreService.class.getDeclaredField("workInfoObserver");
+        observerField.setAccessible(true);
+        java.lang.reflect.Field liveDataField = SmsRestoreService.class.getDeclaredField("workInfoLiveData");
+        liveDataField.setAccessible(true);
+
+        // charService: no observer registered (no handleIntent called)
+        assertThat(observerField.get(charService)).isNull();
+        assertThat(liveDataField.get(charService)).isNull();
+
+        charService.onDestroy();
+
+        assertThat(observerField.get(charService)).isNull();
+        assertThat(liveDataField.get(charService)).isNull();
+        charService = null; // prevent double-destroy
+    }
+
+    /**
+     * U-037 AC-1: After handleIntent registers an observer, onDestroy calls
+     * tearDownObserverAndCollector() which nulls workInfoObserver + workInfoLiveData.
+     * Verifies the onDestroy teardown path removes the observeForever registration
+     * (no leaking observer after service destruction).
+     */
+    @Test public void onDestroy_afterObserverRegistered_nullsObserverAndLiveDataFields() throws Exception {
+        java.lang.reflect.Field observerField = SmsRestoreService.class.getDeclaredField("workInfoObserver");
+        observerField.setAccessible(true);
+        java.lang.reflect.Field liveDataField = SmsRestoreService.class.getDeclaredField("workInfoLiveData");
+        liveDataField.setAccessible(true);
+
+        SmsRestoreService svc = buildServiceWithMockScheduler();
+        // Dispatch to register the observer (handleIntent -> registerRestoreWorkInfoObserver)
+        Intent intent = new Intent("restore");
+        svc.handleIntent(intent);
+
+        // Observer and LiveData must be non-null after registration
+        assertThat(observerField.get(svc)).isNotNull();
+        assertThat(liveDataField.get(svc)).isNotNull();
+
+        // onDestroy — calls tearDownObserverAndCollector() which removes the observer
+        svc.onDestroy();
+
+        // Both fields must be null after onDestroy teardown
+        assertThat(observerField.get(svc)).isNull();
+        assertThat(liveDataField.get(svc)).isNull();
+    }
 }

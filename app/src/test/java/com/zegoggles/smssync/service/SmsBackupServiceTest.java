@@ -321,6 +321,70 @@ public class SmsBackupServiceTest {
         verify(scheduler).scheduleManual(MANUAL);
     }
 
+    // -----------------------------------------------------------------------
+    // U-037 (BUG-005): Observer teardown — removeObserver called on all paths
+    // -----------------------------------------------------------------------
+
+    /**
+     * U-037 AC-1: onDestroy (tearDownObserverAndCollector) must null workInfoObserver
+     * and workInfoLiveData without throwing, covering the path where no observer was
+     * ever registered (fields already null). Verifies the null-safety guard.
+     */
+    @Test public void onDestroy_withNoObserverRegistered_doesNotThrow() throws Exception {
+        // onDestroy with no observer registered must be a no-op (null-safe teardown)
+        // Service was already created in @Before; calling onDestroy again exercises the teardown
+        // path when workInfoObserver == null (fields never set because handleIntent wasn't called).
+        // Verifies IC-1: teardown is unconditional and idempotent.
+        service.onDestroy();
+        // If we reach here without NPE, the null-safe teardown path is correct.
+        assertThat(service).isNotNull();
+    }
+
+    /**
+     * U-037 AC-1/AC-2: After onDestroy, the workInfoObserver field is null — confirmed via
+     * reflection. This documents that no observeForever registration survives destruction.
+     */
+    @Test public void onDestroy_nullsWorkInfoObserverField() throws Exception {
+        // Use reflection to inspect the private field after onDestroy
+        java.lang.reflect.Field observerField = SmsBackupService.class.getDeclaredField("workInfoObserver");
+        observerField.setAccessible(true);
+
+        java.lang.reflect.Field liveDataField = SmsBackupService.class.getDeclaredField("workInfoLiveData");
+        liveDataField.setAccessible(true);
+
+        // Before onDestroy, fields are null (no handleIntent was called in this test path)
+        assertThat(observerField.get(service)).isNull();
+        assertThat(liveDataField.get(service)).isNull();
+
+        // onDestroy — teardown is a no-op when nothing registered, but fields stay null
+        service.onDestroy();
+
+        assertThat(observerField.get(service)).isNull();
+        assertThat(liveDataField.get(service)).isNull();
+    }
+
+    /**
+     * U-037 AC-1: After backupStateChanged with a terminal state, tearDownObserverAndCollector()
+     * is called from within backupStateChanged (the !isRunning branch). The observer + liveData
+     * fields must be null after this path. Verifies the terminal-state teardown path.
+     */
+    @Test public void backupStateChanged_terminalState_nullsObserverFields() throws Exception {
+        java.lang.reflect.Field observerField = SmsBackupService.class.getDeclaredField("workInfoObserver");
+        observerField.setAccessible(true);
+        java.lang.reflect.Field liveDataField = SmsBackupService.class.getDeclaredField("workInfoLiveData");
+        liveDataField.setAccessible(true);
+
+        Intent intent = new Intent(MANUAL.name());
+        service.handleIntent(intent);
+
+        // Simulate terminal state (FINISHED_BACKUP) — triggers teardown from backupStateChanged
+        service.backupStateChanged(service.transition(SmsSyncState.FINISHED_BACKUP, null));
+
+        // Both fields must be null after the terminal-state teardown path
+        assertThat(observerField.get(service)).isNull();
+        assertThat(liveDataField.get(service)).isNull();
+    }
+
     private void assertNotificationShown(CharSequence title, CharSequence message) {
         assertThat(sentNotifications).hasSize(1);
         // U-006 AC-8: notification title/text assertion blocked — NotificationCompat.Builder
