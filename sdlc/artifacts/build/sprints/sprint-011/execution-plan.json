@@ -1,0 +1,6 @@
+{ "execution_plan": { "version":"1.0.0","pipeline":"sprint-execution","instance_id":"sprint-011","plan_type":"sprint-execution",
+  "steps":[ { "step_id":"U-047","agent":"story-build-manager","agent_model":null,
+    "expected_artifacts":["sdlc/artifacts/build/sprints/sprint-011/U-047/plan.md","sdlc/artifacts/build/sprints/sprint-011/U-047/implementation-log.md","sdlc/artifacts/build/sprints/sprint-011/U-047/review-code.md","sdlc/artifacts/build/sprints/sprint-011/U-047/review-security.md","sdlc/artifacts/build/sprints/sprint-011/U-047/qa-results.md"],
+    "gate":{"name":"wave-gate","verdict_type":"audit_gate","max_iterations":1},"enabled":true,"skip_reason":null,"depends_on":[],"parallel_group":"wave-1" } ],
+  "checkpoints":[{"checkpoint_id":"wave-1-complete","after_steps":["U-047"],"gates":[{"gate_id":"wave-1-gate","agent":"deterministic","severity":"blocking"}]}],
+  "metadata":{"created_by":"sprint-manager","context_summary":"Sprint sprint-011 single story U-047","plan_revision":1} } }
