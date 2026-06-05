@@ -29,8 +29,8 @@ sprint: '000008'
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
 | U-041 | Request SMS role on Q+ regardless of legacy getDefaultSmsPackage (fix BUG-009) | Android | developer | sonnet | lead | — | planned | high |
-| U-042 | Advance max_synced_date only after confirmed IMAP append (fix BUG-010) | Android | developer | sonnet | lead | — | planned | high |
-| U-043 | Create IMAP SMS folder on first backup to a fresh account (fix BUG-011) | Android | developer | sonnet | lead | — | planned | high |
+| U-042 | Advance max_synced_date only after confirmed IMAP append (fix BUG-010) | Android | developer | sonnet | lead | — | done | high |
+| U-043 | Create IMAP SMS folder on first backup to a fresh account (fix BUG-011) | Android | developer | sonnet | lead | — | done | high |
 
 ## Wave Summary
 

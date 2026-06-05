@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -18,6 +18,8 @@ id: U-041
 title: Request SMS role on Q+ regardless of legacy getDefaultSmsPackage (fix BUG-009)
 pipeline: ''
 domain: modernization
+resolution: done
+updated_at: '2026-06-05T14:40:00.000Z'
 requirement_source: bug:BUG-009
 sprint: '000008'
 ---

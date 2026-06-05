@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -20,6 +20,8 @@ pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-010
 sprint: '000008'
+updated_at: '2026-06-05T16:59:38.361Z'
+resolution: done
 ---
 
 # U-042: Advance max_synced_date only after a confirmed IMAP append
