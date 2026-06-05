@@ -205,14 +205,52 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
     }
 
     /**
+     * Returns {@code true} if the given hostname is an IP literal (IPv4 dotted-decimal or
+     * IPv6 colon-notation) or is null/blank. Per RFC 6066 §3, SNI must not be sent for
+     * IP literals; these hosts must bypass SNI setup entirely.
+     *
+     * <p>Detection is purely syntactic — no DNS resolution is performed.
+     * IPv4: four decimal octets separated by dots (e.g. "192.168.1.10").
+     * IPv6: any string containing a colon (e.g. "::1", "fe80::1", "2001:db8::1").
+     */
+    static boolean isIpOrBlankHostname(String hostname) {
+        if (hostname == null || hostname.trim().isEmpty()) {
+            return true;
+        }
+        // IPv6: presence of ':' is definitive — no valid DNS label contains a colon.
+        if (hostname.indexOf(':') >= 0) {
+            return true;
+        }
+        // IPv4: four groups of 1-3 digits separated by dots, nothing else.
+        return hostname.matches("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$");
+    }
+
+    /**
      * Sets the TLS SNI hostname via the public {@link SSLParameters#setServerNames} API.
      * Available on API 24+ (Android N). Extracted as a public static method to allow unit
      * testing with a mock SSLSocket without requiring Android API 24 system classes.
+     *
+     * <p>Per RFC 6066 §3, SNI must not be sent for IP literals or empty/blank hostnames.
+     * We guard with an explicit IP/blank check followed by a try/catch safety net: if the
+     * hostname is not a valid DNS name, SNI is silently skipped and TLS proceeds without
+     * it (fix for BUG-015).
      */
     public static void setSniViaSSLParameters(SSLSocket socket, String hostname) {
+        if (isIpOrBlankHostname(hostname)) {
+            // IP literal or empty/blank — RFC 6066 §3 forbids SNI; skip silently.
+            Log.d(LOG_TAG, "Skipping SNI for non-DNS hostname (IP literal or blank): " + hostname);
+            return;
+        }
         SSLParameters params = socket.getSSLParameters();
-        params.setServerNames(Collections.singletonList(new SNIHostName(hostname)));
-        socket.setSSLParameters(params);
+        try {
+            params.setServerNames(Collections.singletonList(new SNIHostName(hostname)));
+            socket.setSSLParameters(params);
+        } catch (IllegalArgumentException e) {
+            // Safety net: hostname passed the IP/blank check but SNIHostName still rejected it
+            // (e.g. malformed label). Skip SNI rather than crash (fix for BUG-015).
+            Log.d(LOG_TAG, "Skipping SNI — SNIHostName rejected hostname: "
+                    + hostname + " — " + e.getMessage());
+        }
     }
 
     private static void setHostnameViaReflection(SSLSocket socket, String hostname) {
