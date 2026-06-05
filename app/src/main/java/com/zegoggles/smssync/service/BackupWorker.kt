@@ -275,6 +275,16 @@ class BackupWorker @AssistedInject constructor(
      *
      * U-026: uses [MailTransport.openFolder] + [MailTransport.appendMessages] instead of
      * [BackupImapStore.getFolder] + folder.appendMessages.
+     *
+     * BUG-010 fix (U-042): the watermark ([DataTypePreferences.setMaxSyncedDate]) is advanced
+     * ONLY after a confirmed successful IMAP append. The confirmation is the return value of
+     * [MailTransport.appendMessages]: it returns the confirmed max-date if and only if the
+     * k-9 append returned normally (no exception). If [openFolder] or [appendMessages] throws
+     * (folder error, login error, append error, cancellation), the exception propagates out of
+     * the loop before [setMaxSyncedDate] can be called, so the watermark is never updated for
+     * the failed batch. Per-batch watermark writes are preserved (durable checkpoint behavior):
+     * if batch N succeeds and batch N+1 fails, batch N's watermark remains committed and only
+     * batch N+1 is retried.
      */
     private suspend fun backupCursors(
         cursors: BackupCursors,
@@ -316,16 +326,24 @@ class BackupWorker @AssistedInject constructor(
                         messages.size, cursor.type))
 
                     // U-026: openFolder + appendMessages via transport port
+                    // BUG-010 fix (U-042): appendMessages returns the confirmed max-date of
+                    // the appended messages. The watermark is advanced to EXACTLY this value —
+                    // never to a separately-computed date and never ahead of unconfirmed messages.
+                    // If openFolder or appendMessages throws, confirmedMaxDate is never assigned
+                    // and setMaxSyncedDate is never called for this batch.
                     val folder: BackupFolderHandle = transport.openFolder(cursor.type, preferences.dataTypePreferences)
-                    transport.appendMessages(folder, result)
+                    val confirmedMaxDate: Long = transport.appendMessages(folder, result)
 
                     // Calendar sync per CALLLOG batch (AC-10c / BackupTask.java:282-284)
                     if (cursor.type == DataType.CALLLOG && calendarSyncer != null) {
                         calendarSyncer.syncCalendar(result)
                     }
 
-                    // setMaxSyncedDate per type (AC-10d / BackupTask.java:285)
-                    preferences.dataTypePreferences.setMaxSyncedDate(cursor.type, result.maxDate)
+                    // BUG-010 fix: watermark advances ONLY to confirmedMaxDate (the value
+                    // returned by appendMessages, not wall-clock time and not a pre-computed
+                    // result field). Per-batch write for durable checkpoint behavior (U-016).
+                    preferences.dataTypePreferences.setMaxSyncedDate(cursor.type, confirmedMaxDate)
+                    Log.d(TAG, "BackupWorker: watermark advanced for ${cursor.type} to $confirmedMaxDate")
                     backedUpItems += messages.size
                 } else {
                     Log.w(TAG, "BackupWorker: no messages converted")
@@ -481,6 +499,36 @@ class BackupWorker @AssistedInject constructor(
                     Preferences(appContext),
                     AuthPreferences(appContext),
                     MailTransportFactory { throw MailException("TestableBackupWorkerFactory: transport not available in unit tests") }
+                )
+            } else null
+        }
+    }
+
+    /**
+     * Test-only [WorkerFactory] for [BackupWorker] watermark regression tests (U-042 / BUG-010).
+     *
+     * Accepts a pre-built [MailTransport] so tests can inject a mock that either succeeds or
+     * throws on [MailTransport.appendMessages]. This enables regression testing of the
+     * "watermark advances only on confirmed append" invariant without a live IMAP connection.
+     *
+     * Usage: pass a Mockito mock (or a lambda-based stub) for [transport]; the factory injects
+     * it via [MailTransportFactory] so each [doWork] call receives the same transport instance.
+     */
+    class TestableBackupWorkerFactoryWithTransport(
+        private val transport: MailTransport
+    ) : androidx.work.WorkerFactory() {
+        override fun createWorker(
+            appContext: Context,
+            workerClassName: String,
+            workerParameters: WorkerParameters
+        ): androidx.work.ListenableWorker? {
+            return if (workerClassName == BackupWorker::class.java.name) {
+                BackupWorker(
+                    appContext,
+                    workerParameters,
+                    Preferences(appContext),
+                    AuthPreferences(appContext),
+                    MailTransportFactory { transport }
                 )
             } else null
         }

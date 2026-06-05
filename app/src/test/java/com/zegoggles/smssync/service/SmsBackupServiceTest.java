@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import androidx.core.app.NotificationCompat;
+import androidx.work.Configuration;
+import androidx.work.testing.WorkManagerTestInitHelper;
 // U-026: com.fsck.k9.mail.MessagingException import replaced by app-owned MailException
 import com.zegoggles.smssync.mail.transport.MailException;
 import com.zegoggles.smssync.contacts.ContactGroup;
@@ -24,6 +26,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import java.util.concurrent.Executors;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -74,6 +77,16 @@ public class SmsBackupServiceTest {
 
     @Before public void before() {
         openMocks(this);
+        // U-042 flakiness fix: SmsBackupService.registerBackupWorkInfoObserver() calls
+        // WorkManager.getInstance(), which throws IllegalStateException if WorkManager
+        // has not been initialized in this Robolectric JVM worker. Ensure it is
+        // initialized unconditionally — WorkManagerTestInitHelper is idempotent per app context.
+        Context appContext = RuntimeEnvironment.application;
+        Configuration config = new Configuration.Builder()
+                .setMinimumLoggingLevel(android.util.Log.DEBUG)
+                .setExecutor(Executors.newSingleThreadExecutor())
+                .build();
+        WorkManagerTestInitHelper.initializeTestWorkManager(appContext, config);
         sentNotifications = new ArrayList<NotificationCompat.Builder>();
         service = new SmsBackupService() {
             // U-032 AC-9/AC-10 Option A: override onCreate() to skip Hilt injection.
