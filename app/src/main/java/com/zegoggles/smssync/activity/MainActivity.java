@@ -414,7 +414,20 @@ public class MainActivity extends ThemeActivity implements
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if (isSmsBackupDefaultSmsApp(this)) {
                 startService(intent);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // BUG-009 / U-041: On Q+, the RoleManager is the authoritative source for the
+                // SMS default; the legacy Sms.getDefaultSmsPackage() is unreliable on
+                // RoleManager-managed devices (may return null even when a default exists).
+                // Always proceed to requestDefaultSmsPackageChange() on Q+ — the RoleManager
+                // path inside that method handles the role request unconditionally.
+                // The legacy package capture is only needed on pre-Q for the switch-back intent.
+                if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
+                    requestDefaultSmsPackageChange();
+                } else {
+                    showDialog(SMS_DEFAULT_PACKAGE_CHANGE);
+                }
             } else {
+                // Pre-Q: capture the current default for the ACTION_CHANGE_DEFAULT switch-back.
                 final String defaultSmsPackage = Sms.getDefaultSmsPackage(this);
                 Log.d(TAG, "default SMS package: " + defaultSmsPackage);
                 if (!TextUtils.isEmpty(defaultSmsPackage)) {
@@ -425,7 +438,7 @@ public class MainActivity extends ThemeActivity implements
                         showDialog(SMS_DEFAULT_PACKAGE_CHANGE);
                     }
                 } else {
-                    // no default package – running on tablet?
+                    // No default package on pre-Q: genuinely unsupported device (tablet/no telephony).
                     Toast.makeText(this, R.string.error_no_sms_default_package, LENGTH_LONG).show();
                 }
             }
