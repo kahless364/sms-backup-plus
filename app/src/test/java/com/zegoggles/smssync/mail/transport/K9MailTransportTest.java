@@ -5,6 +5,7 @@ import com.fsck.k9.mail.MessagingException;
 import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
 import com.zegoggles.smssync.mail.ConversionResult;
 import com.zegoggles.smssync.mail.DataType;
+import com.zegoggles.smssync.mail.Headers;
 import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
 import com.zegoggles.smssync.mail.TlsTrustPolicy;
 import org.junit.Test;
@@ -402,6 +403,75 @@ public class K9MailTransportTest {
         } catch (com.zegoggles.smssync.service.exception.RequiresLoginException e) {
             // expected
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // appendMessages() success path — confirmed date (BUG-010 / U-042)
+    // -------------------------------------------------------------------------
+
+    /**
+     * U-042 / BUG-010: appendMessages() returns result.getMaxDate() on success.
+     *
+     * Verifies the confirmed-append contract: the return value is the max date of the
+     * messages in the ConversionResult, NOT wall-clock time. The caller (BackupWorker)
+     * uses this return value as the watermark — making "watermark = confirmed-date"
+     * compiler-enforced.
+     */
+    @Test
+    public void appendMessages_success_returnsConfirmedMaxDate() throws Exception {
+        String uri = "imap://xoauth:foooo@imap.gmail.com";
+        K9MailTransport transport = new K9MailTransport(RuntimeEnvironment.application,
+                new MailTransportConfig(uri, TlsTrustPolicy.SYSTEM_VALIDATED));
+
+        // Mock ImapFolder.appendMessages() to succeed (returns empty map, no exception)
+        // Note: k9 ImapFolder.appendMessages returns Map<String,String> (UID mapping), not void.
+        com.fsck.k9.mail.store.imap.ImapFolder mockFolder =
+                mock(com.fsck.k9.mail.store.imap.ImapFolder.class);
+        when(mockFolder.appendMessages(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Collections.emptyMap());
+
+        // Build a ConversionResult with a known max date
+        // ConversionResult.maxDate is updated by add(); use a mock Message with DATE header
+        com.fsck.k9.mail.store.imap.ImapMessage mockMsg =
+                mock(com.fsck.k9.mail.store.imap.ImapMessage.class);
+        final long expectedDate = 1_700_000_001_000L;
+        when(mockMsg.getHeader(com.zegoggles.smssync.mail.Headers.DATE))
+                .thenReturn(new String[]{String.valueOf(expectedDate)});
+
+        BackupFolderHandle handle = new BackupFolderHandle(mockFolder);
+        ConversionResult result = new ConversionResult(DataType.SMS);
+        result.add(mockMsg, new java.util.HashMap<>());
+
+        // Act: appendMessages should return the confirmed max date
+        long confirmedDate = transport.appendMessages(handle, result);
+
+        // Assert: returned date matches the ConversionResult's max date (NOT wall-clock "now")
+        assertThat(confirmedDate).isEqualTo(expectedDate);
+    }
+
+    /**
+     * U-042 / BUG-010: appendMessages() on empty ConversionResult returns DEFAULT_MAX_SYNCED_DATE (-1).
+     *
+     * An empty result has maxDate = DataType.Defaults.MAX_SYNCED_DATE (-1). This is
+     * never reached in production (result.isEmpty() guard) but verifies the contract holds.
+     */
+    @Test
+    public void appendMessages_emptyResult_returnsDefaultMaxDate() throws Exception {
+        String uri = "imap://xoauth:foooo@imap.gmail.com";
+        K9MailTransport transport = new K9MailTransport(RuntimeEnvironment.application,
+                new MailTransportConfig(uri, TlsTrustPolicy.SYSTEM_VALIDATED));
+
+        com.fsck.k9.mail.store.imap.ImapFolder mockFolder =
+                mock(com.fsck.k9.mail.store.imap.ImapFolder.class);
+        when(mockFolder.appendMessages(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Collections.emptyMap());
+
+        BackupFolderHandle handle = new BackupFolderHandle(mockFolder);
+        ConversionResult result = new ConversionResult(DataType.SMS); // no messages added → maxDate = -1
+
+        long confirmedDate = transport.appendMessages(handle, result);
+
+        assertThat(confirmedDate).isEqualTo(DataType.Defaults.MAX_SYNCED_DATE);
     }
 
     // -------------------------------------------------------------------------

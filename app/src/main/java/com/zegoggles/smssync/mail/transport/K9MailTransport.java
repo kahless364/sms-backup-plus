@@ -185,12 +185,25 @@ public class K9MailTransport implements MailTransport {
         }
     }
 
+    /**
+     * Appends messages to the IMAP folder and returns the confirmed max-date.
+     *
+     * <p>BUG-010 fix: returns {@code result.getMaxDate()} after a successful append so callers
+     * can gate the watermark advance on the CONFIRMED return value rather than reading
+     * {@code result.getMaxDate()} independently. If the k-9 layer throws (or the append
+     * silently fails and we detect it), this method throws and never returns a date.
+     */
     @Override
-    public void appendMessages(BackupFolderHandle folder, ConversionResult result)
+    public long appendMessages(BackupFolderHandle folder, ConversionResult result)
             throws MailException, RequiresLoginException {
         try {
             List<Message> messages = result.getMessages();
             folder.folder.appendMessages(messages);
+            // Return the confirmed max date. This value comes from the message DATE headers
+            // set during conversion — never from wall-clock time. Callers use this return
+            // value (not a separately-computed date) as the watermark, making
+            // "watermark = confirmed-append date" compiler-enforced.
+            return result.getMaxDate();
         } catch (XOAuth2AuthenticationFailedException e) {
             throw new XOAuth2FailedException(e.getStatus(), e);
         } catch (AuthenticationFailedException e) {

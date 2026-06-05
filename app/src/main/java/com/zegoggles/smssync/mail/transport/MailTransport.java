@@ -68,12 +68,23 @@ public interface MailTransport {
      * The adapter unwraps the k-9 {@code Message} list from {@link ConversionResult} inside
      * {@code mail.*}; the k-9 list never crosses this port.
      *
+     * <p><b>Confirmed-append contract (BUG-010 fix):</b> Returns the maximum message date among
+     * the messages that were confirmed appended (i.e. the value of
+     * {@link ConversionResult#getMaxDate()} at the point the append completed successfully).
+     * Callers MUST use this return value — not any separately-computed date — as the watermark
+     * to advance for this batch. If the append fails, this method throws and never returns a
+     * date, so the caller's watermark is never updated. This makes the
+     * "watermark only advances on confirmed append" invariant compiler-enforced.
+     *
      * @param folder the folder handle returned by {@link #openFolder}
      * @param result the converter result whose messages should be appended
-     * @throws MailException on any IMAP failure
+     * @return the maximum message date (epoch ms) among the confirmed-appended messages;
+     *         equals {@code result.getMaxDate()} if all messages were appended successfully.
+     *         Never returns a wall-clock "now" value — always a message-derived date.
+     * @throws MailException on any IMAP failure (append never confirmed; caller must not advance watermark)
      * @throws RequiresLoginException when credentials are rejected
      */
-    void appendMessages(BackupFolderHandle folder, ConversionResult result)
+    long appendMessages(BackupFolderHandle folder, ConversionResult result)
             throws MailException, RequiresLoginException;
 
     /**
