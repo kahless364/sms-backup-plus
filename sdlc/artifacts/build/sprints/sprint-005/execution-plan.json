@@ -1,0 +1,44 @@
+{
+  "execution_plan": {
+    "version": "1.0.0",
+    "pipeline": "sprint-execution",
+    "instance_id": "sprint-005",
+    "plan_type": "sprint-execution",
+    "variation": null,
+    "variation_rationale": null,
+    "steps": [
+      {
+        "step_id": "U-035",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-005/U-035/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-005/U-035/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-005/U-035/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-005/U-035/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-005/U-035/qa-results.md"
+        ],
+        "gate": { "name": "wave-gate", "verdict_type": "audit_gate", "max_iterations": 1 },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": [],
+        "parallel_group": "wave-1"
+      }
+    ],
+    "checkpoints": [
+      { "checkpoint_id": "wave-1-complete", "after_steps": ["U-035"], "gates": [{ "gate_id": "wave-1-gate", "agent": "deterministic", "severity": "blocking" }] }
+    ],
+    "overrides_applied": {
+      "agent_overrides": { "U-035": { "developer_agent": "developer", "developer_model": "sonnet", "assigned_to": "lead", "override_reason": "story-build process.yaml not found; resolved from config defaults + sprint-001..004 precedent" } },
+      "gate_additions": [],
+      "pipeline_override": null
+    },
+    "metadata": {
+      "created_by": "sprint-manager",
+      "created_at": "2026-06-05T01:26:39Z",
+      "context_summary": "Sprint sprint-005: 1 story, 1 wave. BUG-003 fix (move credential migration off App.onCreate main thread).",
+      "plan_revision": 1,
+      "re_consultation_reason": null
+    }
+  }
+}

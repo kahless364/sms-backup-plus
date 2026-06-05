@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: planned
 artifact_type: user-story
 priority: low
 complexity: medium
@@ -21,6 +21,7 @@ title: Move plaintext-to-encrypted credential migration off the main thread
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-003
+sprint: '000005'
 ---
 
 # U-035: Move plaintext-to-encrypted credential migration off the main thread
