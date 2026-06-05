@@ -27,6 +27,10 @@ import static org.mockito.Mockito.when;
  *   - The reflective fallback path does NOT throw when the method is absent, and does NOT
  *     log at ERROR level (verified by absence of exception propagation) (AC-1, AC-4)
  *
+ * Covers U-047 / BUG-015:
+ *   - IPv4/IPv6 literals and empty/blank hostnames do not throw; SNI is skipped (AC-1, AC-3)
+ *   - DNS hostnames continue to set SNI as before (AC-2, AC-3)
+ *
  * Uses Mockito to create a fake SSLSocket so tests run without a real TLS stack.
  */
 @RunWith(RobolectricTestRunner.class)
@@ -131,6 +135,105 @@ public class DefaultTrustedSocketFactorySniTest {
 
         // Call the reflective fallback path; must not throw and must not call setSSLParameters.
         callSetHostnameViaReflectionDirectly(mockSocket, "imap.gmail.com");
+
+        verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
+    }
+
+    // -----------------------------------------------------------------------
+    // U-047 / BUG-015: guard against IP literals and empty/blank hostnames
+    // -----------------------------------------------------------------------
+
+    /**
+     * AC-2 / AC-3(a): DNS hostname — setSSLParameters is called with SSLParameters
+     * containing an SNIHostName entry (existing behavior confirmed/unchanged).
+     */
+    @Test
+    public void setSniViaSSLParameters_dnsHostname_setsSNI() {
+        SSLSocket mockSocket = mock(SSLSocket.class);
+        SSLParameters params = new SSLParameters();
+        when(mockSocket.getSSLParameters()).thenReturn(params);
+
+        DefaultTrustedSocketFactory.setSniViaSSLParameters(mockSocket, "imap.example.com");
+
+        verify(mockSocket).setSSLParameters(params);
+        List<SNIServerName> serverNames = params.getServerNames();
+        assertThat(serverNames).isNotNull();
+        assertThat(serverNames).hasSize(1);
+        assertThat(serverNames.get(0)).isInstanceOf(SNIHostName.class);
+        assertThat(((SNIHostName) serverNames.get(0)).getAsciiName()).isEqualTo("imap.example.com");
+    }
+
+    /**
+     * AC-1 / AC-3(b): IPv4 literal — no exception; setSSLParameters NOT called with a SNIHostName.
+     * SNIHostName constructor throws IllegalArgumentException for IP literals (RFC 6066 §3).
+     */
+    @Test
+    public void setSniViaSSLParameters_ipv4Literal_doesNotThrowAndSkipsSNI() {
+        SSLSocket mockSocket = mock(SSLSocket.class);
+        SSLParameters params = new SSLParameters();
+        when(mockSocket.getSSLParameters()).thenReturn(params);
+
+        // Must not throw; SNI should be skipped.
+        DefaultTrustedSocketFactory.setSniViaSSLParameters(mockSocket, "192.168.1.10");
+
+        // setSSLParameters must NOT have been called (SNI was skipped).
+        verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * AC-1 / AC-3(c): IPv6 literal — no exception; SNI skipped.
+     */
+    @Test
+    public void setSniViaSSLParameters_ipv6Literal_doesNotThrowAndSkipsSNI() {
+        SSLSocket mockSocket = mock(SSLSocket.class);
+        SSLParameters params = new SSLParameters();
+        when(mockSocket.getSSLParameters()).thenReturn(params);
+
+        // Must not throw for compressed IPv6 form.
+        DefaultTrustedSocketFactory.setSniViaSSLParameters(mockSocket, "::1");
+
+        verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * AC-1 / AC-3(c): Full IPv6 literal — no exception; SNI skipped.
+     */
+    @Test
+    public void setSniViaSSLParameters_ipv6FullLiteral_doesNotThrowAndSkipsSNI() {
+        SSLSocket mockSocket = mock(SSLSocket.class);
+        SSLParameters params = new SSLParameters();
+        when(mockSocket.getSSLParameters()).thenReturn(params);
+
+        DefaultTrustedSocketFactory.setSniViaSSLParameters(mockSocket, "fe80::1");
+
+        verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * AC-1 / AC-3(d): Empty hostname — no exception; SNI skipped.
+     */
+    @Test
+    public void setSniViaSSLParameters_emptyHostname_doesNotThrowAndSkipsSNI() {
+        SSLSocket mockSocket = mock(SSLSocket.class);
+        SSLParameters params = new SSLParameters();
+        when(mockSocket.getSSLParameters()).thenReturn(params);
+
+        // Must not throw.
+        DefaultTrustedSocketFactory.setSniViaSSLParameters(mockSocket, "");
+
+        verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * AC-1 / AC-3(d): Blank (whitespace-only) hostname — no exception; SNI skipped.
+     */
+    @Test
+    public void setSniViaSSLParameters_blankHostname_doesNotThrowAndSkipsSNI() {
+        SSLSocket mockSocket = mock(SSLSocket.class);
+        SSLParameters params = new SSLParameters();
+        when(mockSocket.getSSLParameters()).thenReturn(params);
+
+        DefaultTrustedSocketFactory.setSniViaSSLParameters(mockSocket, "   ");
 
         verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
     }
