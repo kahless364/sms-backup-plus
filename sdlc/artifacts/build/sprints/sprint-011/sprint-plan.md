@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-011
 sprint: '000011'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 011 — SNIHostName IP-literal guard (BUG-015)
@@ -24,7 +26,7 @@ sprint: '000011'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-047 | Guard SNIHostName against IP-literal/empty IMAP host (fix BUG-015) | Android | developer | sonnet | lead | — | planned | low |
+| U-047 | Guard SNIHostName against IP-literal/empty IMAP host (fix BUG-015) | Android | developer | sonnet | lead | — | done | low |
 
 ## Wave Summary
 

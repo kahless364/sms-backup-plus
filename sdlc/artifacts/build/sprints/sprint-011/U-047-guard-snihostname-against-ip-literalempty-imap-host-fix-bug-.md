@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 artifact_type: user-story
 priority: low
 complexity: low
@@ -18,6 +18,7 @@ id: U-047
 title: Guard SNIHostName against IP-literal/empty IMAP host (fix BUG-015)
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: bug:BUG-015
 sprint: '000011'
 ---
