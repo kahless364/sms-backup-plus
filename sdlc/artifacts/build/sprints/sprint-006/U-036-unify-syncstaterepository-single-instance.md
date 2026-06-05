@@ -1,6 +1,7 @@
 ---
 type: bug
-status: ready
+status: planned
+sprint: '000006'
 artifact_type: user-story
 priority: high
 complexity: medium
