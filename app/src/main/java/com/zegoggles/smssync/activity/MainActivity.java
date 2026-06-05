@@ -64,6 +64,7 @@ import com.zegoggles.smssync.service.state.RestoreState;
 import com.zegoggles.smssync.service.state.SyncEvent;
 import com.zegoggles.smssync.tasks.OAuth2CallbackTask;
 import com.zegoggles.smssync.utils.BundleBuilder;
+import com.zegoggles.smssync.utils.WindowInsetsUtil;
 
 import java.util.Arrays;
 import java.util.List;
@@ -140,6 +141,9 @@ public class MainActivity extends ThemeActivity implements
         setContentView(R.layout.main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        // U-046 (BUG-014): apply edge-to-edge window insets so the toolbar title sits below
+        // the status bar and preferences content clears the navigation bar on API 35+.
+        WindowInsetsUtil.applyEdgeToEdgeInsets(getWindow(), toolbar, findViewById(R.id.preferences_container));
         getSupportFragmentManager().addOnBackStackChangedListener(this);
 
         authPreferences = new AuthPreferences(this);
