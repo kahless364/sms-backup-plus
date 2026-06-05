@@ -485,18 +485,19 @@ public class K9MailTransport implements MailTransport {
         }
 
         // -------------------------------------------------------------------------
-        // Constants for create→open retry (Gmail label propagation gap — BUG-011)
+        // Constants for create→open retry (Gmail label propagation gap — BUG-011/BUG-013)
         // Package-private for test access.
         // -------------------------------------------------------------------------
 
-        /** Maximum number of attempts to open a folder immediately after CREATE (BUG-011). */
-        /* package */ static final int MAX_CREATE_OPEN_RETRIES = 3;
-
         /**
-         * Delay in milliseconds between open-after-create retries.
-         * Gmail labels may not be immediately SELECTable after IMAP CREATE.
+         * Maximum number of open-after-CREATE attempts (BUG-013).
+         *
+         * <p>Increased from 3 to 5 to widen the retry budget for Gmail label propagation.
+         * With exponential backoff (1s, 2s, 4s, 8s between attempts 1→2, 2→3, 3→4, 4→5)
+         * the total delay budget is 15 s — sufficient for Gmail label propagation in
+         * the common case while remaining bounded.
          */
-        /* package */ static final long CREATE_OPEN_RETRY_DELAY_MS = 1000L;
+        /* package */ static final int MAX_CREATE_OPEN_RETRIES = 5;
 
         /**
          * Factory method that creates a {@link BackupFolder} for the given data type and label.
@@ -508,11 +509,24 @@ public class K9MailTransport implements MailTransport {
         }
 
         /**
-         * Returns the delay in milliseconds between open-after-create retries.
-         * Package-private to allow test subclasses to zero the delay for fast unit tests.
+         * Returns the delay in milliseconds to wait before the next open-after-create attempt.
+         *
+         * <p>Uses exponential backoff: {@code min(1000 × 2^(attempt-1), 8000)} ms.
+         * For {@code attempt=1}: 1000 ms; {@code attempt=2}: 2000 ms; {@code attempt=3}: 4000 ms;
+         * {@code attempt=4} and beyond: 8000 ms (cap). This gives a total inter-attempt delay
+         * of 1+2+4+8 = 15 s across 5 attempts (BUG-013 fix).
+         *
+         * <p>Package-private to allow test subclasses to zero the delay for fast unit tests.
+         *
+         * @param attempt the 1-based attempt number that just failed (delay before the NEXT attempt)
+         * @return delay in milliseconds; always &gt; 0 in production
          */
-        /* package, for testing */ long getRetryDelayMs() {
-            return CREATE_OPEN_RETRY_DELAY_MS;
+        /* package, for testing */ long getRetryDelayMs(int attempt) {
+            // Exponential: 1000 * 2^(attempt-1), capped at 8000 ms.
+            long base = 1000L;
+            long cap = 8000L;
+            long delay = base << (attempt - 1); // 1000 * 2^(attempt-1)
+            return Math.min(delay, cap);
         }
 
         /**
@@ -524,10 +538,10 @@ public class K9MailTransport implements MailTransport {
          *       if {@code false}, a {@link MessagingException} is thrown immediately rather
          *       than proceeding to {@code open()} which would always fail.</li>
          *   <li>After a successful CREATE, {@code open()} is retried up to
-         *       {@link #MAX_CREATE_OPEN_RETRIES} times with a {@link #CREATE_OPEN_RETRY_DELAY_MS}
-         *       delay between attempts. This handles Gmail's label-propagation gap: a freshly
+         *       {@link #MAX_CREATE_OPEN_RETRIES} times with exponential backoff (1s, 2s, 4s, 8s)
+         *       between attempts. This handles Gmail's label-propagation gap: a freshly
          *       created Gmail label may return {@code NO [NONEXISTENT]} on the first SELECT even
-         *       though the CREATE command succeeded.</li>
+         *       though the CREATE command succeeded (BUG-013 widened budget).</li>
          * </ol>
          * The {@code IllegalArgumentException → MessagingException} re-wrap is preserved verbatim.
          */
@@ -565,32 +579,43 @@ public class K9MailTransport implements MailTransport {
          * RFC 5530 response code returned by Gmail when a new label is not yet SELECTable). All
          * other exceptions are propagated immediately on the first occurrence.
          *
+         * <p>Uses exponential backoff via {@link #getRetryDelayMs(int)} (BUG-013 fix): delays
+         * between attempts are 1s, 2s, 4s, 8s (capped), giving a total budget of ~15 s.
+         * The wait is interruptible: on {@link InterruptedException} the interrupt flag is
+         * restored and a {@link MessagingException} is thrown immediately (AC-2).
+         *
+         * <p>When the folder already exists the caller uses {@code folder.open()} directly;
+         * this method is only reached after a successful CREATE — there is NO added latency
+         * on the fast path (AC-4).
+         *
          * @param folder the folder to open
-         * @throws MessagingException if the folder cannot be opened after all retries
+         * @throws MessagingException if the folder cannot be opened after all retries,
+         *                            or if the thread is interrupted while sleeping
          */
         private void openWithRetryAfterCreate(BackupFolder folder) throws MessagingException {
             MessagingException lastException = null;
             for (int attempt = 1; attempt <= MAX_CREATE_OPEN_RETRIES; attempt++) {
                 try {
                     folder.open(Folder.OPEN_MODE_RW);
-                    return; // success
+                    return; // success — fast exit, no accumulated delay on success
                 } catch (MessagingException e) {
                     String msg = e.getMessage();
                     boolean isNonExistent = msg != null &&
                             msg.toUpperCase(java.util.Locale.US).contains("NONEXISTENT");
                     if (!isNonExistent) {
-                        // Not a NONEXISTENT error — do not retry; propagate immediately.
+                        // Not a NONEXISTENT error — do not retry; propagate immediately (AC-4).
                         throw e;
                     }
                     lastException = e;
                     if (attempt < MAX_CREATE_OPEN_RETRIES) {
-                        long delayMs = getRetryDelayMs();
+                        long delayMs = getRetryDelayMs(attempt);
                         Log.w(TAG, "Folder '" + folder.getName() +
                                 "' not selectable yet after CREATE (attempt " + attempt + "/" +
                                 MAX_CREATE_OPEN_RETRIES + "); retrying in " + delayMs + " ms");
                         try {
                             Thread.sleep(delayMs);
                         } catch (InterruptedException ie) {
+                            // Restore interrupt flag and abort promptly (AC-2 — cancellable).
                             Thread.currentThread().interrupt();
                             throw new MessagingException(
                                     "Interrupted while waiting to retry folder open after CREATE",
