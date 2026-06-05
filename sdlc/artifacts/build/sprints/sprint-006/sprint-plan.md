@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-006
 sprint: '000006'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 006 — Consolidated Code-Review Bug Fixes (BUG-004, BUG-005, BUG-006)
@@ -28,9 +30,9 @@ sprint: '000006'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-036 | Unify SyncStateRepository to a single shared instance (fix BUG-004) | Android | developer | sonnet | lead | — | planned | high |
-| U-037 | Remove WorkInfo observer on service onDestroy (fix BUG-005 leak) | Android | developer | sonnet | lead | — | planned | high |
-| U-038 | Remove dead mail-transport imports from RestoreWorker.kt (fix BUG-006) | Android | developer | sonnet | lead | — | planned | medium |
+| U-036 | Unify SyncStateRepository to a single shared instance (fix BUG-004) | Android | developer | sonnet | lead | — | done | high |
+| U-037 | Remove WorkInfo observer on service onDestroy (fix BUG-005 leak) | Android | developer | sonnet | lead | — | done | high |
+| U-038 | Remove dead mail-transport imports from RestoreWorker.kt (fix BUG-006) | Android | developer | sonnet | lead | — | done | medium |
 
 ## Wave Summary
 

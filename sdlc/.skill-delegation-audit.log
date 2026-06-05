@@ -29,3 +29,5 @@
 {"timestamp":"2026-06-05T03:00:15.087Z","event_type":"teardown","child_skill":"review-story","child_instance_id":"review-story-20260605-023415","context_file_sha256":"f07759f8fb4812a818866c8fc4215180f3a9cb63184ea52db0f349be7693c781"}
 {"timestamp":"2026-06-05T03:03:19.982Z","event_type":"teardown","child_skill":"create-bug","child_instance_id":"create-bug-20260605-030015","context_file_sha256":"267c82f3adf427ea94f551204b102d4488f589038707b97595832ed5c7ed3126"}
 {"timestamp":"2026-06-05T03:05:06.782Z","event_type":"teardown","child_skill":"create-stories","child_instance_id":"create-stories-20260605-030357","context_file_sha256":"7f530fd4938c1609030337129c23301d81f10f63f68e75d9c0c99b82bfb3abc6"}
+{"timestamp":"2026-06-05T03:08:45.724Z","event_type":"teardown","child_skill":"create-sprint","child_instance_id":"create-sprint-20260605-030529","context_file_sha256":"2b66fa48377c0dd4230ec8ec592450392402772e2343384af659c23acdaa586d"}
+{"timestamp":"2026-06-05T04:03:27.602Z","event_type":"teardown","child_skill":"execute-sprint","child_instance_id":"execute-sprint-20260605-030845","context_file_sha256":"ededb5278d2b3ed4ae4b686870779fd89df60fe012d45c17f174cb79ea2be92e"}
