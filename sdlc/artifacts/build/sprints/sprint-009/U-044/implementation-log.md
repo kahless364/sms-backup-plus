@@ -305,11 +305,11 @@ Total build time: ~4m 56s (full build).
 
 ```
 git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
-654
+659
 ```
 
-(Previously 650 after remediation 2; 654 reflects 4 new tests from remediation 3 +
-1 new @Test from the `getRetryDelayMs` schedule assertion — net +4 tests.)
+(Previously 650 after remediation 2; 659 reflects +5 new @Test-annotated tests from
+remediation 3 — Java: 553, Kotlin: 106, total: 659.)
 
 ### AC Verification (Updated for Remediation 3)
 
