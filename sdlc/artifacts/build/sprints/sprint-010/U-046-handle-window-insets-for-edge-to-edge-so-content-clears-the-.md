@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -18,6 +18,7 @@ id: U-046
 title: Handle window insets for edge-to-edge so content clears the system bars (fix BUG-014)
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: bug:BUG-014
 sprint: '000010'
 ---

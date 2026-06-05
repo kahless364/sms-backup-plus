@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-010
 sprint: '000010'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 010 — SNI log noise + edge-to-edge insets (BUG-012, BUG-014)
@@ -26,8 +28,8 @@ sprint: '000010'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-045 | Quiet conscrypt SNI fallback in vendored DefaultTrustedSocketFactory (fix BUG-012) | Android | developer | sonnet | lead | — | planned | high |
-| U-046 | Handle window insets for edge-to-edge so content clears the system bars (fix BUG-014) | Android | developer | sonnet | lead | — | planned | high |
+| U-045 | Quiet conscrypt SNI fallback in vendored DefaultTrustedSocketFactory (fix BUG-012) | Android | developer | sonnet | lead | — | done | high |
+| U-046 | Handle window insets for edge-to-edge so content clears the system bars (fix BUG-014) | Android | developer | sonnet | lead | — | done | high |
 
 ## Wave Summary
 

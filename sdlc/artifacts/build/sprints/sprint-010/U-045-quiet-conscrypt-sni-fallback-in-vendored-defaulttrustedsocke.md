@@ -1,6 +1,6 @@
 ---
 type: bug
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: low
@@ -18,6 +18,7 @@ id: U-045
 title: Quiet conscrypt SNI fallback in vendored DefaultTrustedSocketFactory (fix BUG-012)
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: bug:BUG-012
 sprint: '000010'
 ---
