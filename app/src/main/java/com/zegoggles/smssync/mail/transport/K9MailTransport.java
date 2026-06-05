@@ -471,26 +471,126 @@ public class K9MailTransport implements MailTransport {
             return mStoreConfig.getStoreUri();
         }
 
+        // -------------------------------------------------------------------------
+        // Constants for create→open retry (Gmail label propagation gap — BUG-011)
+        // Package-private for test access.
+        // -------------------------------------------------------------------------
+
+        /** Maximum number of attempts to open a folder immediately after CREATE (BUG-011). */
+        /* package */ static final int MAX_CREATE_OPEN_RETRIES = 3;
+
+        /**
+         * Delay in milliseconds between open-after-create retries.
+         * Gmail labels may not be immediately SELECTable after IMAP CREATE.
+         */
+        /* package */ static final long CREATE_OPEN_RETRY_DELAY_MS = 1000L;
+
+        /**
+         * Factory method that creates a {@link BackupFolder} for the given data type and label.
+         * Package-private to allow test subclasses to inject mock folders (BUG-011 test seam).
+         */
+        /* package, for testing */ @NonNull BackupFolder createBackupFolder(DataType type,
+                                                                              String label) {
+            return new BackupFolder(this, label, type);
+        }
+
+        /**
+         * Returns the delay in milliseconds between open-after-create retries.
+         * Package-private to allow test subclasses to zero the delay for fast unit tests.
+         */
+        /* package, for testing */ long getRetryDelayMs() {
+            return CREATE_OPEN_RETRY_DELAY_MS;
+        }
+
         /**
          * Creates, opens, and returns a BackupFolder.
-         * Verbatim from {@code BackupImapStore.createAndOpenFolder()} (BackupImapStore.java:120-134)
-         * with the {@code IllegalArgumentException → MessagingException} re-wrap preserved.
+         * Based on {@code BackupImapStore.createAndOpenFolder()} (BackupImapStore.java:120-134)
+         * with two BUG-011 fixes applied:
+         * <ol>
+         *   <li>The return value of {@link com.fsck.k9.mail.Folder#create} is now checked —
+         *       if {@code false}, a {@link MessagingException} is thrown immediately rather
+         *       than proceeding to {@code open()} which would always fail.</li>
+         *   <li>After a successful CREATE, {@code open()} is retried up to
+         *       {@link #MAX_CREATE_OPEN_RETRIES} times with a {@link #CREATE_OPEN_RETRY_DELAY_MS}
+         *       delay between attempts. This handles Gmail's label-propagation gap: a freshly
+         *       created Gmail label may return {@code NO [NONEXISTENT]} on the first SELECT even
+         *       though the CREATE command succeeded.</li>
+         * </ol>
+         * The {@code IllegalArgumentException → MessagingException} re-wrap is preserved verbatim.
          */
         private @NonNull BackupFolder createAndOpenFolder(DataType type, @NonNull String label)
                 throws MessagingException {
             try {
-                BackupFolder folder = new BackupFolder(this, label, type);
+                BackupFolder folder = createBackupFolder(type, label);
                 if (!folder.exists()) {
                     Log.i(TAG, "Label '" + label + "' does not exist yet. Creating.");
-                    folder.create(FolderType.HOLDS_MESSAGES);
+                    boolean created = folder.create(FolderType.HOLDS_MESSAGES);
+                    if (!created) {
+                        throw new MessagingException(
+                                "Failed to create folder/label '" + label + "' on the server");
+                    }
+                    // Gmail: newly-created labels may not be immediately SELECTable.
+                    // Retry open() with back-off to handle the propagation gap (BUG-011).
+                    openWithRetryAfterCreate(folder);
+                } else {
+                    folder.open(Folder.OPEN_MODE_RW);
                 }
-                folder.open(Folder.OPEN_MODE_RW);
                 return folder;
             } catch (IllegalArgumentException e) {
                 // thrown inside K9 — re-wrap verbatim (BackupImapStore.java:129-133)
                 Log.e(TAG, "K9 error", e);
                 throw new MessagingException(e.getMessage());
             }
+        }
+
+        /**
+         * Attempts to open the given folder, retrying up to {@link #MAX_CREATE_OPEN_RETRIES}
+         * times if the server reports NONEXISTENT (which Gmail does for a label that was just
+         * created but not yet propagated).
+         *
+         * <p>Only retries on MessagingExceptions whose message contains "NONEXISTENT" (the IMAP
+         * RFC 5530 response code returned by Gmail when a new label is not yet SELECTable). All
+         * other exceptions are propagated immediately on the first occurrence.
+         *
+         * @param folder the folder to open
+         * @throws MessagingException if the folder cannot be opened after all retries
+         */
+        private void openWithRetryAfterCreate(BackupFolder folder) throws MessagingException {
+            MessagingException lastException = null;
+            for (int attempt = 1; attempt <= MAX_CREATE_OPEN_RETRIES; attempt++) {
+                try {
+                    folder.open(Folder.OPEN_MODE_RW);
+                    return; // success
+                } catch (MessagingException e) {
+                    String msg = e.getMessage();
+                    boolean isNonExistent = msg != null &&
+                            msg.toUpperCase(java.util.Locale.US).contains("NONEXISTENT");
+                    if (!isNonExistent) {
+                        // Not a NONEXISTENT error — do not retry; propagate immediately.
+                        throw e;
+                    }
+                    lastException = e;
+                    if (attempt < MAX_CREATE_OPEN_RETRIES) {
+                        long delayMs = getRetryDelayMs();
+                        Log.w(TAG, "Folder '" + folder.getName() +
+                                "' not selectable yet after CREATE (attempt " + attempt + "/" +
+                                MAX_CREATE_OPEN_RETRIES + "); retrying in " + delayMs + " ms");
+                        try {
+                            Thread.sleep(delayMs);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new MessagingException(
+                                    "Interrupted while waiting to retry folder open after CREATE",
+                                    ie);
+                        }
+                    }
+                }
+            }
+            throw new MessagingException(
+                    "Folder '" + folder.getName() + "' was created but is still not selectable " +
+                    "after " + MAX_CREATE_OPEN_RETRIES + " attempt(s). " +
+                    "Last error: " + (lastException != null ? lastException.getMessage() : "unknown"),
+                    lastException);
         }
 
         // -------------------------------------------------------------------------
