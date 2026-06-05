@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-007
 sprint: '000007'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 007 — Consolidated Security-Review Fixes (BUG-007, BUG-008)
@@ -26,8 +28,8 @@ sprint: '000007'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-039 | Persist OAuth2 token directly instead of via Intent extra (fix BUG-007) | Android | developer | sonnet | lead | — | planned | medium |
-| U-040 | Surface Keystore failure during credential migration (fix BUG-008) | Android | developer | sonnet | lead | — | planned | medium |
+| U-039 | Persist OAuth2 token directly instead of via Intent extra (fix BUG-007) | Android | developer | sonnet | lead | — | done | medium |
+| U-040 | Surface Keystore failure during credential migration (fix BUG-008) | Android | developer | sonnet | lead | — | done | medium |
 
 ## Wave Summary
 
