@@ -540,8 +540,9 @@ public class K9MailTransport implements MailTransport {
          *   <li>After a successful CREATE, {@code open()} is retried up to
          *       {@link #MAX_CREATE_OPEN_RETRIES} times with exponential backoff (1s, 2s, 4s, 8s)
          *       between attempts. This handles Gmail's label-propagation gap: a freshly
-         *       created Gmail label may return {@code NO [NONEXISTENT]} on the first SELECT even
-         *       though the CREATE command succeeded (BUG-013 widened budget).</li>
+         *       created Gmail label may return {@code NO [NONEXISTENT]} or {@code "Did not find
+         *       message count"} on the first SELECT even though the CREATE command succeeded
+         *       (BUG-013 widened budget / remediation 2).</li>
          * </ol>
          * The {@code IllegalArgumentException → MessagingException} re-wrap is preserved verbatim.
          */
@@ -572,12 +573,21 @@ public class K9MailTransport implements MailTransport {
 
         /**
          * Attempts to open the given folder, retrying up to {@link #MAX_CREATE_OPEN_RETRIES}
-         * times if the server reports NONEXISTENT (which Gmail does for a label that was just
-         * created but not yet propagated).
+         * times if the server reports one of the two known transitional failure states that
+         * Gmail exhibits for a label that was just created but not yet fully propagated:
          *
-         * <p>Only retries on MessagingExceptions whose message contains "NONEXISTENT" (the IMAP
-         * RFC 5530 response code returned by Gmail when a new label is not yet SELECTable). All
-         * other exceptions are propagated immediately on the first occurrence.
+         * <ol>
+         *   <li><b>NONEXISTENT</b> — {@code NO [NONEXISTENT] Unknown Mailbox}: the label is not
+         *       yet visible to SELECT at all (IMAP RFC 5530 response code).</li>
+         *   <li><b>Did not find message count</b> — {@code MessagingException: Did not find
+         *       message count during open}: the label now exists and is selectable, but the
+         *       SELECT response has not yet populated the EXISTS count. This is the second
+         *       transitional state observed in live Gmail testing after CREATE (BUG-013
+         *       remediation 2).</li>
+         * </ol>
+         *
+         * <p>Both conditions represent a freshly-created Gmail label that is not yet fully
+         * SELECTable. All other exceptions are propagated immediately on the first occurrence.
          *
          * <p>Uses exponential backoff via {@link #getRetryDelayMs(int)} (BUG-013 fix): delays
          * between attempts are 1s, 2s, 4s, 8s (capped), giving a total budget of ~15 s.
@@ -600,10 +610,15 @@ public class K9MailTransport implements MailTransport {
                     return; // success — fast exit, no accumulated delay on success
                 } catch (MessagingException e) {
                     String msg = e.getMessage();
-                    boolean isNonExistent = msg != null &&
-                            msg.toUpperCase(java.util.Locale.US).contains("NONEXISTENT");
-                    if (!isNonExistent) {
-                        // Not a NONEXISTENT error — do not retry; propagate immediately (AC-4).
+                    // Two known transitional states for a freshly-created Gmail label:
+                    //   1. "NONEXISTENT" — label not yet visible to SELECT (phase 1)
+                    //   2. "did not find message count" — label selectable but EXISTS not
+                    //      yet populated in the SELECT response (phase 2, BUG-013 rem. 2)
+                    boolean isFolderNotReadyYet = msg != null && (
+                            msg.toUpperCase(java.util.Locale.US).contains("NONEXISTENT") ||
+                            msg.toLowerCase(java.util.Locale.US).contains("did not find message count"));
+                    if (!isFolderNotReadyYet) {
+                        // Genuinely fatal error — do not retry; propagate immediately (AC-4).
                         throw e;
                     }
                     lastException = e;

@@ -102,3 +102,89 @@ No new entry points. The change is purely internal to `K9MailTransport.BackupIma
 ## Contract Adherence
 
 No integration contracts (story frontmatter `integration_contracts: []`). No CNTR-* artifacts applicable.
+
+---
+
+## Remediation 2 (on-device: handle 'Did not find message count' transitional state)
+
+### Problem Found in Live Testing
+
+On-device testing against live Gmail revealed that after a CREATE, the label goes through
+TWO transitional failure states before becoming fully SELECTable:
+
+1. **Phase 1** — `NO [NONEXISTENT] Unknown Mailbox`: label not yet visible (already handled).
+2. **Phase 2** — `MessagingException: Did not find message count during open`: the label now
+   exists and SELECT succeeds, but the response has no EXISTS count yet.
+
+The original fix only retried on phase 1 (NONEXISTENT). Phase 2 (`"did not find message
+count"`) did not match the predicate, so it was propagated as a fatal error. This caused
+AC-1 to fail on the first backup run — only the WorkManager retry ~38 s later would succeed.
+
+### Broadened Predicate
+
+In `openWithRetryAfterCreate` (K9MailTransport.java), the boolean guard was renamed and
+extended to cover both transitional states:
+
+```java
+boolean isFolderNotReadyYet = msg != null && (
+        msg.toUpperCase(java.util.Locale.US).contains("NONEXISTENT") ||
+        msg.toLowerCase(java.util.Locale.US).contains("did not find message count"));
+```
+
+Both conditions represent a freshly-created Gmail label that is not yet fully SELECTable.
+All genuinely fatal errors (auth failures, connection timeouts, etc.) still propagate
+immediately on the first occurrence. The bounded retry budget (`MAX_CREATE_OPEN_RETRIES = 5`,
+total ~15 s), exponential backoff via `getRetryDelayMs(attempt)`, and cancellability on
+`InterruptedException` are all unchanged.
+
+### Files Changed
+
+- **`app/src/main/java/com/zegoggles/smssync/mail/transport/K9MailTransport.java`**
+  - `openWithRetryAfterCreate` javadoc updated to document both transitional conditions.
+  - `isNonExistent` boolean renamed to `isFolderNotReadyYet`; OR-clause added for
+    `"did not find message count"` (case-insensitive via `toLowerCase`).
+  - `createAndOpenFolder` javadoc updated to reference both conditions and remediation 2.
+
+- **`app/src/test/java/com/zegoggles/smssync/mail/transport/K9MailTransportCreateOpenTest.java`**
+  - Four new tests added (see below).
+
+### New Tests
+
+| Test | What It Asserts |
+|---|---|
+| `createAndOpenFolder_openFailsMessageCountOnce_thenSucceeds_noException` | `open()` throws `"Did not find message count during open"` on attempt 1, succeeds on attempt 2 → completes without exception (retried, not propagated) |
+| `createAndOpenFolder_allOpenAttemptsFailMessageCount_throwsMessagingException` | All 5 attempts fail with `"Did not find message count"` → bounded `MessagingException` thrown after `MAX_CREATE_OPEN_RETRIES` attempts |
+| `createAndOpenFolder_mixedNonExistentThenMessageCount_thenSucceeds_noException` | Mixed two-phase sequence: attempt 1 NONEXISTENT, attempt 2 "did not find message count", attempt 3 success → completes without exception (mirrors live Gmail behaviour) |
+| `createAndOpenFolder_messageCountDetection_caseInsensitive` | Upper-case `"DID NOT FIND MESSAGE COUNT DURING OPEN"` is also retried (detection is case-insensitive) |
+
+All 15 existing tests remain green. No regressions.
+
+### Build / Coverage Result
+
+```
+BUILD SUCCESSFUL
+:app:assembleDebug
+:app:testDebugUnitTest  — all tests passed, 0 failed
+:app:jacocoTestCoverageVerification  — PASSED (per-package LINE >= 70%)
+```
+
+Total build time: ~2m 49s (full build).
+
+### Authoritative @Test Count
+
+```
+git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
+650
+```
+
+(Previously 647 before remediation 1; 650 reflects 3 additional tests from rem. 1 + 4 new
+tests from rem. 2 = 650 total; the 647→650 delta includes both remediations.)
+
+### AC-1 Verification (Updated)
+
+After remediation 2, AC-1 is fully met for first-run success:
+- Phase 1 (NONEXISTENT) → retried (unchanged from original fix).
+- Phase 2 ("did not find message count") → now also retried.
+- Mixed NONEXISTENT → message-count → success sequence tested explicitly in
+  `createAndOpenFolder_mixedNonExistentThenMessageCount_thenSucceeds_noException`.
+- No delay or retry on the folder-already-exists fast path (AC-4 unchanged).
