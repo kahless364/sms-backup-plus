@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-005
 sprint: '000005'
+end_date: 2026-06-05
+velocity_calculated: true
 ---
 
 # Sprint Plan: 005 — Move Credential Migration Off Main Thread (BUG-003)
@@ -26,7 +28,7 @@ sprint: '000005'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-035 | Move plaintext-to-encrypted credential migration off the main thread | Android | developer | sonnet | lead | — | planned | low |
+| U-035 | Move plaintext-to-encrypted credential migration off the main thread | Android | developer | sonnet | lead | — | done | low |
 
 ## Wave Summary
 
