@@ -347,6 +347,27 @@ public class ImapStore extends RemoteStore {
         }
     }
 
+    /**
+     * Closes and discards all pooled connections so the next {@link #getConnection()} call
+     * creates a brand-new one (fresh login).
+     *
+     * <p>On Gmail, a freshly-created label is not visible on a connection that was established
+     * before the CREATE command — the stale SELECT state is cached in the server session.
+     * Draining the pool between create→open retries forces a brand-new TCP/TLS login, after
+     * which Gmail exposes the newly-created label (BUG-013 remediation 3).
+     *
+     * <p>Thread-safe: synchronized on {@code connections} (same monitor used by
+     * {@link #pollConnection()} and {@link #releaseConnection}).
+     */
+    public void closePooledConnections() {
+        synchronized (connections) {
+            ImapConnection c;
+            while ((c = connections.poll()) != null) {
+                try { c.close(); } catch (Exception ignored) { }
+            }
+        }
+    }
+
     ImapConnection createImapConnection() {
         return new ImapConnection(new StoreImapSettings(), mTrustedSocketFactory, connectivityManager);
     }
