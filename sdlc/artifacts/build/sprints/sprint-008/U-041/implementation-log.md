@@ -138,6 +138,107 @@ Per story instruction: `git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'ap
 
 (Pre-commit HEAD count: 623; +3 from `MainActivityRestoreTest`)
 
+## Remediation (post-review blocker fix)
+
+### Blocker confirmed
+
+Two reviewers (code review + security review) identified that the `onActivityResult` re-entry
+guard on Q+ was still broken after the original U-041 fix:
+
+```java
+// BEFORE — always fails on Q+ because getSmsDefaultPackage() is never set by the Q+ branch
+if (preferences.getSmsDefaultPackage() != null) {
+    startRestore();
+}
+```
+
+On Q+, the `startRestore()` Q+ branch never calls `preferences.setSmsDefaultPackage(...)` (only
+the pre-Q branch does). So after the user grants ROLE_SMS, `getSmsDefaultPackage()` is null, the
+guard fires false, `startRestore()` is NOT called, and restore never runs — reproducing BUG-009
+from a different point in the flow.
+
+### Fix applied
+
+**File:** `app/src/main/java/com/zegoggles/smssync/activity/MainActivity.java` — lines 229-241
+
+```java
+// BEFORE (lines 229-235)
+case REQUEST_CHANGE_DEFAULT_SMS_PACKAGE: {
+    if (resultCode == RESULT_CANCELED) break;
+    preferences.setSeenSmsDefaultPackageChangeDialog();
+    if (preferences.getSmsDefaultPackage() != null) {
+        startRestore();
+    }
+    break;
+}
+
+// AFTER (lines 229-241)
+case REQUEST_CHANGE_DEFAULT_SMS_PACKAGE: {
+    if (resultCode == RESULT_CANCELED) break;
+    preferences.setSeenSmsDefaultPackageChangeDialog();
+    // BUG-009 / U-041 remediation: on Q+, getSmsDefaultPackage() is never set by
+    // the Q+ branch of startRestore() (only the pre-Q branch writes it), so the
+    // old guard would always fail on Q+ and restore would never run after the role
+    // grant.  Use isSmsBackupDefaultSmsApp() on Q+ — the role-request just
+    // completed so this will be true if the user granted it.  On pre-Q keep the
+    // original getSmsDefaultPackage() != null check.
+    final boolean readyToRestore = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            ? isSmsBackupDefaultSmsApp(this)
+            : preferences.getSmsDefaultPackage() != null;
+    if (readyToRestore) {
+        startRestore();
+    }
+    break;
+}
+```
+
+`isSmsBackupDefaultSmsApp` is already statically imported at line 100. RESULT_CANCELED
+early-break (line 230) is unchanged. Pre-Q guard is unchanged. The `startRestore()` fast-path
+at line 415 (`isSmsBackupDefaultSmsApp(this) → startService()`) then proceeds to the actual
+restore after re-entry.
+
+### New round-trip tests
+
+**File:** `app/src/test/java/com/zegoggles/smssync/activity/MainActivityRestoreTest.java`
+
+Two new `@Test` methods added (onActivityResult re-entry path — the gap the original tests
+did NOT cover because they called `requestDefaultSmsPackageChange()` directly):
+
+| Test | Description |
+|------|-------------|
+| `bug009_remediation_onActivityResult_resultOk_qPlus_roleHeld_startsRestoreService` | Q+ positive case: RESULT_OK with ROLE_SMS held → guard is true → `startRestore()` → `startService(SmsRestoreService)` issued. Asserts `shadowOf(activity).getNextStartedService()` is non-null and targets `SmsRestoreService`. |
+| `bug009_remediation_onActivityResult_resultCanceled_qPlus_noRestoreStarted` | Q+ negative case: RESULT_CANCELED → early-break fires → `startRestore()` NOT called → `getNextStartedService()` is null. |
+
+Both run `@Config(sdk = Build.VERSION_CODES.Q)` via Robolectric. `ShadowRoleManager.addHeldRole(ROLE_SMS)` makes `isSmsBackupDefaultSmsApp()` return true in the positive case.
+
+### Build / coverage results
+
+```
+BUILD SUCCESSFUL in 2m 36s
+69 actionable tasks: 69 executed
+
+> Task :app:assembleDebug       — SUCCESS
+> Task :app:testDebugUnitTest   — SUCCESS
+> Task :app:jacocoTestCoverageVerification — SUCCESS
+```
+
+All 5 tests in `MainActivityRestoreTest` pass (3 original + 2 new).
+
+### Authoritative @Test count (post-commit)
+
+`git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"`
+
+**Result: 647** (+2 from remediation; original U-041 HEAD was 626, sprint-008 prior stories added 19 more before this commit)
+
+### Blocker resolution
+
+The blocker is resolved. On Q+, after `onActivityResult(REQUEST_CHANGE_DEFAULT_SMS_PACKAGE, RESULT_OK, ...)`:
+- `readyToRestore = isSmsBackupDefaultSmsApp(this)` is `true` (role just granted)
+- `startRestore()` is called
+- `startRestore()` line 415: `isSmsBackupDefaultSmsApp(this)` → `startService(SmsRestoreService)` — restore runs
+
+The complete round-trip — role dialog → user grants → `onActivityResult` → `startRestore()` → `startService()` — is now covered by a Robolectric test that would have caught the original regression.
+
 ## Acceptance Criteria Verification
 
 | AC | Status | Evidence |
