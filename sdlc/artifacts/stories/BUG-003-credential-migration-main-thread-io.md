@@ -12,8 +12,7 @@ design_docs: []
 integration_contracts: []
 dependencies: []
 related_items:
-  - U-011
-  - U-012
+  - U-035
 platforms: []
 tags: []
 id: BUG-003
