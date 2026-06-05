@@ -23,7 +23,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
-import androidx.appcompat.app.AlertDialog;
 
 import com.zegoggles.smssync.R;
 import com.zegoggles.smssync.mail.PinnedCertStore;
@@ -35,8 +34,6 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
-import java.util.Date;
-import java.util.Formatter;
 import java.util.Locale;
 
 import javax.net.ssl.SSLContext;
@@ -114,9 +111,10 @@ public class PinCertificateEnrollmentFlow {
      *
      * @param serverAddress the value from {@code AuthPreferences.SERVER_ADDRESS}, e.g.
      *                      {@code "imap.example.org:993"} or {@code "imap.example.org"}.
-     * @param onShowDialog  a callback that must present the supplied AlertDialog — typically
-     *                      {@code dialog -> dialog.show()} when called from a Fragment, or a
-     *                      test double in unit tests.
+     * @param onShowDialog  a callback that receives enrollment data and builds/shows the dialog —
+     *                      the implementation must use an AppCompat-themed Activity context
+     *                      (e.g. {@code getActivity()}) to construct the AlertDialog, or a
+     *                      test double in unit tests that captures the data without showing.
      */
     public void start(@NonNull String serverAddress,
                       @NonNull DialogShower onShowDialog) {
@@ -126,11 +124,55 @@ public class PinCertificateEnrollmentFlow {
     }
 
     /**
+     * Data object carrying all display parameters needed to build the enrollment
+     * confirmation dialog. The caller (e.g. AdvancedSettings) is responsible for
+     * constructing an {@code androidx.appcompat.app.AlertDialog} from these parameters
+     * using an AppCompat-themed Activity context.
+     *
+     * <p>Separating data from dialog construction ensures that
+     * {@link PinCertificateEnrollmentFlow} never holds an Activity-backed context,
+     * satisfying the anti-leak requirement (AC-3).
+     */
+    public static final class EnrollmentDialogData {
+        /** String resource ID for the dialog title. */
+        public final int titleResId;
+        /** Pre-formatted dialog body text (subject DN, issuer DN, fingerprint, expiry). */
+        public final String message;
+        /** String resource ID for the positive (Trust) button label. */
+        public final int positiveButtonResId;
+        /** String resource ID for the negative (Cancel) button label. */
+        public final int negativeButtonResId;
+        /** Click handler for the positive (Trust) button. Stores the cert on invocation. */
+        public final DialogInterface.OnClickListener onTrust;
+        /** Click handler for the negative (Cancel) button. Fires listener.onCancelled(). */
+        public final DialogInterface.OnClickListener onCancel;
+
+        EnrollmentDialogData(int titleResId,
+                             String message,
+                             int positiveButtonResId,
+                             int negativeButtonResId,
+                             DialogInterface.OnClickListener onTrust,
+                             DialogInterface.OnClickListener onCancel) {
+            this.titleResId = titleResId;
+            this.message = message;
+            this.positiveButtonResId = positiveButtonResId;
+            this.negativeButtonResId = negativeButtonResId;
+            this.onTrust = onTrust;
+            this.onCancel = onCancel;
+        }
+    }
+
+    /**
      * Functional interface so callers can inject a dialog-showing strategy (and tests can
-     * capture the dialog without actually displaying it).
+     * capture the enrollment data without actually displaying a dialog).
+     *
+     * <p>The implementation is responsible for constructing an
+     * {@code androidx.appcompat.app.AlertDialog} using an AppCompat-themed Activity context
+     * (e.g. {@code getActivity()}) to avoid the {@link IllegalStateException} that
+     * {@code AppCompatDelegateImpl} throws when a non-themed context is used (BUG-002).
      */
     public interface DialogShower {
-        void show(AlertDialog dialog);
+        void show(EnrollmentDialogData data);
     }
 
     // -------------------------------------------------------------------------
@@ -329,13 +371,22 @@ public class PinCertificateEnrollmentFlow {
     // -------------------------------------------------------------------------
 
     /**
-     * Builds and shows the enrollment confirmation dialog.
+     * Builds the enrollment confirmation data and passes it to {@code onShowDialog}.
      *
-     * <p>Displays all four mandatory fields per CNTR-MODERNIZATION-002 §EnrolledCertificate:
-     * subject DN, issuer DN, SHA-256 fingerprint, and expiry date.
+     * <p>Computes all four mandatory display fields per CNTR-MODERNIZATION-002 §EnrolledCertificate
+     * (subject DN, issuer DN, SHA-256 fingerprint, expiry date) using the application context for
+     * string-resource lookups ({@code this.context}), then packages them together with the
+     * Trust/Cancel click listeners into an {@link EnrollmentDialogData} object.
+     *
+     * <p>The {@link DialogShower} implementation (in {@code AdvancedSettings}) is responsible for
+     * constructing and showing the {@code androidx.appcompat.app.AlertDialog} with an
+     * AppCompat-themed Activity context — this ensures the dialog inflates correctly on all API
+     * levels without an {@link IllegalStateException} (BUG-002 fix, AC-2).
      *
      * <p>The "Trust this certificate" button is NOT the default-focused control —
-     * the safe default is the Cancel/negative button (CNTR-002 affirmative-consent requirement).
+     * the safe default is the Cancel/negative button (CNTR-002 affirmative-consent requirement,
+     * AC-5). The negative button listener is set first in the builder chain in the
+     * {@link DialogShower} implementation.
      */
     void showEnrollmentDialog(final String host,
                               final int port,
@@ -349,35 +400,37 @@ public class PinCertificateEnrollmentFlow {
             final String expiry = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
                     .format(cert.getNotAfter());
 
+            // Build the dialog message using the application context (correct for getString).
             final String message = context.getString(R.string.ui_protocol_pin_certificate_dialog_subject, subject) + "\n\n"
                     + context.getString(R.string.ui_protocol_pin_certificate_dialog_issuer, issuer) + "\n\n"
                     + context.getString(R.string.ui_protocol_pin_certificate_dialog_fingerprint, fingerprint) + "\n\n"
                     + context.getString(R.string.ui_protocol_pin_certificate_dialog_expires, expiry);
 
-            AlertDialog dialog = new AlertDialog.Builder(context)
-                    .setTitle(R.string.ui_protocol_pin_certificate_dialog_title)
-                    .setMessage(message)
-                    // AC-5: "Trust this certificate" is NOT the default focused button.
-                    // Positive = confirm (Trust); Negative = cancel (safe default).
-                    .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            // Cancel: do NOT write PinnedCertStore (AC-5).
-                            if (listener != null) listener.onCancelled();
-                        }
-                    })
-                    .setPositiveButton(R.string.ui_protocol_pin_certificate_trust_button,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // Affirmative consent: store the cert (AC-6).
-                                    storeCertOnConfirm(host, port, cert);
-                                }
-                            })
-                    .setCancelable(true)
-                    .create();
+            // AC-5: negative (Cancel) listener — does NOT write PinnedCertStore.
+            final DialogInterface.OnClickListener onCancel = new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    if (listener != null) listener.onCancelled();
+                }
+            };
 
-            onShowDialog.show(dialog);
+            // AC-6: positive (Trust) listener — affirmative consent, stores the cert.
+            final DialogInterface.OnClickListener onTrust = new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    storeCertOnConfirm(host, port, cert);
+                }
+            };
+
+            // Pass cert display data + click handlers to the DialogShower.
+            // The DialogShower (AdvancedSettings) builds AlertDialog with a themed Activity context.
+            onShowDialog.show(new EnrollmentDialogData(
+                    R.string.ui_protocol_pin_certificate_dialog_title,
+                    message,
+                    R.string.ui_protocol_pin_certificate_trust_button,
+                    android.R.string.cancel,
+                    onTrust,
+                    onCancel));
 
         } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             Log.e(TAG, "PinCertEnrollment: cannot compute fingerprint", e);

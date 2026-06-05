@@ -467,10 +467,21 @@ public abstract class AdvancedSettings extends SMSBackupPreferenceFragment {
                     }
             ).start(serverAddress, new PinCertificateEnrollmentFlow.DialogShower() {
                 @Override
-                public void show(AlertDialog dialog) {
-                    if (getActivity() != null && !getActivity().isFinishing()) {
-                        dialog.show();
-                    }
+                public void show(PinCertificateEnrollmentFlow.EnrollmentDialogData data) {
+                    // BUG-002 fix (AC-2): build the AppCompat AlertDialog here, using the
+                    // Activity's AppCompat-themed context (getActivity()), NOT application context.
+                    // The activity-null/isFinishing guard protects against rotation between
+                    // FetchCertTask.execute() and onPostExecute().
+                    if (getActivity() == null || getActivity().isFinishing()) return;
+                    // AC-5: setNegativeButton BEFORE setPositiveButton so Cancel is not default.
+                    AlertDialog dialog = new AlertDialog.Builder(getActivity())
+                            .setTitle(data.titleResId)
+                            .setMessage(data.message)
+                            .setNegativeButton(data.negativeButtonResId, data.onCancel)
+                            .setPositiveButton(data.positiveButtonResId, data.onTrust)
+                            .setCancelable(true)
+                            .create();
+                    dialog.show();
                 }
             });
         }

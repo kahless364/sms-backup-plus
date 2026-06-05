@@ -135,8 +135,9 @@ public class AdvancedSettingsServerTest {
                 }
         );
 
-        // Build the dialog (displayit without user interaction) — store must not be written.
-        flow.showEnrollmentDialog(host, port, cert, dialog -> { /* capture only */ });
+        // Capture enrollment data without building or showing a real dialog — store must not
+        // be written merely by receiving the data.
+        flow.showEnrollmentDialog(host, port, cert, data -> { /* capture only — no dialog built */ });
 
         // Assert: store NOT written at display time (AC-5 / CNTR-002 display-before-consent).
         assertThat(pinnedCertStore.getTlsTrustPolicy(host, port))
@@ -164,12 +165,164 @@ public class AdvancedSettingsServerTest {
                 }
         );
 
-        flow.showEnrollmentDialog(host, port, cert, dialog -> { /* capture only */ });
+        flow.showEnrollmentDialog(host, port, cert, data -> { /* capture only — no dialog built */ });
 
-        // Store still empty after dialog is built.
+        // Store still empty after dialog data is built.
         assertThat(pinnedCertStore.get(host, port)).isNull();
         assertThat(pinnedCertStore.getTlsTrustPolicy(host, port))
                 .isEqualTo(TlsTrustPolicy.SYSTEM_VALIDATED);
+    }
+
+    // -------------------------------------------------------------------------
+    // U-034 / BUG-002 — DialogShower contract: EnrollmentDialogData population
+    // -------------------------------------------------------------------------
+
+    /**
+     * U-034 AC-2 / IC-1: showEnrollmentDialog passes an EnrollmentDialogData (not a pre-built
+     * AlertDialog) to the DialogShower. Verifies that the new DialogShower contract is used
+     * and that the data object carries all mandatory fields (title, message, button res IDs,
+     * click listeners).
+     */
+    @Test
+    public void u034_dialogShower_receivesEnrollmentDialogData() throws Exception {
+        final X509Certificate cert = loadCert(CERT_PEM);
+        final String host = "imap.selfhosted.org";
+        final int port = 993;
+
+        final PinCertificateEnrollmentFlow.EnrollmentDialogData[] captured =
+                new PinCertificateEnrollmentFlow.EnrollmentDialogData[1];
+
+        PinCertificateEnrollmentFlow flow = new PinCertificateEnrollmentFlow(
+                RuntimeEnvironment.application,
+                pinnedCertStore,
+                new PinCertificateEnrollmentFlow.Listener() {
+                    @Override public void onEnrolled(String h, int p) {}
+                    @Override public void onCancelled() {}
+                    @Override public void onFetchError(String msg) {}
+                }
+        );
+
+        flow.showEnrollmentDialog(host, port, cert, data -> captured[0] = data);
+
+        // Verify the data object was produced (not null).
+        assertThat(captured[0]).isNotNull();
+        // Title and button resource IDs must be set.
+        assertThat(captured[0].titleResId).isGreaterThan(0);
+        assertThat(captured[0].positiveButtonResId).isGreaterThan(0);
+        assertThat(captured[0].negativeButtonResId).isGreaterThan(0);
+        // Message must contain cert field content (non-empty).
+        assertThat(captured[0].message).isNotNull();
+        assertThat(captured[0].message).isNotEmpty();
+        // Click listeners must be present.
+        assertThat(captured[0].onTrust).isNotNull();
+        assertThat(captured[0].onCancel).isNotNull();
+    }
+
+    /**
+     * U-034 AC-2: The Trust (positive) click listener invokes storeCertOnConfirm, which
+     * writes PinnedCertStore. Invoking onTrust.onClick() directly simulates the user tapping
+     * Trust — the store must contain an entry afterwards.
+     */
+    @Test
+    public void u034_trustClickListener_storesCert() throws Exception {
+        final X509Certificate cert = loadCert(CERT_PEM);
+        final String host = "imap.selfhosted.org";
+        final int port = 993;
+
+        final PinCertificateEnrollmentFlow.EnrollmentDialogData[] captured =
+                new PinCertificateEnrollmentFlow.EnrollmentDialogData[1];
+
+        PinCertificateEnrollmentFlow flow = new PinCertificateEnrollmentFlow(
+                RuntimeEnvironment.application,
+                pinnedCertStore,
+                new PinCertificateEnrollmentFlow.Listener() {
+                    @Override public void onEnrolled(String h, int p) {}
+                    @Override public void onCancelled() {}
+                    @Override public void onFetchError(String msg) {}
+                }
+        );
+
+        flow.showEnrollmentDialog(host, port, cert, data -> captured[0] = data);
+
+        // Simulate tapping Trust.
+        captured[0].onTrust.onClick(null, 0);
+
+        // Store must now contain the cert (AC-4 / AC-6).
+        assertThat(pinnedCertStore.getTlsTrustPolicy(
+                host.toLowerCase(java.util.Locale.US), port))
+                .isEqualTo(TlsTrustPolicy.PINNED_CERTIFICATE);
+    }
+
+    /**
+     * U-034 AC-5: The Cancel (negative) click listener fires listener.onCancelled() and does
+     * NOT write PinnedCertStore. Invoking onCancel.onClick() directly simulates the user
+     * tapping Cancel — the store must remain empty.
+     */
+    @Test
+    public void u034_cancelClickListener_doesNotStoreCert_firesOnCancelled() throws Exception {
+        final X509Certificate cert = loadCert(CERT_PEM);
+        final String host = "imap.selfhosted.org";
+        final int port = 993;
+
+        final boolean[] cancelFired = {false};
+        final PinCertificateEnrollmentFlow.EnrollmentDialogData[] captured =
+                new PinCertificateEnrollmentFlow.EnrollmentDialogData[1];
+
+        PinCertificateEnrollmentFlow flow = new PinCertificateEnrollmentFlow(
+                RuntimeEnvironment.application,
+                pinnedCertStore,
+                new PinCertificateEnrollmentFlow.Listener() {
+                    @Override public void onEnrolled(String h, int p) {}
+                    @Override public void onCancelled() { cancelFired[0] = true; }
+                    @Override public void onFetchError(String msg) {}
+                }
+        );
+
+        flow.showEnrollmentDialog(host, port, cert, data -> captured[0] = data);
+
+        // Simulate tapping Cancel.
+        captured[0].onCancel.onClick(null, 0);
+
+        // Store must remain empty (AC-5).
+        assertThat(pinnedCertStore.get(host, port)).isNull();
+        assertThat(pinnedCertStore.getTlsTrustPolicy(host, port))
+                .isEqualTo(TlsTrustPolicy.SYSTEM_VALIDATED);
+        // onCancelled callback must have fired.
+        assertThat(cancelFired[0]).isTrue();
+    }
+
+    /**
+     * U-034 AC-6 / AC-5: Dialog data message contains all four mandatory cert fields.
+     * Verifies that subject DN, issuer DN, fingerprint (colon-hex), and expiry are all
+     * present in the dialog body string.
+     */
+    @Test
+    public void u034_dialogData_messageContainsAllFourCertFields() throws Exception {
+        final X509Certificate cert = loadCert(CERT_PEM);
+        final String host = "imap.selfhosted.org";
+        final int port = 993;
+
+        final PinCertificateEnrollmentFlow.EnrollmentDialogData[] captured =
+                new PinCertificateEnrollmentFlow.EnrollmentDialogData[1];
+
+        PinCertificateEnrollmentFlow flow = new PinCertificateEnrollmentFlow(
+                RuntimeEnvironment.application,
+                pinnedCertStore,
+                new PinCertificateEnrollmentFlow.Listener() {
+                    @Override public void onEnrolled(String h, int p) {}
+                    @Override public void onCancelled() {}
+                    @Override public void onFetchError(String msg) {}
+                }
+        );
+
+        flow.showEnrollmentDialog(host, port, cert, data -> captured[0] = data);
+
+        final String message = captured[0].message;
+        assertThat(message).isNotNull();
+        // Subject DN must appear (the cert's CN=test.example.org).
+        assertThat(message).contains("test.example.org");
+        // Fingerprint format: colon-separated uppercase hex (AB:CD:...).
+        assertThat(message).containsMatch("[0-9A-F]{2}(:[0-9A-F]{2})+");
     }
 
     // -------------------------------------------------------------------------

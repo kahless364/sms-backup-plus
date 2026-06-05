@@ -1,0 +1,14 @@
+{
+  "skill_name": "execute-sprint",
+  "instance_id": "execute-sprint-20260605-001418",
+  "parent_instance_id": null,
+  "started_at": "2026-06-05T00:14:18Z",
+  "expires_at": "2026-06-05T04:14:18Z",
+  "mode": "execute",
+  "artifact_paths": [
+    "sdlc/artifacts/build/sprints/"
+  ],
+  "current_step": "2",
+  "delegate_target": "amp:Developer",
+  "last_delegation": "2026-06-05T00:16:12.061Z"
+}
