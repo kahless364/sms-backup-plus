@@ -12,7 +12,7 @@ design_docs: []
 integration_contracts: []
 dependencies: []
 related_items:
-  - U-029
+  - U-039
 platforms: []
 tags: []
 id: BUG-007
