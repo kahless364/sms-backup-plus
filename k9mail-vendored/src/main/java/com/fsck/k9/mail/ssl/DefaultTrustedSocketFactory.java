@@ -17,7 +17,9 @@ import android.util.Log;
 
 import com.fsck.k9.mail.MessagingException;
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -187,8 +189,14 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
     }
 
     public static void setSniHost(SSLSocketFactory factory, SSLSocket socket, String hostname) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 &&
-                factory instanceof android.net.SSLCertificateSocketFactory) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // API 24+: use the public SSLParameters API to set the SNI server names list.
+            // This is the supported path on all modern Android versions including API 35+
+            // (conscrypt Java8EngineSocket) where the legacy reflective setHostname shim no
+            // longer applies.
+            setSniViaSSLParameters(socket, hostname);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 &&
+                factory instanceof SSLCertificateSocketFactory) {
             SSLCertificateSocketFactory sslCertificateSocketFactory = (SSLCertificateSocketFactory) factory;
             sslCertificateSocketFactory.setHostname(socket, hostname);
         } else {
@@ -196,11 +204,26 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
         }
     }
 
+    /**
+     * Sets the TLS SNI hostname via the public {@link SSLParameters#setServerNames} API.
+     * Available on API 24+ (Android N). Extracted as a public static method to allow unit
+     * testing with a mock SSLSocket without requiring Android API 24 system classes.
+     */
+    public static void setSniViaSSLParameters(SSLSocket socket, String hostname) {
+        SSLParameters params = socket.getSSLParameters();
+        params.setServerNames(Collections.singletonList(new SNIHostName(hostname)));
+        socket.setSSLParameters(params);
+    }
+
     private static void setHostnameViaReflection(SSLSocket socket, String hostname) {
         try {
             socket.getClass().getMethod("setHostname", String.class).invoke(socket, hostname);
         } catch (Throwable e) {
-            Log.e(LOG_TAG, "Could not call SSLSocket#setHostname(String) method ", e);
+            // The reflective setHostname shim is a legacy path for pre-API 17 devices.
+            // On modern Android (conscrypt Java8EngineSocket, API 35+) this method does not
+            // exist — that is expected and benign. Log at DEBUG to avoid alarming ERROR noise.
+            Log.d(LOG_TAG, "SSLSocket#setHostname(String) not available (expected on API 35+): "
+                    + e.getMessage());
         }
     }
 }
