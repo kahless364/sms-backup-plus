@@ -3,6 +3,7 @@ package com.zegoggles.smssync.preferences;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import com.fsck.k9.mail.AuthType;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -12,6 +13,10 @@ import org.robolectric.RuntimeEnvironment;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -33,6 +38,13 @@ public class AuthPreferencesTest {
         secretStore = new InMemorySecretStore();
         // U-011: Use the two-arg constructor (AC-8) to inject the test fake.
         authPreferences = new AuthPreferences(RuntimeEnvironment.application, secretStore);
+        // U-035: Reset the migration gate before each test so tests do not interfere with each other.
+        CredentialMigrationGate.resetForTest();
+    }
+
+    @After public void after() {
+        // U-035: Ensure the gate is reset after each test (in case a test leaves it in prepared state).
+        CredentialMigrationGate.resetForTest();
     }
 
     @Test public void testStoreUri() throws Exception {
@@ -765,6 +777,189 @@ public class AuthPreferencesTest {
         assertThat(secretStore.get("oauth2_refresh_token")).isEqualTo("rt");
         // Legacy map must be cleared.
         assertThat(secretStore.legacyStore.containsKey("login_password")).isFalse();
+    }
+
+    // -------------------------------------------------------------------------
+    // U-035: Off-thread migration + completion gate tests (AC-4, AC-5, AC-6, AC-7)
+    // All tests use InMemorySecretStore (injected via the two-arg constructor) and
+    // CredentialMigrationGate directly to verify the threading and gate invariants.
+    // -------------------------------------------------------------------------
+
+    /**
+     * AC-7a (U-035): Credential read after off-thread migration (simulated via
+     * executor + gate) returns the migrated value, not null.
+     *
+     * Simulates App.onCreate() dispatching migration to a background executor and
+     * signalling the gate, then verifies that a background-thread credential read
+     * (via getOauth2Token()) correctly awaits the gate and returns the migrated value.
+     */
+    @Test
+    public void u035_offThreadMigration_credentialReadAfterGate_returnsMigratedValue() throws Exception {
+        // Seed legacy plaintext credentials.
+        secretStore.legacyStore.put("login_password", "imap-pw");
+        secretStore.legacyStore.put("oauth2_token", "access-token");
+        secretStore.legacyStore.put("oauth2_refresh_token", "refresh-token");
+
+        // Prepare the gate (as App.onCreate() does) before dispatch.
+        CredentialMigrationGate.prepare();
+
+        // Dispatch migration to a background executor (mirrors App.onCreate() dispatch).
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    secretStore.migrateFromPlaintext();
+                } finally {
+                    CredentialMigrationGate.signalComplete();
+                    executor.shutdown();
+                }
+            }
+        });
+
+        // Credential read on a background thread — must await the gate and return migrated value.
+        final AtomicBoolean consumerDoneRef = new AtomicBoolean(false);
+        final String[] tokenRef = new String[1];
+        Thread consumerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // getOauth2Token() calls CredentialMigrationGate.awaitIfNeeded() internally.
+                tokenRef[0] = authPreferences.getOauth2Token();
+                consumerDoneRef.set(true);
+            }
+        });
+        consumerThread.start();
+        consumerThread.join(5000);
+
+        assertThat(consumerDoneRef.get()).isTrue();
+        assertThat(tokenRef[0]).isEqualTo("access-token");
+    }
+
+    /**
+     * AC-5 (U-035): Migration idempotency — gate is signalled on second launch even when
+     * the migration body short-circuits (MIGRATION_COMPLETE_KEY present).
+     *
+     * Verifies: if migration was already complete (marker present), the gate is still
+     * signalled and credential reads proceed normally without blocking.
+     */
+    @Test
+    public void u035_secondLaunch_migrationAlreadyComplete_gateSignalledImmediately() throws Exception {
+        // Simulate second launch: migration already complete (marker present).
+        secretStore.put("__secretstore_migration_complete__", "1");
+        secretStore.put("oauth2_token", "existing-token");
+
+        // Prepare gate and dispatch (mirrors App.onCreate()).
+        CredentialMigrationGate.prepare();
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    secretStore.migrateFromPlaintext(); // fast-path idempotency short-circuit
+                } finally {
+                    CredentialMigrationGate.signalComplete();
+                    executor.shutdown();
+                }
+            }
+        });
+
+        // Credential read must complete quickly (gate signals after fast-path).
+        final String[] tokenRef = new String[1];
+        final AtomicBoolean done = new AtomicBoolean(false);
+        Thread consumer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                tokenRef[0] = authPreferences.getOauth2Token();
+                done.set(true);
+            }
+        });
+        consumer.start();
+        consumer.join(5000);
+
+        assertThat(done.get()).isTrue();
+        assertThat(tokenRef[0]).isEqualTo("existing-token");
+    }
+
+    /**
+     * AC-6 (U-035): OAuth2 users are NOT logged out — oauth2_token and oauth2_refresh_token
+     * are migrated before the first OAuth2 credential read via the gate.
+     *
+     * The secretStore.migrateFromPlaintext() call in AuthPreferences.migrate() sits before
+     * the useXOAuth() early-return (AC-6 / AuthPreferences.java:344 before line 346).
+     * This test verifies the credential read returns the migrated value after gate signals.
+     */
+    @Test
+    public void u035_oauth2User_notLoggedOut_tokensAvailableAfterMigration() throws Exception {
+        // Setup: OAuth2 user with tokens in legacy store.
+        prefs.edit()
+            .putString("server_authentication", "xoauth")
+            .putString("oauth2_user", "user@gmail.com")
+            .commit();
+        secretStore.legacyStore.put("oauth2_token", "oauth2-access");
+        secretStore.legacyStore.put("oauth2_refresh_token", "oauth2-refresh");
+
+        // Prepare gate + dispatch migration.
+        CredentialMigrationGate.prepare();
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Note: AuthPreferences.migrate() calls secretStore.migrateFromPlaintext()
+                    // BEFORE the useXOAuth() early-return — OAuth2 tokens are always migrated.
+                    secretStore.migrateFromPlaintext();
+                } finally {
+                    CredentialMigrationGate.signalComplete();
+                    executor.shutdown();
+                }
+            }
+        });
+
+        // Background thread reads OAuth2 tokens — must await gate and return migrated values.
+        final String[] tokenRef = new String[1];
+        final String[] refreshRef = new String[1];
+        Thread consumer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                tokenRef[0] = authPreferences.getOauth2Token();
+                refreshRef[0] = authPreferences.getOauth2RefreshToken();
+            }
+        });
+        consumer.start();
+        consumer.join(5000);
+
+        assertThat(tokenRef[0]).isEqualTo("oauth2-access");
+        assertThat(refreshRef[0]).isEqualTo("oauth2-refresh");
+        // User not logged out — hasOAuth2Tokens() returns true.
+        // (Note: hasOAuth2Tokens() uses getOauth2Username() from plaintext prefs + getOauth2Token()
+        // from SecretStore; both values are set above.)
+    }
+
+    /**
+     * AC-7b (U-035): Gate is a no-op when never prepared (test environment where
+     * App.onCreate() is not invoked). getOauth2Token() returns null (no tokens set)
+     * without hanging.
+     *
+     * This verifies backward compatibility for all existing tests that call credential
+     * getters directly without preparing the gate.
+     */
+    @Test
+    public void u035_gateNeverPrepared_credentialReadReturnsWithoutHanging() throws Exception {
+        // Gate never prepared — latch is null.
+        // getOauth2Token() calls awaitIfNeeded() which returns immediately (null latch).
+        final String[] tokenRef = new String[1];
+        final AtomicBoolean done = new AtomicBoolean(false);
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                tokenRef[0] = authPreferences.getOauth2Token();
+                done.set(true);
+            }
+        });
+        t.start();
+        t.join(2000);
+        assertThat(done.get()).isTrue();
+        assertThat(tokenRef[0]).isNull(); // no token set — correct null-on-absent
     }
 
     /**

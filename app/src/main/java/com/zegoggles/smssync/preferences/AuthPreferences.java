@@ -134,11 +134,26 @@ public class AuthPreferences {
         return new EncryptedPrefsSecretStore(context);
     }
 
+    /**
+     * Returns the OAuth2 access token, or {@code null} if absent.
+     *
+     * U-035: Awaits the credential migration gate before reading, so this method
+     * never returns a pre-migration or mid-migration value. The gate is a no-op on
+     * the main thread (to prevent ANR) and a no-op if the gate was never prepared
+     * (test environments, second-launch fast-path). See {@link CredentialMigrationGate}.
+     */
     public String getOauth2Token() {
+        CredentialMigrationGate.awaitIfNeeded();
         return secretStore.get(OAUTH2_TOKEN);
     }
 
+    /**
+     * Returns the OAuth2 refresh token, or {@code null} if absent.
+     *
+     * U-035: Gate-guarded — see {@link #getOauth2Token()} and {@link CredentialMigrationGate}.
+     */
     public String getOauth2RefreshToken() {
+        CredentialMigrationGate.awaitIfNeeded();
         return secretStore.get(OAUTH2_REFRESH_TOKEN);
     }
 
@@ -290,7 +305,13 @@ public class AuthPreferences {
         return preferences.getString(IMAP_USER, null);
     }
 
+    /**
+     * Returns the IMAP password, or {@code null} if absent.
+     *
+     * U-035: Gate-guarded — see {@link #getOauth2Token()} and {@link CredentialMigrationGate}.
+     */
     private String getImapPassword() {
+        CredentialMigrationGate.awaitIfNeeded();
         return secretStore.get(IMAP_PASSWORD);
     }
 

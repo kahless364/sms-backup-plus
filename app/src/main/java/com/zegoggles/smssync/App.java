@@ -40,6 +40,7 @@ import androidx.work.Configuration;
 import android.util.Log;
 import com.fsck.k9.mail.K9MailLib;
 import com.zegoggles.smssync.compat.GooglePlayServices;
+import com.zegoggles.smssync.preferences.CredentialMigrationGate;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.receiver.BootReceiver;
 import com.zegoggles.smssync.receiver.SmsBroadcastReceiver;
@@ -48,6 +49,8 @@ import com.zegoggles.smssync.scheduler.WorkManagerScheduler;
 import com.zegoggles.smssync.service.state.FlowSyncStateRepository;
 import com.zegoggles.smssync.service.state.SyncStateRepository;
 import dagger.hilt.android.HiltAndroidApp;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.inject.Inject;
 
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
@@ -157,10 +160,44 @@ public class App extends Application implements Configuration.Provider {
         syncStateRepositoryInstance = new FlowSyncStateRepository();
 
         gcmAvailable = GooglePlayServices.isAvailable(this);
-        // U-022: 'preferences' is now an @Inject field populated by Hilt before this
-        // line executes (PreferencesModule.providePreferences via SingletonComponent).
-        // 'new Preferences(this)' removed per AC-3.
-        preferences.migrate();
+
+        // U-035 / BUG-003: Run the one-time plaintext-to-encrypted credential migration
+        // OFF the main thread to avoid StrictMode disk-write violations and ANR risk.
+        //
+        // Previously preferences.migrate() was called synchronously here (U-022/AC-3),
+        // which triggered EncryptedPrefsSecretStore.migrateFromPlaintext() on the main
+        // thread — Keystore IPC + two synchronous commit() calls = disk-write violation.
+        //
+        // Fix: prepare the completion gate BEFORE dispatching so the latch is always in
+        // place when credential consumers check it (race-safety: prepare() -> submit() ->
+        // signalComplete() is the guaranteed ordering; no consumer can see a null latch
+        // because prepare() happens-before submit() on the same thread).
+        //
+        // IC-1: Migration still fires on every App.onCreate() until the
+        // MIGRATION_COMPLETE_KEY marker is present (EncryptedPrefsSecretStore idempotency
+        // short-circuit). After migration, the background task completes quickly and the
+        // gate is signalled before any BackupWorker credential read occurs.
+        //
+        // See CredentialMigrationGate for the full race-safety argument.
+        final Preferences capturedPreferences = preferences;
+        CredentialMigrationGate.prepare();
+        final ExecutorService migrationExecutor = Executors.newSingleThreadExecutor();
+        migrationExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Both commit() calls inside migrateFromPlaintext() run here,
+                    // on a background I/O thread — NOT the main thread (AC-3).
+                    capturedPreferences.migrate();
+                } finally {
+                    // Signal the gate regardless of success/failure so credential
+                    // consumers are never permanently blocked.
+                    CredentialMigrationGate.signalComplete();
+                    // Shut down the single-thread executor after the one job completes.
+                    migrationExecutor.shutdown();
+                }
+            }
+        });
 
         // U-024: Explicitly initialize WorkManager with Hilt's configuration so the
         // HiltWorkerFactory is registered. Auto-initialization is disabled in
