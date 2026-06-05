@@ -1,6 +1,6 @@
 ---
 type: story
-status: ready
+status: planned
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -19,6 +19,7 @@ title: 'Fix TLS pin-certificate enrollment dialog crash: build AlertDialog with 
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-002
+sprint: '000004'
 ---
 
 # U-034: Fix TLS pin-certificate enrollment dialog crash: build AlertDialog with a themed Activity context
