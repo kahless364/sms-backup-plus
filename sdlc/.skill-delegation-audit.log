@@ -42,3 +42,4 @@
 {"timestamp":"2026-06-05T18:43:29.090Z","event_type":"teardown","child_skill":"create-stories","child_instance_id":"create-stories-20260605-184237","context_file_sha256":"6d47fbbcd3f33d35cf91cc88c7841f036893d36398a4e2b1892678457e0dff41"}
 {"timestamp":"2026-06-05T18:44:41.051Z","event_type":"teardown","child_skill":"create-sprint","child_instance_id":"create-sprint-20260605-184346","context_file_sha256":"0a2e37b5f5e0e78d6b15ab432c87a1957c2e826609b449bb5f03c053a0274df3"}
 {"timestamp":"2026-06-05T20:01:29.139Z","event_type":"teardown","child_skill":"execute-sprint","child_instance_id":"execute-sprint-20260605-184453","context_file_sha256":"b4f03a447bd51f92db3347164a38449152650e729a2a57bc09f6be744ec3fc87"}
+{"timestamp":"2026-06-05T20:09:12.866Z","event_type":"teardown","child_skill":"create-bug","child_instance_id":"create-bug-20260605-200744","context_file_sha256":"1bc349a7566f7ef4addcb76a703793cb031d97d713f1d3873ccd870ff817aa93"}
