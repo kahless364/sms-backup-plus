@@ -7,10 +7,11 @@ related_design_docs: []
 related_stories: []
 change_records: []
 id: CNTR-MODERNIZATION-005
-title: ''
+title: 'Public com.zegoggles.smssync.BACKUP Broadcast Trigger'
 domain: modernization
-contract_type: ''
-producer: ''
+contract_type: 'event'
+producer: 'external-third-party (uncontrolled: Tasker / MacroDroid / Automate / ADB)'
+consumer: 'com.zegoggles.smssync — BackupBroadcastReceiver'
 ---
 
 # CNTR-MODERNIZATION-005: Public `com.zegoggles.smssync.BACKUP` Broadcast Trigger
@@ -272,4 +273,6 @@ no backup is enqueued and only the `"...but ignored"` debug log is written. resu
 
 ## Notes
 
-One-line: documents the EXISTING public `com.zegoggles.smssync.BACKUP` broadcast (action string, package, no-permission/no-extras delivery, exported=true, opt-in gate) as a HARD-PRESERVE external contract that MU-001 receiver-export and MU-005 WorkManager changes must keep verbatim — draft, not finalized.
+One-line: documents the EXISTING public `com.zegoggles.smssync.BACKUP` broadcast (action string, package, no-permission/no-extras delivery, exported=true, opt-in gate) as a HARD-PRESERVE external contract that MU-001 receiver-export and MU-005 WorkManager changes must keep verbatim.
+
+**Status:** approved/finalized (2026-06-23). Reconciled metadata (title, contract_type=event, producer=external-third-party, consumer) and removed the stale "draft, not finalized" note — the MU-001 and MU-005 changes shipped (sprints 001–002) and the receiver in the current tree honors this contract verbatim (verified `AndroidManifest.xml:163-167` exported=true + action string; `Preferences.java:179` gate default `false`). Re-confirmed during the 2026-06-23 post-migration assessment (finding SE-001).
