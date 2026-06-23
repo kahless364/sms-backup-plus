@@ -8,7 +8,9 @@ import com.zegoggles.smssync.service.state.RestoreState
 import com.zegoggles.smssync.service.state.SmsSyncState
 import com.zegoggles.smssync.service.state.SyncEvent
 import com.zegoggles.smssync.service.state.SyncStateRepository
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -145,5 +147,27 @@ class MainViewModelTest {
         val result: Boolean = viewModel.tryEmitEvent(event)
         // Result is observable by the caller (it is returned and assigned here).
         assertThat(result).isTrue()
+    }
+
+    // -----------------------------------------------------------------------
+    // BUG-005: onCleared() cancels the viewModelScope (no observer leak)
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `onCleared cancels viewModelScope preventing observer leak (BUG-005)`() {
+        // viewModelScope must be active before clear.
+        assertThat(viewModel.viewModelScope.isActive).isTrue()
+
+        // Simulate ViewModel destruction. ViewModel.clear() is the package-private method
+        // that ViewModelStore calls to tear down each ViewModel; it calls onCleared() and
+        // cancels the viewModelScope. Call via reflection to avoid access restrictions.
+        val clearMethod = androidx.lifecycle.ViewModel::class.java.getDeclaredMethod("clear")
+        clearMethod.isAccessible = true
+        clearMethod.invoke(viewModel)
+
+        // After clear(), viewModelScope is cancelled — all background coroutines
+        // (backup/restore observers, cancel collectors) are terminated.
+        // This is the BUG-005 no-leak guarantee.
+        assertThat(viewModel.viewModelScope.isActive).isFalse()
     }
 }

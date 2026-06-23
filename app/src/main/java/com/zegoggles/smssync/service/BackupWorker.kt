@@ -19,6 +19,7 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
@@ -489,7 +490,11 @@ class BackupWorker @AssistedInject constructor(
             .setOngoing(true)
             .setWhen(System.currentTimeMillis())
             .build()
-        return ForegroundInfo(BACKUP_NOTIFICATION_ID, notification)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(BACKUP_NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(BACKUP_NOTIFICATION_ID, notification)
+        }
     }
 
     companion object {

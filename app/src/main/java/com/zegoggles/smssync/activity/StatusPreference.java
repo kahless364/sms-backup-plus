@@ -75,7 +75,6 @@ public class StatusPreference extends Preference implements View.OnClickListener
     SavedState restoredState = null;
 
     // U-020: coroutine scope for state/event Flow collection; cancelled in onDetached (AC-15).
-    // TODO U-022/MU-007: replace with @Inject SyncStateRepository.
     private kotlinx.coroutines.CoroutineScope collectionScope = null;
 
     @SuppressWarnings("unused")

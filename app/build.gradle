@@ -260,9 +260,7 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
                      excludes: jacocoFileFilter + ['**/*Test*.class']),
             fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
                      excludes: jacocoFileFilter + [
-                         // Exclude service/App classes covered by ASM dir to prevent "do not match"
-                         '**/service/SmsBackupService.class',
-                         '**/service/SmsRestoreService.class',
+                         // Exclude App class covered by ASM dir to prevent "do not match"
                          '**/smssync/App.class',
                      ]),
             fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
@@ -308,9 +306,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
                      excludes: jacocoFileFilter + ['**/*Test*.class']),
             fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
                      excludes: jacocoFileFilter + [
-                         // Exclude service/App classes covered by ASM dir to prevent "do not match"
-                         '**/service/SmsBackupService.class',
-                         '**/service/SmsRestoreService.class',
+                         // Exclude App class covered by ASM dir to prevent "do not match"
                          '**/smssync/App.class',
                      ]),
             fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
