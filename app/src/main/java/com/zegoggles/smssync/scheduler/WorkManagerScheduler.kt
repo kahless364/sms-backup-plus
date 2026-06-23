@@ -27,7 +27,9 @@ import com.zegoggles.smssync.service.BackupType
 import com.zegoggles.smssync.service.BackupWorker
 import com.zegoggles.smssync.service.RestoreWorker
 import com.zegoggles.smssync.worker.BackupTriggerWorker
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 /**
  * WorkManager implementation of [BackupScheduler] — the second adapter alongside
@@ -75,8 +77,13 @@ import java.util.concurrent.TimeUnit
  * **[scheduleRestore]**: stub returning a [ScheduledJob] — full durable restore checkpoint
  * is U-016.
  */
-class WorkManagerScheduler(
-    private val context: Context,
+/**
+ * U-048: @Inject constructor added so Hilt can construct this as the @Singleton
+ * BackupScheduler without any manual `new WorkManagerScheduler(...)` call in modules
+ * or App. SchedulerModule binds BackupScheduler -> WorkManagerScheduler via @Binds.
+ */
+class WorkManagerScheduler @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val preferences: Preferences
 ) : BackupScheduler {
 

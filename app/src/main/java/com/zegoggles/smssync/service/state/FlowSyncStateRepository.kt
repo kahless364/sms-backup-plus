@@ -1,6 +1,7 @@
 package com.zegoggles.smssync.service.state
 
 import android.util.Log
+import javax.inject.Inject
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,10 +20,11 @@ import kotlinx.coroutines.flow.asStateFlow
  * AC-5:  SharedFlow replay=0 — late collectors do NOT see prior events.
  * AC-17: tryEmitEvent() return value is logged when false, NOT silently discarded.
  *
- * Manual application-scoped singleton (no Hilt injection until U-022).
- * TODO U-022/MU-007: replace manual singleton with Hilt @Singleton
+ * U-048: @Inject constructor added so Hilt can construct this as a @Singleton without
+ * any manual `new FlowSyncStateRepository()` call in modules or App. EventModule binds
+ * SyncStateRepository -> FlowSyncStateRepository via @Binds.
  */
-class FlowSyncStateRepository : SyncStateRepository {
+class FlowSyncStateRepository @Inject constructor() : SyncStateRepository {
 
     // Seed with BackupState() — the non-null, non-running INITIAL state.
     // CNTR-MODERNIZATION-006 Validation Rule 2.
