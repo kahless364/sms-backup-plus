@@ -33,6 +33,7 @@ import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
 import com.zegoggles.smssync.contacts.ContactAccessor
 import com.zegoggles.smssync.di.MailTransportFactory
+import com.zegoggles.smssync.mail.ConversionResult
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.MessageConverter
 import com.zegoggles.smssync.mail.PersonLookup
@@ -41,6 +42,7 @@ import com.zegoggles.smssync.mail.transport.MailException
 import com.zegoggles.smssync.mail.transport.MailTransport
 import com.zegoggles.smssync.mail.transport.XOAuth2FailedException
 import com.zegoggles.smssync.preferences.AuthPreferences
+import com.zegoggles.smssync.preferences.DataTypePreferences
 import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.scheduler.WorkManagerScheduler
 import com.zegoggles.smssync.service.exception.RequiresLoginException
@@ -296,6 +298,9 @@ class BackupWorker @AssistedInject constructor(
      * the failed batch. Per-batch watermark writes are preserved (durable checkpoint behavior):
      * if batch N succeeds and batch N+1 fails, batch N's watermark remains committed and only
      * batch N+1 is retried.
+     *
+     * U-053 (TE-003): the confirmed-append/watermark gating is now in [appendBatchAndUpdateWatermark],
+     * a named `internal` seam exercised directly by [BackupWorkerWatermarkTest].
      */
     private suspend fun backupCursors(
         cursors: BackupCursors,
@@ -336,25 +341,15 @@ class BackupWorker @AssistedInject constructor(
                         "BackupWorker: sending %d %s message(s) to server.",
                         messages.size, cursor.type))
 
-                    // U-026: openFolder + appendMessages via transport port
-                    // BUG-010 fix (U-042): appendMessages returns the confirmed max-date of
-                    // the appended messages. The watermark is advanced to EXACTLY this value —
-                    // never to a separately-computed date and never ahead of unconfirmed messages.
-                    // If openFolder or appendMessages throws, confirmedMaxDate is never assigned
-                    // and setMaxSyncedDate is never called for this batch.
-                    val folder: BackupFolderHandle = transport.openFolder(cursor.type, preferences.dataTypePreferences)
-                    val confirmedMaxDate: Long = transport.appendMessages(folder, result)
+                    // U-053 (TE-003): delegate confirmed-append + watermark gating to the
+                    // named internal seam so tests can exercise this production code directly.
+                    appendBatchAndUpdateWatermark(transport, cursor.type, result, preferences.dataTypePreferences)
 
                     // Calendar sync per CALLLOG batch (AC-10c / BackupTask.java:282-284)
                     if (cursor.type == DataType.CALLLOG && calendarSyncer != null) {
                         calendarSyncer.syncCalendar(result)
                     }
 
-                    // BUG-010 fix: watermark advances ONLY to confirmedMaxDate (the value
-                    // returned by appendMessages, not wall-clock time and not a pre-computed
-                    // result field). Per-batch write for durable checkpoint behavior (U-016).
-                    preferences.dataTypePreferences.setMaxSyncedDate(cursor.type, confirmedMaxDate)
-                    Log.d(TAG, "BackupWorker: watermark advanced for ${cursor.type} to $confirmedMaxDate")
                     backedUpItems += messages.size
                 } else {
                     Log.w(TAG, "BackupWorker: no messages converted")
@@ -381,6 +376,51 @@ class BackupWorker @AssistedInject constructor(
             // U-026: closeFolders via transport port (does not throw)
             transport.closeFolders()
         }
+    }
+
+    /**
+     * Confirmed-append / watermark-gating seam (U-053, TE-003).
+     *
+     * Performs the three-step BUG-010 invariant in one named, testable unit:
+     *   1. [MailTransport.openFolder] — can throw; watermark never touched if it does
+     *   2. [MailTransport.appendMessages] — can throw; watermark never touched if it does
+     *   3. [DataTypePreferences.setMaxSyncedDate] — reached ONLY after a confirmed append
+     *
+     * This is the single production implementation of the "watermark advances only on
+     * confirmed append" rule. [BackupWorkerWatermarkTest] invokes this method directly
+     * to assert BUG-010 cases against production code (not a re-implementation copy).
+     *
+     * Visibility: `internal` so it is accessible from tests in the same Gradle module
+     * without reflection, while remaining hidden from external callers outside the module.
+     *
+     * @param transport  the active [MailTransport] for this backup run
+     * @param type       the [DataType] whose IMAP folder receives the messages
+     * @param result     the [ConversionResult] containing the messages to append
+     * @param dataTypePreferences  the preferences used to persist the watermark
+     * @throws MailException if [openFolder] or [appendMessages] fails
+     * @throws RequiresLoginException if credentials are rejected
+     */
+    @androidx.annotation.VisibleForTesting(otherwise = androidx.annotation.VisibleForTesting.PRIVATE)
+    internal fun appendBatchAndUpdateWatermark(
+        transport: MailTransport,
+        type: DataType,
+        result: ConversionResult,
+        dataTypePreferences: DataTypePreferences
+    ) {
+        // BUG-010 fix (U-042): openFolder + appendMessages via transport port.
+        // appendMessages returns the confirmed max-date of the appended messages.
+        // The watermark is advanced to EXACTLY this value — never to a separately-computed
+        // date and never ahead of unconfirmed messages.
+        // If openFolder or appendMessages throws, confirmedMaxDate is never assigned
+        // and setMaxSyncedDate is never called for this batch.
+        val folder: BackupFolderHandle = transport.openFolder(type, dataTypePreferences)
+        val confirmedMaxDate: Long = transport.appendMessages(folder, result)
+
+        // BUG-010 fix: watermark advances ONLY to confirmedMaxDate (the value
+        // returned by appendMessages, not wall-clock time and not a pre-computed
+        // result field). Per-batch write for durable checkpoint behavior (U-016).
+        dataTypePreferences.setMaxSyncedDate(type, confirmedMaxDate)
+        Log.d(TAG, "BackupWorker: watermark advanced for $type to $confirmedMaxDate")
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.zegoggles.smssync.service
 
 import android.content.Context
+import androidx.work.testing.TestListenableWorkerBuilder
 import com.google.common.truth.Truth.assertThat
 import com.zegoggles.smssync.mail.ConversionResult
 import com.zegoggles.smssync.mail.DataType
@@ -30,6 +31,11 @@ import java.util.Date
 /**
  * Regression tests for BUG-010 / U-042: watermark advances ONLY after confirmed IMAP append.
  *
+ * U-053 (TE-003): tests now invoke [BackupWorker.appendBatchAndUpdateWatermark] directly —
+ * the named `internal` production seam extracted in U-053. The previous local copy of the
+ * watermark loop has been deleted. Any regression introduced into the
+ * production watermark-gating code will now be caught by these tests.
+ *
  * Tests cover AC-3 scenarios:
  *   (a) append/folder failure → watermark unchanged  (3 variants)
  *   (b) successful batch → watermark = max appended message date  (2 variants)
@@ -38,19 +44,11 @@ import java.util.Date
  * Architecture:
  * - [StubMailTransport] — configurable stub [MailTransport] that either throws or returns
  *   a confirmed date from [MailTransport.appendMessages].
- * - [processWatermarkLoop] — local helper function that replicates the exact 3-line
- *   confirmed-append gating logic from [BackupWorker.backupCursors], so the tests verify
- *   the actual invariant being fixed:
- *     ```
- *     val folder = transport.openFolder(type, prefs)       // can throw → no watermark
- *     val confirmedMaxDate = transport.appendMessages(...)  // can throw → no watermark
- *     prefs.setMaxSyncedDate(type, confirmedMaxDate)        // only reached on success
- *     ```
+ * - The subject under test is a real [BackupWorker] instance constructed via
+ *   [BackupWorker.TestableBackupWorkerFactoryWithTransport], ensuring production code
+ *   (not a copy) is exercised for every assertion.
  * - [buildConversionResult] — creates a [ConversionResult] with a known max date so tests
  *   can assert exact watermark values.
- *
- * Using a local [processWatermarkLoop] helper avoids Hilt annotation-processor conflicts
- * (adding test-seam methods to @HiltWorker classes causes kapt failures with generics).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
@@ -79,6 +77,18 @@ class BackupWorkerWatermarkTest {
         dataTypePreferences.setMaxSyncedDate(DataType.CALLLOG, DataType.Defaults.MAX_SYNCED_DATE)
     }
 
+    /**
+     * Constructs a real [BackupWorker] with a [StubMailTransport] injected via
+     * [BackupWorker.TestableBackupWorkerFactoryWithTransport].
+     *
+     * U-053: this is the production seam bridge — tests call [BackupWorker.appendBatchAndUpdateWatermark]
+     * on this worker instance, exercising the real production watermark-gating code.
+     */
+    private fun buildWorker(transport: StubMailTransport): BackupWorker =
+        TestListenableWorkerBuilder<BackupWorker>(context)
+            .setWorkerFactory(BackupWorker.TestableBackupWorkerFactoryWithTransport(transport))
+            .build() as BackupWorker
+
     // -------------------------------------------------------------------------
     // AC-3(a): append/folder failure → watermark unchanged
     // -------------------------------------------------------------------------
@@ -91,16 +101,20 @@ class BackupWorkerWatermarkTest {
      * [DataTypePreferences.setMaxSyncedDate] is NEVER called unless [MailTransport.appendMessages]
      * returns normally. If openFolder throws, appendMessages is never called, and
      * setMaxSyncedDate is unreachable.
+     *
+     * U-053: assertion is against production [BackupWorker.appendBatchAndUpdateWatermark].
      */
     @Test
     fun ac3a_openFolderFails_watermarkUnchanged() {
         val transport = StubMailTransport(openFolderBehavior = { throw MailException("folder NONEXISTENT") })
+        val worker = buildWorker(transport)
 
         try {
-            processWatermarkLoop(
+            worker.appendBatchAndUpdateWatermark(
                 transport = transport,
-                items = listOf(DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_1)),
-                prefs = dataTypePreferences
+                type = DataType.SMS,
+                result = buildConversionResult(DataType.SMS, SMS_DATE_1),
+                dataTypePreferences = dataTypePreferences
             )
         } catch (_: MailException) {
             // Expected: openFolder threw → watermark write never reached
@@ -116,18 +130,22 @@ class BackupWorkerWatermarkTest {
      *
      * openFolder succeeds; appendMessages throws (e.g. k9 silently failed to append,
      * returned a server error, and the adapter threw a MailException). Watermark unchanged.
+     *
+     * U-053: assertion is against production [BackupWorker.appendBatchAndUpdateWatermark].
      */
     @Test
     fun ac3a_appendMessagesFails_watermarkUnchanged() {
         val transport = StubMailTransport(
             appendMessagesBehavior = { throw MailException("NO [NONEXISTENT] folder gone") }
         )
+        val worker = buildWorker(transport)
 
         try {
-            processWatermarkLoop(
+            worker.appendBatchAndUpdateWatermark(
                 transport = transport,
-                items = listOf(DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_1)),
-                prefs = dataTypePreferences
+                type = DataType.SMS,
+                result = buildConversionResult(DataType.SMS, SMS_DATE_1),
+                dataTypePreferences = dataTypePreferences
             )
         } catch (_: MailException) {
             // Expected: appendMessages threw → watermark write unreachable
@@ -141,18 +159,22 @@ class BackupWorkerWatermarkTest {
      * AC-3(a) variant: login failure → [MailTransport.openFolder] throws [RequiresLoginException].
      *
      * No append occurs → watermark unchanged.
+     *
+     * U-053: assertion is against production [BackupWorker.appendBatchAndUpdateWatermark].
      */
     @Test
     fun ac3a_loginFails_watermarkUnchanged() {
         val transport = StubMailTransport(
             openFolderBehavior = { throw RequiresLoginException() }
         )
+        val worker = buildWorker(transport)
 
         try {
-            processWatermarkLoop(
+            worker.appendBatchAndUpdateWatermark(
                 transport = transport,
-                items = listOf(DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_1)),
-                prefs = dataTypePreferences
+                type = DataType.SMS,
+                result = buildConversionResult(DataType.SMS, SMS_DATE_1),
+                dataTypePreferences = dataTypePreferences
             )
         } catch (_: RequiresLoginException) {
             // Expected
@@ -176,15 +198,19 @@ class BackupWorkerWatermarkTest {
      *
      * The value SMS_DATE_1 is a real message timestamp (2023-11-14), NOT wall-clock "now".
      * This verifies that confirmed dates are message-derived, not time-derived.
+     *
+     * U-053: assertion is against production [BackupWorker.appendBatchAndUpdateWatermark].
      */
     @Test
     fun ac3b_successfulBatch_watermarkAdvancesToConfirmedDate() {
         val transport = StubMailTransport(confirmedDateToReturn = SMS_DATE_1)
+        val worker = buildWorker(transport)
 
-        processWatermarkLoop(
+        worker.appendBatchAndUpdateWatermark(
             transport = transport,
-            items = listOf(DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_1)),
-            prefs = dataTypePreferences
+            type = DataType.SMS,
+            result = buildConversionResult(DataType.SMS, SMS_DATE_1),
+            dataTypePreferences = dataTypePreferences
         )
 
         // Watermark must be exactly the confirmed date
@@ -198,6 +224,8 @@ class BackupWorkerWatermarkTest {
      *
      * This verifies that per-batch watermark updates are cumulative: each successful
      * batch advances the watermark independently.
+     *
+     * U-053: assertion is against production [BackupWorker.appendBatchAndUpdateWatermark] called twice.
      */
     @Test
     fun ac3b_twoSuccessfulBatches_watermarkAdvancesToSecondDate() {
@@ -208,14 +236,19 @@ class BackupWorkerWatermarkTest {
                 if (callCount == 1) SMS_DATE_1 else SMS_DATE_2
             }
         )
+        val worker = buildWorker(transport)
 
-        processWatermarkLoop(
+        worker.appendBatchAndUpdateWatermark(
             transport = transport,
-            items = listOf(
-                DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_1),
-                DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_2)
-            ),
-            prefs = dataTypePreferences
+            type = DataType.SMS,
+            result = buildConversionResult(DataType.SMS, SMS_DATE_1),
+            dataTypePreferences = dataTypePreferences
+        )
+        worker.appendBatchAndUpdateWatermark(
+            transport = transport,
+            type = DataType.SMS,
+            result = buildConversionResult(DataType.SMS, SMS_DATE_2),
+            dataTypePreferences = dataTypePreferences
         )
 
         // After two successful batches, watermark must be SMS_DATE_2 (later date)
@@ -238,6 +271,8 @@ class BackupWorkerWatermarkTest {
      *
      * On the next backup run, the worker fetches messages with date > SMS_DATE_1,
      * so the second message (SMS_DATE_2) is correctly re-attempted.
+     *
+     * U-053: assertion is against production [BackupWorker.appendBatchAndUpdateWatermark].
      */
     @Test
     fun ac3c_partialSuccess_watermarkEqualsBatch1MaxDate() {
@@ -251,15 +286,23 @@ class BackupWorkerWatermarkTest {
                 SMS_DATE_1
             }
         )
+        val worker = buildWorker(transport)
 
+        // Batch 1 — succeeds, watermark = SMS_DATE_1
+        worker.appendBatchAndUpdateWatermark(
+            transport = transport,
+            type = DataType.SMS,
+            result = buildConversionResult(DataType.SMS, SMS_DATE_1),
+            dataTypePreferences = dataTypePreferences
+        )
+
+        // Batch 2 — fails, watermark must not advance
         try {
-            processWatermarkLoop(
+            worker.appendBatchAndUpdateWatermark(
                 transport = transport,
-                items = listOf(
-                    DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_1),
-                    DataType.SMS to buildConversionResult(DataType.SMS, SMS_DATE_2)
-                ),
-                prefs = dataTypePreferences
+                type = DataType.SMS,
+                result = buildConversionResult(DataType.SMS, SMS_DATE_2),
+                dataTypePreferences = dataTypePreferences
             )
         } catch (_: MailException) {
             // Expected: batch 2 threw
@@ -277,31 +320,6 @@ class BackupWorkerWatermarkTest {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
-
-    /**
-     * Replicates the exact confirmed-append gating logic from [BackupWorker.backupCursors]:
-     *
-     *   ```
-     *   val folder = transport.openFolder(type, prefs)        // throws → no watermark
-     *   val confirmedMaxDate = transport.appendMessages(...)   // throws → no watermark
-     *   prefs.setMaxSyncedDate(type, confirmedMaxDate)         // only reached on success
-     *   ```
-     *
-     * This is NOT a copy-paste of the production code; it is the minimal expression of
-     * the invariant being tested. Changes to [BackupWorker.backupCursors] that violate
-     * this invariant would need to also update these tests.
-     */
-    private fun processWatermarkLoop(
-        transport: MailTransport,
-        items: List<Pair<DataType, ConversionResult>>,
-        prefs: DataTypePreferences
-    ) {
-        for ((type, result) in items) {
-            val folder: BackupFolderHandle = transport.openFolder(type, prefs)
-            val confirmedMaxDate: Long = transport.appendMessages(folder, result)
-            prefs.setMaxSyncedDate(type, confirmedMaxDate)
-        }
-    }
 
     /**
      * Creates a [ConversionResult] for [type] containing one mock message with
