@@ -20,6 +20,7 @@ import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.database.Cursor
 import android.net.Uri
 import android.provider.CallLog
@@ -703,7 +704,11 @@ class RestoreWorker @AssistedInject constructor(
             .setOngoing(true)
             .setWhen(System.currentTimeMillis())
             .build()
-        return ForegroundInfo(RESTORE_NOTIFICATION_ID, notification)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(RESTORE_NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(RESTORE_NOTIFICATION_ID, notification)
+        }
     }
 
     companion object {

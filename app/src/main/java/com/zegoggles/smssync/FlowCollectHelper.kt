@@ -13,8 +13,6 @@ import kotlinx.coroutines.launch
  * U-020: Kotlin helper that bridges Flow collection into Java-friendly callbacks.
  * Used by App.java to collect SyncEvent.AutoBackupSettingsChanged from the
  * application-scoped SyncStateRepository without direct Kotlin coroutine API from Java.
- *
- * TODO U-022/MU-007: remove once Hilt injection replaces manual-DI pattern.
  */
 object FlowCollectHelper {
 

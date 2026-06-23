@@ -115,3 +115,49 @@ In the new architecture, the observation is done via `viewModelScope.launch { fl
 
 Authoritative @Test count (post-commit): **638**
 (Previous: 673; removed 35 tests from SmsBackupServiceTest + SmsRestoreServiceTest for deleted classes)
+
+---
+
+## Remediation (post-review)
+
+### U-049 BLOCKER Fix: ForegroundInfo foreground-service-type
+
+**Finding**: The 2-arg `ForegroundInfo(notificationId, notification)` constructor passes
+`foregroundServiceType = 0x0`. On `targetSdk 35` / Android 14+, WorkManager's
+`setForeground()` → `startForeground()` requires the type mask to be a non-empty subset
+of the manifest-declared type (`dataSync`). Passing type `0x0` produces a runtime
+`IllegalArgumentException`.
+
+**Fix applied** to two call sites:
+
+- `app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt` (line 492):
+  Added `android.os.Build` import. Changed `return ForegroundInfo(BACKUP_NOTIFICATION_ID, notification)`
+  to an API-level branch: API 29+ uses the 3-arg constructor with
+  `android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC`; below API 29 falls
+  back to the 2-arg form. `@Suppress("DEPRECATION")` retained (needed for `setTicker()`).
+
+- `app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt` (line 706):
+  Same pattern, using `RESTORE_NOTIFICATION_ID`.
+
+**Manifest permissions verified**: Both `FOREGROUND_SERVICE` (line 79) and
+`FOREGROUND_SERVICE_DATA_SYNC` (line 81) are present in `AndroidManifest.xml` — no change
+needed.
+
+### Stale JaCoCo exclusions removed
+
+**Finding**: `app/build.gradle` `jacocoTestReport` (line ~264) and `jacocoTestCoverageVerification`
+(line ~312) both listed `'**/service/SmsBackupService.class'` and
+`'**/service/SmsRestoreService.class'` as exclusions. These classes were deleted in U-049.
+
+**Fix**: Removed both stale entries from both tasks. The comment updated to note only
+`App.class` remains excluded (per its existing rationale). No other exclusions changed.
+
+### Build Result (post-remediation commit cfbeef5f)
+
+```
+./gradlew :app:assembleDebug                   → BUILD SUCCESSFUL
+./gradlew :app:testDebugUnitTest               → BUILD SUCCESSFUL (643 tests, 0 failures)
+./gradlew :app:jacocoTestCoverageVerification  → BUILD SUCCESSFUL (all packages ≥ LINE 70%)
+```
+
+Authoritative @Test count (post-remediation): **643**

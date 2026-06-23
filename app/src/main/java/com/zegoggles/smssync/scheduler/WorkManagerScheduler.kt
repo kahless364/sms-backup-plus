@@ -71,11 +71,10 @@ import javax.inject.Inject
  * **WorkManager initialization**: App implements [Configuration.Provider] and provides
  * [HiltWorkerFactory] via [App.getWorkManagerConfiguration()] (U-024). Auto-initialization
  * is disabled in AndroidManifest.xml. WorkManager is initialized explicitly in App.onCreate().
- */
-/**
- * U-048: @Inject constructor added so Hilt can construct this as the @Singleton
- * BackupScheduler without any manual `new WorkManagerScheduler(...)` call in modules
- * or App. SchedulerModule binds BackupScheduler -> WorkManagerScheduler via @Binds.
+ *
+ * **Hilt binding** (U-048): `@Inject` constructor allows Hilt to construct this as the
+ * `@Singleton` [BackupScheduler] without any manual instantiation. `SchedulerModule` binds
+ * [BackupScheduler] → [WorkManagerScheduler] via `@Binds`.
  */
 class WorkManagerScheduler @Inject constructor(
     @ApplicationContext private val context: Context,

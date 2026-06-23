@@ -124,7 +124,7 @@ public class MainActivity extends ThemeActivity implements
     private Intent fallbackAuthIntent;
     private PreferenceTitles preferenceTitles;
     // U-020: MainViewModel holds SyncStateRepository; survives configuration changes (AC-14).
-    // TODO U-022/MU-007: replace manual factory with @HiltViewModel.
+    // U-022: @HiltViewModel injection active; ViewModelProvider uses HiltViewModelFactory.
     private MainViewModel viewModel;
 
     @Override

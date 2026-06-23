@@ -103,3 +103,54 @@ Extracted to `SmsDefaultRoleHelper.kt`:
 | AC-3: 5 collaborators no longer `new`-ed in `BackupWorker.kt:211-233` | DONE | Verified: `PersonLookup`, `MessageConverter`, `ContactAccessor`, `TokenRefresher` — factory-created or injected; `CalendarSyncer` — factory method (documented why hand-built) |
 | AC-4: `WorkManagerScheduler.observe()` stub comment removed; LegacyScheduler KDoc removed from WorkManagerScheduler | DONE | `observe()` KDoc updated; class KDoc no longer says "second adapter alongside LegacyScheduler" |
 | AC-5: Build green, `MainActivityRestoreTest` passes, U-034 themed-dialog behavior preserved | DONE | BUILD SUCCESSFUL; `MainActivityRestoreTest` contract preserved; dialog delegation to `showDialog(SMS_DEFAULT_PACKAGE_CHANGE)` intact |
+
+---
+
+## Remediation (post-review)
+
+### U-050 QA FAIL Fix: Stale TODO U-022 comments removed
+
+**Finding**: Three source files retained `TODO U-022/MU-007:` comments describing work that
+was already completed (Hilt path live, manual factory gone):
+
+1. `app/src/main/java/com/zegoggles/smssync/activity/MainActivity.java:127` —
+   `// TODO U-022/MU-007: replace manual factory with @HiltViewModel.`
+   **Fixed**: replaced the TODO line with `// U-022: @HiltViewModel injection active; ViewModelProvider uses HiltViewModelFactory.`
+
+2. `app/src/main/java/com/zegoggles/smssync/activity/StatusPreference.java:78` —
+   `// TODO U-022/MU-007: replace with @Inject SyncStateRepository.`
+   **Fixed**: removed the TODO line; preceding `U-020` comment retained (still accurate).
+
+3. `app/src/main/java/com/zegoggles/smssync/FlowCollectHelper.kt:17` —
+   `* TODO U-022/MU-007: remove once Hilt injection replaces manual-DI pattern.`
+   **Fixed**: removed the TODO sentence from the KDoc; surrounding `U-020` documentation retained.
+
+### W-1 Fix: Double/orphaned KDoc on WorkManagerScheduler
+
+**Finding**: `WorkManagerScheduler.kt` had two consecutive `/** ... */` KDoc blocks
+before the class declaration: the main long-form doc (lines 34–74) and a separate orphaned
+block (lines 75–79, added by U-048) describing the `@Inject` constructor.
+
+**Fix**: Collapsed into a single coherent class KDoc by merging the U-048 `@Inject`
+paragraph into the main block as a "**Hilt binding** (U-048):" section, removing the
+redundant standalone block.
+
+### Optional: BUG-005 onCleared() test added
+
+Added `MainViewModelTest.kt`: `onCleared cancels viewModelScope preventing observer leak (BUG-005)`.
+The test verifies that calling `ViewModel.clear()` (via reflection, the same path that
+`ViewModelStore.clear()` uses) causes `viewModelScope.isActive` to return `false`.
+This confirms all four background coroutine jobs (backup/restore observers + cancel
+collectors) are terminated at ViewModel destruction, satisfying BUG-005.
+
+File: `app/src/test/java/com/zegoggles/smssync/activity/MainViewModelTest.kt`
+
+### Build Result (post-remediation commit cfbeef5f)
+
+```
+./gradlew :app:assembleDebug                   → BUILD SUCCESSFUL
+./gradlew :app:testDebugUnitTest               → BUILD SUCCESSFUL (643 tests, 0 failures)
+./gradlew :app:jacocoTestCoverageVerification  → BUILD SUCCESSFUL (all packages ≥ LINE 70%)
+```
+
+Authoritative @Test count (post-remediation): **643** (previous: 642; +1 BUG-005 test)
