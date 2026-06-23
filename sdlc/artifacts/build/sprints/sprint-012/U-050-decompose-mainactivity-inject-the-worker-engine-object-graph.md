@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -20,6 +20,8 @@ pipeline: ''
 domain: modernization
 requirement_source: assessment:20260623-post-migration-assessment#AR-003
 sprint: '000012'
+updated_at: '2026-06-23T20:19:28.288Z'
+resolution: done
 ---
 
 # U-050: Decompose MainActivity, inject the worker engine object graph, remove stale scheduler seams

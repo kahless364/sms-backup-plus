@@ -18,6 +18,7 @@ id: U-048
 title: 'Complete the Hilt DI migration: @Binds providers, @Inject constructors, remove static SyncStateRepository alias'
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#AR-001
 sprint: '000012'
 ---

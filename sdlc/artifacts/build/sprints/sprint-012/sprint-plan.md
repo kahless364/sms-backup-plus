@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-012
 sprint: '000012'
+end_date: 2026-06-23
+velocity_calculated: true
 ---
 
 # Sprint Plan: 012 — DI & Legacy Retirement (batch A)
@@ -15,22 +17,22 @@ sprint: '000012'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-048 | Complete the Hilt DI migration (@Binds + @Inject, remove static alias) | Android | developer | sonnet | lead | — | planned | high |
-| U-049 | Retire the legacy backup/restore Service dual-dispatch layer | Android | developer | sonnet | lead | U-048 | planned | high |
-| U-050 | Decompose MainActivity, inject worker engine graph, remove stale seams | Android | developer | sonnet | lead | U-048 | planned | medium |
+| U-048 | Complete the Hilt DI migration (@Binds + @Inject, remove static alias) | Android | developer | sonnet | lead | — | done | high |
+| U-049 | Retire the legacy backup/restore Service dual-dispatch layer | Android | developer | sonnet | lead | U-048 | done | high |
+| U-050 | Decompose MainActivity, inject worker engine graph, remove stale seams | Android | developer | sonnet | lead | U-048 | done | medium |
 
 ## Execution Waves
 
 ### Wave 1
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-048 | Complete the Hilt DI migration | Android | developer | sonnet | lead | — | planned | high |
+| U-048 | Complete the Hilt DI migration | Android | developer | sonnet | lead | — | done | high |
 
 ### Wave 2
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-049 | Retire the legacy Service layer | Android | developer | sonnet | lead | U-048 | planned | high |
-| U-050 | Decompose MainActivity + inject worker graph | Android | developer | sonnet | lead | U-048 | planned | medium |
+| U-049 | Retire the legacy Service layer | Android | developer | sonnet | lead | U-048 | done | high |
+| U-050 | Decompose MainActivity + inject worker graph | Android | developer | sonnet | lead | U-048 | done | medium |
 
 ## Wave Summary
 | Wave | Stories | Can Parallel? | Gate |

@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: high
@@ -18,6 +18,7 @@ id: U-049
 title: Retire the legacy backup/restore Service dual-dispatch layer
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#AR-002
 sprint: '000012'
 ---
