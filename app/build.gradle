@@ -315,6 +315,10 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
     executionData.setFrom(files(["${buildDir}/jacoco/testDebugUnitTest.exec"]))
 
     violationRules {
+        // -----------------------------------------------------------------------
+        // PREVIOUSLY-GATED PACKAGES (U-006): LINE >= 70% — DO NOT LOWER
+        // -----------------------------------------------------------------------
+
         // Rule 1: service root package + sub-packages (state, exception).
         // U-006 glob fix: JaCoCo PACKAGE element uses DOT-separated package names, not
         // slash-separated paths. The ORIGINAL 'com/zegoggles/smssync/service/**' was in
@@ -324,6 +328,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
         // 'service.exception' — each evaluated as a separate package with its own 70% limit.
         // VERIFIED: gate fails at service=65.1%, service.state=68.5%, service.exception=68.8%
         // before U-006 backfill. Passes after backfill brings each to >= 70%.
+        // MEASURED (U-051): service=83.6%, service.state=93.5%, service.exception=81.2%
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.service*']
@@ -333,8 +338,8 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
                 minimum = 0.70
             }
         }
-        // Rule 2: mail root package (no sub-packages). Dot notation matches 'mail' exactly
-        // (trailing '*' would also catch future sub-packages like 'mail.mime').
+        // Rule 2: mail root package + mail.transport sub-package.
+        // MEASURED (U-051): mail=71.5%, mail.transport=88.8%
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.mail*']
@@ -344,7 +349,8 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
                 minimum = 0.70
             }
         }
-        // Rule 3: auth root package (no sub-packages). Dot notation matches 'auth' exactly.
+        // Rule 3: auth root package (no sub-packages).
+        // MEASURED (U-051): auth=78.7%
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.auth*']
@@ -352,6 +358,208 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
                 minimum = 0.70
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        // NEWLY-GATED PACKAGES (U-051, TE-001): honest per-package floors.
+        // Each floor is set at or just below the measured LINE% so the gate is
+        // green today but immediately visible. TODO comments mark packages that
+        // need uplift (target: 70% once U-052 IMAP integration tests land).
+        // -----------------------------------------------------------------------
+
+        // Rule 4: root package com.zegoggles.smssync (App.java + a few utils).
+        // MEASURED: 52.9% (18/34 lines). Floor set just below at 50%.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.50 // MEASURED 52.9% — TODO: raise to 70%
+            }
+        }
+
+        // Rule 5: activity root package (MainActivity, StatusPreference, etc.).
+        // MEASURED: activity=15.4%, activity.auth=0%, activity.donation=33.5%,
+        //           activity.events=0%, activity.fragments=12.0%.
+        // The sub-packages are split into individual rules so each gets a
+        // meaningful (not artificially low) floor rather than a single 0% floor.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.activity']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.10 // MEASURED 15.4% (151/983) — TODO: raise to 70%
+            }
+        }
+        // activity.auth: OAuth/xoauth2 flow activity — 0% LINE coverage.
+        // No unit tests exist for this package yet.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.activity.auth*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.00 // MEASURED 0% (0/139) — TODO: raise to 50%+ after auth tests
+            }
+        }
+        // activity.donation: DonationActivity coverage.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.activity.donation*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.30 // MEASURED 33.5% (79/236) — TODO: raise to 70%
+            }
+        }
+        // activity.events: UI event data classes — 0% LINE coverage.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.activity.events*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.00 // MEASURED 0% (0/8) — TODO: raise to 70% (trivial data classes)
+            }
+        }
+        // activity.fragments: preference/status fragments — 12% LINE coverage.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.activity.fragments*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.10 // MEASURED 12.0% (58/483) — TODO: raise to 50%+
+            }
+        }
+
+        // Rule 6: calendar — already near/above the standard 70% gate.
+        // MEASURED: 74.0% (37/50 lines). Floor set at 70%.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.calendar*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70 // MEASURED 74.0% — at standard gate level
+            }
+        }
+
+        // Rule 7: compat — platform compatibility shims.
+        // MEASURED: 23.3% (17/73 lines). Floor set just below at 20%.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.compat*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.20 // MEASURED 23.3% — TODO: raise to 70%
+            }
+        }
+
+        // Rule 8: contacts — already above 70%.
+        // MEASURED: 77.4% (41/53 lines). Floor set at 70%.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.contacts*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70 // MEASURED 77.4% — at standard gate level
+            }
+        }
+
+        // Rule 9: di — Hilt modules; only a single provider line is covered.
+        // MEASURED: 3.1% (1/32 lines). Hilt @Module/@Provides methods are generated
+        // by kapt at build time; the bindings are exercised only in component graph
+        // construction, which requires the full DI container (not easily unit-testable).
+        // Floor set at actual measured value; excluded classes (BackupWorker) also live here.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.di*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.03 // MEASURED 3.1% (1/32) — Hilt modules hard to unit-test; TODO after U-052
+            }
+        }
+
+        // Rule 10: preferences — just below the 70% gate.
+        // MEASURED: 69.4% (286/412 lines). Floor set at 65% to give headroom.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.preferences*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.65 // MEASURED 69.4% — close to gate; TODO: raise to 70%
+            }
+        }
+
+        // Rule 11: receiver — SMS/MMS/boot broadcast receivers.
+        // MEASURED: 53.4% (31/58 lines). Floor set at 50%.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.receiver*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.50 // MEASURED 53.4% — TODO: raise to 70%
+            }
+        }
+
+        // Rule 12: scheduler — WorkManager schedule/cancel logic.
+        // MEASURED: 62.2% (102/164 lines). Floor set at 60%.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.scheduler*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.60 // MEASURED 62.2% — TODO: raise to 70%
+            }
+        }
+
+        // Rule 13: tasks — legacy async task stubs (0% coverage).
+        // MEASURED: 0% (0/20 lines). Package retained for source compatibility;
+        // content is minimal stub code with no tests.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.tasks*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.00 // MEASURED 0% (0/20) — TODO: raise once stubs are removed or tested
+            }
+        }
+
+        // Rule 14: utils — utility classes (converters, formatters, etc.).
+        // MEASURED: 15.0% (30/200 lines). Floor set at 10%.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.utils*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.10 // MEASURED 15.0% — TODO: raise to 70%
+            }
+        }
+
+        // Rule 15: worker — BackupWorker / RestoreWorker.
+        // MEASURED: 0% (0/16 lines) because BackupWorker.class and RestoreWorker.class
+        // are EXCLUDED from jacocoFileFilter (U-015 / U-025). The classes are present
+        // in source but not counted; a 0% floor is honest. Exclusions will be lifted
+        // in U-052 once IMAP integration tests exist.
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.zegoggles.smssync.worker*']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.00 // MEASURED 0% (0/16) — BackupWorker*/RestoreWorker* excluded per U-015; TODO after U-052
             }
         }
     }
