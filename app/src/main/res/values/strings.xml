@@ -260,7 +260,9 @@
   <string name="security_none">None</string>
 
   <string name="ui_third_party_integration_label">3rd party integration</string>
-  <string name="ui_third_party_integration_desc">Allow other apps to trigger backups via broadcast intents</string>
+  <!-- SE-001: clarify that ANY external app (Tasker, MacroDroid, ADB, etc.) can trigger
+       a backup once this is enabled, because the broadcast receiver is public (no permission). -->
+  <string name="ui_third_party_integration_desc">Allow external apps (e.g. Tasker, MacroDroid, ADB) to trigger backups via a public broadcast. Any app on the device can send this broadcast when enabled.</string>
 
   <!-- new ui -->
   <string name="ui_backup_settings_label">Backup settings</string>

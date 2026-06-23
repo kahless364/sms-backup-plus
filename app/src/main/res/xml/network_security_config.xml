@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Config (SE-004).
+    Enforces no-cleartext traffic at the OS layer for all app network calls.
+    The app uses TLS-only transport (IMAP over TLS, OAuth2 over HTTPS) so no
+    domain-specific overrides are required. This config provides defence-in-depth
+    beyond the transport-layer enforcement already present in
+    PinnedCertificateSocketFactory / TrustManagerFactory.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>
