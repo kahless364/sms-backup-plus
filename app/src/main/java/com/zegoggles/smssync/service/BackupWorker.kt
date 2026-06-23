@@ -28,13 +28,10 @@ import androidx.work.workDataOf
 import com.zegoggles.smssync.App
 import com.zegoggles.smssync.R
 import com.zegoggles.smssync.activity.MainActivity
-import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
-import com.zegoggles.smssync.calendar.CalendarAccessor
 import com.zegoggles.smssync.contacts.ContactAccessor
 import com.zegoggles.smssync.di.MailTransportFactory
-import com.zegoggles.smssync.mail.CallFormatter
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.MessageConverter
 import com.zegoggles.smssync.mail.PersonLookup
@@ -82,14 +79,22 @@ import kotlin.coroutines.coroutineContext
  *
  * U-024: Annotated @HiltWorker with @AssistedInject constructor. @Assisted Context and
  * @Assisted WorkerParameters are supplied by WorkManager via HiltWorkerFactory; the
- * remaining constructor params (preferences, authPreferences, mailTransportFactory) are
- * supplied by the Hilt SingletonComponent graph.
+ * remaining constructor params (preferences, authPreferences, mailTransportFactory,
+ * contactAccessor, engineFactory) are supplied by the Hilt SingletonComponent graph.
  *
  * The direct construction of Preferences/AuthPreferences/MailTransport inside doWork() and
  * fetchAndBackupItems() is replaced by injected fields. The buildMailTransport() helper
  * is replaced by mailTransportFactory.create() to preserve the per-run construction semantics
  * (no cached singleton transport — auth-retry path requires a fresh store each time,
  * per DES-MODERNIZATION-008 §Behavior-preservation guarantees, point 2).
+ *
+ * U-050 AR-004: PersonLookup, MessageConverter, TokenRefresher, and CalendarSyncer are no
+ * longer hand-`new`-ed inside fetchAndBackupItems(). They are created per run via the
+ * injected [WorkerEngineFactory] (captures Context, Preferences, AuthPreferences as
+ * Hilt @Singleton deps). ContactAccessor has a zero-arg @Inject constructor and is
+ * injected directly. CalendarSyncer must remain factory-built because it requires a
+ * runtime calendarId (Long) and a legacy static CalendarAccessor.Get.instance() —
+ * both documented in [WorkerEngineFactory.createCalendarSyncerIfEnabled].
  *
  * U-017: This is now the sole production execution path. The legacy Firebase JobDispatcher
  * path (LegacyScheduler, BackupJobs, the firebase job service) has been deleted (Gate G3).
@@ -100,7 +105,11 @@ class BackupWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val preferences: Preferences,
     private val authPreferences: AuthPreferences,
-    private val mailTransportFactory: MailTransportFactory
+    private val mailTransportFactory: MailTransportFactory,
+    /** U-050 AR-004: Injected; zero-arg @Inject constructor, no per-run state. */
+    private val contactAccessor: ContactAccessor,
+    /** U-050 AR-004: Injected factory; creates per-run PersonLookup/MessageConverter/TokenRefresher/CalendarSyncer. */
+    private val engineFactory: WorkerEngineFactory
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -222,29 +231,16 @@ class BackupWorker @AssistedInject constructor(
             resolver,
             BackupQueryBuilder(preferences.dataTypePreferences)
         )
-        val personLookup = PersonLookup(resolver)
-        val contactAccessor = ContactAccessor()
-        val converter = MessageConverter(
-            ctx,
-            preferences,
-            authPreferences.userEmail,
-            personLookup,
-            contactAccessor
-        )
-        val calendarSyncer: CalendarSyncer? = if (preferences.isCallLogCalendarSyncEnabled) {
-            CalendarSyncer(
-                CalendarAccessor.Get.instance(resolver),
-                preferences.callLogCalendarId.toLong(),
-                personLookup,
-                CallFormatter(ctx.resources)
-            )
-        } else null
-
-        val tokenRefresher = TokenRefresher(
-            ctx,
-            OAuth2Client(authPreferences.oAuth2ClientId),
-            authPreferences
-        )
+        // U-050 AR-004: collaborators created via injected WorkerEngineFactory instead of hand-new.
+        // PersonLookup is per-run (fresh LRU cache each run). MessageConverter reads userEmail from
+        // AuthPreferences at creation time — both created via engineFactory, not via 'new'.
+        // CalendarSyncer is still created via factory method because it requires a runtime
+        // calendarId (Long) and a legacy static CalendarAccessor.Get.instance() — see
+        // WorkerEngineFactory.createCalendarSyncerIfEnabled() for the rationale.
+        val personLookup = engineFactory.createPersonLookup()
+        val converter = engineFactory.createMessageConverter(personLookup, contactAccessor)
+        val calendarSyncer: CalendarSyncer? = engineFactory.createCalendarSyncerIfEnabled(personLookup)
+        val tokenRefresher = engineFactory.createTokenRefresher()
 
         var cursors: BackupCursors? = null
         return try {
@@ -411,9 +407,10 @@ class BackupWorker @AssistedInject constructor(
                     // U-024: mailTransportFactory.create() constructs a fresh transport per retry
                     // (auth params are immutable; the retry path always needs a new transport
                     // per DES-MODERNIZATION-008 §Behavior-preservation guarantees, point 2).
+                    // U-050 AR-004: contactAccessor is now the injected field, not a new ContactAccessor().
                     val newTransport = mailTransportFactory.create()
                     val retryConfig = config.retryWithTransport(newTransport)
-                    val retryGroupIds = ContactAccessor().getGroupContactIds(
+                    val retryGroupIds = contactAccessor.getGroupContactIds(
                         ctx.contentResolver, retryConfig.groupToBackup
                     )
                     val retryCursors = BulkFetcher(fetcher).fetch(
@@ -538,12 +535,17 @@ class BackupWorker @AssistedInject constructor(
             workerParameters: WorkerParameters
         ): androidx.work.ListenableWorker? {
             return if (workerClassName == BackupWorker::class.java.name) {
+                val prefs = Preferences(appContext)
+                val authPrefs = AuthPreferences(appContext)
                 BackupWorker(
                     appContext,
                     workerParameters,
-                    Preferences(appContext),
-                    AuthPreferences(appContext),
-                    MailTransportFactory { throw MailException("TestableBackupWorkerFactory: transport not available in unit tests") }
+                    prefs,
+                    authPrefs,
+                    MailTransportFactory { throw MailException("TestableBackupWorkerFactory: transport not available in unit tests") },
+                    // U-050 AR-004: supply ContactAccessor and WorkerEngineFactory for the new params
+                    ContactAccessor(),
+                    WorkerEngineFactory(appContext, prefs, authPrefs)
                 )
             } else null
         }
@@ -568,12 +570,17 @@ class BackupWorker @AssistedInject constructor(
             workerParameters: WorkerParameters
         ): androidx.work.ListenableWorker? {
             return if (workerClassName == BackupWorker::class.java.name) {
+                val prefs = Preferences(appContext)
+                val authPrefs = AuthPreferences(appContext)
                 BackupWorker(
                     appContext,
                     workerParameters,
-                    Preferences(appContext),
-                    AuthPreferences(appContext),
-                    MailTransportFactory { transport }
+                    prefs,
+                    authPrefs,
+                    MailTransportFactory { transport },
+                    // U-050 AR-004: supply ContactAccessor and WorkerEngineFactory for the new params
+                    ContactAccessor(),
+                    WorkerEngineFactory(appContext, prefs, authPrefs)
                 )
             } else null
         }

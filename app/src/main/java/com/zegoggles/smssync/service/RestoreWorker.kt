@@ -40,7 +40,6 @@ import com.zegoggles.smssync.activity.MainActivity
 //   PinnedCertStore, TlsTrustPolicy, K9MailTransport, MailTransportConfig.
 //   None appear in any executable expression in this file (KDoc mentions do not count).
 import com.zegoggles.smssync.Consts
-import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
 import com.zegoggles.smssync.contacts.ContactAccessor
@@ -102,7 +101,12 @@ import kotlin.coroutines.coroutineContext
  * U-024: Annotated @HiltWorker with @AssistedInject constructor. @Assisted Context and
  * @Assisted WorkerParameters are supplied by WorkManager via HiltWorkerFactory; the
  * remaining constructor params (preferences, authPreferences, mailTransportFactory,
- * checkpointStore, insertInterceptor) are supplied by the Hilt SingletonComponent graph.
+ * checkpointStore, insertInterceptor, contactAccessor, engineFactory) are supplied by
+ * the Hilt SingletonComponent graph.
+ *
+ * U-050 AR-004: MessageConverter, PersonLookup, and TokenRefresher are no longer hand-new-ed
+ * inside doWork(). They are created per run via the injected [WorkerEngineFactory].
+ * ContactAccessor is injected directly (zero-arg @Inject constructor, no per-run state).
  *
  * Fault-injection test seam ([TestableRestoreWorkerFactory]) is retained: tests that need
  * direct control over [checkpointStore] and [insertInterceptor] (U-016 checkpoint tests)
@@ -123,7 +127,11 @@ class RestoreWorker @AssistedInject constructor(
      * Fault-injection seam (IC-4). Production: [RestoreInsertInterceptor.NoOp] (bound by
      * CheckpointModule). Tests use [TestableRestoreWorkerFactory] to inject [CrashAfterK].
      */
-    internal val insertInterceptor: RestoreInsertInterceptor
+    internal val insertInterceptor: RestoreInsertInterceptor,
+    /** U-050 AR-004: Injected; zero-arg @Inject constructor, no per-run state. */
+    private val contactAccessor: ContactAccessor,
+    /** U-050 AR-004: Injected factory; creates per-run PersonLookup/MessageConverter/TokenRefresher. */
+    private val engineFactory: WorkerEngineFactory
 ) : CoroutineWorker(context, params) {
 
     // Dedup tracking sets — mirrors RestoreTask.smsIds, callLogIds, uids
@@ -174,19 +182,12 @@ class RestoreWorker @AssistedInject constructor(
                 0
             )
 
-            val converter = MessageConverter(
-                ctx,
-                preferences,
-                authPreferences.userEmail,
-                PersonLookup(ctx.contentResolver),
-                ContactAccessor()
-            )
-
-            val tokenRefresher = TokenRefresher(
-                ctx,
-                OAuth2Client(authPreferences.oAuth2ClientId),
-                authPreferences
-            )
+            // U-050 AR-004: collaborators created via injected WorkerEngineFactory.
+            // PersonLookup is per-run (fresh LRU cache). MessageConverter reads userEmail from
+            // AuthPreferences at construction time. TokenRefresher captures current clientId.
+            val personLookup = engineFactory.createPersonLookup()
+            val converter = engineFactory.createMessageConverter(personLookup, contactAccessor)
+            val tokenRefresher = engineFactory.createTokenRefresher()
 
             executeRestore(config, preferences, converter, tokenRefresher, ctx, authPreferences)
         } catch (e: MailException) {
@@ -761,14 +762,19 @@ class RestoreWorker @AssistedInject constructor(
             workerParameters: WorkerParameters
         ): ListenableWorker? {
             return if (workerClassName == RestoreWorker::class.java.name) {
+                val prefs = Preferences(appContext)
+                val authPrefs = AuthPreferences(appContext)
                 RestoreWorker(
                     appContext,
                     workerParameters,
-                    Preferences(appContext),
-                    AuthPreferences(appContext),
+                    prefs,
+                    authPrefs,
                     MailTransportFactory { throw MailException("TestableRestoreWorkerFactory: transport not available in unit tests") },
                     checkpointStore,
-                    interceptor
+                    interceptor,
+                    // U-050 AR-004: supply ContactAccessor and WorkerEngineFactory for the new params
+                    ContactAccessor(),
+                    WorkerEngineFactory(appContext, prefs, authPrefs)
                 )
             } else null
         }
