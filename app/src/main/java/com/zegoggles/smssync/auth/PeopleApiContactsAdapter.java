@@ -5,6 +5,7 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -36,6 +37,14 @@ public class PeopleApiContactsAdapter implements ContactsPort {
 
     private static final String PEOPLE_API_URL =
             "https://people.googleapis.com/v1/people/me?personFields=emailAddresses";
+
+    /**
+     * U-048: No-arg @Inject constructor so Hilt can construct this as the @Singleton
+     * ContactsPort without any manual {@code new PeopleApiContactsAdapter()} call in
+     * modules. ContactsModule binds ContactsPort -> PeopleApiContactsAdapter via @Binds.
+     */
+    @Inject
+    public PeopleApiContactsAdapter() {}
 
     /**
      * {@inheritDoc}

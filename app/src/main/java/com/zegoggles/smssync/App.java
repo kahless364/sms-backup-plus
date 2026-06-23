@@ -45,8 +45,6 @@ import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.receiver.BootReceiver;
 import com.zegoggles.smssync.receiver.SmsBroadcastReceiver;
 import com.zegoggles.smssync.scheduler.BackupScheduler;
-import com.zegoggles.smssync.scheduler.WorkManagerScheduler;
-import com.zegoggles.smssync.service.state.FlowSyncStateRepository;
 import com.zegoggles.smssync.service.state.SyncStateRepository;
 import dagger.hilt.android.HiltAndroidApp;
 import java.util.concurrent.ExecutorService;
@@ -70,8 +68,13 @@ import static android.content.pm.PackageManager.DONT_KILL_APP;
  *
  * U-022: @HiltAndroidApp triggers code generation of the Hilt application component.
  * Hilt generates Hilt_App which this class extends (transparently, via the plugin).
- * The @Inject Preferences field is populated by Hilt before the onCreate() body runs
- * (Hilt_App.onCreate() calls inject(this) then super.onCreate()).
+ * The @Inject Preferences and @Inject SyncStateRepository fields are populated by Hilt
+ * before the onCreate() body runs (Hilt_App.onCreate() calls inject(this) then super.onCreate()).
+ *
+ * U-048: Completes the Hilt DI cutover. FlowSyncStateRepository, WorkManagerScheduler, and
+ * PeopleApiContactsAdapter all have @Inject constructors; their modules use @Binds abstract.
+ * No manual `new FlowSyncStateRepository()` or `new WorkManagerScheduler(...)` remains in
+ * production code. The Hilt @Singleton scope guarantees exactly one instance of each.
  *
  * U-024: App implements Configuration.Provider so WorkManager uses HiltWorkerFactory
  * instead of the default reflective no-arg factory. WorkManager auto-initialization via
@@ -91,14 +94,22 @@ public class App extends Application implements Configuration.Provider {
     public static final String LOG = "sms_backup_plus.log";
     public static final String CHANNEL_ID = "sms_backup_plus";
 
-    // U-020: FlowSyncStateRepository replaces DefaultSyncStateRepository (Otto-delegating).
-    // U-036 (BUG-004): This static instance IS the same object as the Hilt @Singleton
-    // SyncStateRepository. EventModule.provideSyncStateRepository() returns
-    // App.syncStateRepository() so engine callers (services, workers) and Hilt consumers
-    // (MainViewModel) share exactly one instance. Initialized in onCreate() before any
-    // consumer can read it; Hilt's SingletonComponent does not instantiate SyncStateRepository
-    // during App's own field injection (App only injects Preferences + HiltWorkerFactory).
+    // U-048: Static bridge accessor. The single SyncStateRepository instance is owned by
+    // the Hilt @Singleton graph (EventModule @Binds FlowSyncStateRepository). Hilt injects
+    // it into the `syncStateRepository` field below; App.onCreate() then assigns this static
+    // from the injected field so legacy non-Hilt callers (Activities, Services, Receivers)
+    // continue to receive the same single instance via App.syncStateRepository().
+    // U-049 will migrate all remaining callers to @Inject and this bridge can then be removed.
     private static SyncStateRepository syncStateRepositoryInstance;
+
+    /**
+     * U-048: Hilt-injected SyncStateRepository singleton.
+     * EventModule binds SyncStateRepository -> FlowSyncStateRepository (@Singleton).
+     * Populated by Hilt before this class's onCreate() body runs (Hilt_App.onCreate()
+     * calls inject(this) then super.onCreate()).
+     * Used in onCreate() to populate syncStateRepositoryInstance for legacy callers.
+     */
+    @Inject SyncStateRepository syncStateRepository;
 
     /** Google Play Services present on this device? */
     public static boolean gcmAvailable;
@@ -124,9 +135,10 @@ public class App extends Application implements Configuration.Provider {
      * Application-scoped {@link BackupScheduler} singleton.
      * U-013: replaced BackupJobs field with this port-level field.
      * U-017: binding flipped from LegacyScheduler to WorkManagerScheduler.
-     * TODO U-022: replace with Hilt @Inject BackupScheduler.
+     * U-048: converted to @Inject — SchedulerModule binds BackupScheduler -> WorkManagerScheduler.
+     * Populated by Hilt before this class's onCreate() body runs.
      */
-    private BackupScheduler scheduler;
+    @Inject BackupScheduler scheduler;
 
     @NonNull
     public static BackupScheduler getScheduler(@NonNull Context context) {
@@ -158,10 +170,12 @@ public class App extends Application implements Configuration.Provider {
         super.onCreate();
         setupStrictMode();
 
-        // U-020: FlowSyncStateRepository replaces DefaultSyncStateRepository.
-        // Constructed before any component reaches syncStateRepository().
-        // AC-3: MutableStateFlow + MutableSharedFlow(replay=0, extraBufferCapacity=1).
-        syncStateRepositoryInstance = new FlowSyncStateRepository();
+        // U-048: Hilt constructs FlowSyncStateRepository as a @Singleton via EventModule
+        // @Binds. The `syncStateRepository` field was populated by Hilt in super.onCreate()
+        // (Hilt_App.inject(this) runs before this body). Assign the static bridge accessor
+        // so legacy non-Hilt callers (Activities, Services, Receivers) continue to receive
+        // the same single Hilt-managed instance via App.syncStateRepository().
+        syncStateRepositoryInstance = syncStateRepository;
 
         gcmAvailable = GooglePlayServices.isAvailable(this);
 
@@ -233,10 +247,10 @@ public class App extends Application implements Configuration.Provider {
             createNotificationChannel();
         }
 
-        // U-017: binding flipped to WorkManagerScheduler (Gate G3).
-        // The legacy scheduling classes have been deleted per AC-3/AC-4/AC-5.
-        // WorkManagerScheduler is now the sole production BackupScheduler implementation.
-        scheduler = new WorkManagerScheduler(this, preferences);
+        // U-048: scheduler is @Inject BackupScheduler, populated by Hilt in super.onCreate()
+        // (SchedulerModule @Binds BackupScheduler -> WorkManagerScheduler). No manual
+        // construction here. App.getScheduler(context) returns this Hilt-managed instance
+        // until U-049 migrates remaining callers to direct @Inject BackupScheduler.
 
         // U-017: SmsBroadcastReceiver / BootReceiver enable/disable logic simplified:
         // WorkManagerScheduler owns all scheduling; legacy GCM/AlarmManager toggle removed.
@@ -284,12 +298,15 @@ public class App extends Application implements Configuration.Provider {
 
     /**
      * U-019: Application-scoped SyncStateRepository accessor.
-     * U-020: now returns FlowSyncStateRepository (Flow-backed, no Otto delegation).
-     * U-036 (BUG-004): This static accessor and the Hilt-injected SyncStateRepository
-     * (used by MainViewModel) return THE SAME instance. EventModule.provideSyncStateRepository()
-     * delegates to this method, ensuring a single @Singleton is shared across all callers.
-     * Constructed in onCreate; non-null for the lifetime of the application process.
-     * IC-1: reachable from all production consumers (services, activities, workers).
+     * U-020: returns FlowSyncStateRepository (Flow-backed, no Otto delegation).
+     * U-048: The instance returned here is the SAME Hilt @Singleton managed by EventModule
+     * (@Binds FlowSyncStateRepository). Hilt injects it into {@link #syncStateRepository}
+     * in App.onCreate() (via super.onCreate() / Hilt_App.inject(this)); this accessor
+     * then delegates to that field. No parallel construction path exists.
+     * BUG-004 (permanent fix): EventModule no longer delegates here — the Hilt graph is
+     * the single source of truth. This accessor is a bridge for legacy non-Hilt callers
+     * (Activities, Services, Receivers) pending migration in U-049 and later stories.
+     * IC-1: reachable from all production consumers.
      */
     public static SyncStateRepository syncStateRepository() {
         return syncStateRepositoryInstance;

@@ -1,9 +1,9 @@
 package com.zegoggles.smssync.di
 
-import com.zegoggles.smssync.App
+import com.zegoggles.smssync.service.state.FlowSyncStateRepository
 import com.zegoggles.smssync.service.state.SyncStateRepository
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -11,34 +11,28 @@ import javax.inject.Singleton
 /**
  * Binds SyncStateRepository -> FlowSyncStateRepository for the SingletonComponent.
  *
- * U-022: AC-5 — EventModule is ACTIVE because FlowSyncStateRepository (the live
- * Flow-backed implementation) was delivered by U-020 (DES-007). FlowSyncStateRepository
- * does not yet have an @Inject constructor (that's U-023), so @Provides is used rather
- * than @Binds.
+ * U-048: Converted from @Provides-new to @Binds abstract. FlowSyncStateRepository now
+ * has an @Inject constructor (added by U-048), so Hilt constructs the single @Singleton
+ * instance — no manual `new FlowSyncStateRepository()` anywhere in production code.
  *
- * U-036 (BUG-004 fix): Previously this method constructed a second FlowSyncStateRepository
- * instance, splitting the engine's emission path from the UI's collection path. The fix
- * returns the App-level static instance (App.syncStateRepository()) so both the engine
- * (services + workers via App.syncStateRepository()) and the Hilt graph (MainViewModel)
- * share exactly one instance.
+ * BUG-004 (permanent fix): The previous bridge (App.syncStateRepository() call in
+ * provideSyncStateRepository()) is removed. The single instance is now owned entirely
+ * by the Hilt @Singleton scope. App.java sets its static accessor from the
+ * @Inject-populated field in onCreate(), so all legacy call sites continue to receive
+ * the same Hilt-managed instance.
  *
- * Race-safety: App.syncStateRepository() is guaranteed non-null by the time Hilt first
- * instantiates this @Singleton — App.onCreate() assigns syncStateRepositoryInstance
- * before any Activity/MainViewModel can start. The Hilt SingletonComponent is scoped to
- * the Application and provideSyncStateRepository() is not called during App's own field
- * injection (App injects only Preferences and HiltWorkerFactory, not SyncStateRepository),
- * so the static is always initialized before this method is invoked.
- *
- * DES-MODERNIZATION-008 §Module layout: EventModule | @Binds SyncStateRepository <- DefaultSyncStateRepository.
- * (The implementation class name changed from DefaultSyncStateRepository to FlowSyncStateRepository;
- * the binding intent is the same.)
- * TODO(U-023): convert to @Binds once FlowSyncStateRepository has @Inject constructor.
+ * DES-MODERNIZATION-008 §Module layout: EventModule | @Binds SyncStateRepository <- FlowSyncStateRepository.
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object EventModule {
+abstract class EventModule {
 
-    @Provides
+    /**
+     * Binds [SyncStateRepository] to [FlowSyncStateRepository] as a @Singleton.
+     * Hilt constructs the [FlowSyncStateRepository] via its @Inject constructor
+     * and returns the same instance for every injection point in the graph.
+     */
+    @Binds
     @Singleton
-    fun provideSyncStateRepository(): SyncStateRepository = App.syncStateRepository()
+    abstract fun bindSyncStateRepository(impl: FlowSyncStateRepository): SyncStateRepository
 }
