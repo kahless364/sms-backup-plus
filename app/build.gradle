@@ -155,6 +155,13 @@ dependencies {
 
     testAnnotationProcessor 'com.google.auto.service:auto-service:1.0'
 
+    // U-052: GreenMail embedded IMAP server for BackupImapStoreDelegate integration tests (TE-002).
+    // GreenMail 2.1.x provides an in-JVM RFC 3501 IMAP server; k9mail's socket-based ImapStore
+    // connects to it via plain IMAP (no TLS). greenmail-junit4 pulls in greenmail core and
+    // angus-mail (Jakarta Mail RI) for message injection. Version pinned per supply-chain rules;
+    // checksums added to gradle/verification-metadata.xml.
+    testImplementation 'com.icegreen:greenmail-junit4:2.1.3'
+
     // U-022: Hilt DI framework — bootstrap (plugin + kapt + hilt-work).
     // Version 2.51.1 is compatible with AGP 8.7.3 + Kotlin 1.9.25 + JDK 17 (kapt).
     // hilt-android: runtime annotations + generated component graph.
@@ -202,24 +209,11 @@ def jacocoFileFilter = [
         '**/Manifest*.*',
         '**/*Test*.*',
         'android/**/*.*',
-        // U-025: K9MailTransport's inner delegate contains verbatim k-9 IMAP
-        // protocol code (ImapStore subclass, BackupFolder, search, ImapSearcher) that
-        // requires a live IMAP server to exercise. The outer K9MailTransport class
-        // (port impl, exception translation, static validators) is fully covered.
-        // Exclude the entire BackupImapStoreDelegate class hierarchy from coverage gate.
-        '**/K9MailTransport$BackupImapStoreDelegate.class',
-        '**/K9MailTransport$BackupImapStoreDelegate$*.class',
-        // U-015: BackupWorker and RestoreWorker contain IMAP-dependent backup/restore
-        // execution logic (cursors, store checkSettings, message appending, provider
-        // inserts) that requires a live IMAP store + SMS/CallLog providers to exercise.
-        // The structural contract (INV-3 backoff cap, cancellation, progress keys,
-        // WM enqueue/cancel) is covered by BackupWorkerTest and RestoreWorkerTest.
-        // The IMAP execution paths are excluded from the line coverage gate; they will
-        // be covered by instrumented/integration tests in a later story.
-        '**/BackupWorker.class',
-        '**/BackupWorker$*.class',
-        '**/RestoreWorker.class',
-        '**/RestoreWorker$*.class',
+        // U-052: All three classes previously excluded here are now covered by
+        // BackupImapStoreDelegateIntegrationTest (GreenMail), BackupWorkerIntegrationTest,
+        // and RestoreWorkerIntegrationTest. Exclusion entries removed.
+        // (U-025: K9MailTransport$BackupImapStoreDelegate — removed per U-052)
+        // (U-015: BackupWorker, RestoreWorker — removed per U-052)
         // U-031: BackupTask and RestoreTask deleted — exclusion entries removed.
 ]
 
@@ -329,6 +323,8 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
         // VERIFIED: gate fails at service=65.1%, service.state=68.5%, service.exception=68.8%
         // before U-006 backfill. Passes after backfill brings each to >= 70%.
         // MEASURED (U-051): service=83.6%, service.state=93.5%, service.exception=81.2%
+        // MEASURED (U-052): service=75.6% (BackupWorker+RestoreWorker exclusions removed;
+        //   BackupWorker=55.8%, RestoreWorker=80.2% after integration tests added)
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.service*']
@@ -548,18 +544,18 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
             }
         }
 
-        // Rule 15: worker — BackupWorker / RestoreWorker.
-        // MEASURED: 0% (0/16 lines) because BackupWorker.class and RestoreWorker.class
-        // are EXCLUDED from jacocoFileFilter (U-015 / U-025). The classes are present
-        // in source but not counted; a 0% floor is honest. Exclusions will be lifted
-        // in U-052 once IMAP integration tests exist.
+        // Rule 15: worker — BackupTriggerWorker (com.zegoggles.smssync.worker*).
+        // Note: BackupWorker and RestoreWorker are in service*, not worker*.
+        // U-052: Exclusions for BackupWorker/RestoreWorker removed; they now contribute
+        // to Rule 1 (service*, measured 75.6% after U-052 integration tests).
+        // BackupTriggerWorker has no unit tests; floor stays at 0%.
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.worker*']
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.00 // MEASURED 0% (0/16) — BackupWorker*/RestoreWorker* excluded per U-015; TODO after U-052
+                minimum = 0.00 // MEASURED 0% — BackupTriggerWorker untested; TODO raise after dedicated tests
             }
         }
     }
