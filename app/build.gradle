@@ -131,10 +131,16 @@ dependencies {
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.core:core-role:1.0.0-beta01'
     // U-011: EncryptedSharedPreferences adapter for SecretStore port (CNTR-MODERNIZATION-003).
-    // Pinned to 1.1.0-alpha06 for MasterKey.Builder API with setRequestStrongBoxBacked().
-    // DES-MODERNIZATION-004 §ADR: 1.0.0 stable uses deprecated MasterKeys.getOrCreate() and
-    // does not expose StrongBox best-effort configuration; 1.1.x alpha is required for AC-2.
-    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+    // U-055 (SE-003/BT-004): upgraded from 1.1.0-alpha06 to 1.1.0 stable.
+    // 1.1.0 stable was released (https://developer.android.com/jetpack/androidx/releases/security#1.1.0)
+    // and is the first non-alpha/non-beta release of the 1.1.x line that exposes the
+    // MasterKey.Builder API (including setRequestStrongBoxBacked()). The 1.0.0 stable line
+    // uses the deprecated MasterKeys.getOrCreate() idiom and does NOT expose StrongBox best-effort
+    // configuration. No code changes are required — MasterKey.Builder and
+    // EncryptedSharedPreferences.create() API surface is identical between 1.1.0-alpha06 and
+    // 1.1.0 stable. Data-at-rest compatibility is maintained: both versions use the same
+    // Tink-backed AES-256-GCM/SIV scheme.
+    implementation 'androidx.security:security-crypto:1.1.0'
 
     // U-019: coroutines test helpers for SyncStateRepository tests
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
