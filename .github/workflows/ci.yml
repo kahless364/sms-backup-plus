@@ -41,5 +41,12 @@ jobs:
           restore-keys: |
             gradle-caches-
 
-      - name: Run tests, lint, coverage verification, and release assembly
+      - name: Run tests, lint, coverage report, and release assembly
         run: ./gradlew test lint jacocoTestReport assembleRelease
+
+      # U-051 (TE-001): enforce per-package LINE coverage gate on all ~13 packages.
+      # jacocoTestReport already finalizes jacocoTestCoverageVerification, but we
+      # invoke it explicitly here so CI surfaces a clear step name on failure rather
+      # than burying the breach in the report task's output.
+      - name: Enforce coverage gate (jacocoTestCoverageVerification)
+        run: ./gradlew :app:jacocoTestCoverageVerification
