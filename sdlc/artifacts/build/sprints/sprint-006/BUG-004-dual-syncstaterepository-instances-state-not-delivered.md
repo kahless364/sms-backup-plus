@@ -19,6 +19,8 @@ id: BUG-004
 title: 'Dual SyncStateRepository instances: engine state never reaches MainViewModel/UI'
 domain: build
 origin: code-review
+resolved_by: U-036
+sprint: '000006'
 ---
 
 # BUG-004: Dual SyncStateRepository instances — engine state never reaches the UI

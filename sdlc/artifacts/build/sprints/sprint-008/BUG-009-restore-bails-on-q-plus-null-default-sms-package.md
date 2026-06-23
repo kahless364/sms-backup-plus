@@ -12,6 +12,7 @@ design_docs: []
 integration_contracts: []
 dependencies: []
 related_items:
+  - U-041
   - U-009
   - U-021
 platforms: []
@@ -20,6 +21,8 @@ id: BUG-009
 title: Restore bails on Android Q+ when legacy getDefaultSmsPackage() returns null
 domain: build
 origin: code-review
+resolved_by: U-041
+sprint: '000008'
 ---
 
 # BUG-009: Restore bails on Q+ when legacy getDefaultSmsPackage() returns null

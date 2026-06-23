@@ -19,6 +19,8 @@ id: BUG-006
 title: RestoreWorker.kt has dead mail-transport/adapter imports (ACL-purity nit)
 domain: build
 origin: code-review
+resolved_by: U-038
+sprint: '000006'
 ---
 
 # BUG-006: Dead mail-transport/adapter imports in RestoreWorker.kt

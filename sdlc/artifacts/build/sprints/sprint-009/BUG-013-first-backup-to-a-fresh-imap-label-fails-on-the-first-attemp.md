@@ -11,13 +11,16 @@ requirements: []
 design_docs: []
 integration_contracts: []
 dependencies: []
-related_items: []
+related_items:
+  - U-044
 platforms: []
 tags: []
 id: BUG-013
 title: 'First backup to a fresh IMAP label fails on the first attempt: create-then-select retry window (3x1s) too short for Gmail label propagation'
 domain: build
 origin: qa
+resolved_by: U-044
+sprint: '000009'
 ---
 
 # BUG-013: First backup to a fresh IMAP label fails on the first attempt (create→select retry window too short)

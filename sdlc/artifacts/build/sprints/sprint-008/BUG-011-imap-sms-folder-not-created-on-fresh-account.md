@@ -12,6 +12,7 @@ design_docs: []
 integration_contracts: []
 dependencies: []
 related_items:
+  - U-043
   - U-025
   - U-026
   - U-027
@@ -21,6 +22,8 @@ id: BUG-011
 title: 'First backup to a fresh IMAP account fails: "SMS" folder not created/selectable (NONEXISTENT)'
 domain: build
 origin: qa
+resolved_by: U-043
+sprint: '000008'
 ---
 
 # BUG-011: First backup to a fresh account fails — "SMS" IMAP folder NONEXISTENT

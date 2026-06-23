@@ -11,13 +11,16 @@ requirements: []
 design_docs: []
 integration_contracts: []
 dependencies: []
-related_items: []
+related_items:
+  - U-046
 platforms: []
 tags: []
 id: BUG-014
 title: App content draws under the status/navigation bars (targetSdk 35 forced edge-to-edge, no window insets) — toolbar title overlaps status bar; nav bar area not usable
 domain: build
 origin: qa
+resolved_by: U-046
+sprint: '000010'
 ---
 
 # BUG-014: App content draws under the system bars (targetSdk 35 edge-to-edge, no insets)

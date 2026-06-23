@@ -19,6 +19,8 @@ id: BUG-005
 title: Worker->foreground WorkInfo observer leaked on onDestroy (no removeObserver)
 domain: build
 origin: code-review
+resolved_by: U-037
+sprint: '000006'
 ---
 
 # BUG-005: Worker→foreground WorkInfo observer leaked on onDestroy

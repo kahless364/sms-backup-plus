@@ -19,6 +19,8 @@ id: BUG-001
 title: Gradle dependency verification fails for all -sources.jar artifacts on IDE/source resolution
 domain: build
 origin: qa
+resolved_by: U-033
+sprint: '000003'
 ---
 
 # BUG-001: Gradle dependency verification fails for all -sources.jar artifacts on IDE/source resolution

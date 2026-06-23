@@ -19,6 +19,8 @@ id: BUG-003
 title: Credential migration performs disk/crypto I/O on the main thread in App.onCreate (StrictMode violation)
 domain: build
 origin: qa
+resolved_by: U-035
+sprint: '000005'
 ---
 
 # BUG-003: Credential migration performs disk/crypto I/O on the main thread in App.onCreate (StrictMode violation)

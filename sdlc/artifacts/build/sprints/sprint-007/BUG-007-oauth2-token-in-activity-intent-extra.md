@@ -19,6 +19,8 @@ id: BUG-007
 title: Raw OAuth2 token passed via Activity Intent extra (legacy AccountManager path)
 domain: build
 origin: code-review
+resolved_by: U-039
+sprint: '000007'
 ---
 
 # BUG-007: Raw OAuth2 token in Activity Intent extra (legacy path)

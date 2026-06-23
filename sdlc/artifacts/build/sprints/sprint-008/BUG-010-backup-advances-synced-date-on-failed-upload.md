@@ -12,6 +12,7 @@ design_docs: []
 integration_contracts: []
 dependencies: []
 related_items:
+  - U-042
   - U-015
   - U-016
 platforms: []
@@ -20,6 +21,8 @@ id: BUG-010
 title: Backup advances max_synced_date even when the IMAP upload failed (silent skip / data loss)
 domain: build
 origin: qa
+resolved_by: U-042
+sprint: '000008'
 ---
 
 # BUG-010: Backup advances max_synced_date despite a failed upload

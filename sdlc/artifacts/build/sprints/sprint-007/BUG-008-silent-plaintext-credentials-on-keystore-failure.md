@@ -19,6 +19,8 @@ id: BUG-008
 title: Silent plaintext credential persistence when Keystore fails during migration
 domain: build
 origin: code-review
+resolved_by: U-040
+sprint: '000007'
 ---
 
 # BUG-008: Silent plaintext credential persistence on Keystore failure

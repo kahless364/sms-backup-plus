@@ -19,6 +19,8 @@ id: BUG-002
 title: 'TLS pin-certificate enrollment dialog crashes: AppCompat AlertDialog built with application context'
 domain: build
 origin: qa
+resolved_by: U-034
+sprint: '000004'
 ---
 
 # BUG-002: TLS pin-certificate enrollment dialog crashes: AppCompat AlertDialog built with application context

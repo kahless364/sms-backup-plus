@@ -11,13 +11,16 @@ requirements: []
 design_docs: []
 integration_contracts: []
 dependencies: []
-related_items: []
+related_items:
+  - U-045
 platforms: []
 tags: []
 id: BUG-012
 title: conscrypt Java8EngineSocket.setHostname NoSuchMethodException in vendored k-9 DefaultTrustedSocketFactory (SNI) on API 35+
 domain: build
 origin: qa
+resolved_by: U-045
+sprint: '000010'
 ---
 
 # BUG-012: conscrypt Java8EngineSocket.setHostname NoSuchMethodException (SNI) in vendored k-9

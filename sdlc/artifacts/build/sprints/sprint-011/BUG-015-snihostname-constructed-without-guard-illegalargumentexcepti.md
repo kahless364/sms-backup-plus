@@ -11,13 +11,16 @@ requirements: []
 design_docs: []
 integration_contracts: []
 dependencies: []
-related_items: []
+related_items:
+  - U-047
 platforms: []
 tags: []
 id: BUG-015
 title: SNIHostName constructed without guard — IllegalArgumentException on IP-literal/empty IMAP host (API 24+)
 domain: build
 origin: code-review
+resolved_by: U-047
+sprint: '000011'
 ---
 
 # BUG-015: SNIHostName constructed without guard — IllegalArgumentException on IP-literal/empty host
