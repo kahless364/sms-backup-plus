@@ -15,18 +15,26 @@
  */
 package com.zegoggles.smssync.service
 
+import android.app.Notification
+import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.provider.CallLog
 import android.provider.Telephony
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.zegoggles.smssync.App
+import com.zegoggles.smssync.R
+import com.zegoggles.smssync.activity.MainActivity
 // U-026: all k-9 imports removed; engine now uses app-owned ACL types
 // U-038 (BUG-006): removed five unused adapter/transport imports: BackupImapStore,
 //   PinnedCertStore, TlsTrustPolicy, K9MailTransport, MailTransportConfig.
@@ -124,6 +132,12 @@ class RestoreWorker @AssistedInject constructor(
     private val uids: MutableSet<String> = HashSet()
 
     override suspend fun doWork(): Result {
+        // U-049 AC-2: Set foreground notification early in doWork() so the restore shows
+        // a foreground-service notification on Android 12+ without ANR risk.
+        // Uses the same notification channel (App.CHANNEL_ID) and content that
+        // SmsRestoreService.restoreStateChanged() previously provided via startForeground().
+        setForeground(createRestoreForegroundInfo())
+
         // INV-3 backoff cap: cap effective retry delay at 300s (same logic as BackupWorker)
         val runAttempt = runAttemptCount
         if (runAttempt > 0) {
@@ -663,8 +677,39 @@ class RestoreWorker @AssistedInject constructor(
         return Result.failure(workDataOf(KEY_FAILURE_REASON to "auth_error"))
     }
 
+    /**
+     * U-049 AC-2: Builds the ForegroundInfo used by setForeground() at the start of doWork().
+     * Replaces the foreground-service notification that SmsRestoreService.restoreStateChanged()
+     * previously posted via startForeground(). Same notification channel (App.CHANNEL_ID),
+     * same notification ID (RESTORE_ID = 2), same content as the legacy service notification.
+     * The pending intent opens MainActivity so the user can monitor progress.
+     */
+    @Suppress("DEPRECATION")
+    private fun createRestoreForegroundInfo(): ForegroundInfo {
+        val ctx = applicationContext
+        val intent = Intent(ctx, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            ctx, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification: Notification = NotificationCompat.Builder(ctx)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setChannelId(App.CHANNEL_ID)
+            .setTicker(ctx.getString(R.string.status_restore))
+            .setContentTitle(ctx.getString(R.string.status_restore))
+            .setContentText(ctx.getString(R.string.status_restore))
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setWhen(System.currentTimeMillis())
+            .build()
+        return ForegroundInfo(RESTORE_NOTIFICATION_ID, notification)
+    }
+
     companion object {
         internal const val TAG = "SMSBackup+"
+
+        /** Foreground-service notification ID for restore (matches SmsRestoreService.RESTORE_ID). */
+        const val RESTORE_NOTIFICATION_ID = 2
 
         /** WorkData key: current item index in the restore loop */
         const val PROGRESS_KEY_CURRENT_ITEM = "current_item"

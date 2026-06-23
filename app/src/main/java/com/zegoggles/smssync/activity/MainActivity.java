@@ -57,8 +57,6 @@ import com.zegoggles.smssync.compat.SmsReceiver;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 import com.zegoggles.smssync.service.BackupType;
-import com.zegoggles.smssync.service.SmsBackupService;
-import com.zegoggles.smssync.service.SmsRestoreService;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.RestoreState;
 import com.zegoggles.smssync.service.state.SyncEvent;
@@ -417,16 +415,21 @@ public class MainActivity extends ThemeActivity implements
     }
 
     private void startBackup(BackupType backupType) {
-        startService(new Intent(this, SmsBackupService.class).setAction(backupType.name()));
+        // U-049 AC-4: delegate to ViewModel (calls injected BackupScheduler.scheduleManual),
+        // replacing startService(SmsBackupService.class) — no Service intermediary.
+        viewModel.startBackup(backupType);
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private void startRestore() {
-        final Intent intent = new Intent(this, SmsRestoreService.class);
+        // U-049 AC-4: replace startService(SmsRestoreService.class) with viewModel.startRestore().
+        // The service-layer dispatch is gone; restore is scheduled directly via the ViewModel
+        // which calls the injected BackupScheduler.scheduleRestore().
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if (isSmsBackupDefaultSmsApp(this)) {
-                startService(intent);
+                // U-049: directly enqueue restore via ViewModel (no Service intermediary).
+                viewModel.startRestore();
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // BUG-009 / U-041: On Q+, the RoleManager is the authoritative source for the
                 // SMS default; the legacy Sms.getDefaultSmsPackage() is unreliable on
@@ -456,7 +459,9 @@ public class MainActivity extends ThemeActivity implements
                 }
             }
         } else {
-            startService(intent);
+            // Pre-KitKat: restore directly via ViewModel (no SMS-default-app permission needed).
+            // U-049: replaced startService(SmsRestoreService.class) with viewModel.startRestore().
+            viewModel.startRestore();
         }
     }
 
@@ -553,7 +558,7 @@ public class MainActivity extends ThemeActivity implements
      * On API 33+ (Android 13 / TIRAMISU), the POST_NOTIFICATIONS permission is a runtime
      * permission that must be requested before posting any notification. This method requests
      * it on first activity launch so the user sees the dialog before the first backup/restore
-     * progress notification is posted by SmsBackupService / SmsRestoreService.
+     * progress notification is posted by BackupWorker / RestoreWorker via setForeground().
      * On API 32 and below the call is suppressed entirely — the permission did not exist and
      * calling requestPermissions for it would crash on older SDKs.
      */
