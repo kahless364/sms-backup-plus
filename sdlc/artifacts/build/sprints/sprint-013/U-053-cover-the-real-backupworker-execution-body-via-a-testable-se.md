@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -20,6 +20,8 @@ pipeline: ''
 domain: modernization
 requirement_source: assessment:20260623-post-migration-assessment#TE-003
 sprint: '000013'
+updated_at: '2026-06-23T22:24:56.398Z'
+resolution: done
 ---
 
 # U-053: Cover the real BackupWorker execution body via a testable seam

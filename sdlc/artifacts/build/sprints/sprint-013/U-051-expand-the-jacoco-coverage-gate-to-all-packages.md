@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: low
@@ -20,6 +20,8 @@ pipeline: ''
 domain: modernization
 requirement_source: assessment:20260623-post-migration-assessment#TE-001
 sprint: '000013'
+updated_at: '2026-06-23T22:23:33.411Z'
+resolution: done
 ---
 
 # U-051: Expand the jacoco coverage gate to all packages

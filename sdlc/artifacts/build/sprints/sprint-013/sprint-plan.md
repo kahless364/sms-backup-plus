@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-013
 sprint: '000013'
+end_date: 2026-06-23
+velocity_calculated: true
 ---
 
 # Sprint Plan: 013 — Test Visibility (batch B)
@@ -15,22 +17,22 @@ sprint: '000013'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-051 | Expand the jacoco coverage gate to all packages | Android | developer | sonnet | lead | — | planned | high |
-| U-052 | Add IMAP integration coverage + remove worker/transport exclusions | Android | developer | sonnet | lead | U-051 | planned | high |
-| U-053 | Cover the real BackupWorker body via a testable seam | Android | developer | sonnet | lead | — | planned | medium |
+| U-051 | Expand the jacoco coverage gate to all packages | Android | developer | sonnet | lead | — | done | high |
+| U-052 | Add IMAP integration coverage + remove worker/transport exclusions | Android | developer | sonnet | lead | U-051 | done | high |
+| U-053 | Cover the real BackupWorker body via a testable seam | Android | developer | sonnet | lead | — | done | medium |
 
 ## Execution Waves
 
 ### Wave 1
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-051 | Expand the jacoco coverage gate | Android | developer | sonnet | lead | — | planned | high |
-| U-053 | Cover the real BackupWorker body | Android | developer | sonnet | lead | — | planned | medium |
+| U-051 | Expand the jacoco coverage gate | Android | developer | sonnet | lead | — | done | high |
+| U-053 | Cover the real BackupWorker body | Android | developer | sonnet | lead | — | done | medium |
 
 ### Wave 2
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-052 | IMAP integration + remove exclusions | Android | developer | sonnet | lead | U-051 | planned | high |
+| U-052 | IMAP integration + remove exclusions | Android | developer | sonnet | lead | U-051 | done | high |
 
 ## Wave Summary
 | Wave | Stories | Can Parallel? | Gate |

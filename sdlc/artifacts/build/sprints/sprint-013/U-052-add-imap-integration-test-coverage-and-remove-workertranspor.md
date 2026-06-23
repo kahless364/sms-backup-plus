@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: high
 complexity: high
@@ -20,6 +20,8 @@ pipeline: ''
 domain: modernization
 requirement_source: assessment:20260623-post-migration-assessment#TE-002
 sprint: '000013'
+updated_at: '2026-06-23T22:24:20.922Z'
+resolution: done
 ---
 
 # U-052: Add IMAP integration test coverage and remove worker/transport coverage exclusions
