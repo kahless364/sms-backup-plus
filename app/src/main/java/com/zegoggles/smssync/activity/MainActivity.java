@@ -17,12 +17,9 @@
 package com.zegoggles.smssync.activity;
 
 import android.annotation.TargetApi;
-import android.app.role.RoleManager;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Telephony.Sms;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -67,10 +64,7 @@ import com.zegoggles.smssync.utils.WindowInsetsUtil;
 import java.util.Arrays;
 import java.util.List;
 
-import static android.provider.Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT;
-import static android.provider.Telephony.Sms.Intents.EXTRA_PACKAGE_NAME;
 import static android.widget.Toast.LENGTH_LONG;
-import static androidx.core.role.RoleManagerCompat.ROLE_SMS;
 import static androidx.preference.PreferenceFragmentCompat.ARG_PREFERENCE_ROOT;
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
@@ -422,47 +416,13 @@ public class MainActivity extends ThemeActivity implements
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private void startRestore() {
-        // U-049 AC-4: replace startService(SmsRestoreService.class) with viewModel.startRestore().
-        // The service-layer dispatch is gone; restore is scheduled directly via the ViewModel
-        // which calls the injected BackupScheduler.scheduleRestore().
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (isSmsBackupDefaultSmsApp(this)) {
-                // U-049: directly enqueue restore via ViewModel (no Service intermediary).
-                viewModel.startRestore();
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // BUG-009 / U-041: On Q+, the RoleManager is the authoritative source for the
-                // SMS default; the legacy Sms.getDefaultSmsPackage() is unreliable on
-                // RoleManager-managed devices (may return null even when a default exists).
-                // Always proceed to requestDefaultSmsPackageChange() on Q+ — the RoleManager
-                // path inside that method handles the role request unconditionally.
-                // The legacy package capture is only needed on pre-Q for the switch-back intent.
-                if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
-                    requestDefaultSmsPackageChange();
-                } else {
-                    showDialog(SMS_DEFAULT_PACKAGE_CHANGE);
-                }
-            } else {
-                // Pre-Q: capture the current default for the ACTION_CHANGE_DEFAULT switch-back.
-                final String defaultSmsPackage = Sms.getDefaultSmsPackage(this);
-                Log.d(TAG, "default SMS package: " + defaultSmsPackage);
-                if (!TextUtils.isEmpty(defaultSmsPackage)) {
-                    preferences.setSmsDefaultPackage(defaultSmsPackage);
-                    if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
-                        requestDefaultSmsPackageChange();
-                    } else {
-                        showDialog(SMS_DEFAULT_PACKAGE_CHANGE);
-                    }
-                } else {
-                    // No default package on pre-Q: genuinely unsupported device (tablet/no telephony).
-                    Toast.makeText(this, R.string.error_no_sms_default_package, LENGTH_LONG).show();
-                }
-            }
-        } else {
-            // Pre-KitKat: restore directly via ViewModel (no SMS-default-app permission needed).
-            // U-049: replaced startService(SmsRestoreService.class) with viewModel.startRestore().
-            viewModel.startRestore();
-        }
+        // U-050 AR-003: SMS-role negotiation logic delegated to SmsDefaultRoleHelper.
+        // Behavior and BUG-009/U-041 Q+ role-request path are preserved verbatim in the helper.
+        SmsDefaultRoleHelper.startRestore(this, preferences, new SmsDefaultRoleHelper.DialogDelegate() {
+            @Override public void showSmsDefaultPackageChangeDialog() { showDialog(SMS_DEFAULT_PACKAGE_CHANGE); }
+            @Override public void requestDefaultSmsPackageChange() { MainActivity.this.requestDefaultSmsPackageChange(); }
+            @Override public void startViewModelRestore() { viewModel.startRestore(); }
+        });
     }
 
     private void showFragment(@NonNull Fragment fragment, @Nullable String rootKey) {
@@ -498,29 +458,13 @@ public class MainActivity extends ThemeActivity implements
     }
 
     void requestDefaultSmsPackageChange() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            RoleManager roleManager = (RoleManager) getSystemService(Context.ROLE_SERVICE);
-            if (roleManager != null && !roleManager.isRoleHeld(ROLE_SMS)) {
-                SmsReceiver.enable(this);
-                Intent intent = roleManager.createRequestRoleIntent(ROLE_SMS);
-                startActivityForResult(intent, REQUEST_CHANGE_DEFAULT_SMS_PACKAGE);
-            }
-        } else {
-            Intent intent = new Intent(ACTION_CHANGE_DEFAULT).putExtra(EXTRA_PACKAGE_NAME, getPackageName());
-            startActivityForResult(intent, REQUEST_CHANGE_DEFAULT_SMS_PACKAGE);
-        }
+        // U-050 AR-003: delegated to SmsDefaultRoleHelper; behavior preserved.
+        SmsDefaultRoleHelper.requestDefaultSmsPackageChange(this);
     }
 
     private void restoreDefaultSmsProvider(String smsPackage) {
-        Log.d(TAG, "restoring SMS provider "+smsPackage);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // release role by disabling receiver:
-            // this will kill the app if the permission is revoked
-            SmsReceiver.disable(this);
-        } else if (!TextUtils.isEmpty(smsPackage)) {
-            final Intent intent = new Intent(ACTION_CHANGE_DEFAULT).putExtra(EXTRA_PACKAGE_NAME, smsPackage);
-            startActivity(intent);
-        }
+        // U-050 AR-003: delegated to SmsDefaultRoleHelper; behavior preserved.
+        SmsDefaultRoleHelper.restoreDefaultSmsProvider(this, smsPackage);
     }
 
     private void handleAccountManagerAuth(@NonNull Intent data) {
@@ -545,13 +489,12 @@ public class MainActivity extends ThemeActivity implements
     }
 
     private void checkDefaultSmsApp() {
-        // U-020: SmsRestoreService.isServiceIdle() replaced by repository state check (AC-9)
-        boolean restoreIdle = App.syncStateRepository() == null
-            || !App.syncStateRepository().getState().getValue().isRunning()
-            || !(App.syncStateRepository().getState().getValue() instanceof RestoreState);
-        if (isSmsBackupDefaultSmsApp(this) && restoreIdle) {
-            restoreDefaultSmsProvider(preferences.getSmsDefaultPackage());
-        }
+        // U-050 AR-003: delegated to SmsDefaultRoleHelper; behavior preserved.
+        // SyncState is a Kotlin typealias for State; use the concrete class in Java.
+        // Pass viewModel.state.getValue() as the current state (null-safe).
+        com.zegoggles.smssync.service.state.State currentState =
+            (viewModel != null) ? viewModel.getState().getValue() : null;
+        SmsDefaultRoleHelper.checkDefaultSmsApp(this, preferences, currentState);
     }
 
     /**

@@ -32,8 +32,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 /**
- * WorkManager implementation of [BackupScheduler] — the second adapter alongside
- * [LegacyScheduler], introduced by U-014.
+ * WorkManager implementation of [BackupScheduler] — the sole production adapter since U-017.
  *
  * This adapter maps all port operations to [WorkRequest]s while preserving the four
  * invariants mandated by CNTR-MODERNIZATION-004:
@@ -69,13 +68,9 @@ import javax.inject.Inject
  * [CONTENT_TRIGGER_UNIQUE_NAME] for the content-trigger periodic work. Names must be
  * stable across app restarts because WorkManager persists work by unique name.
  *
- * **Ordering constraint**: WorkManager custom initialization via [Configuration.Provider]
- * and [HiltWorkerFactory] is owned by U-024. Until U-024 lands, the default WorkManager
- * initializer (declared in the AndroidX work manifest) is in use; do NOT remove it from
- * the manifest before U-024 merges.
- *
- * **[scheduleRestore]**: stub returning a [ScheduledJob] — full durable restore checkpoint
- * is U-016.
+ * **WorkManager initialization**: App implements [Configuration.Provider] and provides
+ * [HiltWorkerFactory] via [App.getWorkManagerConfiguration()] (U-024). Auto-initialization
+ * is disabled in AndroidManifest.xml. WorkManager is initialized explicitly in App.onCreate().
  */
 /**
  * U-048: @Inject constructor added so Hilt can construct this as the @Singleton
@@ -386,11 +381,14 @@ class WorkManagerScheduler @Inject constructor(
     // -----------------------------------------------------------------------
 
     /**
-     * Returns a [SchedulerObservable] backed by a static [SchedulerState.Enqueued] value.
+     * Returns a [SchedulerObservable] carrying a static [SchedulerState.Enqueued] value.
      *
-     * Full WorkManager [WorkInfo] → SchedulerState live observable is U-020 (Otto→StateFlow).
-     * Until that story lands, this returns a static state so callers get a non-null observable
-     * without a crash.
+     * U-050 AR-005: The "until U-020 lands" comment is removed — U-020 (Otto→StateFlow)
+     * has landed. The method is retained in the interface contract ([BackupScheduler.observe])
+     * for API stability; no production caller currently invokes it (WorkInfo observation is
+     * handled by [MainViewModel] via [WorkManager.getWorkInfosForUniqueWorkFlow] directly).
+     * This implementation returns a stable non-null observable; a live WorkInfo-backed
+     * implementation can be substituted if a caller is added.
      */
     override fun observe(jobKind: BackupType): SchedulerObservable<SchedulerState> {
         return SchedulerObservable(SchedulerState.Enqueued)
