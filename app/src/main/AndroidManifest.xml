@@ -127,12 +127,11 @@
         <activity android:name=".activity.auth.AccountManagerAuthActivity"/>
         <activity android:name=".activity.donation.DonationActivity"/>
 
-        <service android:name=".service.SmsBackupService"
-                 android:exported="false"
-                 android:foregroundServiceType="dataSync"/>
-        <service android:name=".service.SmsRestoreService"
-                 android:exported="false"
-                 android:foregroundServiceType="dataSync"/>
+        <!-- U-049: SmsBackupService, SmsRestoreService deleted (dual-dispatch layer retired).
+             Foreground notification is now provided by BackupWorker/RestoreWorker via
+             setForeground(ForegroundInfo(...)) and WorkManager's foreground service support.
+             WorkManager registers its own foreground service (SystemForegroundService) which
+             handles the android:foregroundServiceType="dataSync" permission automatically. -->
         <!-- U-017: SmsJobService deleted (Firebase JobDispatcher removed). -->
 
         <receiver android:name=".receiver.SmsBroadcastReceiver"

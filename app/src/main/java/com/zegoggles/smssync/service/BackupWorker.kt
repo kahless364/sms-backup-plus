@@ -15,11 +15,19 @@
  */
 package com.zegoggles.smssync.service
 
+import android.app.Notification
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.zegoggles.smssync.App
+import com.zegoggles.smssync.R
+import com.zegoggles.smssync.activity.MainActivity
 import com.zegoggles.smssync.auth.OAuth2Client
 import com.zegoggles.smssync.auth.TokenRefreshException
 import com.zegoggles.smssync.auth.TokenRefresher
@@ -96,6 +104,12 @@ class BackupWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        // U-049 AC-2: Set foreground notification early in doWork() so the backup shows
+        // a foreground-service notification on Android 12+ without ANR risk.
+        // Uses the same notification channel (App.CHANNEL_ID) and content that
+        // SmsBackupService.notifyAboutBackup() previously provided.
+        setForeground(createBackupForegroundInfo())
+
         // INV-3 backoff cap: cap effective retry delay at 300s.
         // At attempt N, effective delay = 30 * 2^N seconds.
         // N=0: 30s, N=1: 60s, N=2: 120s, N=3: 240s, N=4: 480s → cap exceeded.
@@ -453,8 +467,39 @@ class BackupWorker @AssistedInject constructor(
         return BackupType.BROADCAST_INTENT
     }
 
+    /**
+     * U-049 AC-2: Builds the ForegroundInfo used by setForeground() at the start of doWork().
+     * Replaces the foreground-service notification that SmsBackupService.notifyAboutBackup()
+     * previously posted via startForeground(). Same notification channel (App.CHANNEL_ID),
+     * same notification ID (BACKUP_ID = 1), same content as the legacy service notification.
+     * The pending intent opens MainActivity so the user can monitor progress.
+     */
+    @Suppress("DEPRECATION")
+    private fun createBackupForegroundInfo(): ForegroundInfo {
+        val ctx = applicationContext
+        val intent = Intent(ctx, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            ctx, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification: Notification = NotificationCompat.Builder(ctx)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setChannelId(App.CHANNEL_ID)
+            .setTicker(ctx.getString(R.string.status_backup))
+            .setContentTitle(ctx.getString(R.string.status_backup))
+            .setContentText(ctx.getString(R.string.status_backup))
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setWhen(System.currentTimeMillis())
+            .build()
+        return ForegroundInfo(BACKUP_NOTIFICATION_ID, notification)
+    }
+
     companion object {
         internal const val TAG = "SMSBackup+"
+
+        /** Foreground-service notification ID for backup (matches SmsBackupService.BACKUP_ID). */
+        const val BACKUP_NOTIFICATION_ID = 1
 
         /** WorkData key: number of messages backed up so far */
         const val PROGRESS_KEY_BACKED_UP = "backed_up"

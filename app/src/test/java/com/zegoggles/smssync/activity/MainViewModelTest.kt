@@ -1,6 +1,7 @@
 package com.zegoggles.smssync.activity
 
 import com.google.common.truth.Truth.assertThat
+import com.zegoggles.smssync.scheduler.BackupScheduler
 import com.zegoggles.smssync.service.state.BackupState
 import com.zegoggles.smssync.service.state.FlowSyncStateRepository
 import com.zegoggles.smssync.service.state.RestoreState
@@ -14,6 +15,11 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 /**
  * U-021: Unit tests for MainViewModel.
@@ -22,17 +28,24 @@ import org.junit.Test
  *       delegating to the repository — verified by asserting that values emitted to the
  *       repository are immediately visible through the ViewModel's flows.
  * AC-9: New tests added per the story requirement (AC-9 bullet 1).
+ *
+ * U-049: Updated to pass Context and BackupScheduler args (new constructor parameters).
+ * Uses RobolectricTestRunner for the ApplicationContext; BackupScheduler is mocked.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class MainViewModelTest {
+
+    @Mock private lateinit var mockScheduler: BackupScheduler
 
     private lateinit var repository: FlowSyncStateRepository
     private lateinit var viewModel: MainViewModel
 
     @Before
     fun setUp() {
+        MockitoAnnotations.openMocks(this)
         repository = FlowSyncStateRepository()
-        viewModel = MainViewModel(repository)
+        viewModel = MainViewModel(RuntimeEnvironment.getApplication(), repository, mockScheduler)
     }
 
     // -----------------------------------------------------------------------
