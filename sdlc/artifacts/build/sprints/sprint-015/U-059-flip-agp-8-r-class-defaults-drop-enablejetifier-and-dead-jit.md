@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -18,6 +18,7 @@ id: U-059
 title: Flip AGP-8 R-class defaults, drop enableJetifier and dead jitpack repo, add CI coverage verification
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#BT-002
 sprint: '000015'
 ---

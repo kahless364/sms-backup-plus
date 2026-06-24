@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-015
 sprint: '000015'
+end_date: 2026-06-24
+velocity_calculated: true
 ---
 
 # Sprint Plan: 015 — Toolchain Currency (batch D)
@@ -15,18 +17,18 @@ sprint: '000015'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-057 | Migrate to Kotlin 2.x + KSP, raise JVM target to 17 | Android | developer | sonnet | lead | — | planned | medium |
-| U-058 | Refresh vendored k-9 deps, drop org.apache.http.legacy | Android | developer | sonnet | lead | — | planned | medium |
-| U-059 | Flip AGP-8 R-class defaults, repo hygiene, CI coverage verify | Android | developer | sonnet | lead | — | planned | medium |
+| U-057 | Migrate to Kotlin 2.x + KSP, raise JVM target to 17 | Android | developer | sonnet | lead | — | done | medium |
+| U-058 | Refresh vendored k-9 deps, drop org.apache.http.legacy | Android | developer | sonnet | lead | — | done | medium |
+| U-059 | Flip AGP-8 R-class defaults, repo hygiene, CI coverage verify | Android | developer | sonnet | lead | — | done | medium |
 
 ## Execution Waves
 
 ### Wave 1
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-057 | Kotlin 2.x + KSP + JVM 17 | Android | developer | sonnet | lead | — | planned | medium |
-| U-058 | Refresh vendored k-9 deps | Android | developer | sonnet | lead | — | planned | medium |
-| U-059 | AGP-8 defaults + repo hygiene + CI | Android | developer | sonnet | lead | — | planned | medium |
+| U-057 | Kotlin 2.x + KSP + JVM 17 | Android | developer | sonnet | lead | — | done | medium |
+| U-058 | Refresh vendored k-9 deps | Android | developer | sonnet | lead | — | done | medium |
+| U-059 | AGP-8 defaults + repo hygiene + CI | Android | developer | sonnet | lead | — | done | medium |
 
 ## Wave Summary
 | Wave | Stories | Can Parallel? | Gate |

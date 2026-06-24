@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: high
@@ -18,6 +18,7 @@ id: U-058
 title: Refresh the vendored k-9 transitive dependencies and drop org.apache.http.legacy
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#BT-003
 sprint: '000015'
 ---

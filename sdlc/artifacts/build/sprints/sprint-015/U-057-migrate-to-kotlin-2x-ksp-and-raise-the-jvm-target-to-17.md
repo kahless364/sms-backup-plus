@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: high
@@ -18,6 +18,7 @@ id: U-057
 title: Migrate to Kotlin 2.x + KSP and raise the JVM target to 17
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#BT-001
 sprint: '000015'
 ---
