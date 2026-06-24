@@ -491,4 +491,101 @@ class WorkManagerSchedulerTest {
         assertThat(workInfos[0].state).isNotEqualTo(WorkInfo.State.FAILED)
         assertThat(workInfos[0].state).isNotEqualTo(WorkInfo.State.CANCELLED)
     }
+
+    // -----------------------------------------------------------------------
+    // U-054 (SE-002): Degraded-encryption gate on automatic schedule paths
+    // All four automatic paths + scheduleRestore must return null without enqueueing work.
+    // -----------------------------------------------------------------------
+
+    /**
+     * U-054 (SE-002): scheduleIncoming() returns null without enqueuing work when degraded.
+     * A degraded device must not schedule automatic incoming-SMS backups — credentials
+     * in plaintext would be transmitted via IMAP.
+     */
+    @Test
+    fun se002_scheduleIncoming_encryptionDegraded_returnsNullNoWork() {
+        `when`(secretStore.isEncryptionDegraded()).thenReturn(true)
+
+        val job = scheduler.scheduleIncoming()
+
+        assertThat(job).isNull()
+        val workInfos = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork(BackupType.INCOMING.name)
+            .get()
+        assertThat(workInfos).isEmpty()
+    }
+
+    /**
+     * U-054 (SE-002): scheduleRegular() returns null without enqueuing work when degraded.
+     * A degraded device must not schedule periodic automatic backups.
+     */
+    @Test
+    fun se002_scheduleRegular_encryptionDegraded_returnsNullNoWork() {
+        `when`(secretStore.isEncryptionDegraded()).thenReturn(true)
+
+        val job = scheduler.scheduleRegular()
+
+        assertThat(job).isNull()
+        val workInfos = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork(BackupType.REGULAR.name)
+            .get()
+        assertThat(workInfos).isEmpty()
+    }
+
+    /**
+     * U-054 (SE-002): scheduleContentTrigger() returns null without enqueuing work when degraded.
+     * The content-URI trigger worker would ultimately call scheduleIncoming(), but the gate
+     * must fire before any work is enqueued.
+     */
+    @Test
+    fun se002_scheduleContentTrigger_encryptionDegraded_returnsNullNoWork() {
+        `when`(secretStore.isEncryptionDegraded()).thenReturn(true)
+
+        val job = scheduler.scheduleContentTrigger()
+
+        assertThat(job).isNull()
+        val workInfos = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork(WorkManagerScheduler.CONTENT_TRIGGER_UNIQUE_NAME)
+            .get()
+        assertThat(workInfos).isEmpty()
+    }
+
+    /**
+     * U-054 (SE-002): scheduleBootup() returns null without enqueuing work when degraded.
+     * On boot, a degraded device must not silently schedule a doomed backup job.
+     */
+    @Test
+    fun se002_scheduleBootup_encryptionDegraded_returnsNullNoWork() {
+        `when`(secretStore.isEncryptionDegraded()).thenReturn(true)
+
+        val job = scheduler.scheduleBootup()
+
+        assertThat(job).isNull()
+        val workInfos = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork(BackupType.REGULAR.name)
+            .get()
+        assertThat(workInfos).isEmpty()
+    }
+
+    /**
+     * U-054 (SE-002): scheduleRestore() returns null without enqueuing work when degraded.
+     * Restore requires IMAP credentials; credentials in plaintext must not be used for
+     * a credentialed IMAP session (defense-in-depth alongside the ViewModel gate).
+     */
+    @Test
+    fun se002_scheduleRestore_encryptionDegraded_returnsNullNoWork() {
+        `when`(secretStore.isEncryptionDegraded()).thenReturn(true)
+
+        val config = com.zegoggles.smssync.scheduler.RestoreSchedulerConfig(
+            com.zegoggles.smssync.service.RestoreWorker.RESTORE_WORK_NAME,
+            com.zegoggles.smssync.service.RestoreWorker.RESTORE_WORK_NAME
+        )
+        val job = scheduler.scheduleRestore(config)
+
+        assertThat(job).isNull()
+        val workInfos = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork(com.zegoggles.smssync.service.RestoreWorker.RESTORE_WORK_NAME)
+            .get()
+        assertThat(workInfos).isEmpty()
+    }
 }
