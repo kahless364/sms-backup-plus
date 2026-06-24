@@ -6,11 +6,15 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.7.3'
         // U-019: Kotlin plugin needed for SyncStateRepository/SyncEvent Kotlin files
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25'
+        // U-057: Upgraded from 1.9.25 to 2.0.21 (Kotlin 2.x K2 compiler, compatible with AGP 8.7.3).
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21'
+        // U-057: KSP (Kotlin Symbol Processing) plugin — replaces kapt for Hilt annotation processing.
+        // KSP 2.0.21-1.0.28 is the version matching Kotlin 2.0.21.
+        // Hilt 2.51.1 supports KSP (available from Hilt 2.48+).
+        classpath 'com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.0.21-1.0.28'
         // U-022: Hilt Gradle plugin (must precede app/build.gradle application of
         // 'com.google.dagger.hilt.android'). Version aligned with hilt-android/hilt-compiler
-        // dependencies below. 2.51.1 is the last stable release compatible with AGP 8.7.3 +
-        // Kotlin 1.9.25 + JDK 17 without requiring Java-17-bytecode dagger internals (2.52+).
+        // dependencies below. 2.51.1 is compatible with AGP 8.7.3 + Kotlin 2.0.21 + JDK 17 + KSP.
         classpath 'com.google.dagger:hilt-android-gradle-plugin:2.51.1'
     }
 }
