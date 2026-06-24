@@ -130,9 +130,18 @@
 
         <!-- U-049: SmsBackupService, SmsRestoreService deleted (dual-dispatch layer retired).
              Foreground notification is now provided by BackupWorker/RestoreWorker via
-             setForeground(ForegroundInfo(...)) and WorkManager's foreground service support.
-             WorkManager registers its own foreground service (SystemForegroundService) which
-             handles the android:foregroundServiceType="dataSync" permission automatically. -->
+             setForeground(ForegroundInfo(id, notification, FOREGROUND_SERVICE_TYPE_DATA_SYNC)).
+             BUG-016: WorkManager's SystemForegroundService is the service that actually calls
+             Service.startForeground(notification, type). On targetSdk 34+ the runtime type
+             passed to startForeground MUST be a subset of the foregroundServiceType declared
+             on the <service> manifest element. The WorkManager library declares this service
+             with NO foregroundServiceType (0x0), so passing dataSync (0x1) throws
+             IllegalArgumentException ("0x1 is not a subset of 0x0") and the backup/restore
+             worker crash-loops. We override the service element here to declare dataSync. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:replace="android:foregroundServiceType" />
         <!-- U-017: SmsJobService deleted (Firebase JobDispatcher removed). -->
 
         <receiver android:name=".receiver.SmsBroadcastReceiver"
