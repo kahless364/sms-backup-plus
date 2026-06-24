@@ -313,6 +313,7 @@ public class EncryptedPrefsSecretStore implements SecretStore {
      * @return {@code true} iff the last migration attempt failed due to Keystore unavailability
      *         and credentials may still be in plaintext.
      */
+    @Override
     public boolean isEncryptionDegraded() {
         return appContext
                 .getSharedPreferences(CREDENTIALS_FILE_NAME + "_meta", Context.MODE_PRIVATE)

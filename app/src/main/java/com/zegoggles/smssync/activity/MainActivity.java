@@ -165,6 +165,11 @@ public class MainActivity extends ThemeActivity implements
         // U-020: replaces onStart App.register(this) / onStop App.unregister(this) (AC-14b).
         // Uses repeatOnLifecycle(STARTED) via MainActivityFlowHelper.
         MainActivityFlowHelper.startCollection(this, viewModel);
+
+        // U-054 (SE-002, AC-2): surface the ENCRYPTION_DEGRADED warning immediately on launch
+        // so the user is not surprised when scheduled backups silently do nothing.
+        // checkDegradedOnLaunch() is a no-op when the flag is not set (happy path).
+        viewModel.checkDegradedOnLaunch();
     }
 
     @Override

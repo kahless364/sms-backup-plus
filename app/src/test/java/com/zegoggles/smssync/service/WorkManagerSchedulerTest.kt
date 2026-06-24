@@ -6,6 +6,7 @@ import androidx.work.testing.WorkManagerTestInitHelper
 import com.google.common.truth.Truth.assertThat
 import com.zegoggles.smssync.preferences.DataTypePreferences
 import com.zegoggles.smssync.preferences.Preferences
+import com.zegoggles.smssync.preferences.SecretStore
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.scheduler.WorkManagerScheduler
 import org.junit.Before
@@ -47,6 +48,7 @@ class WorkManagerSchedulerTest {
 
     @Mock private lateinit var preferences: Preferences
     @Mock private lateinit var dataTypePreferences: DataTypePreferences
+    @Mock private lateinit var secretStore: SecretStore
 
     @Before
     fun setUp() {
@@ -72,8 +74,10 @@ class WorkManagerSchedulerTest {
         `when`(preferences.isWifiOnly).thenReturn(false)
         `when`(preferences.isCallLogBackupAfterCallEnabled()).thenReturn(false)
         `when`(dataTypePreferences.isBackupEnabled(DataType.CALLLOG)).thenReturn(false)
+        // Default: encryption not degraded (happy path)
+        `when`(secretStore.isEncryptionDegraded()).thenReturn(false)
 
-        scheduler = WorkManagerScheduler(context, preferences)
+        scheduler = WorkManagerScheduler(context, preferences, secretStore)
     }
 
     // -----------------------------------------------------------------------
