@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -18,6 +18,7 @@ id: U-054
 title: 'Enforce the ENCRYPTION_DEGRADED flag: gate and warn on degraded credential storage'
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#SE-002
 sprint: '000014'
 ---

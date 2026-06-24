@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: low
 complexity: low
@@ -18,6 +18,7 @@ id: U-055
 title: Move androidx.security-crypto off alpha and add an encryption-scheme regression test
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#SE-003
 sprint: '000014'
 ---

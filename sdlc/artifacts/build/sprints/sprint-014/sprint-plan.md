@@ -1,9 +1,11 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-014
 sprint: '000014'
+end_date: 2026-06-24
+velocity_calculated: true
 ---
 
 # Sprint Plan: 014 — Security Hardening (batch C)
@@ -15,18 +17,18 @@ sprint: '000014'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-054 | Enforce the ENCRYPTION_DEGRADED flag (completes BUG-008) | Android | developer | sonnet | lead | — | planned | medium |
-| U-055 | Move security-crypto off alpha + scheme regression test | Android | developer | sonnet | lead | — | planned | low |
-| U-056 | Network security config (no cleartext) + opt-in copy | Android | developer | sonnet | lead | — | planned | low |
+| U-054 | Enforce the ENCRYPTION_DEGRADED flag (completes BUG-008) | Android | developer | sonnet | lead | — | done | medium |
+| U-055 | Move security-crypto off alpha + scheme regression test | Android | developer | sonnet | lead | — | done | low |
+| U-056 | Network security config (no cleartext) + opt-in copy | Android | developer | sonnet | lead | — | done | low |
 
 ## Execution Waves
 
 ### Wave 1
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-054 | Enforce ENCRYPTION_DEGRADED | Android | developer | sonnet | lead | — | planned | medium |
-| U-055 | security-crypto off alpha | Android | developer | sonnet | lead | — | planned | low |
-| U-056 | networkSecurityConfig + opt-in copy | Android | developer | sonnet | lead | — | planned | low |
+| U-054 | Enforce ENCRYPTION_DEGRADED | Android | developer | sonnet | lead | — | done | medium |
+| U-055 | security-crypto off alpha | Android | developer | sonnet | lead | — | done | low |
+| U-056 | networkSecurityConfig + opt-in copy | Android | developer | sonnet | lead | — | done | low |
 
 ## Wave Summary
 | Wave | Stories | Can Parallel? | Gate |

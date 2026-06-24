@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: done
 artifact_type: user-story
 priority: low
 complexity: low
@@ -18,6 +18,7 @@ id: U-056
 title: Add a network security config (no cleartext) and clarify the 3rd-party-integration opt-in copy
 pipeline: ''
 domain: modernization
+resolution: done
 requirement_source: assessment:20260623-post-migration-assessment#SE-004
 sprint: '000014'
 ---
