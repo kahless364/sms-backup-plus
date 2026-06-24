@@ -126,8 +126,16 @@ class WorkManagerScheduler @Inject constructor(
      * INV-1: REPLACE; INV-2: UNMETERED or CONNECTED per isWifiOnly(); INV-3: EXPONENTIAL/30s.
      * Delay = [Preferences.getIncomingTimeoutSecs] seconds.
      * Returns null if autoBackupEnabled is false or timeout <= 0.
+     *
+     * U-054 (SE-002): returns null without enqueuing any work when
+     * [SecretStore.isEncryptionDegraded] returns true. A degraded device must not enqueue
+     * automatic backup work that would fail when credentials cannot be decrypted.
      */
     override fun scheduleIncoming(): ScheduledJob? {
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "WorkManagerScheduler.scheduleIncoming: blocked — encryption degraded, credentials in plaintext")
+            return null
+        }
         val timeoutSecs = preferences.incomingTimeoutSecs
         if (!preferences.isAutoBackupEnabled || timeoutSecs <= 0) {
             Log.d(TAG, "WorkManagerScheduler.scheduleIncoming: skipped (autoBackup=" +
@@ -155,8 +163,16 @@ class WorkManagerScheduler @Inject constructor(
      * INV-1: UPDATE on stable unique name; INV-2: UNMETERED or CONNECTED; INV-3: EXPONENTIAL/30s.
      * Interval = [Preferences.getRegularTimeoutSecs] seconds (minimum 15 minutes per WM API).
      * Returns null if autoBackupEnabled is false.
+     *
+     * U-054 (SE-002): returns null without enqueuing any work when
+     * [SecretStore.isEncryptionDegraded] returns true. A degraded device must not enqueue
+     * automatic backup work that would fail when credentials cannot be decrypted.
      */
     override fun scheduleRegular(): ScheduledJob? {
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "WorkManagerScheduler.scheduleRegular: blocked — encryption degraded, credentials in plaintext")
+            return null
+        }
         if (!preferences.isAutoBackupEnabled) {
             Log.d(TAG, "WorkManagerScheduler.scheduleRegular: skipped (autoBackup disabled)")
             return null
@@ -195,8 +211,16 @@ class WorkManagerScheduler @Inject constructor(
      *
      * INV-4: two-stage debounce — the triggered [BackupTriggerWorker] enqueues a delayed
      * incoming backup rather than backing up directly.
+     *
+     * U-054 (SE-002): returns null without enqueuing any work when
+     * [SecretStore.isEncryptionDegraded] returns true. A degraded device must not enqueue
+     * automatic backup work that would fail when credentials cannot be decrypted.
      */
     override fun scheduleContentTrigger(): ScheduledJob? {
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "WorkManagerScheduler.scheduleContentTrigger: blocked — encryption degraded, credentials in plaintext")
+            return null
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             // Below API 24: content-URI triggers are unavailable.
             // The broadcast fallback (SmsBroadcastReceiver → scheduleIncoming()) covers this path.
@@ -238,8 +262,16 @@ class WorkManagerScheduler @Inject constructor(
      * If !isAutoBackupEnabled: cancels all; returns null.
      * Otherwise: schedules regular backup with BOOT_BACKUP_DELAY (60s) initial delay.
      * Source: BackupJobs.java:86-97; BOOT_BACKUP_DELAY = 60 (line 56).
+     *
+     * U-054 (SE-002): returns null without enqueuing any work when
+     * [SecretStore.isEncryptionDegraded] returns true. A degraded device must not enqueue
+     * automatic backup work that would fail when credentials cannot be decrypted.
      */
     override fun scheduleBootup(): ScheduledJob? {
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "WorkManagerScheduler.scheduleBootup: blocked — encryption degraded, credentials in plaintext")
+            return null
+        }
         if (!preferences.isAutoBackupEnabled) {
             Log.d(TAG, "WorkManagerScheduler.scheduleBootup: autoBackup disabled, cancelling all")
             cancelAll()
@@ -346,8 +378,18 @@ class WorkManagerScheduler @Inject constructor(
      *
      * INV-1: REPLACE semantics via [ExistingWorkPolicy.REPLACE].
      * No network constraint for restore (restore is user-initiated, not background-triggered).
+     *
+     * U-054 (SE-002): returns null without enqueuing any work when
+     * [SecretStore.isEncryptionDegraded] returns true. Restore requires IMAP credentials;
+     * credentials in plaintext must not be used to initiate a credentialed IMAP session.
+     * The ViewModel caller (MainViewModel.startRestore) gates the restore path separately,
+     * but this ensures the scheduler layer is also protected (defense-in-depth).
      */
     override fun scheduleRestore(config: RestoreSchedulerConfig): ScheduledJob? {
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "WorkManagerScheduler.scheduleRestore: blocked — encryption degraded, credentials in plaintext")
+            return null
+        }
         val request = OneTimeWorkRequest.Builder(RestoreWorker::class.java)
             .setConstraints(Constraints.NONE)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)

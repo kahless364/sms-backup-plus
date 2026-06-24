@@ -23,6 +23,7 @@ import com.zegoggles.smssync.activity.events.PerformAction;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 import com.zegoggles.smssync.preferences.Preferences;
 // U-020: CancelEvent, SmsBackupService.isServiceWorking(), SmsRestoreService.isServiceIdle() removed
+import com.zegoggles.smssync.service.exception.EncryptionDegradedException;
 import com.zegoggles.smssync.service.state.BackupState;
 import com.zegoggles.smssync.service.state.RestoreState;
 import com.zegoggles.smssync.service.state.SmsSyncState;
@@ -226,7 +227,11 @@ public class StatusPreference extends Preference implements View.OnClickListener
     // U-020: @Subscribe removed — called by StatusPreferenceFlowHelper (AC-15).
     void backupStateChanged(final BackupState newState) {
         if (App.LOCAL_LOGV) Log.v(TAG, "backupStateChanged:"+newState);
-        if (newState.backupType.isBackground()) return;
+        // U-054 (SE-002): ERROR states must always surface — do not suppress them even when
+        // the backup type is a background type (REGULAR, INCOMING, etc.). Background-type
+        // progress/completion updates are suppressed in the UI (they would be confusing noise),
+        // but an ERROR, including the ENCRYPTION_DEGRADED launch warning, must always render.
+        if (newState.backupType.isBackground() && newState.state != SmsSyncState.ERROR) return;
 
         stateChanged(newState);
 
@@ -395,6 +400,15 @@ public class StatusPreference extends Preference implements View.OnClickListener
                     onAuthFailed();
                 } else if (state.isPermissionException()) {
                     displayMissingPermissions(AppPermission.from(state.getMissingPermissions()));
+                } else if (state.exception instanceof EncryptionDegradedException) {
+                    // U-054 (SE-002): Show the distinct degraded-encryption headline and detail.
+                    // EncryptionDegradedException implements LocalizableException, so
+                    // state.getErrorMessage() returns status_encryption_degraded_details.
+                    final String detailMessage = state.getErrorMessage(getContext().getResources());
+                    statusLabel.setText(R.string.status_encryption_degraded);
+                    syncDetailsLabel.setText(detailMessage == null
+                            ? getString(R.string.status_encryption_degraded_details)
+                            : detailMessage);
                 } else {
                     final String errorMessage = state.getErrorMessage(getContext().getResources());
                     statusLabel.setText(R.string.status_unknown_error);
