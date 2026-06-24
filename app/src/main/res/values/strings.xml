@@ -73,6 +73,10 @@
   <string name="status_canceled_details">%1$d/%2$d items successfully backed up.</string>
   <string name="status_gmail_temp_error">Temporary IMAP error, try again later.</string>
 
+  <!-- U-054 (SE-002): ENCRYPTION_DEGRADED warning strings -->
+  <string name="status_encryption_degraded">Encryption error — backup paused</string>
+  <string name="status_encryption_degraded_details">Credential encryption failed on a prior launch. Backup and restore are blocked until credentials are re-entered. Open account settings to re-authenticate.</string>
+
   <string name="ui_settings_advanced_label">Advanced settings</string>
   <string name="ui_settings_advanced_desc">Set advanced preferences.</string>
 

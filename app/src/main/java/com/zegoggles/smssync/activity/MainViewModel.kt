@@ -8,12 +8,14 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.zegoggles.smssync.mail.DataType
 import com.zegoggles.smssync.mail.transport.MailException
+import com.zegoggles.smssync.preferences.SecretStore
 import com.zegoggles.smssync.scheduler.BackupScheduler
 import com.zegoggles.smssync.scheduler.RestoreSchedulerConfig
 import com.zegoggles.smssync.service.BackupType
 import com.zegoggles.smssync.service.BackupWorker
 import com.zegoggles.smssync.service.RestoreWorker
 import com.zegoggles.smssync.service.WorkManagerCancelCollector
+import com.zegoggles.smssync.service.exception.EncryptionDegradedException
 import com.zegoggles.smssync.service.state.BackupState
 import com.zegoggles.smssync.service.state.RestoreState
 import com.zegoggles.smssync.service.state.SmsSyncState
@@ -52,7 +54,8 @@ import kotlinx.coroutines.launch
 class MainViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: SyncStateRepository,
-    private val scheduler: BackupScheduler
+    private val scheduler: BackupScheduler,
+    private val secretStore: SecretStore
 ) : ViewModel() {
 
     private val TAG = "SMSBackup+"
@@ -85,11 +88,54 @@ class MainViewModel @Inject constructor(
     fun tryEmitEvent(event: SyncEvent): Boolean = repository.tryEmitEvent(event)
 
     /**
+     * U-054 (SE-002): Checks whether credentials are in the degraded (plaintext-on-disk) state
+     * and, if so, emits a persistent error [BackupState] to [SyncStateRepository].
+     *
+     * This method is called from [MainActivity.onCreate] so that the warning is visible
+     * immediately on launch (AC-2). The status UI (StatusPreference) observes the repository
+     * state flow and renders the ERROR state with the localized degraded message
+     * (R.string.status_encryption_degraded / status_encryption_degraded_details).
+     *
+     * When the degraded flag is not set (happy path), this method is a no-op — it does NOT
+     * modify the repository state and does NOT block normal operation.
+     *
+     * @return true if the degraded state was detected and an error state was emitted;
+     *         false if credentials are properly encrypted (no-op).
+     */
+    fun checkDegradedOnLaunch(): Boolean {
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "MainViewModel.checkDegradedOnLaunch: ENCRYPTION_DEGRADED flag is set — emitting warning state")
+            repository.emitState(
+                BackupState(SmsSyncState.ERROR, 0, 0, BackupType.UNKNOWN, null,
+                    EncryptionDegradedException())
+            )
+            return true
+        }
+        return false
+    }
+
+    /**
      * U-049 AC-4: Schedules a manual backup (MANUAL or SKIP type) via the injected
      * BackupScheduler and starts observing WorkInfo for progress. Replaces
      * MainActivity.startService(SmsBackupService.class) + the service-layer WorkInfo bridge.
+     *
+     * U-054 (SE-002): If [SecretStore.isEncryptionDegraded] returns true, the backup is NOT
+     * enqueued. Instead a [BackupState] with [SmsSyncState.ERROR] and an
+     * [EncryptionDegradedException] is emitted so the UI shows the persistent warning. This
+     * preserves the BUG-008 retry path: the next successful migration clears the flag, after
+     * which [scheduler.scheduleManual] will enqueue normally.
      */
     fun startBackup(backupType: BackupType) {
+        // U-054 (SE-002): gate on degraded credential storage before enqueuing.
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "MainViewModel.startBackup: blocked — ENCRYPTION_DEGRADED flag set (SE-002)")
+            repository.emitState(
+                BackupState(SmsSyncState.ERROR, 0, 0, backupType, null,
+                    EncryptionDegradedException())
+            )
+            return
+        }
+
         // Cancel any existing backup observation before starting a new one
         backupObserverJob?.cancel()
         backupCancelCollectorJob?.cancel()
@@ -110,8 +156,22 @@ class MainViewModel @Inject constructor(
      * U-049 AC-4: Schedules a restore via the injected BackupScheduler and starts observing
      * WorkInfo for progress. Replaces MainActivity.startService(SmsRestoreService.class) +
      * the service-layer WorkInfo bridge.
+     *
+     * U-054 (SE-002): If [SecretStore.isEncryptionDegraded] returns true, the restore is NOT
+     * enqueued — credentials in plaintext must not be used for IMAP login. Emits an ERROR
+     * [RestoreState] carrying [EncryptionDegradedException].
      */
     fun startRestore() {
+        // U-054 (SE-002): gate on degraded credential storage before enqueuing.
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "MainViewModel.startRestore: blocked — ENCRYPTION_DEGRADED flag set (SE-002)")
+            repository.emitState(
+                RestoreState(SmsSyncState.ERROR, 0, 0, 0, 0, null,
+                    EncryptionDegradedException())
+            )
+            return
+        }
+
         // Cancel any existing restore observation before starting a new one
         restoreObserverJob?.cancel()
         restoreCancelCollectorJob?.cancel()

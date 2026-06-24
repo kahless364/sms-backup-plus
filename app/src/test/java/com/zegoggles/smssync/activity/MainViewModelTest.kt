@@ -1,6 +1,7 @@
 package com.zegoggles.smssync.activity
 
 import com.google.common.truth.Truth.assertThat
+import com.zegoggles.smssync.preferences.SecretStore
 import com.zegoggles.smssync.scheduler.BackupScheduler
 import com.zegoggles.smssync.service.state.BackupState
 import com.zegoggles.smssync.service.state.FlowSyncStateRepository
@@ -19,6 +20,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -39,6 +41,7 @@ import org.robolectric.RuntimeEnvironment
 class MainViewModelTest {
 
     @Mock private lateinit var mockScheduler: BackupScheduler
+    @Mock private lateinit var mockSecretStore: SecretStore
 
     private lateinit var repository: FlowSyncStateRepository
     private lateinit var viewModel: MainViewModel
@@ -47,7 +50,9 @@ class MainViewModelTest {
     fun setUp() {
         MockitoAnnotations.openMocks(this)
         repository = FlowSyncStateRepository()
-        viewModel = MainViewModel(RuntimeEnvironment.getApplication(), repository, mockScheduler)
+        // Default: encryption not degraded (happy path — does not change existing test behaviour)
+        `when`(mockSecretStore.isEncryptionDegraded()).thenReturn(false)
+        viewModel = MainViewModel(RuntimeEnvironment.getApplication(), repository, mockScheduler, mockSecretStore)
     }
 
     // -----------------------------------------------------------------------

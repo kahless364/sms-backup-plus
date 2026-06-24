@@ -23,6 +23,7 @@ import androidx.work.*
 import androidx.work.PeriodicWorkRequest
 import com.zegoggles.smssync.Consts
 import com.zegoggles.smssync.preferences.Preferences
+import com.zegoggles.smssync.preferences.SecretStore
 import com.zegoggles.smssync.service.BackupType
 import com.zegoggles.smssync.service.BackupWorker
 import com.zegoggles.smssync.service.RestoreWorker
@@ -78,7 +79,8 @@ import javax.inject.Inject
  */
 class WorkManagerScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val preferences: Preferences
+    private val preferences: Preferences,
+    private val secretStore: SecretStore
 ) : BackupScheduler {
 
     // -----------------------------------------------------------------------
@@ -267,8 +269,19 @@ class WorkManagerScheduler @Inject constructor(
      * IMPORTANT: Constraints.NONE means NetworkType.NOT_REQUIRED — not CONNECTED.
      * Using CONNECTED would defer backups on devices without active connectivity at trigger
      * time, breaking Tasker / third-party automation that sends the BACKUP broadcast.
+     *
+     * U-054 (SE-002): returns null without enqueuing any work when
+     * [SecretStore.isEncryptionDegraded] returns true. This gates the CNTR-MODERNIZATION-005
+     * broadcast path (BackupBroadcastReceiver → scheduleImmediate) so that a Tasker-triggered
+     * or 3rd-party backup on a degraded device is silently blocked rather than silently
+     * transmitting credentials that remain in plaintext on disk.
      */
     override fun scheduleImmediate(): ScheduledJob? {
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "WorkManagerScheduler.scheduleImmediate: blocked — encryption degraded, credentials in plaintext")
+            return null
+        }
+
         val request = OneTimeWorkRequest.Builder(BackupWorker::class.java)
             .setConstraints(Constraints.NONE)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
@@ -296,11 +309,20 @@ class WorkManagerScheduler @Inject constructor(
      * Accepts only [BackupType.MANUAL] or [BackupType.SKIP]; other values are contract violations.
      *
      * INV-1: REPLACE; INV-2: Constraints.NONE; INV-3: EXPONENTIAL/30s; INV unique-name: distinct.
+     *
+     * U-054 (SE-002): returns null without enqueuing any work when
+     * [SecretStore.isEncryptionDegraded] returns true. The ViewModel caller (MainViewModel)
+     * handles the null result by emitting a degraded-error [BackupState] to [SyncStateRepository].
      */
     override fun scheduleManual(backupType: BackupType): ScheduledJob? {
         require(backupType == BackupType.MANUAL || backupType == BackupType.SKIP) {
             "scheduleManual accepts only MANUAL or SKIP, got $backupType"
         }
+        if (secretStore.isEncryptionDegraded()) {
+            Log.w(TAG, "WorkManagerScheduler.scheduleManual: blocked — encryption degraded, credentials in plaintext")
+            return null
+        }
+
         val request = OneTimeWorkRequest.Builder(BackupWorker::class.java)
             .setConstraints(Constraints.NONE)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)

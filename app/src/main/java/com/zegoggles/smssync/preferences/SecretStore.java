@@ -67,4 +67,22 @@ public interface SecretStore {
      * Contract: CNTR-MODERNIZATION-003 §Migration entry point
      */
     void migrateFromPlaintext();
+
+    /**
+     * Returns {@code true} if the Keystore/EncryptedSharedPreferences store was unavailable
+     * during the last migration attempt, leaving credentials stored in plaintext (U-040/BUG-008).
+     *
+     * <p>The default implementation returns {@code false} — implementations that do not
+     * support Keystore-backed encryption (e.g. in-memory test fakes) are never in the degraded
+     * state. Only {@link EncryptedPrefsSecretStore} overrides this to return the persisted flag.
+     *
+     * <p>U-054 (SE-002): callers (e.g. WorkManagerScheduler, MainViewModel) gate backup
+     * operations and surface a user-visible warning when this returns {@code true}.
+     *
+     * @return {@code true} iff credentials may still be in plaintext due to a prior Keystore
+     *         failure; {@code false} otherwise.
+     */
+    default boolean isEncryptionDegraded() {
+        return false;
+    }
 }
