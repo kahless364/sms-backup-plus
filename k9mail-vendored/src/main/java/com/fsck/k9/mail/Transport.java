@@ -7,7 +7,8 @@ import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
 import com.fsck.k9.mail.store.StoreConfig;
 import com.fsck.k9.mail.ServerSettings.Type;
 import com.fsck.k9.mail.transport.SmtpTransport;
-import com.fsck.k9.mail.transport.WebDavTransport;
+// U-058 (BT-003): WebDavTransport removed — SMS Backup+ is IMAP/SMTP-only.
+// The webdav branch in getInstance/decodeTransportUri/createTransportUri removed below.
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -23,9 +24,8 @@ public abstract class Transport {
         String uri = storeConfig.getTransportUri();
         if (uri.startsWith("smtp")) {
             return new SmtpTransport(storeConfig, new DefaultTrustedSocketFactory(context));
-        } else if (uri.startsWith("webdav")) {
-            return new WebDavTransport(storeConfig);
         } else {
+            // U-058 (BT-003): webdav branch removed; SMS Backup+ is SMTP-only for outgoing.
             throw new MessagingException("Unable to locate an applicable Transport for " + uri);
         }
     }
@@ -45,9 +45,8 @@ public abstract class Transport {
     public static ServerSettings decodeTransportUri(String uri) {
         if (uri.startsWith("smtp")) {
             return SmtpTransport.decodeUri(uri);
-        } else if (uri.startsWith("webdav")) {
-            return WebDavTransport.decodeUri(uri);
         } else {
+            // U-058 (BT-003): webdav branch removed.
             throw new IllegalArgumentException("Not a valid transport URI");
         }
     }
@@ -66,9 +65,8 @@ public abstract class Transport {
     public static String createTransportUri(ServerSettings server) {
         if (Type.SMTP == server.type) {
             return SmtpTransport.createUri(server);
-        } else if (Type.WebDAV == server.type) {
-            return WebDavTransport.createUri(server);
         } else {
+            // U-058 (BT-003): webdav branch removed.
             throw new IllegalArgumentException("Not a valid transport URI");
         }
     }

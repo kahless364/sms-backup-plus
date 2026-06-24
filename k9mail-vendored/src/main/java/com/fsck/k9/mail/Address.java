@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.james.mime4j.MimeException;
+// mime4j 0.8.x: MimeException no longer thrown by LenientAddressParser; import removed.
 import org.apache.james.mime4j.codec.EncoderUtil;
 import org.apache.james.mime4j.dom.address.Mailbox;
 import org.apache.james.mime4j.dom.address.MailboxList;
-import org.apache.james.mime4j.field.address.AddressBuilder;
+import org.apache.james.mime4j.field.address.LenientAddressParser;
 
 import android.text.TextUtils;
 import android.text.util.Rfc822Token;
@@ -139,7 +139,9 @@ public class Address implements Serializable {
         }
         List<Address> addresses = new ArrayList<Address>();
         try {
-            MailboxList parsedList =  AddressBuilder.DEFAULT.parseAddressList(addressList).flatten();
+            // mime4j 0.8.x: LenientAddressParser.parseAddressList() does not throw MimeException
+            // (it is lenient by design); catch RuntimeException for safety.
+            MailboxList parsedList =  LenientAddressParser.DEFAULT.parseAddressList(addressList).flatten();
 
             for (int i = 0, count = parsedList.size(); i < count; i++) {
                 org.apache.james.mime4j.dom.address.Address address = parsedList.get(i);
@@ -151,8 +153,8 @@ public class Address implements Serializable {
                             + address.getClass().toString());
                 }
             }
-        } catch (MimeException pe) {
-            Log.e(LOG_TAG, "MimeException in Address.parse()", pe);
+        } catch (RuntimeException pe) {
+            Log.e(LOG_TAG, "Error in Address.parse()", pe);
             //but we do an silent failover : we just use the given string as name with empty address
             addresses.add(new Address(null, addressList, false));
         }

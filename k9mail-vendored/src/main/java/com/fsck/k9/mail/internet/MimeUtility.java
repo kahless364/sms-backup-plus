@@ -1036,11 +1036,17 @@ public class MimeUtility {
                     }
                 };
             } else if (MimeUtil.ENC_QUOTED_PRINTABLE.equalsIgnoreCase(encoding)) {
+                // mime4j 0.8.x: QuotedPrintableInputStream.close() no longer declares throws IOException;
+                // wrap the checked call inside a try-catch and rethrow as RuntimeException.
                 inputStream = new QuotedPrintableInputStream(rawInputStream) {
                     @Override
-                    public void close() throws IOException {
+                    public void close() {
                         super.close();
-                        closeInputStreamWithoutDeletingTemporaryFiles(rawInputStream);
+                        try {
+                            closeInputStreamWithoutDeletingTemporaryFiles(rawInputStream);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Error closing quoted-printable stream", e);
+                        }
                     }
                 };
             } else {

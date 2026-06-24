@@ -13,20 +13,37 @@
 //   - AndroidManifest.xml (required; copied verbatim from original)
 //   - Dependency coordinates: jcenter() deps migrated to mavenCentral() equivalents
 //     (jcenter was shut down in 2022; functionally identical artifacts).
-//     apache-mime4j pinned to 0.7.2 (exact original version from mavenCentral).
-//     commons-io pinned to 2.4 (exact original version).
+//     apache-mime4j bumped to 0.8.11 per U-058 (BT-003); requires source adaptation
+//     (see "U-058 mime4j 0.8.x adaptation" entries below).
+//     commons-io bumped to 2.16.1 per U-058 (BT-003).
 //     jutf7 1.0.0 and jzlib 1.0.7 available from mavenCentral.
 //   - compileSdkVersion raised from 25 to 35 (matches host project; no source changes).
 //   - support-annotations replaced with androidx.annotation:annotation (jcenter artifact
 //     migrated to mavenCentral; no API change — same @NonNull/@Nullable etc).
-//   - useLibrary 'org.apache.http.legacy' added: required for webdav/ package which
-//     uses Apache HTTP Client. No behavioral change; webdav/ is not used by SMS Backup+.
+//   - useLibrary 'org.apache.http.legacy' REMOVED per U-058 (BT-003):
+//       · webdav/ source package excluded from compilation (SMS Backup+ is IMAP-only;
+//         confirmed zero references to com.fsck.k9.mail.store.webdav.* outside webdav/
+//         itself — grep evidence in implementation-log.md).
+//       · TrustManagerFactory.java: StrictHostnameVerifier (org.apache.http.conn.ssl)
+//         replaced with HttpsURLConnection.getDefaultHostnameVerifier() + MinimalSslSession
+//         shim — same RFC 2818 hostname verification, no legacy dependency.
 //   - Source import: android.support.annotation.* → androidx.annotation.* in 12 files.
 //     Pure annotation migration; no behavioral change. AGP 8 / AndroidX requires this.
 //     Documented per AC-5 U-027 "permitted if documented in NOTICE and build.gradle".
 //     Affected files: Address, BoundaryGenerator, Message, Part, MessageExtractor,
 //     MessageIdGenerator, MimeBodyPart, MimeHeader, MimeMessage, MimeUtility, TextBody,
 //     SmtpTransport (12 files — import statement only, no logic change).
+//
+// U-058 mime4j 0.8.x adaptation (source changes to k9mail-vendored):
+//   - Address.java:       AddressBuilder → LenientAddressParser (class renamed in 0.8.x)
+//   - EncoderUtil.java:   CharsetUtil.{UTF_8,US_ASCII,ISO_8859_1} → StandardCharsets.*
+//                         (CharsetUtil static charset fields removed in 0.8.x)
+//   - MimeMessage.java:   new MimeConfig() + mutators → MimeConfig.custom()…build()
+//                         (MimeConfig is now immutable in 0.8.x; builder API added)
+//   - MessageHeaderParser.java: same MimeConfig builder migration
+//   - MimeUtility.java:   QuotedPrintableInputStream.close() no longer declares IOException;
+//                         anonymous override updated accordingly (IOE wrapped in RuntimeException)
+//   - TrustManagerFactory.java: see org.apache.http.legacy removal above
 
 apply plugin: 'com.android.library'
 
@@ -37,8 +54,23 @@ android {
         minSdkVersion 21
     }
 
-    // for using Apache HTTP Client (webdav/ package)
-    useLibrary 'org.apache.http.legacy'
+    // webdav/ is dead code in this fork (SMS Backup+ is IMAP-only).
+    // Exclude it from the source set so we can drop useLibrary 'org.apache.http.legacy'.
+    // U-058 (BT-003): confirmed zero production references to webdav classes outside
+    // the webdav/ directory itself (grep evidence in implementation-log.md).
+    sourceSets {
+        main {
+            java {
+                // U-058 (BT-003): webdav/ package and its dependents are dead code in this
+                // fork (SMS Backup+ is IMAP-only). Excluded so we can drop
+                // useLibrary 'org.apache.http.legacy'.
+                // Transport.java and RemoteStore.java retain the SMTP/IMAP paths only;
+                // their webdav branches have been removed.
+                exclude 'com/fsck/k9/mail/store/webdav/**'
+                exclude 'com/fsck/k9/mail/transport/WebDavTransport.java'
+            }
+        }
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -65,13 +97,14 @@ dependencies {
     // 'api' (not 'implementation') because app/src directly imports
     // org.apache.james.mime4j.codec.EncoderUtil (Sanitizer.java:3).
     // Original k-9 used 'compile' scope which is equivalent to 'api'.
-    api 'org.apache.james:apache-mime4j-core:0.7.2'
+    api 'org.apache.james:apache-mime4j-core:0.8.11'
     // Original: compile 'org.apache.james:apache-mime4j-dom:0.7.2' (jcenter)
-    api 'org.apache.james:apache-mime4j-dom:0.7.2'
+    api 'org.apache.james:apache-mime4j-dom:0.8.11'
     // Original: compile 'commons-io:commons-io:2.4' (jcenter)
+    // Bumped from 2.4 to 2.16.1 per U-058 (BT-003): security patches + maintained version.
     // 'api' because app/src directly imports org.apache.commons.io.IOUtils
     // (Attachment.java:13, MessageConverter.java:39).
-    api 'commons-io:commons-io:2.4'
+    api 'commons-io:commons-io:2.16.1'
     // Original: compile 'com.jcraft:jzlib:1.0.7' (jcenter; also on mavenCentral)
     implementation 'com.jcraft:jzlib:1.0.7'
     // Original: compile 'com.beetstra.jutf7:jutf7:1.0.0' (jcenter)

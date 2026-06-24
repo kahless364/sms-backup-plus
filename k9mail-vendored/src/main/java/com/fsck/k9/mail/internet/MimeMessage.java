@@ -93,11 +93,13 @@ public class MimeMessage extends Message {
 
         mBody = null;
 
-        MimeConfig parserConfig  = new MimeConfig();
-        parserConfig.setMaxHeaderLen(-1); // The default is a mere 10k
-        parserConfig.setMaxLineLen(-1); // The default is 1000 characters. Some MUAs generate
-        // REALLY long References: headers
-        parserConfig.setMaxHeaderCount(-1); // Disable the check for header count.
+        // mime4j 0.8.x: MimeConfig is now immutable; use the builder pattern.
+        MimeConfig parserConfig = MimeConfig.custom()
+                .setMaxHeaderLen(-1)      // The default is a mere 10k
+                .setMaxLineLen(-1)        // The default is 1000 characters. Some MUAs generate
+                                          // REALLY long References: headers
+                .setMaxHeaderCount(-1)    // Disable the check for header count.
+                .build();
         MimeStreamParser parser = new MimeStreamParser(parserConfig);
         parser.setContentHandler(new MimeMessageBuilder());
         if (recurse) {
