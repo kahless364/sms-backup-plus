@@ -30,12 +30,13 @@ import static com.zegoggles.smssync.App.TAG;
  * the same backing file — otherwise the library would attempt to decrypt pre-existing
  * plaintext entries and throw.
  *
- * Version note: pinned to androidx.security:security-crypto:1.1.0-alpha06
- * (DES-MODERNIZATION-004 §ADR trade-off note). The 1.1.x alpha is required for the
- * MasterKey.Builder API with setRequestStrongBoxBacked(). The 1.0.0 stable release
- * uses the deprecated MasterKeys.getOrCreate() idiom and does not expose StrongBox
- * best-effort configuration. 1.1.0-alpha06 is the latest published alpha as of
- * June 2026 and is the version used in production by numerous AndroidX projects.
+ * Version note: uses androidx.security:security-crypto:1.1.0 stable
+ * (U-055 / SE-003 / BT-004 — upgraded from 1.1.0-alpha06). The 1.1.0 stable release
+ * retains the MasterKey.Builder API (including setRequestStrongBoxBacked()) introduced
+ * in the 1.1.x alpha line. The older 1.0.0 stable line uses the deprecated
+ * MasterKeys.getOrCreate() idiom and does not expose StrongBox best-effort configuration.
+ * 1.1.0 stable is the first non-alpha/non-beta release on the 1.1.x line;
+ * data at rest is compatible with 1.1.0-alpha06 (both use Tink-backed AES-256-GCM/SIV).
  *
  * Contract: CNTR-MODERNIZATION-003
  * Design: DES-MODERNIZATION-004
