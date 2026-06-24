@@ -206,18 +206,21 @@ public class MainActivity extends ThemeActivity implements
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_about:
-                showDialog(ABOUT);
-                return true;
-            case R.id.menu_reset:
-                showDialog(RESET);
-                return true;
-            case R.id.menu_view_log:
-                showDialog(VIEW_LOG);
-
-            default:
-                return super.onOptionsItemSelected(item);
+        // U-059 (BT-002): converted from switch(R.id.*) to if/else because
+        // nonFinalResIds=true makes R fields non-final; switch cases require
+        // compile-time constants, which non-final fields are not.
+        int id = item.getItemId();
+        if (id == R.id.menu_about) {
+            showDialog(ABOUT);
+            return true;
+        } else if (id == R.id.menu_reset) {
+            showDialog(RESET);
+            return true;
+        } else if (id == R.id.menu_view_log) {
+            showDialog(VIEW_LOG);
+            return super.onOptionsItemSelected(item);
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 

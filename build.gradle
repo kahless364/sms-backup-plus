@@ -30,7 +30,10 @@ allprojects {
     repositories {
         mavenCentral()
         maven { url "https://maven.google.com" }
-        maven { url "https://jitpack.io" }
+        // U-059 (BT-005): jitpack.io removed — it was added for the original k-9
+        // dependency before vendoring (U-027). k9mail-vendored is now an in-tree
+        // Gradle module; jitpack.io resolves nothing and adds network round-trips
+        // plus a supply-chain attack surface on every build.
         // U-017: maven.scijava.org AND mavenLocal() removed (Gate G3 — AC-7).
         // Both only served firebase-jobdispatcher:0.8.6 (from ~/.m2), now deleted.
         // The k-9 mail library is the in-tree :k9mail-vendored Gradle module (U-027),
