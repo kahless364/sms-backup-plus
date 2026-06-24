@@ -3,9 +3,8 @@ package com.fsck.k9.mail.internet;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
-
-import org.apache.james.mime4j.util.CharsetUtil;
 
 /**
  * Static methods for encoding header field values. This includes encoded-words
@@ -159,13 +158,13 @@ class EncoderUtil {
         for (int index = 0; index < len; index++) {
             char ch = text.charAt(index);
             if (ch > 0xff) {
-                return CharsetUtil.UTF_8;
+                return StandardCharsets.UTF_8;
             }
             if (ch > 0x7f) {
                 ascii = false;
             }
         }
-        return ascii ? CharsetUtil.US_ASCII : CharsetUtil.ISO_8859_1;
+        return ascii ? StandardCharsets.US_ASCII : StandardCharsets.ISO_8859_1;
     }
 
     private static Encoding determineEncoding(byte[] bytes) {

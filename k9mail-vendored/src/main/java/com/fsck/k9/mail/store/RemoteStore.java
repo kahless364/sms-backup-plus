@@ -11,8 +11,7 @@ import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
 import com.fsck.k9.mail.ssl.TrustedSocketFactory;
 import com.fsck.k9.mail.store.imap.ImapStore;
 import com.fsck.k9.mail.store.pop3.Pop3Store;
-import com.fsck.k9.mail.store.webdav.WebDavHttpClient;
-import com.fsck.k9.mail.store.webdav.WebDavStore;
+// U-058 (BT-003): WebDavStore/WebDavHttpClient removed — SMS Backup+ is IMAP-only.
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,9 +54,8 @@ public abstract class RemoteStore extends Store {
             } else if (uri.startsWith("pop3")) {
                 store = new Pop3Store(storeConfig,
                         new DefaultTrustedSocketFactory(context));
-            } else if (uri.startsWith("webdav")) {
-                store = new WebDavStore(storeConfig, new WebDavHttpClient.WebDavHttpClientFactory());
             }
+            // U-058 (BT-003): webdav branch removed — SMS Backup+ is IMAP-only.
 
             if (store != null) {
                 sStores.put(uri, store);
@@ -103,9 +101,8 @@ public abstract class RemoteStore extends Store {
             return ImapStore.decodeUri(uri);
         } else if (uri.startsWith("pop3")) {
             return Pop3Store.decodeUri(uri);
-        } else if (uri.startsWith("webdav")) {
-            return WebDavStore.decodeUri(uri);
         } else {
+            // U-058 (BT-003): webdav branch removed.
             throw new IllegalArgumentException("Not a valid store URI");
         }
     }
@@ -127,9 +124,8 @@ public abstract class RemoteStore extends Store {
             return ImapStore.createUri(server);
         } else if (Type.POP3 == server.type) {
             return Pop3Store.createUri(server);
-        } else if (Type.WebDAV == server.type) {
-            return WebDavStore.createUri(server);
         } else {
+            // U-058 (BT-003): webdav branch removed.
             throw new IllegalArgumentException("Not a valid store URI");
         }
     }
