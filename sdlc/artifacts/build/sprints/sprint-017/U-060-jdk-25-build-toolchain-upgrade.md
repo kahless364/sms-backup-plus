@@ -20,7 +20,8 @@ title: Run the build on JDK 25 (Gradle 9.x / AGP 9.x toolchain upgrade) while ke
 pipeline: ''
 domain: build
 requirement_source: bug:BUG-017
-updated_at: '2026-11-11T22:16:14.773Z'
+updated_at: '2026-11-11T22:39:35.532Z'
+current_build_phase: implementation
 ---
 
 # U-060: Run the build on JDK 25 (Gradle 9.x / AGP 9.x toolchain upgrade) while keeping the Java 17 bytecode target
