@@ -4,129 +4,131 @@ story_id: "U-060"
 gate_id: "plan-review"
 gate: plan-review
 checkpoint: "plan-gate"
-verdict: "FAIL"
+verdict: "PASS"
 agent: "Solution Architect (separate instance, plan-review gate)"
 timestamp: "2026-11-11"
-iteration: 2
-artifact_reviewed: "sdlc/artifacts/build/sprints/sprint-017/U-060/plan.md (revision 2, delta vs 2334fc6d)"
-blockers: 1
-warnings: 6
+iteration: 3
+artifact_reviewed: "sdlc/artifacts/build/sprints/sprint-017/U-060/plan.md (revision 3, delta vs 648d6b53)"
+blockers: 0
+warnings: 5
 ---
 
 # Gate Report: gate-result — U-060
 
-## Gate: plan-review @ plan-gate (iteration 2 of 3)
+## Gate: plan-review @ plan-gate (iteration 3 of 3, final)
 
-## Verdict: FAIL
+## Verdict: PASS
 
 ## Summary
 
-Revision 2 resolves all three iteration-1 blockers (B-1, B-2, B-3) and all seven observations (N-1 to N-7), with evidence I re-checked independently.
-- **Gradle 9.5.1 is accepted.** The move from 9.3.1 is well-argued: it is stronger on the two sources AC-11 actually names. It also introduces no compatibility problem that 9.3.1 did not have.
-- **The rollback is now safe.**
-- **Branch M is executable without further decisions.**
+Revision 3 resolves R2-B1 cleanly and consistently. A Robolectric-only failure (T3) now takes a separate T3 path (T.1–T.6) that keeps the app at minSdk 21. Branch M's minSdk raise is reachable only through T1, T2, or a new evidence-gated trigger, T3-forced. The new Step 3.4 Gradle 9.3.1 fallback is coherent, and its weaker AC-11 evidence basis is flagged explicitly rather than applied silently. The R14 CI containment now uses the documented mechanism, and the story-amendment signals are redundant enough to survive a non-standard Phase Completion Report (PCR) field. I found no dangling cross-references or step-numbering errors. Nothing remaining needs a plan.md fix before a Developer can safely execute the plan. The five observations below are refinements.
 
-One defect remains. Trigger **T3** (Robolectric 4.15.1 fails on JDK 25) raises the app's minSdk to 23, and nothing technical forces that. It would drop Android 5.0/5.1 users for a test-tooling reason. That overreaches the product-owner approval, which was granted as permission rather than mandate, with Android 5.x to be kept where keeping it costs nothing risky. The fix is a small, local edit to the T3 row and M.1/M.2/M.10.
+## Prior findings — disposition
 
-## Iteration 1 findings — disposition
-
-| Finding | Status | Evidence checked this iteration |
+| Finding | Iteration | Status |
 |---|---|---|
-| B-1 misquoted Gradle compatibility citations | **Resolved** | Verbatim quotes match what I fetched for 9.1.0, 9.2.1, 9.3.0, 9.3.1, 9.4.0, 9.4.1, 9.5.0 and 9.5.1. I did not independently re-fetch the 9.6 and 9.7 rows in SC-5; they do not bear on the decision. SC-5 records the reading of AC-11 and the residual risk. |
-| B-2 repo-wide `git restore -- .` | **Resolved** | See "Rollback" below. |
-| B-3 product-owner minSdk approval | **Resolved, with one overreach** | Branch M is fully specified. T3 is new blocker R2-B1. |
-| N-1 Fallback B2 was a no-op | Resolved (dropped) | `hilt-compiler-1.3.0.pom` uses `room-compiler-processing` 2.6.0, the same as 1.2.0, so forcing a newer one targeted the wrong component. |
-| N-2 mixed androidx.hilt versions | Resolved (not adopted) | — |
-| N-3 bootstrap checksum | Resolved | Step 1 sets `distributionSha256Sum`. |
-| N-4 HEAD mismatch | Resolved | `git diff --stat b09bda5d HEAD -- . ':!sdlc'` is empty today, so the Step 0.1 guard works as written. |
-| N-5 CI daemon JVM | Resolved (R14) | See observation O-3 on the containment syntax. |
-| N-6 AC-6 wording | Resolved | 12.1 and 12.2 are written from the observed M2/M4 results. |
-| N-7 `-proc` | Resolved | Added to the B-javac watch list. |
+| B-1 misquoted Gradle citations | 1 | Resolved in revision 2 (verified iteration 2) |
+| B-2 repo-wide `git restore -- .` | 1 | Resolved in revision 2 (verified iteration 2; list re-checked this iteration) |
+| B-3 PO minSdk approval → specified branch | 1 | Resolved in revision 2 |
+| N-1..N-7 | 1 | Resolved in revision 2 |
+| **R2-B1** T3 raised minSdk without necessity | 2 | **Resolved** (see check 1) |
+| O-1 Gradle 9.5.1 accepted | 2 | No action needed |
+| O-2 R16 bare stop | 2 | Resolved: Step 3.4 fallback (check 2) |
+| O-3 R14 containment syntax | 2 | Resolved (check 3) |
+| O-4 non-standard PCR field | 2 | Resolved (check 4) |
+| O-5 lint-baseline discipline on main path | 2 | Resolved (Step 8.2, second bullet) |
+| O-6 Branch M dependency facts | 2 | Informational, carried forward |
 
-## Findings
+## Verification of the iteration-3 changes
 
-### Blocking (must be fixed in plan.md before implementation)
+**1. R2-B1: resolved, consistent across every dependent section.**
 
-**R2-B1: Trigger T3 raises minSdk without technical necessity, which overreaches the product-owner approval.**
+The split is consistent in each section that depends on it:
+- **Trigger table.** T1 and T2 are labelled "technically forced" because hilt-work 1.3.0/1.4.0 and Hilt 2.60 *declare* minSdk 23. T3 leads to the T3 path only, with "minSdk stays 21". T3-forced requires the specific error to be saved to `evidence/t3-robolectric-minsdk21.log`, and test failures with any other cause are explicitly excluded.
+- **Combinations.** These are defined: T3 together with T1 or T2 runs the full Branch M plus Robolectric 4.16.1.
+- **T3 path.**
+  - T.1 changes Robolectric to 4.16.1 only; minSdk, androidx.hilt and Hilt are unchanged.
+  - T.2 makes the four `@Config` retargets with a minSdk-21-accurate comment.
+  - T.3 is an executable acceptance check that escalates to T3-forced only on evidence.
+  - T.4 re-runs Step 6.
+  - T.5 lists what T3 does not do: no `CHANGES` entry, no minSdk docs, no release statement, no M.5/M.9, no manifest change.
+  - T.6 records a story *note* rather than a scope amendment, plus the R17 sentence.
+- **Branch M.**
+  - M.1: Robolectric 4.16.1 only for T3-forced or a combination.
+  - M.2: a `<REASON>` placeholder per trigger, including T3-forced.
+  - M.6: T3-forced re-runs Step 6.
+  - M.10: lists T3-forced.
+  - Stop conditions: amended accordingly.
+- **Step 7.1:** routes to the T3 path first, and to Branch M only on T3-forced.
+- **Step 7.5:** applies the same 4-line diff rule to both. I checked that it works mechanically: the file is LF in the index (`git ls-files --eol`: `i/lf w/crlf`, `core.autocrlf=true`), so `git diff` output has no `\r` and the `)$` anchor matches.
+- **Checkpoint C:** T3 path first, then Branch M, then the Step 3.4 fallback.
+- **AC rows:**
+  - AC-2: "empty, or exactly the 4-line retarget under the full Branch M or the T3 path".
+  - AC-10: {23, 29} under 4.15.1 or 4.16.1.
+  - AC-19: minSdk not covered.
+  - Separate "ACs touched" blocks exist for Branch M and for the T3 path.
+- **Other sections:**
+  - R8 routes to the T3 path. R17 records the test-floor gap, with the correct rationale: no `SDK_INT` check against LOLLIPOP/LOLLIPOP_MR1/M in `app/src/main` (consistent with my iteration-1 grep).
+  - The Files table marks `CHANGES` as "Full Branch M only (not the T3 path)".
+  - Steps 10, 11 and 12.1, Quality and Test Strategy are all consistent.
 
-The T3 row (Branch M table) reads: Robolectric 4.15.1 → 4.16.1, and "the app's minSdk is raised as well, so that the Robolectric-testable floor equals the app's floor". The stated reason is a test-coverage preference, not a constraint.
+This now matches the product owner's intent: Android 5.x users are dropped only when a dependency declares minSdk 23 or Robolectric demonstrably refuses minSdk 21.
 
-Why minSdk 23 is not needed under T3:
-- Robolectric 4.16 dropping SDK 21/22 means only that *tests* cannot run at 21/22. The four `SmsReceiverTest` tests can be retargeted to `M` exactly as in M.2 while the app keeps minSdk 21.
-- Every other Robolectric test runs at 29 (`robolectric.properties` `sdk=29`), at Q (`MainActivityRestoreTest`), or at 23 (`WorkManagerSchedulerTest`). None needs SDK 21/22.
-- The plan itself shows that API 21 and API 23 take the same `SmsReceiver` branch (`>= KITKAT && < Q`). Moving those tests to 23 therefore loses no meaningful coverage.
+**2. Step 3.4 Gradle 9.3.1 fallback: coherent; no AC weakened silently.**
+- **Trigger.** Narrowly defined: an *error* originating in KGP/KSP that names a Gradle API, with the log saved. Kotlin compile errors and processor errors are explicitly excluded.
+- **Actions.** Complete:
+  - `--stop`;
+  - URL and checksum (`b266d5ff…`, verified in iteration 1);
+  - re-run 3.1–3.3;
+  - re-run `updateDaemonJvm`;
+  - Step 5 on 9.3.1 with wrapper-jar hash `b3a875dd…` (verified in iteration 1);
+  - a complete Step 6;
+  - text substitutions in 3.1, 8.1 and 12.1, including dropping the 9.4-only precedence remark.
+- **Stop condition.** Stops if the error reproduces on 9.3.1, which is correct because the cause is then not the Gradle version.
+- **SC-5 "Fallback reading".** States plainly that AC-11/AC-15 would then rest on a weaker reading: the Kotlin table, the AGP minimums, and the Gradle page's *pre-release* listing. Implementation Notes must say so, quoting the 9.5.1 error, and the Developer's final message carries "PO ACKNOWLEDGEMENT ADVISED". This is disclosed, not silent.
+- **Rollback.** The procedure and the AC-1, AC-11, AC-15 rows and Files table all reference the fallback.
 
-Under T3 alone, then, the cost of keeping Android 5.x is a documented test-floor gap (API 21–22 not emulated). That is not a risky product change, and the product owner asked for exactly that trade-off.
+**3. R14 CI containment: correct.**
+- `org.gradle.java.installations.fromEnv` is documented in docs.gradle.org/9.5.1/userguide/toolchains.html as a comma-separated list of environment-variable names in `gradle.properties` (fetched this iteration). `JAVA_HOME_25_X64,JAVA_HOME` is valid syntax.
+- Writing it to the runner's `~/.gradle/gradle.properties` is read client-side, which is where daemon JVM selection happens. Daemon detection uses toolchain detection logic, as quoted from the gradle_daemon page; I verified that sentence on the 9.3.1 page in iteration 1.
+- It does not leak into local builds.
+- It is pre-written but applied only if the first PR run shows the R14 signature, which is proportionate.
 
-The other two triggers are legitimate:
-- **T1:** `hilt-work` 1.3.0/1.4.0 declare `minSdkVersion="23"`, so manifest merge fails at 21.
-- **T2:** Hilt 2.60 itself declares "minSDK for Hilt is now 23".
+**4. Story-amendment signals: adequate.** Each signal appears in three places: a prose line in the final message, `implementation-log.md`, and the PCR notes. They use distinct prefixes: "STORY AMENDMENT REQUIRED:" (Branch M), "STORY NOTE REQUIRED (no scope change):" (T3 path) and "PO ACKNOWLEDGEMENT ADVISED:" (Step 3.4). Step 12.3 consolidates them for the orchestrator.
 
-Required change to plan.md:
-1. **T3 alone** becomes: Robolectric 4.16.1, plus the M.2 retarget of the four `@Config` lines to `M`. **minSdk stays 21.** The comment text says the tests run at 23 because Robolectric 4.16 cannot emulate 21/22, not because minSdk was raised. No `CHANGES` entry and no M.7/M.8 minSdk documentation.
-   - Record in Implementation Notes: "API 21–22 not Robolectric-testable from U-060; app still supports them".
-   - Story amendment is needed only for AC-10 (configured SDK set {23, 29}) and the AC-2 note that retargeting is not disabling. It is not needed for the runtime-behavior scope statement.
-2. Raise minSdk under T3 only if Robolectric 4.16.1 **demonstrably refuses** to run with a manifest minSdk of 21. Save the error to evidence; that makes the raise technically forced.
-3. If T3 combines with T1 or T2, the full Branch M applies as written.
-4. Update the T3 row, M.1 ("T3 only"), M.2 comment text, M.10, R8, and the "ACs touched if Branch M triggers" block to match.
+**5. Cross-references and numbering: no new inconsistency.**
+- **Dangling references.** None: I grepped for references to non-existent Step 3.5+, M.11+, T.7+ and R18+.
+- **AC-4 row.** Now cites Step 2.2 and Step 11. The stale "Step 3.4" is gone, and Step 3.4 now names the fallback.
+- **Rollback lists.** `U060_TRACKED`/`U060_NEW` are unchanged, and every path is still tracked (checked in iteration 2). The T3 path and Step 3.4 touch no new paths.
+- **Front matter.** `risks_identified: 17` matches R1–R17.
 
-### Non-blocking observations
+## Non-blocking observations
 
-- **O-1: Assessment of Gradle 9.5.1 (accepted).** The checksums match services.gradle.org: bin zip `bafc141b619ad6350fd975fc903156dd5c151998cc8b058e8c1044ab5f7b031f`, wrapper jar `497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7`.
-  - **Quotes verified:** the 9.5.x page reads "9.0 through 9.2.0-alpha05" and Kotlin "2.0.0 through 2.3.20". The upgrade guide confirms "The embedded Kotlin has been upgraded from 2.3.10 to Kotlin 2.3.20", the 9.4 system-property-priority change, and the reworked Windows start script.
-  - **Consistency:** the dependent values are updated in Steps 1, 3.1, 5, 7.4, 8.1 and 12.1, the AC table, and the Files table. A grep shows no leftover 9.3.1 checksum, and every remaining "9.3.1" mention is rationale or revision log.
-  - **Set coherence:** the set is internally consistent and defensible:
-    - AGP 9.0.x publishes only *minimums* (Gradle ≥ 9.1.0), not a maximum, and Gradle 9.5 lists AGP 9.0 as tested, so there is no AGP-side ceiling problem.
-    - The Hilt plugin states only "Gradle 9.1+".
-    - KSP 2.3.6 predates Gradle 9.5, but I found no KSP or Dagger issues mentioning Gradle 9.5 (GitHub search).
-  - **New exposure:** the one exposure 9.3.1 did not have is KGP 2.3.21, which sits two minors above the Kotlin table's "fully supported" Gradle maximum (R16). It is correctly disclosed.
-- **O-2: Pre-specify an R16 / KSP fallback instead of a bare stop.** If a KGP or KSP error appears that is specific to Gradle 9.5, the obvious pre-justified fallback is the iteration-1 set: wrapper 9.3.1, with its already verified checksums `b266d5ff…`/`b3a875dd…`. Its compatibility reading is already written up in SC-5. A one-line "fallback: 9.3.1 wrapper, re-run Steps 1/5/6" would avoid a mid-build stall. This is optional.
-- **O-3: The R14 containment syntax is uncertain.** `-Dorg.gradle.java.installations.fromEnv=…` on the `./gradlew` line may not be honoured for *daemon* JVM selection, which happens client-side. The robust, documented form is to write the property into the runner's user-home `gradle.properties` in a CI step, e.g. `echo "org.gradle.java.installations.fromEnv=JAVA_HOME_25_X64" >> ~/.gradle/gradle.properties`.
-- **O-4: `story_amendment_required: true` is not a field in the standard Phase Completion Report.** The orchestrator must be told to look for it, or the Developer should also state it in prose under `errors`/notes so it cannot be dropped.
-- **O-5: M.5 lint-baseline rule is sound.** The allowed diff is header attributes plus `ObsoleteSdkInt` messages, and the baseline has exactly 10 `ObsoleteSdkInt` entries (grep). Everything else goes through R5. One note: the header `version=` will change because of AGP 9's lint even without Branch M. If `updateLintBaseline` is ever run on the main path, the same diff discipline should apply.
-- **O-6: The Branch M dependency facts check out.**
-  - `hilt-work` 1.2.0, 1.3.0 and 1.4.0 all declare `minCompileSdk=34`, which compileSdk 35 satisfies, so `checkAarMetadata` is safe.
-  - 1.3.0/1.4.0 require AGP ≥ 8.1.1.
-  - The Dagger 2.60 release notes add no AGP or Gradle requirement beyond minSdk 23. They also show 2.60 "Updated Kotlin version to 2.3.21" (fixes #5177/#5180/#5190), which supports T2's choice of 2.60.1.
-
-### Rollback (item 3 of the iteration-2 brief): sound
-
-- **Path list:** every path in `U060_TRACKED` is tracked (`git ls-files --error-unmatch` on all 15), so `git restore --source=HEAD --staged --worktree -- $U060_TRACKED` will not abort on an unmatched pathspec. `U060_NEW` covers the two new files.
-- **Order:** daemons are stopped before the wrapper is restored, which is correct because the 8.14.1 wrapper cannot run on JDK 25.
-- **Excluded paths:** `sdlc/**` and `.claude/**` are never passed to restore/checkout, `code-location.md` is reversed only by hand edit, and `CLAUDE.md` goes through the Engine Librarian.
-- **Post-check:** the step-4 check `git status --short -- . ':!sdlc' ':!.claude'` prints nothing on today's tree, so it is a usable assertion.
-- **Step 6.1:** the restore is a single path, `--worktree` only.
-
-### Branch M executability (item 2 of the iteration-2 brief)
-
-Apart from R2-B1, Branch M can be executed by a Developer without further decisions:
-- Triggers T1 and T2 are precisely defined, and B1's pass/fail definition separates R11 from B1.
-- The edits are exact line-level changes.
-- The pre-specified 1.3.0 → 1.4.0 second step is justified.
-- The test-diff rule in Step 7.5 is mechanically checkable, and the docs, CHANGES and release statement are specified.
-- Stop conditions are listed.
-- The Developer does not edit ACs; the amendment is routed to the Requirements Analyst before code review and QA.
-
-Dropping Fallback B2 is correct (see N-1 disposition).
+- **O3-1:** "Checkpoint B outcome" says "M.1–M.5 checks pass", but M.5 (lint) runs in Step 8.2, after Checkpoint B. Read it as "M.1–M.4 at Checkpoint B; M.5 at Step 8.2".
+- **O3-2:** If Step 3.4 triggers during Step 7, its action list re-runs 3.1–3.3 and Step 6 but does not say "then re-run Step 7 in full". This is implied by Checkpoint C. The Developer should re-run all Step 7 gates on 9.3.1 before claiming AC-1/AC-2.
+- **O3-3:** Under the Step 3.4 fallback, the orchestrator should obtain product-owner acknowledgement of SC-5's Fallback reading before QA sign-off, not merely relay the "advised" flag. AC-11 is worded strictly.
+- **O3-4:** `implementation-log.md` is a new workspace file named only in this plan. The orchestrator and Developer should treat it as an evidence file under the story workspace. It must never be written outside `sdlc/artifacts/build/sprints/sprint-017/U-060/`.
+- **O3-5 (carried from iteration 2, informational):** The Branch M dependency facts verified in iteration 2 remain valid:
+  - hilt-work 1.2.0, 1.3.0 and 1.4.0 have `minCompileSdk=34`;
+  - Dagger 2.60 adds only the minSdk 23 requirement;
+  - Gradle 9.5.1 checksums are `bafc141b…` and `497c8c2a…`.
 
 ## Artifacts Consulted
 
 | Artifact | Path | Purpose |
 |---|---|---|
-| Plan (revision 2) | sdlc/artifacts/build/sprints/sprint-017/U-060/plan.md | Full re-read (862 lines); delta vs `2334fc6d` |
-| U-060 story / BUG-017 | sdlc/artifacts/build/sprints/sprint-017/U-060-jdk-25-build-toolchain-upgrade.md; sdlc/artifacts/stories/BUG-017-build-fails-on-jdk-25.md | ACs, scope statement (read in iteration 1; unchanged) |
-| Build files | build.gradle, app/build.gradle, gradle.properties, gradle/wrapper/gradle-wrapper.properties, settings.gradle, metadata/build.gradle, k9mail-vendored/build.gradle, .github/workflows/ci.yml | Read in iteration 1; unchanged on disk (`git status` clean outside sdlc) |
-| Test config | app/src/test/resources/robolectric.properties; `@Config(sdk…)` grep over app/src/test | T3 analysis |
-| Lint baseline | app/lint-baseline.xml | `ObsoleteSdkInt` count (10) |
-| Git state | `git status`, `git diff --stat b09bda5d HEAD -- . ':!sdlc'`, `git ls-files --error-unmatch` (15 paths) | Step 0.1 guard, rollback list |
-| External | services.gradle.org gradle-9.5.1 bin/wrapper sha256; docs.gradle.org/{9.1.0..9.5.1}/userguide/compatibility.html; docs.gradle.org/9.5.1/userguide/upgrading_version_9.html; hilt-work-{1.2.0,1.3.0,1.4.0}.aar aar-metadata; hilt-compiler-1.3.0.pom; github.com/google/dagger release dagger-2.60; GitHub issue search (google/ksp, google/dagger: "Gradle 9.5") | Spot-checks |
+| Plan (revision 3) | sdlc/artifacts/build/sprints/sprint-017/U-060/plan.md | Changed sections read in full: SC-2, SC-5, AC mapping, rollback, Steps 3–3.4, Branch M, T3 path, Steps 7.5–12.3. Structure and cross-references grepped across all 1006 lines. Delta vs `648d6b53` |
+| Story / BUG-017 | sdlc/artifacts/build/sprints/sprint-017/U-060-jdk-25-build-toolchain-upgrade.md; sdlc/artifacts/stories/BUG-017-build-fails-on-jdk-25.md | Unchanged since iteration 1 |
+| SmsReceiverTest | app/src/test/java/com/zegoggles/smssync/compat/SmsReceiverTest.java | Line endings / Step 7.5 regex applicability |
+| Git state | `git log`, `git ls-files --eol`, `git config core.autocrlf` | Delta base; diff normalisation |
+| External | docs.gradle.org/9.5.1/userguide/toolchains.html (`installations.fromEnv`) | R14 containment |
 | Template | plugin cache templates/build-artifacts/gate-report-template.md | Report format |
 
 ## Phase Completion Report
 ---
 story_id: "U-060"
 phase: "plan-gate/plan-review"
-verdict: "FAIL"
+verdict: "PASS"
 artifact_path: "sdlc/artifacts/build/sprints/sprint-017/U-060/plan-review.md"
 story_status: "in-progress"
 current_build_phase: "planning"
