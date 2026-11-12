@@ -3,7 +3,7 @@ id: REQ-MODERNIZATION-010
 title: Upgrade Play Billing to 7.x (ProductDetails API)
 artifact_type: requirement
 domain: modernization
-status: approved
+status: superseded
 type: functional
 priority: low
 epic: EPIC-MODERNIZATION-004
@@ -13,9 +13,12 @@ related_requirements:
 related_stories: []
 related_design_docs: []
 traces_to: []
-change_records: []
+change_records:
+  - CR-004
 notes: |
   Traceability: TECH-004/DEP-004 (billing portion); migration unit MU-009; source assessment 20260529-modernization. Elective (M4) — isolated to the donation subsystem.
+  2026-11-12 (CR-004): Superseded. On 2026-11-12 the product owner decided to remove the donation flow ("remove the donation flow"). The intent of this requirement is superseded by REQ-MODERNIZATION-018, and the donation flow and the Play Billing dependency are removed by U-061. Acceptance criteria AC-1..AC-4 are not applicable. The body text below is kept unedited as the historical record of U-028.
+updated_at: '2026-11-12T21:21:19.141Z'
 ---
 
 # Upgrade Play Billing to 7.x

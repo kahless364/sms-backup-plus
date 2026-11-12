@@ -13,6 +13,7 @@ traces_to:
   - EPIC-MODERNIZATION-006
 change_records:
   - CR-003
+  - CR-004
 id: REQ-MODERNIZATION-018
 title: Remove the Donation Flow and the Play Billing Dependency
 domain: modernization

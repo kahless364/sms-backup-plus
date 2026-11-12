@@ -1,6 +1,6 @@
 ---
 type: story
-status: in-progress
+status: done
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -22,8 +22,9 @@ title: Remove the donation flow and the Play Billing dependency
 pipeline: ''
 domain: modernization
 alignment_audit: passed
-updated_at: '2026-11-12T18:43:43.103Z'
-current_build_phase: implementation
+updated_at: '2026-11-12T21:41:56.111Z'
+resolution: done
+updated_date: 2026-11-12
 ---
 
 # U-061: Remove the Donation Flow and the Play Billing Dependency
@@ -193,6 +194,65 @@ None. DES-MODERNIZATION-013 states that no interface is introduced or altered an
 
 ## Implementation Notes
 <!-- Added by agents during build. Record: before/after test counts (AC-7); the five re-measured JaCoCo values (AC-8); the IC-4 scratch-run result; IC-5 tree diff result. -->
+Source for every figure: `sdlc/artifacts/build/sprints/sprint-018/U-061/implementation-log.md` (the log) and its `evidence/` folder.
+
+**Commits:** `e0c51d42..7dfd651b` (log, increment table).
+
+| Inc | Purpose |
+|-----|---------|
+| I0 | Baseline evidence, no product change |
+| I1 | Re-host `EnrollmentDialogThemeTest` on a nested `ThemeActivity` subclass |
+| I2 | Remove donation entry points (settings, `MainSettings`, `Keys.DONATE`, manifest) |
+| I3 | Delete the donation package, its tests and `Consts.Billing` |
+| I4 | Remove donation strings from all 22 `strings.xml` files |
+| I5 | Remove the Play Billing dependency and its stale lint-baseline entry |
+| I6 | Retire the `activity.donation` JaCoCo rule |
+| I7 | Update README, CHANGES and code-location |
+| I8 | Record the re-measured root-package coverage (one comment line) |
+| I9 | Restore the Error Prone `-dontwarn` rule (release R8 build; approved deviation) |
+
+**AC-7 test counts** (log I0.2, I3, I8 Close-out): `@Test` count 697 before (`evidence/before-test-count.txt`), 682 after (working tree and JUnit; `evidence/I3-worktree-test-count.txt`); 697 - 15 = 682. Final JUnit `tests=682 failures=0 errors=0 skipped=2` (`evidence/final-junit-totals.txt`, `evidence/I9-junit-totals.txt`). The HEAD-based `git grep` count after the final commit is not recorded in the log (QA re-runs it).
+
+**AC-8 re-measured JaCoCo LINE values** (log I8 "Other checks" and I9; `evidence/after-jacoco-packages.txt`, `evidence/I9-jacoco-packages.txt`; I6 run in `evidence/I6-jacoco-packages.txt`):
+
+| Package | I0 baseline | I8 run | I9 run | Floor |
+|---------|-------------|--------|--------|-------|
+| root `com.zegoggles.smssync` | 18/30 60.0% | 17/29 58.6% | 17/29 58.6% | 0.50 |
+| activity | 189/1011 18.7% | 199/1011 19.7% | 199/1011 19.7% | 0.10 |
+| activity.fragments | 58/483 12.0% | 58/472 12.3% | 58/472 12.3% | 0.10 |
+| receiver | 29/58 50.0% | 29/58 50.0% | 29/58 50.0% | 0.50 |
+| preferences | 315/413 76.3% | 313/412 76.0% | 314/412 76.2% | 0.65 |
+| utils | 30/199 15.1% | 30/199 15.1% | 30/199 15.1% | 0.10 |
+
+**IC-4 scratch-run result** (log I8, `evidence/I8-ic4-writer.{log,diff}`): `./gradlew --write-verification-metadata sha256 help` in a scratch copy, exit 0; classification empty (diff with `--strip-trailing-cr` is empty; writer emits CRLF, committed blob is LF). No additions, no removals; stale billing entries remain, which AC-9 allows. Repository file never changed.
+
+**IC-5 tree diff result** (log I5, `evidence/I5-drift-{debug,release}.txt`): both variants exit 0. 95 modules before, 83 after. 12 modules removed, exactly the expected set (`billing`, 3 `datatransport`, 5 `play-services-*`, 3 `firebase-encoders*`). No unexpected removals, no version drift, no modules added.
+
+### Product-owner decisions (2026-11-12)
+
+- **Play Store visibility:** accepted ("option 1, accept it and delete the dead setting later"). The `<queries>` entries were not re-added. Follow-up story: delete the dead "Old backup scheduler" setting together with `GooglePlayServices.java` and `App.gcmAvailable`.
+- **Third-party integration setting ON during the IC-11 device check:** precondition waived ("Waive it"). The device check was not repeated and the setting was not changed.
+- **Release build:** `:app:minifyReleaseWithR8` failed after the billing removal because the removed `play-services-basement` had supplied `-dontwarn com.google.errorprone.annotations.**`. The product owner approved adding that one rule to `app/proguard-rules.pro` ("Add the one-line rule"), done as increment I9. This is an approved deviation from the story's statement that the file is unchanged.
+
+### Deviations
+
+Numbers as in the log; the log text describes only deviations 1, 2, 3, 7, 8 and 9. Deviations 4, 5 and 6 are not recorded in the log.
+
+1. `app/build.gradle` BuildConfig comment reworded (I5); accepted by the orchestrator.
+2. `MainSettings.java`: the `App.TAG` static import was also deleted (I2).
+3. `apkanalyzer` fails with `NoClassDefFoundError: javax/xml/bind/annotation/XmlSchema` (I0); dexdump used instead.
+7. `sdlc/artifacts/engagement/endpoints.md:62` and `systems.md:55` still describe Play Billing; not edited; follow-up.
+8. IC-4 writer run in a scratch copy, not a scratch branch.
+9. The final gate ran on the identical tree before the commit.
+
+IC-8 item (4), the R8 configuration comparison, was read per design decision D6 (source-aware `r8_config_pairs.py`: 63 removed, all attributed; exactly 1 added, the approved `-dontwarn` rule).
+
+### Known gaps for review and QA
+
+- The per-increment gates and the I8 final gate built no release variant, so the R8 failure surfaced only at I8.4; I9 fixed it and its gate builds release.
+- The `activity` package line coverage differed between runs: 189/1011 (18.7%) in the I0 and I6 runs, 199/1011 (19.7%) in the I8 and I9 runs. The log says it "varies by 10 lines between runs; always above its floor" (floor 0.10).
+- AC-10 and IC-14 are satisfied by CR-004, not by the Developer (log: "not Developer work").
+- The release APK was not run on a device (log, "Not verified").
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->

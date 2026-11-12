@@ -1,10 +1,10 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-018
 sprint: '018'
-updated_at: '2026-11-12T18:22:54.585Z'
+updated_at: '2026-11-12T21:41:56.387Z'
 ---
 
 # Sprint Plan: Sprint 018
@@ -16,7 +16,7 @@ updated_at: '2026-11-12T18:22:54.585Z'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-061 | Remove the donation flow and the Play Billing dependency | - | developer | sonnet | (unassigned) | - | in-progress | medium |
+| U-061 | Remove the donation flow and the Play Billing dependency | - | developer | sonnet | (unassigned) | - | done | medium |
 
 ## Execution Waves
 

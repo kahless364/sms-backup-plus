@@ -1,5 +1,5 @@
 ---
-status: approved
+status: superseded
 artifact_type: design-document
 applicable_prompts:
   - system-architecture
@@ -10,14 +10,18 @@ related_requirements:
 related_stories: []
 related_design_docs: []
 integration_contracts: []
-change_records: []
+change_records:
+  - CR-004
 type: ''
 id: DES-MODERNIZATION-010
-title: ''
+title: Play Billing 7.x Uplift (ProductDetails) for the Donation Subsystem
 domain: modernization
+updated_at: '2026-11-12T21:21:19.149Z'
 ---
 
 # DES-MODERNIZATION-010: Play Billing 7.x Uplift (ProductDetails) for the Donation Subsystem
+
+> **SUPERSEDED (2026-11-12, CR-004):** This design is superseded by DES-MODERNIZATION-013 (donation flow removal), which implements REQ-MODERNIZATION-018. The donation subsystem and the `com.android.billingclient:billing` dependency it describes were removed by U-061. The text below is retained unedited as the record of the U-028 upgrade.
 
 ## Overview
 

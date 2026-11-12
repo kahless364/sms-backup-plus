@@ -1,0 +1,78 @@
+# U-061 QA re-derivation summary (QA Analyst, 2026-11-12). Counts and outcomes only; raw logs kept outside the repo.
+# HEAD 7dfd651b; product paths clean against HEAD (git status --short -- . ':!sdlc' empty) before and after QA.
+
+## Gate runs at HEAD (JDK line from init script: java.version=25.0.5)
+run1: :app:assembleDebug :app:testDebugUnitTest --rerun :app:jacocoTestReport :app:jacocoTestCoverageVerification  -> BUILD SUCCESSFUL, exit 0
+run2: same, with JUnit-XML init script (copy of evidence/tools/junit-xml.init.gradle)                         -> BUILD SUCCESSFUL, exit 0
+run3: clean + same tasks, with JUnit-XML init script                                                           -> BUILD SUCCESSFUL, exit 0
+release: :app:assembleRelease :app:processReleaseManifest :app:processDebugManifest -> exit 0 (minifyReleaseWithR8 UP-TO-DATE)
+release-forced: :app:minifyReleaseWithR8 --rerun :app:assembleRelease -> exit 0, R8 executed, no "Missing class"; app-release-unsigned.apk 1995017 bytes
+
+## JUnit XML totals (run2, fresh XML; run3 identical)
+files=73 tests=682 failures=0 errors=0 skipped=2
+skipped: AppTest.shouldGetVersionName; AuthPreferencesTest.u012_robolectricSmoke_encryptedPrefsSecretStore_migrateFromPlaintext
+EnrollmentDialogThemeTest: tests=3 failures=0 errors=0
+no donation test result files
+note: without the init script JUnit XML is not written; XML files left in app/build/test-results from an earlier run were stale and were not used
+
+## git grep @Test count (CLAUDE.md command)
+HEAD=682  e0c51d42=697  delta=15 (DonationActivityTest 10 + SkuTest 5 at e0c51d42)
+
+## JaCoCo LINE by package (covered/total)
+package                 run1      run2      run3(clean)  floor
+com.zegoggles.smssync   17/29     17/29     17/29        0.50
+activity                199/1011  199/1011  189/1011     0.10
+activity.fragments      58/472    58/472    58/472       0.10
+receiver                29/58     29/58     29/58        0.50
+preferences             314/412   314/412   314/412      0.65
+utils                   30/199    30/199    30/199       0.10
+activity.donation package absent; HostActivity absent from JaCoCo XML (all runs)
+activity run1 vs run3 line diff: 10 lines, all in activity/MainViewModel.kt (203,204,205,206,209,213 = observeBackupWork collector body;
+246,255,256,266 = mapWorkInfoToBackupState), class MainViewModel 52->48 and MainViewModel$observeBackupWork$1$1 6->0.
+receiver: production classes and tests use no threads/executors/handlers/coroutines -> 29/58 observed in all 7 known runs (I0,I6,I8,I9,QA x3)
+
+## Manifests (QA after-state vs committed before-state; packaged diffs normalised with the IC-6 norm())
+merged debug:    added 0 removed 49   merged release:    added 0 removed 49 (same removed lines as debug)
+packaged debug:  added 0 removed 44   packaged release:  added 0 removed 44 (same removed lines as debug)
+removed elements (all four): BILLING permission; <queries> (2 intents); billingclient.version meta-data; ProxyBillingActivity;
+ProxyBillingActivityV2; DonationActivity; GoogleApiActivity; gms.version meta-data; TransportBackendDiscovery (+backend: meta-data);
+JobInfoSchedulerService; AlarmManagerSchedulerBroadcastReceiver. No other element.
+QA after-state equals committed after-merged-{debug,release}.xml (byte, CR stripped) and after-manifest-{debug,release}.txt (normalised)
+IC-7 (both variants, merged + packaged): package com.zegoggles.smssync; versionCode 1602; BackupBroadcastReceiver exported=true, no permission,
+action com.zegoggles.smssync.BACKUP; SystemForegroundService foregroundServiceType 0x1 (dataSync); InitializationProvider 0;
+networkSecurityConfig + fullBackupContent present; DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION x2; INTERNET 1; ACCESS_NETWORK_STATE 1
+
+## Independent baseline (git archive e0c51d42 into a scratch copy, assembleDebug assembleRelease, exit 0)
+before-merged-{debug,release}.xml: identical to QA baseline build
+before-manifest-{debug,release}.txt: identical after norm()
+kept-before.txt: identical (49 names); baseline mapping prefix count 965
+before-deps-releaseRuntime.txt: same module set and versions as QA baseline resolution
+
+## Release / R8 (IC-8) on the forced R8 run
+(1) mapping prefix count 0; com.android.billingclient substring 0
+(2) debug APK dexdump: 9140 classes; com/android/billingclient 0; com/zegoggles/smssync/activity/donation 0; gms/datatransport/firebase-encoders 0;
+    apkanalyzer not installed in this SDK (no cmdline-tools); unzip -l billingclient|activity/donation entries 0
+(3) comm -23 kept-before kept-after: com.zegoggles.smssync.activity.donation.DonationActivity (only); comm -13: empty; kept-after 48 names
+(4) section-aware configuration.txt pairs (QA script, QA baseline vs HEAD): before 289, after 227, removed 63 all attributed
+    (billing-7.1.1 17, play-services-basement-18.4.0 32, play-services-base-18.5.0 3, transport-api-3.0.0 2, transport-backend-cct-3.1.8 2,
+     AAPT keeps 7: ProxyBillingActivity x2, GoogleApiActivity, TransportBackendDiscovery, JobInfoSchedulerService,
+     AlarmManagerSchedulerBroadcastReceiver, DonationActivity); unattributed 0;
+    added 1: (app/proguard-rules.pro, -dontwarn com.google.errorprone.annotations.**)
+
+## Dependencies (AC-4, IC-5): :app:dependencies at HEAD, exit 0 both
+debugRuntimeClasspath / releaseRuntimeClasspath: com.android.billingclient 0; gms/datatransport/firebase-encoders 0
+module drift vs evidence/before-deps-*: before 95, after 83, removed 12 (billing, transport-api, transport-backend-cct, transport-runtime,
+play-services-base, -basement, -location, -places-placereport, -tasks, firebase-encoders, -json, -proto), added 0, version drift 0 (both variants)
+
+## IC-4 writer (git archive HEAD into a scratch copy; never in the repo)
+./gradlew --write-verification-metadata sha256 help -> exit 0; diff --strip-trailing-cr vs HEAD blob: 0 lines (bytes differ only by line endings)
+gradle/verification-metadata.xml: unchanged e0c51d42..HEAD and worktree == HEAD; verify-metadata true, verify-signatures false
+
+## Static checks at HEAD
+AC-1: donation dir absent (ls: No such file or directory); grep -rniE "billing|donat" app/src/main app/build.gradle -> 0 (rc 1); git grep at HEAD -> 0
+       all 25 strings.xml -> 0 matches (22 had matches at e0c51d42)
+IC-13: grep -rn "purchase errors" app/src/main/res -> 0
+IC-10: grep -rn "DonationActivity\|Consts.Billing\|Keys.DONATE\|DONATE" app/src -> 0
+AC-2: grep 'key="donate"' preferences.xml -> 0; every android:fragment in res/xml resolves to an existing class (6/6)
+strings diff (minimal algorithm, 22 files): added 0, removed 235, all removed lines are the 10 named strings or the 2 comments
+product diff e0c51d42..HEAD: 38 files, all within Affected Code plus app/proguard-rules.pro (approved I9)
