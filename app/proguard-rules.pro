@@ -55,3 +55,8 @@
 # U-060: AGP 9 disallows proguard-android.txt; keep pre-AGP-9 release behaviour (no R8 optimisation).
 # Enabling optimisation is a separate, release-tested change (recorded debt).
 -dontoptimize
+
+# Tink references compile-time-only Error Prone
+# annotations. play-services-basement used to
+# supply this rule; it left with the in-app purchase library.
+-dontwarn com.google.errorprone.annotations.**

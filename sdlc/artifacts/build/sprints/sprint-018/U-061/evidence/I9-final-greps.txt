@@ -1,0 +1,6 @@
+AC-1:
+ls: cannot access 'app/src/main/java/com/zegoggles/smssync/activity/donation/': No such file or directory
+grep -rniE 'billing|donat' app/src/main app/build.gradle -> 0
+IC-10 -> 0
+IC-13 -> 0
+extra: proguard-rules.pro (outside AC-1 scope) billing|donat -> 0

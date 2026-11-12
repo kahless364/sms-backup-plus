@@ -1,0 +1,67 @@
+before_pairs=289 after_pairs=227 removed=63 added=1
+ADDED (approved app rule, replaces the rule formerly contributed by play-services-basement): -dontwarn com.google.errorprone.annotations.**
+OK removed-library rule:     public static final *** NULL;  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule:   <fields>;  <- billing-7.1.1/proguard.txt
+OK removed-library rule:   @androidx.annotation.Keep <fields>;  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule:   @androidx.annotation.Keep <methods>;  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule:   @com.google.android.gms.common.annotation.KeepName *;  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule:   com.google.android.gms.common.api.internal.BasePendingResult$ReleasableResultGuardian mResultGuardian;  <- play-services-base-18.5.0/proguard.txt
+OK removed-library rule:   public <fields>;  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule:   public <methods>;  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule:   public static final *** CREATOR;  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn android.app.Notification  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn android.security.NetworkSecurityPolicy  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn com.google.android.apps.common.proguard.SideEffectFree  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn com.google.android.apps.common.proguard.SideEffectFree  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn com.google.android.apps.common.proguard.UsedBy*  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn com.google.android.apps.common.proguard.UsedByReflection  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn com.google.android.gms.common.util.VisibleForTesting  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn com.google.android.libraries.phenotype.registration.PhenotypeResourceReader  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn com.google.auto.value.AutoValue  <- transport-api-3.0.0/proguard.txt
+OK removed-library rule: -dontwarn com.google.auto.value.AutoValue  <- transport-backend-cct-3.1.8/proguard.txt
+OK removed-library rule: -dontwarn com.google.auto.value.AutoValue$Builder  <- transport-api-3.0.0/proguard.txt
+OK removed-library rule: -dontwarn com.google.auto.value.AutoValue$Builder  <- transport-backend-cct-3.1.8/proguard.txt
+OK removed-library rule: -dontwarn com.google.common.flogger.backend.google.GooglePlatform  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn com.google.common.flogger.backend.system.DefaultPlatform  <- billing-7.1.1/proguard.txt
+OK removed-library rule (the rule the approved app rule replaces): -dontwarn com.google.errorprone.annotations.**  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn dalvik.system.VMStack  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn javax.annotation.**  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn javax.annotation.**  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn libcore.io.Memory  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn libcore.io.Memory  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn org.checkerframework.**  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn org.checkerframework.**  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn org.jspecify.nullness.NullMarked  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -dontwarn sun.misc.Unsafe  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -dontwarn sun.misc.Unsafe  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keep @androidx.annotation.Keep class *  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keep @com.google.android.gms.common.util.DynamiteApi public class * {  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keep @interface android.support.annotation.Keep  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keep @interface androidx.annotation.Keep  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keep @interface com.google.android.gms.common.annotation.KeepName  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keep @interface com.google.android.gms.common.util.DynamiteApi  <- play-services-basement-18.4.0/proguard.txt
+OK AAPT keep for AC-3 component: -keep class com.android.billingclient.api.ProxyBillingActivity { <init>(); }  <- aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+OK AAPT keep for AC-3 component: -keep class com.android.billingclient.api.ProxyBillingActivityV2 { <init>(); }  <- aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+OK removed-library rule: -keep class com.android.vending.billing.** { *; }  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -keep class com.google.android.apps.play.billingtestcompanion.aidl.** { *; }  <- billing-7.1.1/proguard.txt
+OK AAPT keep for AC-3 component: -keep class com.google.android.datatransport.runtime.backends.TransportBackendDiscovery { <init>(); }  <- aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+OK AAPT keep for AC-3 component: -keep class com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver { <init>(); }  <- aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+OK AAPT keep for AC-3 component: -keep class com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService { <init>(); }  <- aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+OK AAPT keep for AC-3 component: -keep class com.google.android.gms.common.api.GoogleApiActivity { <init>(); }  <- aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+OK removed-library rule: -keep class com.google.android.gms.common.internal.ReflectedParcelable  <- play-services-basement-18.4.0/proguard.txt
+OK AAPT keep for AC-3 component: -keep class com.zegoggles.smssync.activity.donation.DonationActivity { <init>(); }  <- aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+OK removed-library rule: -keepclasseswithmembers class * {  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keepclassmembernames class * {  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keepclassmembers class * extends com.google.android.gms.internal.play_billing.zzhk {  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -keepclassmembers class * implements android.os.Parcelable {  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keepclassmembers class com.google.android.gms.common.api.internal.BasePendingResult {  <- play-services-base-18.5.0/proguard.txt
+OK removed-library rule: -keepclassmembers public class com.google.android.gms.common.internal.safeparcel.SafeParcelable {  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keepnames @com.google.android.gms.common.annotation.KeepName class *  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keepnames class * implements com.google.android.gms.common.internal.ReflectedParcelable  <- play-services-basement-18.4.0/proguard.txt
+OK removed-library rule: -keepnames class com.android.billingclient.api.ProxyBillingActivity  <- billing-7.1.1/proguard.txt
+OK removed-library rule: -keepnames class com.android.billingclient.api.ProxyBillingActivityV2  <- billing-7.1.1/proguard.txt
+OK removed-library rule: }  <- billing-7.1.1/proguard.txt
+OK removed-library rule: }  <- play-services-base-18.5.0/proguard.txt
+OK removed-library rule: }  <- play-services-basement-18.4.0/proguard.txt
+RESULT: PASS
+exit=0

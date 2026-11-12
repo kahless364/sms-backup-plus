@@ -1,0 +1,4 @@
+baseline rebuilt from e0c51d42 in a scratch copy; comparison with the original I0 derived evidence:
+kept names identical to evidence/kept-before.txt
+configuration rules identical to evidence/before-configuration-rules.txt
+prefix count: 965 (I0: 965)
