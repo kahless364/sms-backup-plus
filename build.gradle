@@ -4,18 +4,21 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.3'
+        // U-060: Gradle 9.5.1 / AGP 9.0.1 / KGP 2.3.21 run the build on JDK 25 (app bytecode stays 17).
+        // AGP 9.0 needs Gradle >= 9.1.0, JDK >= 17, KGP >= 2.2.10, SDK Build Tools >= 36.0.0
+        // (developer.android.com/build/releases/agp-9-0-0-release-notes).
+        classpath 'com.android.tools.build:gradle:9.0.1'
         // U-019: Kotlin plugin needed for SyncStateRepository/SyncEvent Kotlin files
-        // U-057: Upgraded from 1.9.25 to 2.0.21 (Kotlin 2.x K2 compiler, compatible with AGP 8.7.3).
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21'
-        // U-057: KSP (Kotlin Symbol Processing) plugin — replaces kapt for Hilt annotation processing.
-        // KSP 2.0.21-1.0.28 is the version matching Kotlin 2.0.21.
-        // Hilt 2.51.1 supports KSP (available from Hilt 2.48+).
-        classpath 'com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.0.21-1.0.28'
-        // U-022: Hilt Gradle plugin (must precede app/build.gradle application of
+        // U-060: KGP 2.3.21 (AGP 9 built-in Kotlin needs >= 2.2.10; declared here so a KGP newer than
+        // AGP's runtime 2.2.10 is used). 2.4.x is excluded: Hilt 2.59.2 cannot read Kotlin 2.4 metadata.
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.21'
+        // U-057/U-060: KSP replaces kapt for Hilt. KSP 2.3.x is KSP2-only and the first line (2.3.1+)
+        // with AGP 9 built-in Kotlin support; 2.3.6 includes the Windows KSP2 recompilation fix.
+        classpath 'com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.3.6'
+        // U-022/U-060: Hilt Gradle plugin (must precede app/build.gradle application of
         // 'com.google.dagger.hilt.android'). Version aligned with hilt-android/hilt-compiler
-        // dependencies below. 2.51.1 is compatible with AGP 8.7.3 + Kotlin 2.0.21 + JDK 17 + KSP.
-        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.51.1'
+        // dependencies in app/build.gradle. 2.59.x is the first Hilt line with AGP 9 support.
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.59.2'
     }
 }
 
@@ -43,5 +46,8 @@ allprojects {
 }
 
 task clean(type: Delete) {
-    delete rootProject.buildDir
+    delete rootProject.layout.buildDirectory
 }
+
+// U-060 (AC-7): daemon JVM criteria are generated without download URLs (no toolchain repository configured).
+tasks.named('updateDaemonJvm') { toolchainPlatforms = [] }

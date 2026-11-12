@@ -1,11 +1,9 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
+// U-060: the standalone Kotlin Android plugin application was removed - AGP 9 provides built-in Kotlin (KGP 2.3.21 on the root classpath).
 // U-057: KSP replaces kapt for annotation processing (Hilt codegen).
 // KSP is the modern, Kotlin-native annotation processor; kapt is maintenance-mode.
-// KSP 2.0.21-1.0.28 is the version matching Kotlin 2.0.21 (U-057).
-// Hilt 2.51.1 supports KSP for mixed Java+Kotlin source modules (from Hilt 2.48+).
-// If this causes Hilt codegen breakage for the mixed-source module, revert to kapt
-// per the original deliberate decision documented in git history (U-022).
+// U-060: KSP 2.3.6 (KSP2-only) matches the Kotlin 2.3.x line and supports AGP 9 built-in Kotlin.
+// Hilt 2.59.2 supports KSP for mixed Java+Kotlin source modules and requires AGP 9.
 apply plugin: 'com.google.devtools.ksp'
 // U-022: Hilt Android Gradle plugin — transforms @HiltAndroidApp, @AndroidEntryPoint, etc.
 // Classpath declared in root build.gradle buildscript.dependencies (U-022).
@@ -41,7 +39,7 @@ android {
     }
 
     buildFeatures {
-        // AGP 8 disables BuildConfig generation by default; re-enable since the
+        // AGP disables BuildConfig generation by default; re-enable since the
         // app uses BuildConfig.DEBUG in DonationActivity and App.java.
         buildConfig true
     }
@@ -49,9 +47,11 @@ android {
     buildTypes {
         release {
             // U-004: enabled R8 code-shrinking on release (was false)
-            // U-002: R8 full-mode is the AGP 8 default; keep rules validated (AC-12).
+            // U-002: R8 full-mode is the default; keep rules validated (AC-12).
+            // U-060: AGP 9 disallows proguard-android.txt; the -optimize file is used together with
+            // '-dontoptimize' in proguard-rules.pro to preserve the previous (non-optimising) release posture.
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig keystoreProperties.isEmpty() ? null : signingConfigs.release
         }
         debug {
@@ -82,27 +82,29 @@ android {
         exclude 'META-INF/DEPENDENCIES'
     }
 
-    // U-057: Raised JVM/source target from 8 to 17. The JDK 17 build environment no longer
-    // needs -Xlint:-options to suppress the "source/target 8 is obsolete" warning; that
-    // suppression is removed from the JavaCompile task below. Java 17 LTS is the JDK in use
-    // and now the compile/runtime target as well.
+    // U-057: Raised JVM/source target from 8 to 17 (the -Xlint:-options suppression for the
+    // "source/target 8 is obsolete" warning was removed from the JavaCompile task below).
+    // U-060: the build now RUNS on JDK 25 (gradle/gradle-daemon-jvm.properties); the bytecode
+    // target deliberately stays 17 (class-file major version 61).
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    // U-057: jvmTarget raised from '1.8' to '17' (matches compileOptions above).
-    kotlinOptions {
-        jvmTarget = '17'
-    }
-
     testOptions {
         unitTests {
-            // Robolectric 4.12.x requires Android resources to be included for
+            // Robolectric requires Android resources to be included for
             // tests that access application resources. Without this flag, calls to
             // RuntimeEnvironment.application that touch resources will fail.
             includeAndroidResources = true
         }
+    }
+}
+
+// U-060: Kotlin jvmTarget (AGP 9 built-in Kotlin; replaces the legacy per-android Kotlin options block). Matches compileOptions (17).
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
@@ -111,8 +113,8 @@ android {
 
 dependencies {
     // U-019: Kotlin stdlib + coroutines for SyncStateRepository / SyncEvent facade
-    // U-057: Upgraded kotlin-stdlib from 1.9.25 to 2.0.21 (Kotlin 2.x).
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
+    // U-057/U-060: kotlin-stdlib matches the Kotlin Gradle plugin (2.3.21).
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.3.21'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     // U-020: lifecycle-runtime-ktx for lifecycleScope + repeatOnLifecycle in Flow helpers.
@@ -156,10 +158,10 @@ dependencies {
 
     // U-005: Toolchain uplift (AC-1 through AC-4 / REQ-MODERNIZATION-003 AC-7)
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.robolectric:robolectric:4.12.2'
+    testImplementation 'org.robolectric:robolectric:4.15.1' // U-060: ASM 9.8 reads Java 25 class files; 4.16+ drops SDK 21/22
     testImplementation "com.google.truth:truth:1.4.4"
     // mockito-all (fat-jar, 2015) replaced with mockito-core 5.x (AC-3)
-    testImplementation 'org.mockito:mockito-core:5.14.2'
+    testImplementation 'org.mockito:mockito-core:5.18.0' // U-060: bundles ByteBuddy 1.17.5 (Java 25)
     // byte-buddy and objenesis pulled transitively by mockito-core 5.x
 
     testAnnotationProcessor 'com.google.auto.service:auto-service:1.0'
@@ -172,18 +174,18 @@ dependencies {
     testImplementation 'com.icegreen:greenmail-junit4:2.1.3'
 
     // U-022: Hilt DI framework — bootstrap (plugin + KSP + hilt-work).
-    // Version 2.51.1 is compatible with AGP 8.7.3 + Kotlin 2.0.21 + JDK 17 + KSP (U-057).
+    // U-060: Hilt 2.59.2 (plugin, runtime, compiler, testing all identical) - AGP 9 + Kotlin 2.3.x + KSP2.
     // hilt-android: runtime annotations + generated component graph.
     // hilt-compiler: KSP annotation processor — generates Hilt_App, DaggerApp_HiltComponents, etc.
-    //   (U-057: was kapt 'com.google.dagger:hilt-compiler:2.51.1'; now ksp(...) for KSP processing)
+    //   (U-057: was kapt; now ksp(...) for KSP processing)
     // hilt-work: WorkManager integration (HiltWorkerFactory) needed for U-024.
     // hilt-android-testing: Hilt test harness (HiltAndroidRule, HiltTestApplication) for U-023+.
-    implementation 'com.google.dagger:hilt-android:2.51.1'
-    ksp 'com.google.dagger:hilt-compiler:2.51.1'
+    implementation 'com.google.dagger:hilt-android:2.59.2'
+    ksp 'com.google.dagger:hilt-compiler:2.59.2'
     implementation 'androidx.hilt:hilt-work:1.2.0'
     ksp 'androidx.hilt:hilt-compiler:1.2.0'
-    testImplementation 'com.google.dagger:hilt-android-testing:2.51.1'
-    kspTest 'com.google.dagger:hilt-compiler:2.51.1'
+    testImplementation 'com.google.dagger:hilt-android-testing:2.59.2'
+    kspTest 'com.google.dagger:hilt-compiler:2.59.2'
 }
 
 tasks.withType(JavaCompile) {
@@ -208,7 +210,23 @@ tasks.withType(JavaCompile) {
 // ---------------------------------------------------------------------------
 
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = "0.8.14" // U-060: first release with official Java 25 support
+}
+
+// U-060 (AC-9): single source of truth for JaCoCo class roots; paths are AGP/KGP internals and
+// may move between plugin versions - the guard turns a silent empty fileTree into a build failure.
+def jacocoClassRootPaths = [
+    asm   : 'intermediates/classes/debugUnitTest/transformDebugUnitTestClassesWithAsm/dirs',
+    javac : 'intermediates/javac/debug/compileDebugJavaWithJavac/classes',
+    kotlin: 'intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes', // U-060: AGP 9 built-in Kotlin output (was tmp/kotlin-classes/debug, which is now stale/unwritten)
+]
+def jacocoClassRootFiles = jacocoClassRootPaths.collectEntries { k, v -> [k, layout.buildDirectory.dir(v).get().asFile] }
+def assertJacocoClassRoots = { ->
+    jacocoClassRootFiles.each { k, File f ->
+        boolean any = false
+        if (f.isDirectory()) f.eachFileRecurse(groovy.io.FileType.FILES) { if (it.name.endsWith('.class')) any = true }
+        if (!any) throw new GradleException("U-060 JaCoCo guard: class root '${k}' missing or empty: ${f}")
+    }
 }
 
 // Shared class-file filter: exclude generated/framework files from coverage
@@ -235,7 +253,7 @@ afterEvaluate {
     tasks.named('testDebugUnitTest') {
         jacoco {
             // Write a deterministic exec file path for the report task to consume.
-            destinationFile = file("${buildDir}/jacoco/testDebugUnitTest.exec")
+            destinationFile = layout.buildDirectory.file('jacoco/testDebugUnitTest.exec').get().asFile
             includeNoLocationClasses = true
             excludes = ['jdk.internal.*']
         }
@@ -260,18 +278,19 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     // classes from the javac dir to prevent duplicate entries that cause "do not match" errors.
     // U-019: include Kotlin compiled classes alongside Java classes
     classDirectories.setFrom(files([
-            fileTree(dir: "${buildDir}/intermediates/classes/debugUnitTest/transformDebugUnitTestClassesWithAsm/dirs",
+            fileTree(dir: jacocoClassRootFiles.asm,
                      excludes: jacocoFileFilter + ['**/*Test*.class']),
-            fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+            fileTree(dir: jacocoClassRootFiles.javac,
                      excludes: jacocoFileFilter + [
                          // Exclude App class covered by ASM dir to prevent "do not match"
                          '**/smssync/App.class',
                      ]),
-            fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
+            fileTree(dir: jacocoClassRootFiles.kotlin,
                      excludes: jacocoFileFilter)
     ]))
     // U-005: use the deterministic exec path written by the testDebugUnitTest jacoco {} block
-    executionData.setFrom(files(["${buildDir}/jacoco/testDebugUnitTest.exec"]))
+    executionData.setFrom(files(layout.buildDirectory.file('jacoco/testDebugUnitTest.exec')))
+    doFirst { assertJacocoClassRoots() } // U-060 (AC-9)
 
     // Trigger coverage verification after the report; build fails non-zero on breach
     finalizedBy 'jacocoTestCoverageVerification'
@@ -306,17 +325,18 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
     // because exec data was produced against the ASM-transformed versions).
     // U-019: include Kotlin compiled classes alongside Java classes
     classDirectories.setFrom(files([
-            fileTree(dir: "${buildDir}/intermediates/classes/debugUnitTest/transformDebugUnitTestClassesWithAsm/dirs",
+            fileTree(dir: jacocoClassRootFiles.asm,
                      excludes: jacocoFileFilter + ['**/*Test*.class']),
-            fileTree(dir: "${buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+            fileTree(dir: jacocoClassRootFiles.javac,
                      excludes: jacocoFileFilter + [
                          // Exclude App class covered by ASM dir to prevent "do not match"
                          '**/smssync/App.class',
                      ]),
-            fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug",
+            fileTree(dir: jacocoClassRootFiles.kotlin,
                      excludes: jacocoFileFilter)
     ]))
-    executionData.setFrom(files(["${buildDir}/jacoco/testDebugUnitTest.exec"]))
+    executionData.setFrom(files(layout.buildDirectory.file('jacoco/testDebugUnitTest.exec')))
+    doFirst { assertJacocoClassRoots() } // U-060 (AC-9)
 
     violationRules {
         // -----------------------------------------------------------------------
@@ -480,7 +500,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
 
         // Rule 9: di — Hilt modules; only a single provider line is covered.
         // MEASURED: 3.1% (1/32 lines). Hilt @Module/@Provides methods are generated
-        // by kapt at build time; the bindings are exercised only in component graph
+        // by KSP at build time; the bindings are exercised only in component graph
         // construction, which requires the full DI container (not easily unit-testable).
         // Floor set at actual measured value; excluded classes (BackupWorker) also live here.
         rule {
@@ -572,5 +592,5 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
 }
 
 // U-005: The --add-opens jvmArgs block that was added as a stopgap for Robolectric 4.3.1
-// incompatibility with JDK 17 has been removed. Robolectric 4.12.x handles JDK 17
-// natively and no longer requires these JVM flags.
+// incompatibility with JDK 17 has been removed. Robolectric 4.15.x handles JDK 17-25
+// natively and no longer requires these JVM flags (re-verified on JDK 25 in U-060).

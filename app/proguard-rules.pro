@@ -51,3 +51,7 @@
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
+
+# U-060: AGP 9 disallows proguard-android.txt; keep pre-AGP-9 release behaviour (no R8 optimisation).
+# Enabling optimisation is a separate, release-tested change (recorded debt).
+-dontoptimize

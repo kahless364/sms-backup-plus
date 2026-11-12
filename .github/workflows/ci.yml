@@ -16,14 +16,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # AGP 8.x requires JDK 17 at configuration time.
-      # Do NOT downgrade to JDK 11 or earlier — AGP 8 will fail immediately with:
-      # "Android Gradle plugin requires Java 17 to run."
-      - name: Set up JDK 17
+      # Gradle 9.5 / AGP 9.0 run on JDK 17+; this project builds and tests on JDK 25, declared in
+      # gradle/gradle-daemon-jvm.properties. AGP 9.0 requires SDK Build Tools >= 36.0.0.
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '25'
           distribution: 'temurin'
+
+      # AGP 9.0 needs Build Tools 36.0.0 (the runner image ships it today; this guards against image drift).
+      - name: Install Android SDK Build Tools 36.0.0
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;36.0.0"
 
       - name: Cache Gradle wrapper
         uses: actions/cache@v4
