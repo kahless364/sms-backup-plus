@@ -1,0 +1,245 @@
+                EnclosingMethod,
+                InnerClasses,
+                RuntimeVisibleAnnotations,
+                RuntimeVisibleParameterAnnotations,
+                RuntimeVisibleTypeAnnotations
+                RuntimeVisibleTypeAnnotations,
+                Signature
+    # Keep the public no-argument constructor while allowing other methods to be optimized.
+    *** get*();
+    <fields>;
+    <init>();
+    <init>(...);
+    <init>(android.app.Application);
+    <init>(android.app.Application,androidx.lifecycle.SavedStateHandle);
+    <init>(androidx.lifecycle.SavedStateHandle);
+    @android.support.annotation.Keep <fields>;
+    @android.support.annotation.Keep <init>(...);
+    @android.support.annotation.Keep <methods>;
+    @android.webkit.JavascriptInterface <methods>;
+    @androidx.annotation.Keep <fields>;
+    @androidx.annotation.Keep <init>(...);
+    @androidx.annotation.Keep <methods>;
+    @androidx.lifecycle.OnLifecycleEvent *;
+    @com.squareup.otto.Produce <methods>;
+    @com.squareup.otto.Subscribe <methods>;
+    boolean ANDROID_DETECTED return true;
+    boolean FAST_SERVICE_LOADER_ENABLED return false;
+    boolean SUPPORT_MISSING return false;
+    boolean getASSERTIONS_ENABLED() return false;
+    boolean getDEBUG() return false;
+    boolean getRECOVER_STACK_TRACES() return false;
+    native <methods>;
+    public <init>();
+    public <init>(...);
+    public <init>(android.content.Context, android.util.AttributeSet);
+    public <init>(android.content.Context, android.util.AttributeSet, int, int);
+    public static ** valueOf(java.lang.String);
+    public static **[] values();
+    public static final ** CREATOR;
+    public static final *** NULL;
+    public void *(android.view.View);
+    static java.lang.String *;
+    void set*(***);
+    volatile <fields>;
+   *** get*();
+   void set*(***);
+  <fields>;
+  <methods>;
+  @androidx.annotation.DoNotInline <methods>;
+  @androidx.annotation.Keep <fields>;
+  @androidx.annotation.Keep <methods>;
+  @com.google.android.gms.common.annotation.KeepName *;
+  com.google.android.gms.common.api.internal.BasePendingResult$ReleasableResultGuardian mResultGuardian;
+  public <fields>;
+  public <methods>;
+  public static final *** CREATOR;
+-allowaccessmodification
+-assumenosideeffects class androidx.startup.StartupLogger { public static <methods>; }
+-assumenosideeffects class kotlinx.coroutines.DebugKt {
+-assumenosideeffects class kotlinx.coroutines.internal.FastServiceLoaderKt {
+-assumenosideeffects class kotlinx.coroutines.internal.MainDispatcherLoader {
+-assumenosideeffects class kotlinx.coroutines.internal.MainDispatchersKt {
+-dontnote android.net.http.**
+-dontnote android.support.**
+-dontnote androidx.**
+-dontnote com.android.vending.licensing.ILicensingService
+-dontnote com.google.android.vending.licensing.ILicensingService
+-dontnote com.google.vending.licensing.ILicensingService
+-dontnote java.lang.invoke.**
+-dontnote org.apache.http.**
+-dontoptimize
+-dontwarn android.app.Notification
+-dontwarn android.security.NetworkSecurityPolicy
+-dontwarn android.support.**
+-dontwarn androidx.**
+-dontwarn androidx.room.paging.**
+-dontwarn com.google.android.apps.common.proguard.SideEffectFree
+-dontwarn com.google.android.apps.common.proguard.UsedBy*
+-dontwarn com.google.android.apps.common.proguard.UsedByReflection
+-dontwarn com.google.android.gms.common.util.VisibleForTesting
+-dontwarn com.google.android.libraries.phenotype.registration.PhenotypeResourceReader
+-dontwarn com.google.auto.value.AutoValue
+-dontwarn com.google.auto.value.AutoValue$Builder
+-dontwarn com.google.common.flogger.backend.google.GooglePlatform
+-dontwarn com.google.common.flogger.backend.system.DefaultPlatform
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn dalvik.system.VMStack
+-dontwarn java.lang.ClassValue
+-dontwarn java.lang.instrument.ClassFileTransformer
+-dontwarn java.lang.instrument.Instrumentation
+-dontwarn javax.annotation.**
+-dontwarn libcore.io.Memory
+-dontwarn org.checkerframework.**
+-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
+-dontwarn org.jspecify.nullness.NullMarked
+-dontwarn sun.misc.Signal
+-dontwarn sun.misc.SignalHandler
+-dontwarn sun.misc.Unsafe
+-identifiernamestring @dagger.internal.IdentifierNameString class ** {
+-if public class ** extends androidx.fragment.app.Fragment
+-keep !interface * implements androidx.lifecycle.LifecycleObserver {
+-keep @android.support.annotation.Keep class * {*;}
+-keep @androidx.annotation.Keep class *
+-keep @androidx.annotation.Keep class * {*;}
+-keep @com.google.android.gms.common.util.DynamiteApi public class * {
+-keep @interface android.support.annotation.Keep
+-keep @interface androidx.annotation.Keep
+-keep @interface com.google.android.gms.common.annotation.KeepName
+-keep @interface com.google.android.gms.common.util.DynamiteApi
+-keep class * extends androidx.room.RoomDatabase
+-keep class * extends androidx.startup.Initializer {
+-keep class * extends androidx.work.InputMerger
+-keep class * extends androidx.work.Worker
+-keep class * implements androidx.lifecycle.GeneratedAdapter {
+-keep class * implements androidx.versionedparcelable.VersionedParcelable
+-keep class android.support.annotation.Keep
+-keep class android.widget.Space { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.app.AlertController$RecycleListView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.view.menu.ActionMenuItemView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.view.menu.ExpandedMenuView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.view.menu.ListMenuItemView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ActionBarContainer { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ActionBarContextView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ActionBarOverlayLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ActionMenuView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ActivityChooserView$InnerLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.AlertDialogLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ButtonBarLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ContentFrameLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.DialogTitle { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.FitWindowsFrameLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.FitWindowsLinearLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.SearchView { <init>(...); }
+-keep class androidx.appcompat.widget.SearchView$SearchAutoComplete { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.SwitchCompat { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.Toolbar { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.appcompat.widget.ViewStubCompat { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.core.app.CoreComponentFactory { <init>(); }
+-keep class androidx.core.widget.NestedScrollView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.preference.SwitchPreferenceCompat { <init>(...); }
+-keep class androidx.preference.UnPressableLinearLayout { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.preference.internal.PreferenceImageView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.profileinstaller.ProfileInstallReceiver { <init>(); }
+-keep class androidx.recyclerview.widget.RecyclerView { <init>(android.content.Context, android.util.AttributeSet); }
+-keep class androidx.room.MultiInstanceInvalidationService { <init>(); }
+-keep class androidx.work.WorkerParameters
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.RescheduleReceiver { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.SystemAlarmService { <init>(); }
+-keep class androidx.work.impl.background.systemjob.SystemJobService { <init>(); }
+-keep class androidx.work.impl.diagnostics.DiagnosticsReceiver { <init>(); }
+-keep class androidx.work.impl.foreground.SystemForegroundService { <init>(); }
+-keep class androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver { <init>(); }
+-keep class com.android.billingclient.api.ProxyBillingActivity { <init>(); }
+-keep class com.android.billingclient.api.ProxyBillingActivityV2 { <init>(); }
+-keep class com.android.vending.billing.** { *; }
+-keep class com.firebase.jobdispatcher.** { *; }
+-keep class com.google.android.apps.play.billingtestcompanion.aidl.** { *; }
+-keep class com.google.android.datatransport.runtime.backends.TransportBackendDiscovery { <init>(); }
+-keep class com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver { <init>(); }
+-keep class com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService { <init>(); }
+-keep class com.google.android.gms.common.api.GoogleApiActivity { <init>(); }
+-keep class com.google.android.gms.common.internal.ReflectedParcelable
+-keep class com.zegoggles.smssync.App { <init>(); }
+-keep class com.zegoggles.smssync.activity.MainActivity { <init>(); }
+-keep class com.zegoggles.smssync.activity.StatusPreference { <init>(...); }
+-keep class com.zegoggles.smssync.activity.auth.AccountManagerAuthActivity { <init>(); }
+-keep class com.zegoggles.smssync.activity.auth.OAuth2WebAuthActivity { <init>(); }
+-keep class com.zegoggles.smssync.activity.auth.RedirectReceiverActivity { <init>(); }
+-keep class com.zegoggles.smssync.activity.donation.DonationActivity { <init>(); }
+-keep class com.zegoggles.smssync.activity.fragments.AdvancedSettings$Backup { <init>(); }
+-keep class com.zegoggles.smssync.activity.fragments.AdvancedSettings$Backup$CallLog { <init>(); }
+-keep class com.zegoggles.smssync.activity.fragments.AdvancedSettings$Main { <init>(); }
+-keep class com.zegoggles.smssync.activity.fragments.AdvancedSettings$Restore { <init>(); }
+-keep class com.zegoggles.smssync.activity.fragments.AdvancedSettings$Server { <init>(); }
+-keep class com.zegoggles.smssync.activity.fragments.AutoBackupSettings { <init>(); }
+-keep class com.zegoggles.smssync.compat.ComposeSmsActivity { <init>(); }
+-keep class com.zegoggles.smssync.compat.HeadlessSmsSendService { <init>(); }
+-keep class com.zegoggles.smssync.compat.MmsReceiver { <init>(); }
+-keep class com.zegoggles.smssync.compat.SmsReceiver { <init>(); }
+-keep class com.zegoggles.smssync.receiver.BackupBroadcastReceiver { <init>(); }
+-keep class com.zegoggles.smssync.receiver.BootReceiver { <init>(); }
+-keep class com.zegoggles.smssync.receiver.PackageReplacedReceiver { <init>(); }
+-keep class com.zegoggles.smssync.receiver.SmsBroadcastReceiver { <init>(); }
+-keep public class * extends androidx.coordinatorlayout.widget.CoordinatorLayout$Behavior {
+-keep public class * extends androidx.preference.Preference {
+-keep public class * extends androidx.recyclerview.widget.RecyclerView$LayoutManager {
+-keep public class * extends androidx.work.ListenableWorker {
+-keep public class android.support.**Parcelizer { *; }
+-keep public class androidx.**Parcelizer { *; }
+-keep public class androidx.preference.Preference {
+-keep public class androidx.versionedparcelable.ParcelImpl
+-keep public class com.android.vending.licensing.ILicensingService
+-keep public class com.google.android.vending.licensing.ILicensingService
+-keep public class com.google.vending.licensing.ILicensingService
+-keep public class com.zegoggles.smssync.service.SmsJobService { *; }
+-keep,allowobfuscation @interface androidx.annotation.Keep
+-keep,allowobfuscation,allowshrinking @dagger.hilt.EntryPoint class *# Keep for the reflective cast done in EntryPoints.
+-keep,allowobfuscation,allowshrinking @dagger.hilt.android.EarlyEntryPoint class *
+-keep,allowobfuscation,allowshrinking @dagger.hilt.internal.ComponentEntryPoint class *
+-keep,allowobfuscation,allowshrinking @dagger.hilt.internal.GeneratedEntryPoint class *
+-keep,allowobfuscation,allowshrinking class com.zegoggles.smssync.activity.MainViewModel
+-keepattributes *Annotation*
+-keepattributes AnnotationDefault,
+-keepclasseswithmembernames,includedescriptorclasses class * {
+-keepclasseswithmembers class * {
+-keepclasseswithmembers,allowobfuscation public class <1> {
+-keepclassmembernames class * {
+-keepclassmembernames,allowobfuscation,allowshrinking class androidx.core.app.NotificationCompat$*$Api*Impl {
+-keepclassmembernames,allowobfuscation,allowshrinking class androidx.core.os.UserHandleCompat$Api*Impl {
+-keepclassmembernames,allowobfuscation,allowshrinking class androidx.core.view.ViewCompat$Api* {
+-keepclassmembernames,allowobfuscation,allowshrinking class androidx.core.view.WindowInsetsCompat$*Impl* {
+-keepclassmembernames,allowobfuscation,allowshrinking class androidx.core.widget.EdgeEffectCompat$Api*Impl {
+-keepclassmembers class * extends android.app.Activity {
+-keepclassmembers class * extends com.google.android.gms.internal.play_billing.zzhk {
+-keepclassmembers class * extends com.google.crypto.tink.shaded.protobuf.GeneratedMessageLite {
+-keepclassmembers class * implements android.os.Parcelable {
+-keepclassmembers class * {
+-keepclassmembers class ** {
+-keepclassmembers class androidx.lifecycle.ReportFragment$LifecycleCallbacks { *; }
+-keepclassmembers class androidx.vectordrawable.graphics.drawable.VectorDrawableCompat$* {
+-keepclassmembers class com.google.android.gms.common.api.internal.BasePendingResult {
+-keepclassmembers class kotlin.coroutines.SafeContinuation {
+-keepclassmembers class kotlinx.coroutines.** {
+-keepclassmembers enum * {
+-keepclassmembers enum androidx.lifecycle.Lifecycle$Event {
+-keepclassmembers enum com.zegoggles.smssync.** {
+-keepclassmembers public class * extends android.view.View {
+-keepclassmembers public class com.google.android.gms.common.internal.safeparcel.SafeParcelable {
+-keepclassmembers,allowobfuscation class * extends androidx.lifecycle.AndroidViewModel {
+-keepclassmembers,allowobfuscation class * extends androidx.lifecycle.ViewModel {
+-keepclassmembers,allowobfuscation class * implements androidx.savedstate.SavedStateRegistry$AutoRecreated {
+-keepclassmembers,allowobfuscation class * {
+-keepnames @androidx.hilt.work.HiltWorker class * extends androidx.work.ListenableWorker
+-keepnames @com.google.android.gms.common.annotation.KeepName class *
+-keepnames class * extends androidx.startup.Initializer
+-keepnames class * implements com.google.android.gms.common.internal.ReflectedParcelable
+-keepnames class androidx.appcompat.app.AppCompatViewInflater
+-keepnames class com.android.billingclient.api.ProxyBillingActivity
+-keepnames class com.android.billingclient.api.ProxyBillingActivityV2
+}

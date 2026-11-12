@@ -1,0 +1,7 @@
+// U-061: enable JUnit XML for Test tasks without editing tracked build files (U-060 QA method).
+gradle.projectsEvaluated {
+    gradle.rootProject.allprojects { p ->
+        p.tasks.withType(Test).configureEach { t -> t.reports.junitXml.required = true }
+    }
+}
+println "U061-DAEMON-JVM: java.version=${System.getProperty('java.version')}"

@@ -1,0 +1,9 @@
+sdk=36
+pm_list_lines=1
+ls_rc=0
+ls_runas_error_lines=0
+prefs_file_listed_count=1
+cat_rc=0
+has_map=1
+tpi_match: name="third_party_integration" value="true"
+STATE=ON (third_party_integration=true; not changed by Developer)

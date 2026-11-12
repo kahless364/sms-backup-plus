@@ -1,0 +1,13 @@
+# Derived from the raw I0 baseline gate run (raw log withheld: contains machine paths).
+# command: ./gradlew -I <init> --console=plain clean :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest :app:jacocoTestReport :app:jacocoTestCoverageVerification (then :app:processDebugManifest :app:processReleaseManifest)
+U061-DAEMON-JVM: java.version=25.0.5
+BUILD SUCCESSFUL in 2m 37s
+156 actionable tasks: 148 executed, 8 up-to-date
+exit=0
+BUILD SUCCESSFUL in 8s
+12 actionable tasks: 12 up-to-date
+task :app:assembleDebug -> > Task :app:assembleDebug
+task :app:assembleRelease -> > Task :app:assembleRelease
+task :app:testDebugUnitTest -> > Task :app:testDebugUnitTest
+task :app:jacocoTestReport -> > Task :app:jacocoTestReport
+task :app:jacocoTestCoverageVerification -> > Task :app:jacocoTestCoverageVerification

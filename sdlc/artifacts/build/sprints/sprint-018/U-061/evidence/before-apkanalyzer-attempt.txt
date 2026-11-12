@@ -1,0 +1,6 @@
+Exception in thread "main" java.lang.NoClassDefFoundError: javax/xml/bind/annotation/XmlSchema
+	at com.android.repository.api.SchemaModule$SchemaModuleVersion.<init>(SchemaModule.java:156)
+	at com.android.repository.api.SchemaModule.<init>(SchemaModule.java:75)
+	at com.android.sdklib.repository.AndroidSdkHandler.<clinit>(AndroidSdkHandler.java:81)
+	at com.android.tools.apk.analyzer.ApkAnalyzerCli.getAaptInvokerFromSdk(ApkAnalyzerCli.java:277)
+apkanalyzer rc=1

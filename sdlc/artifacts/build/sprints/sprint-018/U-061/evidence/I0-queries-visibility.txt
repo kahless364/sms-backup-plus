@@ -1,0 +1,5 @@
+com.zegoggles.smssync can see com.android.vending: no
+com.zegoggles.smssync can see com.google.android.gms: no
+Note: `dumpsys package queries` lists com.android.vending and com.google.android.gms under the global
+"forceQueryable" section (system-forced visibility, applies to every app), not under a
+com.zegoggles.smssync-specific entry. Per-app grant for this app: no. Effective visibility via forceQueryable: yes (both).
