@@ -32,20 +32,4 @@ public final class Consts {
     /** {@link android.provider.Telephony.Sms#CONTENT_URI} */
     public static final Uri SMS_PROVIDER     =  Uri.parse("content://sms");
     public static final Uri CALLLOG_PROVIDER = CallLog.Calls.CONTENT_URI;
-
-    public static class Billing {
-        private Billing() {}
-
-        public static final String DONATION_PREFIX = "donation.";
-
-        static final String SKU_DONATION_1 = "donation.1";
-        static final String SKU_DONATION_2 = "donation.2";
-        static final String SKU_DONATION_3 = "donation.3";
-
-        public static final String[] ALL_SKUS = new String[]{
-                SKU_DONATION_1,
-                SKU_DONATION_2,
-                SKU_DONATION_3,
-        };
-    }
 }

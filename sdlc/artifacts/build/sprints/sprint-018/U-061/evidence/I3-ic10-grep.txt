@@ -1,0 +1,2 @@
+$ grep -rn "DonationActivity\|Consts.Billing\|Keys.DONATE\|DONATE" app/src
+(grep rc=1; empty output = 0 results)

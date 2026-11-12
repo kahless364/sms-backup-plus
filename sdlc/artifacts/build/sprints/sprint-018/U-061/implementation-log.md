@@ -36,6 +36,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 | I0 | e0c51d421659ab3bf3deff7662e7201da6c4fe62 | none | 0 | tests=697 failures=0 errors=0 skipped=2 | U-061 I0: baseline evidence (no product change) |
 | I1 | 8866f805b861a153b57cc88e9c1cd050f66a9414 | EnrollmentDialogThemeTest.java | 0 | tests=697 failures=0 errors=0 skipped=2 (isolated 3/3) | U-061 I1: re-host EnrollmentDialogThemeTest on a nested ThemeActivity subclass |
 | I2 | 3257a1491e46fa3d33e00a0162157d6a3322c68a | AndroidManifest.xml, MainSettings.java, Preferences.java, preferences.xml | 0 | tests=697 failures=0 errors=0 skipped=2 | U-061 I2: remove donation entry points (settings, MainSettings, Keys.DONATE, manifest) |
+| I3 | 5cb305f839e88c8c876f702d0cf84df4cc4c2a81 | Consts.java (M); 3 donation main classes, 2 donation test classes (D) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I3: delete the donation package, its tests and Consts.Billing |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -192,6 +193,20 @@ is empty (I0 expected list: none).
   derived). The donation tests still run against the undeclared `DonationActivity`.
 - End check: porcelain = the four ` M` paths above (matches the I2 expected list, 4).
 - Proposed message: `U-061 I2: remove donation entry points (settings, MainSettings, Keys.DONATE, manifest)`.
+
+## I3 - Delete the donation code, its tests and Consts.Billing (AC-6, AC-7, IC-10)
+
+- Start: HEAD `5cb305f839e88c8c876f702d0cf84df4cc4c2a81` (I2 commit); product-pathspec porcelain empty.
+- Deleted (`rm -r`): `app/src/main/java/com/zegoggles/smssync/activity/donation/{DonationActivity,DonationListFragment,Sku}.java` and
+  `app/src/test/java/com/zegoggles/smssync/activity/donation/{DonationActivityTest,SkuTest}.java` (the two directories are gone).
+- `Consts.java`: deleted lines 35-50 (blank line plus `Billing` class) with a byte-preserving, assertion-guarded line-range script;
+  line endings preserved; numstat 0 added / 16 deleted; the file ends `CALLLOG_PROVIDER ...;` then `}`.
+- IC-10: `grep -rn "DonationActivity\|Consts.Billing\|Keys.DONATE\|DONATE" app/src` gives 0 results (`evidence/I3-ic10-grep.txt`).
+- Gate G: exit 0, **`files=73 tests=682 failures=0 errors=0 skipped=2`** (`evidence/I3-gates.log`, `evidence/I3-junit-totals.txt`; derived).
+  697 - 15 = 682; 2 files fewer (75 -> 73). Working-tree `@Test` count (`grep -rh "@Test" app/src/test ... | grep -c`) = **682**
+  (`evidence/I3-worktree-test-count.txt`), equal to I0 minus 15 (AC-7). The HEAD-based `git grep` is re-run by QA after the I8 commit.
+- End check: porcelain = ` M Consts.java` plus five ` D` paths (matches the I3 expected list, 6).
+- Proposed message: `U-061 I3: delete the donation package, its tests and Consts.Billing`.
 
 ## Product-owner decisions carried forward (from the coordinator, recorded at I1)
 
