@@ -268,18 +268,7 @@
   </string>
   <string name="select_google_account"> Επιλέξτε ένα λογαριασμό Google </string>
 
-  <!-- donation related -->
-  <string name="donate"> Δωρεά </string>
-  <string name="donate_summary"> Χρήση ασφαλούς Google Play store συστήματος  πληρωμών.</string>
 
-  <string name="ui_dialog_donate_message"> Παρακαλούμε να προσδιορίσετε το ποσό:</string>
-  <string name="ui_donation_success_message"> Επιτυχής Δωρεά, σας ευχαριστούμε !</string>
-  <string name="ui_donation_failure_message">Η δωρεά απέτυχε: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">In-app τιμολόγηση δεν είναι διαθέσιμη </string>
-  <string name="donation_error_unavailable">μη διαθέσιμη</string>
-  <string name="donation_error_canceled">ακυρώθηκε</string>
-  <string name="donation_error_already_owned">έχετε ήδη πραγματοποιήσει δωρεά </string>
   <string name="ui_dark_theme_label">Σκούρο θέμα</string>
 </resources>

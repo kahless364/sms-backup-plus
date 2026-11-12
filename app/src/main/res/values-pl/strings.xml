@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="donate">Darowizna</string>
     <string name="app_name">SMS Backup+</string>
     <string name="app_description">
 	Użyj Gmail do przechowywania kopii zapasowej swoich SMSów.
@@ -158,9 +157,6 @@
     <string name="ui_restore_calllog_label">Przywróć historię połączeń</string>
     <string name="sms">SMS</string>
     <string name="calllog">Historia połaczeń</string>
-    <string name="ui_dialog_donate_message">Określ kwotę i walutę:</string>
-    <string name="ui_donation_success_message">Darowizna dokonana. Dziekuję bardzo!</string>
-    <string name="ui_donation_failure_message">Darowizna nieudana: %1$s</string>
     <string name="app_log_skip_backup_already_running">Pomijam, kopia zapasowa własnie sie wykonuje</string>
     <string name="app_log_skip_backup_skip_messages">Pomiń wszystkie wiadomości</string>
     <string name="app_log_skip_backup_no_items">Pomijam (nie znaleziono pozycji)</string>
@@ -216,12 +212,6 @@
     <string name="ui_dialog_confirm_action_msg">Czy na pewno chcesz wykonać tą operację?</string>
     <string name="ui_dialog_account_manager_token_error">Nie udało się uzyskać uwierzytelnienia od systemu. Czy chcesz spróbować uwierzytelnienia przez przeglądarkę?</string>
     <string name="select_google_account">Wybierz konto Google</string>
-    <string name="donate_summary">Używa bezpiecznej metody płatności przez sklep Google Play.</string>
-    <string name="donation_error_iab_unavailable">Płatności w aplikacji nie są dostępne</string>
-    <string name="donation_error_unavailable">niedostępne</string>
-    <string name="donation_error_canceled">anulowano</string>
-    <string name="donation_error_already_owned">już dokonano darowizny</string>
-    <string name="donation_unspecified_error">nieokreślony błąd: %1$d</string>
     <string name="error_no_sms_default_package">Nie wybrano domyślnego pakietu SMS.</string>
     <string name="ui_dialog_sms_default_package_change_title">Wymagana zmiana aplikacji</string>
     <string name="ui_dialog_sms_default_package_change_msg">Musisz ustawić SMS Backup+ jako swoją domyślną aplikację do SMS na czas odtwarzania z kopii zapasowej. Po zakończeniu operacji przypomnimy Ci, żeby wrócić do poprzednich ustawień. SMSy otrzymane w trakcie odtwarzania z kopii zostanę dostarczone normalnie, ale nie wygenerują powiadominień.</string>

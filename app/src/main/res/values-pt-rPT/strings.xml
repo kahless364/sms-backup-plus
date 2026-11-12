@@ -176,17 +176,6 @@
 
   <string name="select_google_account">Escolhe uma conta Google</string>
 
-  <!-- donation related -->
-  <string name="donate">Doar</string>
-  <string name="donate_summary">Usando o método de pagamento seguro da Google Play.</string>
 
-  <string name="ui_dialog_donate_message">Por favor, indique o montante:</string>
-  <string name="ui_donation_success_message">Doação conseguida, muito obrigado!</string>
-  <string name="ui_donation_failure_message">Falha na doação: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">Método de pagamento não está disponível</string>
-  <string name="donation_error_unavailable">não disponível</string>
-  <string name="donation_error_canceled">cancelado</string>
-  <string name="donation_error_already_owned">Já realisou uma doação</string>
 </resources>

@@ -288,19 +288,8 @@
   </string>
   <string name="select_google_account">Изаберите Гугл налог</string>
 
-  <!-- donation related -->
-  <string name="donate">Донација</string>
-  <string name="donate_summary">Користим безбедно плаћање Гуглове Плеј продавнице.</string>
 
-  <string name="ui_dialog_donate_message">Наведите износ:</string>
-  <string name="ui_donation_success_message">Донација је успела, хвала вам!</string>
-  <string name="ui_donation_failure_message">Донације није успела: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">Плаћање преко апликације није доступно</string>
-  <string name="donation_error_unavailable">није доступно</string>
-  <string name="donation_error_canceled">отказано</string>
-  <string name="donation_error_already_owned">већ сте донирали</string>
 
   <string name="ui_dialog_sms_default_package_change_title">Белешка надоградње</string>
   <string name="ui_dialog_sms_default_package_change_msg">

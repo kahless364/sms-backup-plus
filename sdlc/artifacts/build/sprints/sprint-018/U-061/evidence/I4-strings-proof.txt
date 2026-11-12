@@ -1,0 +1,39 @@
+# Proofs re-run with --diff-algorithm=minimal. The default (Myers) diff aligned 14 files' kept blank lines as 2 deleted + 2 added (28 added / 263 deleted, net 235); the file bytes are identical either way, minimal/patience/histogram all show 0 added / 235 deleted.
+## default-diff numstat total (for the record)
+files=22 added=28 deleted=263 net=235
+## minimal-diff numstat per file
+0	11	app/src/main/res/values-ca/strings.xml
+0	12	app/src/main/res/values-da/strings.xml
+0	10	app/src/main/res/values-de/strings.xml
+0	12	app/src/main/res/values-fr/strings.xml
+0	12	app/src/main/res/values-gl/strings.xml
+0	11	app/src/main/res/values-gr/strings.xml
+0	11	app/src/main/res/values-hu/strings.xml
+0	3	app/src/main/res/values-it/strings.xml
+0	12	app/src/main/res/values-ko/strings.xml
+0	12	app/src/main/res/values-nl/strings.xml
+0	10	app/src/main/res/values-pl/strings.xml
+0	11	app/src/main/res/values-pt-rPT/strings.xml
+0	11	app/src/main/res/values-ru/strings.xml
+0	4	app/src/main/res/values-sk/strings.xml
+0	11	app/src/main/res/values-sq/strings.xml
+0	11	app/src/main/res/values-sr/strings.xml
+0	12	app/src/main/res/values-sv/strings.xml
+0	12	app/src/main/res/values-tr/strings.xml
+0	11	app/src/main/res/values-uk/strings.xml
+0	12	app/src/main/res/values-zh-rCN/strings.xml
+0	12	app/src/main/res/values-zh-rTW/strings.xml
+0	12	app/src/main/res/values/strings.xml
+files=22 added=0 deleted=235
+## added lines (minimal)
+0
+## removed lines not matching the 10 names or 2 comments (minimal)
+0
+## grep -rniE 'billing|donat' app/src/main/res
+count=0
+## grep -rn 'purchase errors' app/src/main/res (IC-13)
+count=0
+## BOM zh-rTW
+0000000 357 273 277
+## other values* dirs untouched (cs, es, nb-rNO)
+modified=0

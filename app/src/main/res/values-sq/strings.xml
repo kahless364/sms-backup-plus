@@ -209,17 +209,6 @@
       Nuk mund të marrë shenjën nga sistemi. Dëshironi të provoni metodën e verifikimit me shfletues?
   </string>
   <string name="select_google_account">Zgjidhni një llogari Google</string>
-  <!-- donation related -->
-  <string name="donate">Dhuroni</string>
-  <string name="donate_summary">Duke përdorur pagesën e sigurtë në-program të Google Play Store.</string>
-  <string name="ui_dialog_donate_message">Ju lutemi zgjidhni shumën:</string>
-  <string name="ui_donation_success_message">Dhurimi i suksesshëm, faleminderit!</string>
-  <string name="ui_donation_failure_message">Dhurimi dështoi: %1$s</string>
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">faturimi në-program nuk është i pranishëm</string>
-  <string name="donation_error_unavailable">I pa disponueshëm</string>
-  <string name="donation_error_canceled">I anulluar</string>
-  <string name="donation_error_already_owned">ju keni dhuruar njëherë</string>
   <string name="ui_dialog_sms_default_package_change_title">Njoftim përmirësimi</string>
   <string name="ui_dialog_sms_default_package_change_msg">
     Në rast të rikthmit të mesazheve tuaja në Android KitKat dhe Lollipop ju nevojitet

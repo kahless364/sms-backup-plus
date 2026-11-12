@@ -310,20 +310,8 @@
   <string name="ui_dialog_account_manager_token_error">Det gick inte att få nyckel från systemet. Vill du prova att logga in med webbläsaren?</string>
   <string name="select_google_account">Välj Google-konto</string>
 
-  <!-- donation related -->
-  <string name="donate">Donera</string>
-  <string name="donate_summary">Med säker in-app Google Play Store-betalning.</string>
 
-  <string name="ui_dialog_donate_message">Vänligen ange konto:</string>
-  <string name="ui_donation_success_message">Donationen genomförd, tack så mycket!</string>
-  <string name="ui_donation_failure_message">Donationen misslyckades: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">In-app-betalning är ej tillgänglig</string>
-  <string name="donation_error_unavailable">ej tillgänglig</string>
-  <string name="donation_error_canceled">avbruten</string>
-  <string name="donation_error_already_owned">du har redan donerat</string>
-  <string name="donation_unspecified_error">okänt fel: %1$d</string>
 
   <string name="error_no_sms_default_package">Standard-app för SMS ej satt.</string>
   <string name="ui_dialog_sms_default_package_change_title">Kräver app-ändring</string>

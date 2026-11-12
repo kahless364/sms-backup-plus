@@ -311,20 +311,8 @@
   <string name="ui_dialog_account_manager_token_error">시스템으로부터 토큰을 받아오지 못했습니다. 브라우저에서 인증을 시도하시겠습니까?</string>
   <string name="select_google_account">Google 계정 선택</string>
 
-  <!-- donation related -->
-  <string name="donate">기부</string>
-  <string name="donate_summary">암호화된 Google 플레이 스토어 앱 내부 결제 사용.</string>
 
-  <string name="ui_dialog_donate_message">금액을 지정해 주십시오:</string>
-  <string name="ui_donation_success_message">기부가 완료되었습니다. 감사합니다!</string>
-  <string name="ui_donation_failure_message">기부 실패: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">앱 내부 결제를 사용할 수 없습니다</string>
-  <string name="donation_error_unavailable">사용할 수 없습니다</string>
-  <string name="donation_error_canceled">취소됨</string>
-  <string name="donation_error_already_owned">이미 기부하셨습니다</string>
-  <string name="donation_unspecified_error">알지 못하는 에러: %1$d</string>
 
   <string name="error_no_sms_default_package">기본 SMS 앱 설정되지 않음.</string>
   <string name="ui_dialog_sms_default_package_change_title">앱 교체가 필요함</string>

@@ -310,20 +310,8 @@
   <string name="ui_dialog_account_manager_token_error">無法從系統取得令牌。您是否願意嘗試一下瀏覽器驗證方式？</string>
   <string name="select_google_account">選擇一個 Google 賬戶</string>
 
-  <!-- donation related -->
-  <string name="donate">捐贈</string>
-  <string name="donate_summary">使用安全的 Google Play 商店應用內支付。</string>
 
-  <string name="ui_dialog_donate_message">請指定金額：</string>
-  <string name="ui_donation_success_message">捐贈成功，謝謝您！</string>
-  <string name="ui_donation_failure_message">捐贈失敗：%1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">應用內付費功能不可用</string>
-  <string name="donation_error_unavailable">不可用</string>
-  <string name="donation_error_canceled">已取消</string>
-  <string name="donation_error_already_owned">您已經捐贈過了</string>
-  <string name="donation_unspecified_error">未指定的錯誤：%1$d</string>
 
   <string name="error_no_sms_default_package">未設定預設簡訊應用程式</string>
   <string name="ui_dialog_sms_default_package_change_title">必要的應用程式變更</string>

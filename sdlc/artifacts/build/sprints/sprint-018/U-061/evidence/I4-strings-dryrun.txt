@@ -1,0 +1,261 @@
+values-ca: delete 11 OK
+    -288: <!-- donation related -->
+    -289: <string name="donate">Donació</string>
+    -290: <string name="donate_summary">S\'utilitza el pagament segur Google Play Store in-app.</string>
+    -292: <string name="ui_dialog_donate_message">Introduïu la quantitat:</string>
+    -293: <string name="ui_donation_success_message">Donació amb èxit, gràcies!</string>
+    -294: <string name="ui_donation_failure_message">Ha fallat la donació: %1$s</string>
+    -296: <!-- purchase errors -->
+    -297: <string name="donation_error_iab_unavailable">El cobrament In-app no està disponible</string>
+    -298: <string name="donation_error_unavailable">no disponible</string>
+    -299: <string name="donation_error_canceled">cancel·lat</string>
+    -300: <string name="donation_error_already_owned">ja heu donat anteriorment</string>
+values-cs: delete 0 OK
+values-da: delete 12 OK
+    -284: <!-- donation related -->
+    -285: <string name="donate">Donering</string>
+    -286: <string name="donate_summary">Ved brug af sikker betaling gennem Google Play.</string>
+    -288: <string name="ui_dialog_donate_message">Vælg beløb:</string>
+    -289: <string name="ui_donation_success_message">Donationen er gennemført. Tak for hjælpen!</string>
+    -290: <string name="ui_donation_failure_message">Donationen fejlede: %1$s</string>
+    -292: <!-- purchase errors -->
+    -293: <string name="donation_error_iab_unavailable">I-app køb er ikke tilgængelig</string>
+    -294: <string name="donation_error_unavailable">ikke tilgængelig</string>
+    -295: <string name="donation_error_canceled">anulleret</string>
+    -296: <string name="donation_error_already_owned">du har allerede doneret</string>
+    -317: <string name="donation_unspecified_error">uspecifieret fejl: %1$d</string>
+values-de: delete 10 OK
+    -242: <string name="donate">Spenden</string>
+    -243: <string name="donate_summary">Mit der sicheren Google Play Bezahlmethode.</string>
+    -245: <string name="ui_dialog_donate_message">Bitte geben Sie Betrag und Währung an:</string>
+    -246: <string name="ui_donation_success_message">Spende erfolgreich, Vielen Dank!</string>
+    -247: <string name="ui_donation_failure_message">Spende fehlgeschlagen: %1$s</string>
+    -291: <string name="donation_error_already_owned">Sie haben bereits gespendet</string>
+    -297: <string name="donation_error_canceled">abgebrochen</string>
+    -298: <string name="donation_error_iab_unavailable">Bezahlungsmethode nicht verfügbar</string>
+    -299: <string name="donation_error_unavailable">nicht verfügbar</string>
+    -300: <string name="donation_unspecified_error">allgemeiner Fehler: %1$d</string>
+values-es: delete 0 OK
+values-fr: delete 12 OK
+    -282: <!-- donation related -->
+    -283: <string name="donate">Donation</string>
+    -284: <string name="donate_summary">En utilisant la méthode de paiement sécurisé du Google Play Store.</string>
+    -286: <string name="ui_dialog_donate_message">Veuillez spécifier le montant ainsi que la devise :</string>
+    -287: <string name="ui_donation_success_message">Don effectué, merci !</string>
+    -288: <string name="ui_donation_failure_message">Erreur lors du don : %1$s</string>
+    -290: <!-- purchase errors -->
+    -291: <string name="donation_error_iab_unavailable">La facturation "in-app" n\'est pas disponible</string>
+    -292: <string name="donation_error_unavailable">non disponible</string>
+    -293: <string name="donation_error_canceled">annulé</string>
+    -294: <string name="donation_error_already_owned">vous avez déjà effectué un don</string>
+    -317: <string name="donation_unspecified_error">erreur générale: %1$d</string>
+values-gl: delete 12 OK
+    -310: <!-- donation related -->
+    -311: <string name="donate">Doar</string>
+    -312: <string name="donate_summary">Usar pago seguro na aplicación de Google Play Store.</string>
+    -314: <string name="ui_dialog_donate_message">Por favor, indique a cantidade:</string>
+    -315: <string name="ui_donation_success_message">Doazón realizada con éxito, grazas!</string>
+    -316: <string name="ui_donation_failure_message">Fallou a doazón: %1$s</string>
+    -318: <!-- purchase errors -->
+    -319: <string name="donation_error_iab_unavailable">A facturación en aplicación non está dispoñible</string>
+    -320: <string name="donation_error_unavailable">non dispoñible</string>
+    -321: <string name="donation_error_canceled">cancelada</string>
+    -322: <string name="donation_error_already_owned">xa realizou unha doazón</string>
+    -323: <string name="donation_unspecified_error">erro non especificado: %1$d</string>
+values-gr: delete 11 OK
+    -271: <!-- donation related -->
+    -272: <string name="donate"> Δωρεά </string>
+    -273: <string name="donate_summary"> Χρήση ασφαλούς Google Play store συστήματος  πληρωμών.</string>
+    -275: <string name="ui_dialog_donate_message"> Παρακαλούμε να προσδιορίσετε το ποσό:</string>
+    -276: <string name="ui_donation_success_message"> Επιτυχής Δωρεά, σας ευχαριστούμε !</string>
+    -277: <string name="ui_donation_failure_message">Η δωρεά απέτυχε: %1$s</string>
+    -279: <!-- purchase errors -->
+    -280: <string name="donation_error_iab_unavailable">In-app τιμολόγηση δεν είναι διαθέσιμη </string>
+    -281: <string name="donation_error_unavailable">μη διαθέσιμη</string>
+    -282: <string name="donation_error_canceled">ακυρώθηκε</string>
+    -283: <string name="donation_error_already_owned">έχετε ήδη πραγματοποιήσει δωρεά </string>
+values-hu: delete 11 OK
+    -282: <!-- donation related -->
+    -283: <string name="donate">Támogatás</string>
+    -284: <string name="donate_summary">Biztonságosan Google Play Áruház rendszerén keresztül.</string>
+    -286: <string name="ui_dialog_donate_message">Adja meg az összeget:</string>
+    -287: <string name="ui_donation_success_message">Az adományozás sikeres volt, köszönjük!</string>
+    -288: <string name="ui_donation_failure_message">Az adományozás sikertelen: %1$s</string>
+    -290: <!-- purchase errors -->
+    -291: <string name="donation_error_iab_unavailable">Az alkalmazáson belüli számlázás nem elérhető</string>
+    -292: <string name="donation_error_unavailable">nem elérhető</string>
+    -293: <string name="donation_error_canceled">megszakítva</string>
+    -294: <string name="donation_error_already_owned">Ön már adományozott</string>
+values-it: delete 3 OK
+    -232: <string name="ui_dialog_donate_message">Si prega di specificare la valuta e la somma:</string>
+    -233: <string name="ui_donation_success_message">Donazione avvenuta con successo, grazie!</string>
+    -234: <string name="ui_donation_failure_message">Donazione fallita: %1$s</string>
+values-ko: delete 12 OK
+    -314: <!-- donation related -->
+    -315: <string name="donate">기부</string>
+    -316: <string name="donate_summary">암호화된 Google 플레이 스토어 앱 내부 결제 사용.</string>
+    -318: <string name="ui_dialog_donate_message">금액을 지정해 주십시오:</string>
+    -319: <string name="ui_donation_success_message">기부가 완료되었습니다. 감사합니다!</string>
+    -320: <string name="ui_donation_failure_message">기부 실패: %1$s</string>
+    -322: <!-- purchase errors -->
+    -323: <string name="donation_error_iab_unavailable">앱 내부 결제를 사용할 수 없습니다</string>
+    -324: <string name="donation_error_unavailable">사용할 수 없습니다</string>
+    -325: <string name="donation_error_canceled">취소됨</string>
+    -326: <string name="donation_error_already_owned">이미 기부하셨습니다</string>
+    -327: <string name="donation_unspecified_error">알지 못하는 에러: %1$d</string>
+values-nb-rNO: delete 0 OK
+values-nl: delete 12 OK
+    -321: <!-- donation related -->
+    -322: <string name="donate">Doneren</string>
+    -323: <string name="donate_summary">Met veilige Google Play Store in-appaankopen.</string>
+    -325: <string name="ui_dialog_donate_message">Kies een bedrag:</string>
+    -326: <string name="ui_donation_success_message">Donatie gelukt, hartelijk bedankt!</string>
+    -327: <string name="ui_donation_failure_message">Donatie mislukt: %1$s</string>
+    -329: <!-- purchase errors -->
+    -330: <string name="donation_error_iab_unavailable">In-appaankopen zijn niet beschikbaar</string>
+    -331: <string name="donation_error_unavailable">niet beschikbaar</string>
+    -332: <string name="donation_error_canceled">geannuleerd</string>
+    -333: <string name="donation_error_already_owned">u heeft al gedoneerd</string>
+    -334: <string name="donation_unspecified_error">niet nader omschreven fout: %1$d</string>
+values-pl: delete 10 OK
+    -3: <string name="donate">Darowizna</string>
+    -161: <string name="ui_dialog_donate_message">Określ kwotę i walutę:</string>
+    -162: <string name="ui_donation_success_message">Darowizna dokonana. Dziekuję bardzo!</string>
+    -163: <string name="ui_donation_failure_message">Darowizna nieudana: %1$s</string>
+    -219: <string name="donate_summary">Używa bezpiecznej metody płatności przez sklep Google Play.</string>
+    -220: <string name="donation_error_iab_unavailable">Płatności w aplikacji nie są dostępne</string>
+    -221: <string name="donation_error_unavailable">niedostępne</string>
+    -222: <string name="donation_error_canceled">anulowano</string>
+    -223: <string name="donation_error_already_owned">już dokonano darowizny</string>
+    -224: <string name="donation_unspecified_error">nieokreślony błąd: %1$d</string>
+values-pt-rPT: delete 11 OK
+    -179: <!-- donation related -->
+    -180: <string name="donate">Doar</string>
+    -181: <string name="donate_summary">Usando o método de pagamento seguro da Google Play.</string>
+    -183: <string name="ui_dialog_donate_message">Por favor, indique o montante:</string>
+    -184: <string name="ui_donation_success_message">Doação conseguida, muito obrigado!</string>
+    -185: <string name="ui_donation_failure_message">Falha na doação: %1$s</string>
+    -187: <!-- purchase errors -->
+    -188: <string name="donation_error_iab_unavailable">Método de pagamento não está disponível</string>
+    -189: <string name="donation_error_unavailable">não disponível</string>
+    -190: <string name="donation_error_canceled">cancelado</string>
+    -191: <string name="donation_error_already_owned">Já realisou uma doação</string>
+values-ru: delete 11 OK
+    -262: <!-- donation related -->
+    -263: <string name="donate">Пожертвование</string>
+    -264: <string name="donate_summary">Будет использована безопасная транзакция Google Play Store.</string>
+    -266: <string name="ui_dialog_donate_message">Выберите сумму:</string>
+    -267: <string name="ui_donation_success_message">Отправлено, спасибо за поддержку!</string>
+    -268: <string name="ui_donation_failure_message">Не удалось отправить пожертвование: %1$s</string>
+    -270: <!-- purchase errors -->
+    -271: <string name="donation_error_iab_unavailable">Сервис покупок в приложениях недоступен</string>
+    -272: <string name="donation_error_unavailable">недоступно</string>
+    -273: <string name="donation_error_canceled">отменено</string>
+    -274: <string name="donation_error_already_owned">пожертвование уже выполнено</string>
+values-sk: delete 4 OK
+    -4: <string name="donate">Podporiť</string>
+    -161: <string name="ui_dialog_donate_message">Uveďte sumu a menu:</string>
+    -162: <string name="ui_donation_success_message">Darovanie bolo úspešné. Ďakujeme</string>
+    -163: <string name="ui_donation_failure_message">Darovanie bolo neúspešné: %1$s</string>
+values-sq: delete 11 OK
+    -212: <!-- donation related -->
+    -213: <string name="donate">Dhuroni</string>
+    -214: <string name="donate_summary">Duke përdorur pagesën e sigurtë në-program të Google Play Store.</string>
+    -215: <string name="ui_dialog_donate_message">Ju lutemi zgjidhni shumën:</string>
+    -216: <string name="ui_donation_success_message">Dhurimi i suksesshëm, faleminderit!</string>
+    -217: <string name="ui_donation_failure_message">Dhurimi dështoi: %1$s</string>
+    -218: <!-- purchase errors -->
+    -219: <string name="donation_error_iab_unavailable">faturimi në-program nuk është i pranishëm</string>
+    -220: <string name="donation_error_unavailable">I pa disponueshëm</string>
+    -221: <string name="donation_error_canceled">I anulluar</string>
+    -222: <string name="donation_error_already_owned">ju keni dhuruar njëherë</string>
+values-sr: delete 11 OK
+    -291: <!-- donation related -->
+    -292: <string name="donate">Донација</string>
+    -293: <string name="donate_summary">Користим безбедно плаћање Гуглове Плеј продавнице.</string>
+    -295: <string name="ui_dialog_donate_message">Наведите износ:</string>
+    -296: <string name="ui_donation_success_message">Донација је успела, хвала вам!</string>
+    -297: <string name="ui_donation_failure_message">Донације није успела: %1$s</string>
+    -299: <!-- purchase errors -->
+    -300: <string name="donation_error_iab_unavailable">Плаћање преко апликације није доступно</string>
+    -301: <string name="donation_error_unavailable">није доступно</string>
+    -302: <string name="donation_error_canceled">отказано</string>
+    -303: <string name="donation_error_already_owned">већ сте донирали</string>
+values-sv: delete 12 OK
+    -313: <!-- donation related -->
+    -314: <string name="donate">Donera</string>
+    -315: <string name="donate_summary">Med säker in-app Google Play Store-betalning.</string>
+    -317: <string name="ui_dialog_donate_message">Vänligen ange konto:</string>
+    -318: <string name="ui_donation_success_message">Donationen genomförd, tack så mycket!</string>
+    -319: <string name="ui_donation_failure_message">Donationen misslyckades: %1$s</string>
+    -321: <!-- purchase errors -->
+    -322: <string name="donation_error_iab_unavailable">In-app-betalning är ej tillgänglig</string>
+    -323: <string name="donation_error_unavailable">ej tillgänglig</string>
+    -324: <string name="donation_error_canceled">avbruten</string>
+    -325: <string name="donation_error_already_owned">du har redan donerat</string>
+    -326: <string name="donation_unspecified_error">okänt fel: %1$d</string>
+values-tr: delete 12 OK
+    -313: <!-- donation related -->
+    -314: <string name="donate">Bağış</string>
+    -315: <string name="donate_summary">Güvenli Google Play Store uygulama içi ödemelerini kullan.</string>
+    -317: <string name="ui_dialog_donate_message">Lütfen tutarı belirtiniz:</string>
+    -318: <string name="ui_donation_success_message">Bağış başarılı, teşekkürler!</string>
+    -319: <string name="ui_donation_failure_message">Bağış yapılamadı: %1$s</string>
+    -321: <!-- purchase errors -->
+    -322: <string name="donation_error_iab_unavailable">Uygulama içi faturalama mevcut değil</string>
+    -323: <string name="donation_error_unavailable">mevcut değil</string>
+    -324: <string name="donation_error_canceled">vazgeçildi</string>
+    -325: <string name="donation_error_already_owned">zaten bağış yaptınız</string>
+    -326: <string name="donation_unspecified_error">belirtilmemiş hata: %1$d</string>
+values-uk: delete 11 OK
+    -217: <!-- donation related -->
+    -218: <string name="donate">Віддячити</string>
+    -219: <string name="donate_summary">Скориставшись безпечною оплатою Google Play безпосередньо з додатку.</string>
+    -220: <string name="ui_dialog_donate_message">Будь ласка, оберіть суму та валюту:</string>
+    -221: <string name="ui_donation_success_message">Дякуємо за підтримку!</string>
+    -222: <string name="ui_donation_failure_message">Сталася помилка: %1$s</string>
+    -224: <!-- purchase errors -->
+    -225: <string name="donation_error_iab_unavailable">Білінг в додатку недоступний</string>
+    -226: <string name="donation_error_unavailable">недоступний</string>
+    -227: <string name="donation_error_canceled">скасовано</string>
+    -228: <string name="donation_error_already_owned">ви вже здаровували</string>
+values-zh-rCN: delete 12 OK
+    -309: <!-- donation related -->
+    -310: <string name="donate">捐赠</string>
+    -311: <string name="donate_summary">使用安全的 Google Play 商店应用内付款。</string>
+    -313: <string name="ui_dialog_donate_message">请指定金额：</string>
+    -314: <string name="ui_donation_success_message">捐赠成功，谢谢您！</string>
+    -315: <string name="ui_donation_failure_message">捐赠失败：%1$s</string>
+    -317: <!-- purchase errors -->
+    -318: <string name="donation_error_iab_unavailable">应用内付费功能不可用</string>
+    -319: <string name="donation_error_unavailable">不可用</string>
+    -320: <string name="donation_error_canceled">已取消</string>
+    -321: <string name="donation_error_already_owned">您已经捐赠过了</string>
+    -322: <string name="donation_unspecified_error">未指定的错误: %1$d</string>
+values-zh-rTW: delete 12 OK
+    -313: <!-- donation related -->
+    -314: <string name="donate">捐贈</string>
+    -315: <string name="donate_summary">使用安全的 Google Play 商店應用內支付。</string>
+    -317: <string name="ui_dialog_donate_message">請指定金額：</string>
+    -318: <string name="ui_donation_success_message">捐贈成功，謝謝您！</string>
+    -319: <string name="ui_donation_failure_message">捐贈失敗：%1$s</string>
+    -321: <!-- purchase errors -->
+    -322: <string name="donation_error_iab_unavailable">應用內付費功能不可用</string>
+    -323: <string name="donation_error_unavailable">不可用</string>
+    -324: <string name="donation_error_canceled">已取消</string>
+    -325: <string name="donation_error_already_owned">您已經捐贈過了</string>
+    -326: <string name="donation_unspecified_error">未指定的錯誤：%1$d</string>
+values: delete 12 OK
+    -338: <!-- donation related -->
+    -339: <string name="donate">Donate</string>
+    -340: <string name="donate_summary">Using secure Google Play Store in-app payment.</string>
+    -342: <string name="ui_dialog_donate_message">Please specify amount:</string>
+    -343: <string name="ui_donation_success_message">Donation successful, thank you!</string>
+    -344: <string name="ui_donation_failure_message">Donation failed: %1$s</string>
+    -346: <!-- purchase errors -->
+    -347: <string name="donation_error_iab_unavailable">In-app billing is not available</string>
+    -348: <string name="donation_error_unavailable">not available</string>
+    -349: <string name="donation_error_canceled">canceled</string>
+    -350: <string name="donation_error_already_owned">you have already donated</string>
+    -351: <string name="donation_unspecified_error">unspecified error: %1$d</string>
+files=25 expected_total=235 ok=True

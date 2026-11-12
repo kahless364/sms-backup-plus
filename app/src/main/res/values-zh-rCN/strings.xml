@@ -306,20 +306,8 @@
   <string name="ui_dialog_account_manager_token_error">无法从系统获取令牌。您是否想要尝试一下浏览器验证方式？</string>
   <string name="select_google_account">选择一个 Google 账户</string>
 
-  <!-- donation related -->
-  <string name="donate">捐赠</string>
-  <string name="donate_summary">使用安全的 Google Play 商店应用内付款。</string>
 
-  <string name="ui_dialog_donate_message">请指定金额：</string>
-  <string name="ui_donation_success_message">捐赠成功，谢谢您！</string>
-  <string name="ui_donation_failure_message">捐赠失败：%1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">应用内付费功能不可用</string>
-  <string name="donation_error_unavailable">不可用</string>
-  <string name="donation_error_canceled">已取消</string>
-  <string name="donation_error_already_owned">您已经捐赠过了</string>
-  <string name="donation_unspecified_error">未指定的错误: %1$d</string>
 
   <string name="error_no_sms_default_package">未设置为默认的短信应用。</string>
   <string name="ui_dialog_sms_default_package_change_title">需要更改短信应用</string>

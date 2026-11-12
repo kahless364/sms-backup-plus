@@ -285,18 +285,7 @@
   </string>
   <string name="select_google_account">Seleccioneu un compte de Google</string>
 
-  <!-- donation related -->
-  <string name="donate">Donació</string>
-  <string name="donate_summary">S\'utilitza el pagament segur Google Play Store in-app.</string>
 
-  <string name="ui_dialog_donate_message">Introduïu la quantitat:</string>
-  <string name="ui_donation_success_message">Donació amb èxit, gràcies!</string>
-  <string name="ui_donation_failure_message">Ha fallat la donació: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">El cobrament In-app no està disponible</string>
-  <string name="donation_error_unavailable">no disponible</string>
-  <string name="donation_error_canceled">cancel·lat</string>
-  <string name="donation_error_already_owned">ja heu donat anteriorment</string>
     <string name="ui_dark_theme_label">Tema fosc</string>
 </resources>

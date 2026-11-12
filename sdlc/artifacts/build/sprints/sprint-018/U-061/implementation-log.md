@@ -37,6 +37,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 | I1 | 8866f805b861a153b57cc88e9c1cd050f66a9414 | EnrollmentDialogThemeTest.java | 0 | tests=697 failures=0 errors=0 skipped=2 (isolated 3/3) | U-061 I1: re-host EnrollmentDialogThemeTest on a nested ThemeActivity subclass |
 | I2 | 3257a1491e46fa3d33e00a0162157d6a3322c68a | AndroidManifest.xml, MainSettings.java, Preferences.java, preferences.xml | 0 | tests=697 failures=0 errors=0 skipped=2 | U-061 I2: remove donation entry points (settings, MainSettings, Keys.DONATE, manifest) |
 | I3 | 5cb305f839e88c8c876f702d0cf84df4cc4c2a81 | Consts.java (M); 3 donation main classes, 2 donation test classes (D) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I3: delete the donation package, its tests and Consts.Billing |
+| I4 | 68d06796459673cfbb7fdeadcb9d99af914b1326 | 22 strings.xml files (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I4: remove donation strings from all 22 strings.xml files |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -207,6 +208,26 @@ is empty (I0 expected list: none).
   (`evidence/I3-worktree-test-count.txt`), equal to I0 minus 15 (AC-7). The HEAD-based `git grep` is re-run by QA after the I8 commit.
 - End check: porcelain = ` M Consts.java` plus five ` D` paths (matches the I3 expected list, 6).
 - Proposed message: `U-061 I3: delete the donation package, its tests and Consts.Billing`.
+
+## I4 - Strings, all 22 files, by name (AC-1 item 7, IC-13)
+
+- Start: HEAD `68d06796459673cfbb7fdeadcb9d99af914b1326` (I3 commit); product-pathspec porcelain empty.
+- Dry run (`evidence/I4-strings-dryrun.txt`): every folder `OK` (25 folders, 0 MISMATCH); last line `files=25 expected_total=235 ok=True`.
+  Every listed line is one of the 10 named `<string>` lines or one of the two exact comments (the script selects only those).
+- Apply (`evidence/I4-strings-apply.txt`): `WRITTEN`. The script works on raw bytes, so each file's line endings and the
+  `values-zh-rTW` BOM (`357 273 277`, confirmed) are preserved. `values-cs`, `values-es`, `values-nb-rNO` are untouched.
+- **Totals (this run): files changed 22; lines deleted 235; lines added 0** (`git diff --diff-algorithm=minimal --numstat`).
+- Observation (not a defect): git's default (Myers) diff of 14 of these files shows `2 added / +2 deleted` blank lines
+  (default numstat total 28 added / 263 deleted, net 235) because the kept blank lines between the removed strings are aligned
+  differently. The file bytes are the same either way; `minimal`, `patience` and `histogram` all give 0 added / 235 deleted.
+  The plan's step-3 pure-deletion proofs were therefore run with `--diff-algorithm=minimal` and give: added lines 0;
+  removed lines outside the 10 names and 2 comments 0 (`evidence/I4-strings-proof.txt`). The orchestrator's check of the
+  committed diff should use the same option (or `git diff --numstat -w`-free equivalent) to see pure deletions.
+- Proofs (`evidence/I4-strings-proof.txt`): `grep -rniE "billing|donat" app/src/main/res` = 0 (AC-1-scoped strings grep);
+  `grep -rn "purchase errors" app/src/main/res` = 0 (IC-13).
+- Gate G: exit 0, `files=73 tests=682 failures=0 errors=0 skipped=2` (`evidence/I4-gates.log`, `evidence/I4-junit-totals.txt`; derived).
+- End check: porcelain = 22 ` M` paths (`values/strings.xml` and the 21 locale files; matches the I4 expected list, 22).
+- Proposed message: `U-061 I4: remove donation strings from all 22 strings.xml files`.
 
 ## Product-owner decisions carried forward (from the coordinator, recorded at I1)
 

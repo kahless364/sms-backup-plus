@@ -259,18 +259,7 @@
   </string>
   <string name="select_google_account">Выберите аккаунт Google</string>
 
-  <!-- donation related -->
-  <string name="donate">Пожертвование</string>
-  <string name="donate_summary">Будет использована безопасная транзакция Google Play Store.</string>
 
-  <string name="ui_dialog_donate_message">Выберите сумму:</string>
-  <string name="ui_donation_success_message">Отправлено, спасибо за поддержку!</string>
-  <string name="ui_donation_failure_message">Не удалось отправить пожертвование: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">Сервис покупок в приложениях недоступен</string>
-  <string name="donation_error_unavailable">недоступно</string>
-  <string name="donation_error_canceled">отменено</string>
-  <string name="donation_error_already_owned">пожертвование уже выполнено</string>
     <string name="ui_dark_theme_label">Ночной режим</string>
 </resources>

@@ -239,12 +239,7 @@
   <string name="calllog">Anrufprotokoll</string>
 
 
-  <string name="donate">Spenden</string>
-  <string name="donate_summary">Mit der sicheren Google Play Bezahlmethode.</string>
 
-  <string name="ui_dialog_donate_message">Bitte geben Sie Betrag und Währung an:</string>
-  <string name="ui_donation_success_message">Spende erfolgreich, Vielen Dank!</string>
-  <string name="ui_donation_failure_message">Spende fehlgeschlagen: %1$s</string>
 
   <string name="app_log_skip_backup_already_running">Übersprungen weil die Sicherung bereits läuft.</string>
   <string name="app_log_skip_backup_skip_messages">Überspringe alle Nachrichten</string>
@@ -288,16 +283,11 @@
     standardmäßige SMS-App festlegen. Nach dem Vorgang wird die Einstellung zurückgesetzt. Eingehende Nachrichten
     während der Wiederherstellung werden zugestellt, erzeugen aber keine Notifikationen.
   </string>
-  <string name="donation_error_already_owned">Sie haben bereits gespendet</string>
   <string name="call_rejected">Eingehender Anruf, abgelehnt</string>
   <string name="call_rejected_text">Abgelehnter Anruf von %1$s</string>
   <string name="call_voicemail">Eingehender Anruf, Anrufbeantworter</string>
   <string name="call_voicemail_text">Anruf von %1$s (Anrufbeantworter)</string>
   <string name="custom_imap_not_configured">IMAP (nicht konfiguriert)</string>
-  <string name="donation_error_canceled">abgebrochen</string>
-  <string name="donation_error_iab_unavailable">Bezahlungsmethode nicht verfügbar</string>
-  <string name="donation_error_unavailable">nicht verfügbar</string>
-  <string name="donation_unspecified_error">allgemeiner Fehler: %1$d</string>
   <string name="error_no_sms_default_package">Keine voreingestellte SMS-Anwendung verfügbar.</string>
   <string name="error_sms_provider_not_writable">SMS provider ist nicht schreibbar</string>
   <string name="permission_read_call_log">Anrufsliste lesen</string>

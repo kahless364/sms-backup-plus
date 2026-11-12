@@ -281,19 +281,8 @@
   </string>
   <string name="select_google_account">Vælg en google konto</string>
 
-  <!-- donation related -->
-  <string name="donate">Donering</string>
-  <string name="donate_summary">Ved brug af sikker betaling gennem Google Play.</string>
 
-  <string name="ui_dialog_donate_message">Vælg beløb:</string>
-  <string name="ui_donation_success_message">Donationen er gennemført. Tak for hjælpen!</string>
-  <string name="ui_donation_failure_message">Donationen fejlede: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">I-app køb er ikke tilgængelig</string>
-  <string name="donation_error_unavailable">ikke tilgængelig</string>
-  <string name="donation_error_canceled">anulleret</string>
-  <string name="donation_error_already_owned">du har allerede doneret</string>
     <string name="ui_dark_theme_label">Mørkt tema</string>
     <string name="status_permission_problem">Problem med tilladelser</string>
   <string name="permission_read_sms">Adgang til SMS beskeder</string>
@@ -314,7 +303,6 @@
   <string name="pref_use_old_scheduler">Gammel skedulerings metode</string>
   <string name="pref_use_old_scheduler_summary">Gennemtving brug af gammel skedulerings metode</string>
   <string name="pref_use_old_scheduler_no_gcm_summary">Google Play Services er ikke tilgængelig</string>
-  <string name="donation_unspecified_error">uspecifieret fejl: %1$d</string>
   <string name="error_no_sms_default_package">Der er sat en standard SMS pakke.</string>
   <string name="ui_dialog_sms_default_package_change_title">Påkrævet app ændring</string>
   <string name="ui_dialog_sms_default_package_change_msg">

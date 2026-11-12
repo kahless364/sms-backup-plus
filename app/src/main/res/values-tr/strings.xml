@@ -310,20 +310,8 @@
   <string name="ui_dialog_account_manager_token_error">Sistemden bilgi alınamadı. Tarayıcı kimlik doğrulama yöntemini denemek ister misiniz?</string>
   <string name="select_google_account">Bir Google hesabı seçiniz</string>
 
-  <!-- donation related -->
-  <string name="donate">Bağış</string>
-  <string name="donate_summary">Güvenli Google Play Store uygulama içi ödemelerini kullan.</string>
 
-  <string name="ui_dialog_donate_message">Lütfen tutarı belirtiniz:</string>
-  <string name="ui_donation_success_message">Bağış başarılı, teşekkürler!</string>
-  <string name="ui_donation_failure_message">Bağış yapılamadı: %1$s</string>
 
-  <!-- purchase errors -->
-  <string name="donation_error_iab_unavailable">Uygulama içi faturalama mevcut değil</string>
-  <string name="donation_error_unavailable">mevcut değil</string>
-  <string name="donation_error_canceled">vazgeçildi</string>
-  <string name="donation_error_already_owned">zaten bağış yaptınız</string>
-  <string name="donation_unspecified_error">belirtilmemiş hata: %1$d</string>
 
   <string name="error_no_sms_default_package">Varsayılan SMS paketi yok.</string>
   <string name="ui_dialog_sms_default_package_change_title">Uygulama değişikliği gerekli</string>
