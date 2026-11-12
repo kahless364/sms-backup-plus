@@ -1,0 +1,5 @@
+classes:
+app/build/intermediates/classes/debugUnitTest/transformDebugUnitTestClassesWithAsm/dirs/com/zegoggles/smssync/activity/fragments/EnrollmentDialogThemeTest$HostActivity.class
+app/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes/com/zegoggles/smssync/activity/fragments/EnrollmentDialogThemeTest$HostActivity.class
+grep HostActivity app/src/main:
+(rc=1)

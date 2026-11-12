@@ -34,6 +34,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 | Inc | HEAD at start | Files (product) | Gate exit | Totals | Proposed message |
 |-----|---------------|-----------------|-----------|--------|------------------|
 | I0 | e0c51d421659ab3bf3deff7662e7201da6c4fe62 | none | 0 | tests=697 failures=0 errors=0 skipped=2 | U-061 I0: baseline evidence (no product change) |
+| I1 | 8866f805b861a153b57cc88e9c1cd050f66a9414 | EnrollmentDialogThemeTest.java | 0 | tests=697 failures=0 errors=0 skipped=2 (isolated 3/3) | U-061 I1: re-host EnrollmentDialogThemeTest on a nested ThemeActivity subclass |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -144,6 +145,38 @@ data clear, no setting changed, no broadcast sent, no screenshots, no backup or 
 
 `git status --porcelain --untracked-files=all -- app README.md CHANGES sdlc/artifacts/engagement/code-location.md metadata gradle`
 is empty (I0 expected list: none).
+
+## I1 - Re-host EnrollmentDialogThemeTest (IC-3, AC-6)
+
+- Start: HEAD `8866f805b861a153b57cc88e9c1cd050f66a9414` (I0 commit). Product-pathspec porcelain empty.
+- Edited only `app/src/test/java/com/zegoggles/smssync/activity/fragments/EnrollmentDialogThemeTest.java` (LF, kept LF):
+  import `DonationActivity` -> `ThemeActivity`; comment block and javadoc rewritten (both now say the AppCompat theme
+  comes from `ThemeActivity.onCreate()`, not the manifest; `{@link DonationActivity}` -> `{@link HostActivity}`);
+  three host lines -> `HostActivity activity = Robolectric.buildActivity(HostActivity.class).create().get();`;
+  added `public static class HostActivity extends ThemeActivity {}` (nested, with the plan's javadoc, no `*/` glob).
+  No assertion changed. numstat 25 added / 11 deleted.
+- Self-check: `grep -c DonationActivity` = 0; `grep -c @Test` = 3.
+- IC-3 isolated run (`--tests ...EnrollmentDialogThemeTest`): exit 0, `files=1 tests=3 failures=0 errors=0 skipped=0`
+  (`evidence/I1-isolated-junit-totals.txt`, `evidence/I1-isolated-theme-test.log`, derived). `HostActivity.class` exists under
+  test-class directories only; `grep -rn HostActivity app/src/main` empty (`evidence/I1-hostactivity-checks.txt`).
+- Gate G (`:app:assembleDebug :app:testDebugUnitTest`): exit 0, `files=75 tests=697 failures=0 errors=0 skipped=2`
+  (`evidence/I1-gates.log`, `evidence/I1-junit-totals.txt`; derived, raw logs not kept for path hygiene).
+- End check: porcelain = ` M app/src/test/java/com/zegoggles/smssync/activity/fragments/EnrollmentDialogThemeTest.java` (matches the I1 list).
+- Proposed message: `U-061 I1: re-host EnrollmentDialogThemeTest on a nested ThemeActivity subclass`.
+- Note: git warns that LF will be replaced by CRLF (core.autocrlf); this is the plan's known LF-file state, not a change.
+
+## Product-owner decisions carried forward (from the coordinator, recorded at I1)
+
+1. **Play Store visibility:** the product owner ACCEPTS the app losing its declared visibility of the Play Store and will
+   delete the dead "Old backup scheduler" setting in a follow-up story (verbatim: "option 1, accept it and delete the dead
+   setting later"). At I8: record before/after visibility and the `use_old_scheduler` summary text and enabled state as
+   planned; a loss is expected and accepted, so it is not escalated and `<queries>` is never re-added. Also note at I8
+   whether anything observable actually changed (I0 found both packages already in the system-wide forceQueryable list on
+   this image).
+2. **Third-party integration** is still ON on the emulator; it remains a product-owner action or waiver before the I8
+   device check. No Developer action.
+3. **Scratch fallback for I8:** if the scratch folder holding the raw I0 mapping/configuration/JaCoCo files is gone, rebuild
+   them from the code as of e0c51d42 (parent of the I0 commit 8866f805) in a scratch copy outside the repo, and say so here.
 
 ## Notes
 

@@ -1,0 +1,5 @@
+# derived from the raw isolated run (raw log withheld: machine paths)
+U061-DAEMON-JVM: java.version=25.0.5
+BUILD SUCCESSFUL in 38s
+52 actionable tasks: 5 executed, 47 up-to-date
+exit=0

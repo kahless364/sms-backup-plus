@@ -6,7 +6,7 @@ import android.content.Context;
 import androidx.appcompat.app.AlertDialog;
 
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.activity.donation.DonationActivity;
+import com.zegoggles.smssync.activity.ThemeActivity;
 import com.zegoggles.smssync.mail.PinnedCertStore;
 
 import org.junit.Test;
@@ -111,10 +111,11 @@ public class EnrollmentDialogThemeTest {
     @Test
     public void bug002_guard_dialogShowerContract_contextMustBeActivity() throws Exception {
         // Obtain an AppCompat-themed Activity from Robolectric.
-        // DonationActivity extends ThemeActivity extends AppCompatActivity.
-        // The manifest declares android:theme="@style/SMSBackupPlusTheme.Light" at the
-        // application level, which inherits from Theme.AppCompat.Light.NoActionBar.
-        DonationActivity activity = Robolectric.buildActivity(DonationActivity.class).create().get();
+        // HostActivity (nested below) extends ThemeActivity extends AppCompatActivity.
+        // The AppCompat theme comes from ThemeActivity.onCreate(), which calls
+        // setTheme(new Preferences(this).getAppTheme()), not from the manifest: the AGP 9
+        // unit-test manifest declares no app components and no application theme.
+        HostActivity activity = Robolectric.buildActivity(HostActivity.class).create().get();
 
         // Contract assertion: the context used to build the AlertDialog must be an Activity.
         // The production fix in AdvancedSettings.Server uses getActivity() for exactly this reason.
@@ -161,10 +162,10 @@ public class EnrollmentDialogThemeTest {
      * POSITIVE / contract: building an AppCompat {@link AlertDialog} using an AppCompat
      * Activity context succeeds and the dialog can be shown.
      *
-     * <p>Uses {@link DonationActivity} (which extends {@code ThemeActivity → AppCompatActivity})
-     * as the host. Robolectric applies the {@code SMSBackupPlusTheme.Light} from the manifest
-     * (inheriting from {@code Theme.AppCompat.Light.NoActionBar}) so the AppCompat delegate
-     * finds a valid theme.
+     * <p>Uses {@link HostActivity} (which extends {@code ThemeActivity → AppCompatActivity})
+     * as the host. The AppCompat theme comes from {@code ThemeActivity.onCreate()}, which calls
+     * {@code setTheme(new Preferences(this).getAppTheme())} (a {@code Theme.AppCompat}
+     * descendant), not from the manifest, so the AppCompat delegate finds a valid theme.
      *
      * <p>Asserts: {@link AlertDialog#isShowing()} is true after {@link AlertDialog#show()},
      * confirming the themed-context contract works end-to-end.
@@ -176,7 +177,7 @@ public class EnrollmentDialogThemeTest {
      */
     @Test
     public void bug002_positive_activityContextBuildsAndShowsDialog() {
-        DonationActivity activity = Robolectric.buildActivity(DonationActivity.class).create().get();
+        HostActivity activity = Robolectric.buildActivity(HostActivity.class).create().get();
 
         // Build and show the dialog using the AppCompat Activity context — must NOT throw.
         AlertDialog dialog = new AlertDialog.Builder(activity)
@@ -241,7 +242,7 @@ public class EnrollmentDialogThemeTest {
 
         // Step 2: reproduce the production DialogShower code from AdvancedSettings.Server:
         // use an AppCompat-themed Activity context (getActivity() in production).
-        DonationActivity activity = Robolectric.buildActivity(DonationActivity.class).create().get();
+        HostActivity activity = Robolectric.buildActivity(HostActivity.class).create().get();
 
         final PinCertificateEnrollmentFlow.EnrollmentDialogData data = captured[0];
 
@@ -289,4 +290,17 @@ public class EnrollmentDialogThemeTest {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der));
     }
+
+    // -------------------------------------------------------------------------
+    // Host activity
+    // -------------------------------------------------------------------------
+
+    /**
+     * Test-only AppCompat host: a concrete subclass of the production {@code ThemeActivity}
+     * (which is abstract). It is not registered in any manifest; Robolectric launches it
+     * undeclared. It is nested so that it compiles to
+     * {@code EnrollmentDialogThemeTest$HostActivity} and stays under the JaCoCo
+     * {@code *Test*} class-file filter.
+     */
+    public static class HostActivity extends ThemeActivity {}
 }
