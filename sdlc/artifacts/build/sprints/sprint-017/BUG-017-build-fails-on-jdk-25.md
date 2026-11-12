@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: done
 artifact_type: bug
 severity: high
 priority: medium
@@ -20,7 +20,10 @@ id: BUG-017
 title: 'Gradle build fails on JDK 25: "Unsupported class file major version 69" (Gradle 8.14.1 toolchain not JDK 25 compatible)'
 domain: build
 origin: qa
-updated_at: '2026-11-11T22:02:14.211Z'
+updated_at: '2026-11-12T16:31:32.372Z'
+resolution: done
+resolved_by: U-060
+sprint: '017'
 ---
 
 # BUG-017: Gradle build fails on JDK 25: "Unsupported class file major version 69"
