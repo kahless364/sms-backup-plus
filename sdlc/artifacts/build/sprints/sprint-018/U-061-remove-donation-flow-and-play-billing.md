@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: in-progress
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -22,7 +22,8 @@ title: Remove the donation flow and the Play Billing dependency
 pipeline: ''
 domain: modernization
 alignment_audit: passed
-updated_at: '2026-11-12T18:22:26.512Z'
+updated_at: '2026-11-12T18:43:43.103Z'
+current_build_phase: implementation
 ---
 
 # U-061: Remove the Donation Flow and the Play Billing Dependency

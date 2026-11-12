@@ -16,7 +16,7 @@ updated_at: '2026-11-12T18:22:54.585Z'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-061 | Remove the donation flow and the Play Billing dependency | - | developer | sonnet | (unassigned) | - | planned | medium |
+| U-061 | Remove the donation flow and the Play Billing dependency | - | developer | sonnet | (unassigned) | - | in-progress | medium |
 
 ## Execution Waves
 
