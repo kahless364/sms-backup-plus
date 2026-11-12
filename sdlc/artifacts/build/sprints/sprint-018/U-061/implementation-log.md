@@ -40,6 +40,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 | I4 | 68d06796459673cfbb7fdeadcb9d99af914b1326 | 22 strings.xml files (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I4: remove donation strings from all 22 strings.xml files |
 | I5 | 9639f5c7df464bcc2f646809642aa36d719c5264 | app/build.gradle, app/lint-baseline.xml (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I5: remove the Play Billing dependency and its stale lint-baseline entry |
 | I6 | 8cffa46fd99293b943096bbdf154798a1d549bbb | app/build.gradle (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I6: retire the activity.donation JaCoCo rule |
+| I7 | 5b3c5907d9a6d6200a280d02c32c51e457bacbb7 | CHANGES, README.md, code-location.md (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I7: update README, CHANGES and code-location for the donation removal |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -279,6 +280,22 @@ is empty (I0 expected list: none).
   `grep -rniE "billing|donat" app/src/main app/build.gradle` = **0 results**.
 - End check: porcelain = ` M app/build.gradle` (matches the I6 expected list; no IC-9 test).
 - Proposed message: `U-061 I6: retire the activity.donation JaCoCo rule`.
+
+## I7 - Docs (AC-11, D7)
+
+- Start: HEAD `5b3c5907d9a6d6200a280d02c32c51e457bacbb7` (I6 commit); product-pathspec porcelain empty.
+- Byte-preserving, assertion-guarded edits (existing line endings kept: CHANGES and README.md CRLF in the working tree, code-location.md LF).
+- `README.md`: deleted the `* Google Play billing service - used for in-app donations` bullet (was line 241), then the donation paragraph
+  (lines 43-45: two text lines plus the blank). The sentence "SMS Backup+ is available for free ... there will never be a pro / paid version."
+  (lines 40-41) is retained. numstat 0 added / 4 deleted; `grep -ciE 'billing|donat' README.md` = 0.
+- `CHANGES`: inserted after `  * Updated Swedish localization (#890)` (unreleased 1.6.0 block) exactly:
+  `  * Removed the in-app donation feature and the in-app billing (Play Billing) dependency`. Lines 23, 120, 138, 168 untouched. numstat 1 / 0.
+- `sdlc/artifacts/engagement/code-location.md`: deleted line 37 (the `com.android.billingclient:billing` in-app donations bullet). numstat 0 / 1.
+- `git diff --stat -- metadata/play sdlc/artifacts/engagement/endpoints.md sdlc/artifacts/engagement/systems.md` is empty
+  (`evidence/I7-checks.txt`; `endpoints.md:62` and `systems.md:55` still describe Play Billing: deviation 7, not edited).
+- Gate G: exit 0, `files=73 tests=682 failures=0 errors=0 skipped=2` (`evidence/I7-gates.log`, `evidence/I7-junit-totals.txt`; derived).
+- End check: porcelain = ` M CHANGES`, ` M README.md`, ` M sdlc/artifacts/engagement/code-location.md` (matches the I7 expected list, 3).
+- Proposed message: `U-061 I7: update README, CHANGES and code-location for the donation removal`.
 
 ## Product-owner decisions carried forward (from the coordinator, recorded at I1)
 

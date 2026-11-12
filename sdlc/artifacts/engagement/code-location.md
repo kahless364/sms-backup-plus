@@ -34,7 +34,6 @@ the defunct Google Code "SMS Backup" project.
 
 - `com.squareup:otto` — event bus
 - `com.github.jberkel.k-9:k9mail-library` — IMAP/email handling
-- `com.android.billingclient:billing` — in-app donations
 - `com.firebase:firebase-jobdispatcher` — background job scheduling
 - `androidx.annotation`, `androidx.preference`, `androidx.core:core-role`
 

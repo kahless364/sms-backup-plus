@@ -1,0 +1,4 @@
+git diff --stat -- metadata/play sdlc/artifacts/engagement/endpoints.md sdlc/artifacts/engagement/systems.md  -> 0 lines (empty)
+1	0	CHANGES
+0	4	README.md
+0	1	sdlc/artifacts/engagement/code-location.md

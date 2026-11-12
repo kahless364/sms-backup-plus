@@ -3,6 +3,7 @@
   * Android minSdk now 14 (4.0, Ice Cream Sandwich)
   * Deprecated unsupported authentication via Google OAuth
   * Updated Swedish localization (#890)
+  * Removed the in-app donation feature and the in-app billing (Play Billing) dependency
 
 == 1.5.11 (1576) 04-23-2018
 

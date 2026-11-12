@@ -40,9 +40,6 @@ Tested with Android 4.x (Ice Cream Sandwich) - 10.x. (Q)
 SMS Backup+ is available for free in the [Google Play Store] and on [F-Droid],
 there will never be a pro / paid version.
 
-But if you find the app useful and want to support its development you can make a donation
-using the secure in-app Play Store payment mechanism.
-
 To get updates more frequently join the [beta programme](#beta) or download the latest beta manually
 from [Github releases].
 
@@ -238,7 +235,6 @@ course be addressed.
   * Prevent phone from sleeping - needed to keep network active during a backup
   * Find accounts on the device - used for authentication
   * Use accounts on the device - used for authentication
-  * Google Play billing service - used for in-app donations
   * Run at startup - used to enable automatic backups after reboot
 
 👉 1.5.11 introduces runtime permissions (Android 6.0+) which means that you only grant the permissions
