@@ -1,0 +1,8 @@
+57a58
+> -allowaccessmodification
+203c204
+< -keep,allowobfuscation,allowshrinking @dagger.hilt.android.EarlyEntryPoint class *# Keep for the reflective cast done in EntryPoints.
+---
+> -keep,allowobfuscation,allowshrinking @dagger.hilt.android.EarlyEntryPoint class *
+205a207
+> -keep,allowobfuscation,allowshrinking class com.zegoggles.smssync.activity.MainViewModel

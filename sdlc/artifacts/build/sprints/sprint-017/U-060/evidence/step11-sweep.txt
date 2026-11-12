@@ -1,0 +1,18 @@
+## verification grep
+exit=1
+## DSL leftovers
+app/build.gradle:2:// U-060: 'kotlin-android' removed - AGP 9 provides built-in Kotlin (KGP 2.3.21 on the root classpath).
+app/build.gradle:104:// U-060: Kotlin jvmTarget (AGP 9 built-in Kotlin; replaces android { kotlinOptions }). Matches compileOptions (17).
+## opt-outs
+gradle.properties:23:# U-059 (BT-005): android.enableJetifier removed — app is fully AndroidX; k-9 is
+## app/build.gradle diff minimum/includes/excludes
+warning: in the working copy of 'app/build.gradle', LF will be replaced by CRLF the next time Git touches it
+## sdk
+21:    compileSdkVersion 35
+24:        minSdkVersion 21
+25:        targetSdkVersion 35
+31:# nonTransitiveRClass=true: each module's R only contains its own resources.
+34:android.nonTransitiveRClass=true
+35:# nonFinalResIds=true: R fields are non-final (fine for app code).
+38:android.nonFinalResIds=true
+## unrelated sdlc verify

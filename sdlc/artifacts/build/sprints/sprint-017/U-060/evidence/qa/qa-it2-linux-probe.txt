@@ -1,0 +1,21 @@
+=== QA Linux probe 2026-11-12T16:23:46Z on Linux 6.18.58.1-microsoft-standard-WSL2 x86_64
+16ec096259bb25db45f20cec88f7fd76672957f674a69f4a3214b9f535bb65dd  <repo>/gradlew
+16ec096259bb25db45f20cec88f7fd76672957f674a69f4a3214b9f535bb65dd  proj/gradlew
+c20d162204bc43eb9d57e172f6582e901ef5b6f017c6a9cb8df7a08f52c93a1e  <repo>/gradle.properties
+c20d162204bc43eb9d57e172f6582e901ef5b6f017c6a9cb8df7a08f52c93a1e  proj/gradle.properties
+--- Probe 1: stub java (no JDK) -> does gradlew export JAVA_TOOL_OPTIONS on Linux?
+STUB-JAVA sees JAVA_TOOL_OPTIONS=[]
+--- Download Temurin JDK 25 (Linux x64)
+openjdk version "25.0.5" 2026-10-20 LTS
+--- Probe 2: real JDK 25 + working-tree gradlew + repo gradle.properties (with Windows selector flag in org.gradle.jvmargs)
+PROBE os=Linux java.version=25.0.5
+PROBE env JAVA_TOOL_OPTIONS=[]
+PROBE daemon inputArguments=[-Xmx2048m, -Dfile.encoding=UTF-8, -Duser.country, -Duser.language=en, -Duser.variant]
+PROBE sysprop java.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider
+PROBE sysprop jdk.net.unixdomain.tmpdir=/nonexistent
+PROBE SelectorProvider.provider()=sun.nio.ch.EPollSelectorProvider
+PROBE Selector.open OK provider=sun.nio.ch.EPollSelectorProvider
+EXIT=0
+--- Probe 3: same, but forked test-style JVM? (javaexec with daemon's jvmargs not inherited) - JavaExec with no jvmargs
+FORK JAVA_TOOL_OPTIONS=[null] provider=sun.nio.ch.EPollSelectorProvider
+EXIT=0

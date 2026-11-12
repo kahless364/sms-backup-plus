@@ -100,7 +100,9 @@ the defunct Google Code "SMS Backup" project.
 4. **jvmargs:** a user-global `org.gradle.jvmargs` replaces the repository's `org.gradle.jvmargs`.
    The repository's Windows NIO flags (`SelectorProvider`, `jdk.net.unixdomain.tmpdir`) are also exported
    by `gradlew` via `JAVA_TOOL_OPTIONS` (needed on Windows: without it JDK 25 fails with "Unable to
-   establish loopback connection"). **Re-apply that block in `gradlew` after any `./gradlew wrapper` regeneration.**
+   establish loopback connection"). The block is a marked LOCAL ADDITION in `gradlew` and runs only under Git Bash/MSYS/Cygwin
+   (on Linux/macOS the flag class does not exist and would crash the JVM). **Re-apply it in `gradlew` after any `./gradlew wrapper`
+   regeneration.** `gradlew.bat` is the stock generated script WITHOUT this workaround: on Windows use Git Bash `./gradlew`.
 5. **Verify:** `./gradlew --version` - the "Daemon JVM" line must cite `gradle/gradle-daemon-jvm.properties`.
 6. **Baseline for baseline-vs-after comparisons on JDK 17:** `-Dorg.gradle.java.home=<jdk17>` on the command line
    (highest precedence) is for old pre-U-060 commits only.

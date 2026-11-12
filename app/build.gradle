@@ -396,6 +396,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
 
         // Rule 4: root package com.zegoggles.smssync (App.java + a few utils).
         // MEASURED: 52.9% (18/34 lines). Floor set just below at 50%.
+        // U-060 re-measured: 60.0% (18/30) - Kotlin 2.3 code generation no longer emits some inlined helper lines.
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync']
@@ -476,13 +477,15 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
 
         // Rule 7: compat — platform compatibility shims.
         // MEASURED: 23.3% (17/73 lines). Floor set just below at 20%.
+        // U-060 re-measured: 21.9% (16/73) - MmsReceiver's class-declaration line is no longer executed because
+        // AGP 9 gives Robolectric a unit-test manifest without the app's components (see receiver rule below).
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.compat*']
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.20 // MEASURED 23.3% — TODO: raise to 70%
+                minimum = 0.20 // MEASURED 23.3%; U-060: 21.9% (16/73) — TODO: raise to 70%
             }
         }
 
@@ -499,7 +502,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
         }
 
         // Rule 9: di — Hilt modules; only a single provider line is covered.
-        // MEASURED: 3.1% (1/32 lines). Hilt @Module/@Provides methods are generated
+        // U-060 re-measured: 6.9% (2/29). Original note: MEASURED: 3.1% (1/32 lines). Hilt @Module/@Provides methods are generated
         // by KSP at build time; the bindings are exercised only in component graph
         // construction, which requires the full DI container (not easily unit-testable).
         // Floor set at actual measured value; excluded classes (BackupWorker) also live here.
@@ -527,13 +530,18 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
 
         // Rule 11: receiver — SMS/MMS/boot broadcast receivers.
         // MEASURED: 53.4% (31/58 lines). Floor set at 50%.
+        // U-060 re-measured: exactly 50.0% (29/58) = ZERO HEADROOM against the 0.50 floor. Cause (not JaCoCo counting):
+        // AGP 9 gives Robolectric the processDebugUnitTestManifest manifest, which has none of the app's components, so
+        // Robolectric no longer instantiates manifest receivers at test setup and the class-declaration lines of
+        // BackupBroadcastReceiver (:38) and PackageReplacedReceiver (:15) (and compat/MmsReceiver :7) are uncovered.
+        // Follow-up: add a BackupBroadcastReceiver test (also covers the opt-in gate) and/or fix the unit-test manifest.
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.receiver*']
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.50 // MEASURED 53.4% — TODO: raise to 70%
+                minimum = 0.50 // MEASURED 53.4%; U-060: 50.0% (29/58), zero headroom — TODO: raise to 70%
             }
         }
 

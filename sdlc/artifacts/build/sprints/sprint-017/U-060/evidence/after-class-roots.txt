@@ -1,0 +1,3 @@
+182 intermediates/classes/debugUnitTest/transformDebugUnitTestClassesWithAsm/dirs
+297 intermediates/javac/debug/compileDebugJavaWithJavac/classes
+116 intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes

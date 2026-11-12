@@ -1,0 +1,16 @@
+// QA (U-060): enable JUnit XML for Test tasks without editing tracked build files.
+// Registered from projectsEvaluated, so it runs after build.gradle's allprojects configureEach(false).
+gradle.projectsEvaluated {
+    gradle.rootProject.allprojects { p ->
+        p.tasks.withType(Test).configureEach { t -> t.reports.junitXml.required = true }
+    }
+}
+// QA: print the JVM actually running the build (daemon) and the test JVM.
+println "QA-DAEMON-JVM: java.version=${System.getProperty('java.version')} java.home=${System.getProperty('java.home')}"
+gradle.projectsEvaluated {
+    gradle.rootProject.allprojects { p ->
+        p.tasks.withType(Test).configureEach { t ->
+            t.doFirst { println "QA-TEST-JVM(${t.path}): ${t.javaLauncher.isPresent() ? t.javaLauncher.get().metadata.installationPath : 'daemon-default'} ver=${t.javaLauncher.isPresent() ? t.javaLauncher.get().metadata.languageVersion : System.getProperty('java.version')}" }
+        }
+    }
+}

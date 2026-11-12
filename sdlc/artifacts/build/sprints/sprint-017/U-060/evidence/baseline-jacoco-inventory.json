@@ -1,0 +1,122 @@
+{
+ "com.zegoggles.smssync": {
+  "classes": 15,
+  "line_covered": 20,
+  "line_missed": 14
+ },
+ "com.zegoggles.smssync.activity": {
+  "classes": 72,
+  "line_covered": 191,
+  "line_missed": 829
+ },
+ "com.zegoggles.smssync.activity.auth": {
+  "classes": 15,
+  "line_covered": 0,
+  "line_missed": 139
+ },
+ "com.zegoggles.smssync.activity.donation": {
+  "classes": 14,
+  "line_covered": 79,
+  "line_missed": 157
+ },
+ "com.zegoggles.smssync.activity.events": {
+  "classes": 2,
+  "line_covered": 0,
+  "line_missed": 8
+ },
+ "com.zegoggles.smssync.activity.fragments": {
+  "classes": 42,
+  "line_covered": 58,
+  "line_missed": 425
+ },
+ "com.zegoggles.smssync.auth": {
+  "classes": 12,
+  "line_covered": 185,
+  "line_missed": 50
+ },
+ "com.zegoggles.smssync.calendar": {
+  "classes": 3,
+  "line_covered": 37,
+  "line_missed": 13
+ },
+ "com.zegoggles.smssync.compat": {
+  "classes": 5,
+  "line_covered": 17,
+  "line_missed": 56
+ },
+ "com.zegoggles.smssync.contacts": {
+  "classes": 7,
+  "line_covered": 41,
+  "line_missed": 12
+ },
+ "com.zegoggles.smssync.di": {
+  "classes": 20,
+  "line_covered": 2,
+  "line_missed": 27
+ },
+ "com.zegoggles.smssync.mail": {
+  "classes": 28,
+  "line_covered": 531,
+  "line_missed": 212
+ },
+ "com.zegoggles.smssync.mail.transport": {
+  "classes": 14,
+  "line_covered": 241,
+  "line_missed": 46
+ },
+ "com.zegoggles.smssync.preferences": {
+  "classes": 15,
+  "line_covered": 310,
+  "line_missed": 103
+ },
+ "com.zegoggles.smssync.receiver": {
+  "classes": 4,
+  "line_covered": 31,
+  "line_missed": 27
+ },
+ "com.zegoggles.smssync.scheduler": {
+  "classes": 9,
+  "line_covered": 140,
+  "line_missed": 48
+ },
+ "com.zegoggles.smssync.service": {
+  "classes": 59,
+  "line_covered": 631,
+  "line_missed": 192
+ },
+ "com.zegoggles.smssync.service.exception": {
+  "classes": 9,
+  "line_covered": 15,
+  "line_missed": 4
+ },
+ "com.zegoggles.smssync.service.state": {
+  "classes": 24,
+  "line_covered": 115,
+  "line_missed": 8
+ },
+ "com.zegoggles.smssync.tasks": {
+  "classes": 2,
+  "line_covered": 0,
+  "line_missed": 20
+ },
+ "com.zegoggles.smssync.utils": {
+  "classes": 11,
+  "line_covered": 30,
+  "line_missed": 170
+ },
+ "com.zegoggles.smssync.worker": {
+  "classes": 2,
+  "line_covered": 0,
+  "line_missed": 16
+ },
+ "dagger.hilt.internal.aggregatedroot.codegen": {
+  "classes": 1,
+  "line_covered": 0,
+  "line_missed": 1
+ },
+ "hilt_aggregated_deps": {
+  "classes": 14,
+  "line_covered": 0,
+  "line_missed": 14
+ }
+}

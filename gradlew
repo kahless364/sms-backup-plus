@@ -89,14 +89,6 @@ APP_BASE_NAME=${0##*/}
 APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
 
 # Use the maximum available, or set MAX_FD != -1 to use that value.
-# U-002 / U-060 (AC-18): Windows NIO selector workaround, carried over from the pre-regeneration wrapper script.
-# On this Windows setup any JDK 17-25 JVM fails Selector.open() with "Unable to establish loopback
-# connection" unless the unix-domain tmpdir is overridden. JAVA_TOOL_OPTIONS is inherited by every
-# forked JVM (launcher AND the Gradle daemon), which the org.gradle.jvmargs entries alone do not
-# guarantee (Gradle applies -D jvmargs after daemon start). Benign on non-Windows platforms.
-# Re-apply after every `./gradlew wrapper` regeneration.
-export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider -Djdk.net.unixdomain.tmpdir=/nonexistent"
-
 MAX_FD=maximum
 
 warn () {
@@ -121,6 +113,18 @@ case "$( uname )" in                #(
   MSYS* | MINGW* )  msys=true    ;; #(
   NONSTOP* )        nonstop=true ;;
 esac
+
+# >>> LOCAL ADDITION to the generated script (U-002 / U-060, AC-18): Windows-only NIO workaround. <<<
+# Under Git Bash/MSYS/Cygwin any JDK 17-25 JVM here fails Selector.open() with "Unable to establish loopback
+# connection" unless the unix-domain tmpdir is overridden. JAVA_TOOL_OPTIONS is inherited by every forked JVM
+# (launcher AND the Gradle daemon), which the org.gradle.jvmargs entries alone do not guarantee.
+# NOT benign elsewhere: sun.nio.ch.WindowsSelectorProvider does not exist on Linux/macOS JDKs, and naming it makes
+# the JVM throw ServiceConfigurationError, so this is exported only under Windows shells (cygwin/msys, detected above).
+# Re-apply after every `./gradlew wrapper` regeneration.
+if "$cygwin" || "$msys" ; then
+    export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider -Djdk.net.unixdomain.tmpdir=/nonexistent"
+fi
+# <<< END LOCAL ADDITION <<<
 
 
 

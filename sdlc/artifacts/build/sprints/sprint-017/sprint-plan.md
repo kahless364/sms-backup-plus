@@ -1,10 +1,10 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-017
 sprint: '017'
-updated_at: '2026-11-11T22:15:55.226Z'
+updated_at: '2026-11-12T16:27:53.974Z'
 ---
 
 # Sprint Plan: sprint-017
@@ -16,7 +16,7 @@ updated_at: '2026-11-11T22:15:55.226Z'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-060 | Run the build on JDK 25 (Gradle 9.x / AGP 9.x toolchain upgrade) while keeping the Java 17 bytecode target |  | developer | sonnet |  |  | in-progress | medium |
+| U-060 | Run the build on JDK 25 (Gradle 9.x / AGP 9.x toolchain upgrade) while keeping the Java 17 bytecode target |  | developer | sonnet |  |  | done | medium |
 
 ## Execution Waves
 

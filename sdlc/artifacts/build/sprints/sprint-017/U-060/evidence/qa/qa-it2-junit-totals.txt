@@ -1,0 +1,2 @@
+files=75 tests=697 failures=0 errors=0 skipped=2
+skipped: ['AppTest#shouldGetVersionName', 'AuthPreferencesTest#u012_robolectricSmoke_encryptedPrefsSecretStore_migrateFromPlaintext']

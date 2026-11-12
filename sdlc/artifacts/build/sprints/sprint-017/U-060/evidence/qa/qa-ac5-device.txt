@@ -1,0 +1,15 @@
+QA AC-5 device probe (text only; no screenshot; no account/message data copied)
+AVD: Pixel_9_Pro (adb emu avd name), serial emulator-5554, ro.build.version.sdk=36. Pixel_10_Pro not started/touched.
+APK: app/build/outputs/apk/debug/app-debug.apk from QA run1 at HEAD 8dc3e417 (clean + --rerun-tasks), sha256 c6c2b8bc358fea04134228e39515fb6c8abb91b01ce32bdc5c8f16c361ffda72, versionCode 1602, compileSdk 35, targetSdk 35
+adb install -r -> "Performing Streamed Install / Success"; dumpsys lastUpdateTime 09:42:40 -> 10:04:05 (minSdk=21 targetSdk=35)
+am start -W -n com.zegoggles.smssync/.activity.MainActivity -> Status: ok, LaunchState: WARM, TotalTime 13315
+pidof com.zegoggles.smssync -> 5268 (still alive after launch); topResumedActivity = com.zegoggles.smssync/.activity.MainActivity
+logcat -d (whole buffer since emulator boot, 6954 lines):
+  FATAL EXCEPTION count: 0
+  AndroidRuntime "Process: com.zegoggles.smssync" count: 0
+  ANR in com.zegoggles: 0
+11-12 10:04:06.459   721   755 I ActivityManager: Force stopping com.zegoggles.smssync appid=10219 user=-1: installPackageLI
+11-12 10:04:06.987   721   780 I ActivityManager: Force stopping com.zegoggles.smssync appid=10219 user=0: pkg removed
+11-12 10:04:13.875   721   756 I ActivityManager: Start proc 5268:com.zegoggles.smssync/u0a219 for broadcast 
+11-12 10:04:31.421   721   745 I ActivityTaskManager: Displayed com.zegoggles.smssync/.activity.MainActivity for user 0: +13s315ms
+No broadcast sent, no setting changed, no backup/restore triggered by QA, no uninstall, no data clear.

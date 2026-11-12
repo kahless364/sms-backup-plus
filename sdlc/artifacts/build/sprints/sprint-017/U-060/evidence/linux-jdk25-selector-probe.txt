@@ -1,0 +1,9 @@
+openjdk version "25.0.5" 2026-10-20 LTS
+== no flags
+Selector.open OK: sun.nio.ch.EPollSelectorProvider
+== SelectorProvider=WindowsSelectorProvider (as in gradle.properties jvmargs / old gradlew)
+Exception in thread "main" java.util.ServiceConfigurationError
+	at java.base/java.nio.channels.spi.SelectorProvider$Holder.loadProviderFromProperty(SelectorProvider.java:103)
+	at java.base/java.nio.channels.spi.SelectorProvider$Holder.provider(SelectorProvider.java:84)
+== tmpdir only
+Selector.open OK: sun.nio.ch.EPollSelectorProvider

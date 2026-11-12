@@ -1,0 +1,4 @@
+kspDebugAndroidTestKotlinProcessorClasspath
+kspDebugKotlinProcessorClasspath
+kspDebugUnitTestKotlinProcessorClasspath
+kspReleaseKotlinProcessorClasspath

@@ -1,0 +1,17 @@
+Performing Streamed Install
+Success
+Starting: Intent { cmp=com.zegoggles.smssync/.activity.MainActivity }
+Status: ok
+LaunchState: WARM
+Activity: com.zegoggles.smssync/.activity.MainActivity
+TotalTime: 4671
+WaitTime: 4689
+Complete
+pid:
+4933
+fatal-grep-exit=1
+== C-3
+Broadcasting: Intent { act=com.zegoggles.smssync.BACKUP flg=0x400000 pkg=com.zegoggles.smssync }
+Broadcast completed: result=0
+11-12 09:43:00.432  4933  4933 D SMSBackup+: backup requested via broadcast intent
+c3-grep-exit=0

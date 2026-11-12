@@ -1,0 +1,329 @@
+Picked up JAVA_TOOL_OPTIONS:  -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider -Djdk.net.unixdomain.tmpdir=/nonexistent
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :k9mail-vendored:preBuild UP-TO-DATE
+> Task :k9mail-vendored:preDebugBuild UP-TO-DATE
+> Task :k9mail-vendored:processDebugNavigationResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :k9mail-vendored:generateDebugResources UP-TO-DATE
+> Task :k9mail-vendored:packageDebugResources UP-TO-DATE
+> Task :k9mail-vendored:parseDebugLocalResources UP-TO-DATE
+> Task :k9mail-vendored:generateDebugRFile UP-TO-DATE
+> Task :k9mail-vendored:compileDebugKotlin NO-SOURCE
+> Task :k9mail-vendored:javaPreCompileDebug UP-TO-DATE
+> Task :k9mail-vendored:compileDebugJavaWithJavac UP-TO-DATE
+> Task :k9mail-vendored:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :k9mail-vendored:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :app:hiltSyncDebug UP-TO-DATE
+> Task :k9mail-vendored:writeDebugAarMetadata UP-TO-DATE
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :k9mail-vendored:extractDeepLinksDebug UP-TO-DATE
+> Task :k9mail-vendored:processDebugManifest UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :k9mail-vendored:compileDebugLibraryResources UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:transformDebugClassesWithAsm UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :k9mail-vendored:generateDebugAssets UP-TO-DATE
+> Task :k9mail-vendored:mergeDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:packageDebugUnitTestForUnitTest UP-TO-DATE
+> Task :app:processDebugUnitTestManifest UP-TO-DATE
+> Task :app:generateDebugUnitTestConfig UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:hiltSyncDebugUnitTest UP-TO-DATE
+> Task :app:hiltAggregateDepsDebugUnitTest UP-TO-DATE
+> Task :app:hiltJavaCompileDebugUnitTest NO-SOURCE
+> Task :app:transformDebugUnitTestClassesWithAsm UP-TO-DATE
+> Task :k9mail-vendored:processDebugJavaRes NO-SOURCE
+> Task :app:testDebugUnitTest UP-TO-DATE
+> Task :app:test UP-TO-DATE
+> Task :k9mail-vendored:preDebugUnitTestBuild UP-TO-DATE
+> Task :k9mail-vendored:javaPreCompileDebugUnitTest
+> Task :k9mail-vendored:checkDebugAarMetadata
+> Task :k9mail-vendored:mergeDebugJniLibFolders UP-TO-DATE
+> Task :k9mail-vendored:mergeDebugNativeLibs NO-SOURCE
+> Task :k9mail-vendored:stripDebugDebugSymbols NO-SOURCE
+> Task :k9mail-vendored:copyDebugJniLibsProjectAndLocalJars
+> Task :k9mail-vendored:generateDebugUnitTestStubRFile
+> Task :k9mail-vendored:extractDebugAnnotations
+> Task :k9mail-vendored:compileDebugUnitTestKotlin NO-SOURCE
+> Task :k9mail-vendored:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :k9mail-vendored:processDebugUnitTestJavaRes NO-SOURCE
+> Task :k9mail-vendored:testDebugUnitTest NO-SOURCE
+> Task :k9mail-vendored:test UP-TO-DATE
+> Task :k9mail-vendored:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :k9mail-vendored:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :k9mail-vendored:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :k9mail-vendored:prepareDebugArtProfile UP-TO-DATE
+> Task :k9mail-vendored:prepareLintJarForPublish UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :k9mail-vendored:createFullJarDebug
+> Task :k9mail-vendored:writeDebugLintModelMetadata
+> Task :app:extractProguardFiles
+> Task :k9mail-vendored:mergeDebugJavaResource
+> Task :k9mail-vendored:extractProguardFiles
+> Task :k9mail-vendored:syncDebugLibJars
+> Task :k9mail-vendored:bundleDebugLocalLintAar
+> Task :k9mail-vendored:generateDebugLintModel
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugUnitTestLintModel
+> Task :k9mail-vendored:preDebugAndroidTestBuild UP-TO-DATE
+> Task :k9mail-vendored:generateDebugAndroidTestLintModel
+> Task :k9mail-vendored:generateDebugUnitTestLintModel
+> Task :k9mail-vendored:generateDebugLintReportModel
+> Task :metadata:lint
+> Task :app:jacocoTestReport UP-TO-DATE
+> Task :app:jacocoTestCoverageVerification UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:mergeReleaseJniLibFolders
+> Task :k9mail-vendored:preReleaseBuild UP-TO-DATE
+> Task :k9mail-vendored:mergeReleaseJniLibFolders
+> Task :k9mail-vendored:mergeReleaseNativeLibs NO-SOURCE
+> Task :k9mail-vendored:copyReleaseJniLibsProjectOnly
+> Task :k9mail-vendored:generateReleaseResources
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :k9mail-vendored:packageReleaseResources
+> Task :k9mail-vendored:processReleaseNavigationResources
+> Task :k9mail-vendored:javaPreCompileRelease
+> Task :k9mail-vendored:parseReleaseLocalResources
+> Task :k9mail-vendored:prepareReleaseArtProfile UP-TO-DATE
+> Task :k9mail-vendored:generateReleaseRFile
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseArtProfile
+> Task :k9mail-vendored:compileReleaseKotlin NO-SOURCE
+
+> Task :k9mail-vendored:compileReleaseJavaWithJavac
+Java compiler version 25 has deprecated support for compiling with source/target version 8.
+Try one of the following options:
+    1. [Recommended] Use Java toolchain with a lower language version
+    2. Set a higher source/target version
+    3. Use a lower version of the JDK running the build (if you're not using Java toolchain)
+For more details on how to configure these settings, see https://developer.android.com/build/jdks.
+To suppress this warning, set android.javaCompile.suppressSourceTargetDeprecationWarning=true in gradle.properties.
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+3 warnings
+
+> Task :k9mail-vendored:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :k9mail-vendored:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :app:generateReleaseBuildConfig
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:processReleaseNavigationResources
+> Task :k9mail-vendored:writeReleaseAarMetadata
+> Task :app:javaPreCompileRelease
+> Task :app:compileReleaseNavigationResources
+> Task :app:parseReleaseLocalResources
+> Task :app:checkReleaseAarMetadata
+> Task :app:mapReleaseSourceSetPaths
+> Task :k9mail-vendored:bundleLibCompileToJarRelease
+> Task :k9mail-vendored:bundleLibRuntimeToJarRelease
+> Task :app:generateReleaseRFile
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :k9mail-vendored:lintAnalyzeDebugAndroidTest
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :k9mail-vendored:extractDeepLinksRelease
+> Task :k9mail-vendored:processReleaseJavaRes NO-SOURCE
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :k9mail-vendored:generateReleaseAssets UP-TO-DATE
+> Task :k9mail-vendored:compileReleaseLibraryResources
+> Task :k9mail-vendored:mergeReleaseAssets
+> Task :app:mergeReleaseAssets
+> Task :app:compressReleaseAssets
+
+> Task :k9mail-vendored:processReleaseManifest
+package="com.fsck.k9.mail" found in source AndroidManifest.xml: C:\Code\Android\sms-backup-plus\k9mail-vendored\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.fsck.k9.mail" from the source AndroidManifest.xml: C:\Code\Android\sms-backup-plus\k9mail-vendored\src\main\AndroidManifest.xml.
+
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:mergeReleaseResources
+
+> Task :app:processReleaseMainManifest
+C:\Code\Android\sms-backup-plus\app\src\main\AndroidManifest.xml:141:9-144:61 Warning:
+	service#androidx.work.impl.foreground.SystemForegroundService@android:foregroundServiceType was tagged at AndroidManifest.xml:141 to replace other declarations but no other declaration present
+
+> Task :app:processReleaseManifest
+> Task :k9mail-vendored:lintAnalyzeDebugUnitTest
+> Task :k9mail-vendored:createFullJarRelease
+> Task :k9mail-vendored:generateReleaseLintModel
+> Task :k9mail-vendored:stripReleaseDebugSymbols NO-SOURCE
+> Task :k9mail-vendored:checkReleaseAarMetadata
+> Task :k9mail-vendored:copyReleaseJniLibsProjectAndLocalJars
+> Task :k9mail-vendored:extractDeepLinksForAarRelease UP-TO-DATE
+> Task :k9mail-vendored:extractReleaseAnnotations
+> Task :k9mail-vendored:mergeReleaseConsumerProguardFiles UP-TO-DATE
+> Task :k9mail-vendored:mergeReleaseJavaResource
+> Task :k9mail-vendored:syncReleaseLibJars
+> Task :k9mail-vendored:bundleReleaseLocalLintAar
+> Task :app:processReleaseManifestForPackage
+> Task :k9mail-vendored:writeReleaseLintModelMetadata
+> Task :k9mail-vendored:generateReleaseLintVitalModel
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :k9mail-vendored:bundleReleaseAar
+> Task :k9mail-vendored:compileReleaseNavigationResources
+> Task :k9mail-vendored:mapReleaseSourceSetPaths
+> Task :k9mail-vendored:mergeReleaseResources
+> Task :k9mail-vendored:verifyReleaseResources
+> Task :k9mail-vendored:assembleRelease
+> Task :app:processReleaseResources
+> Task :app:optimizeReleaseResources
+> Task :k9mail-vendored:lintVitalAnalyzeRelease
+> Task :k9mail-vendored:lintAnalyzeDebug
+
+> Task :k9mail-vendored:lintReportDebug
+Wrote HTML report to file:///C:/Code/Android/sms-backup-plus/k9mail-vendored/build/reports/lint-results-debug.html
+
+> Task :k9mail-vendored:lintDebug
+> Task :k9mail-vendored:lint
+> Task :app:kspReleaseKotlin
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:lintAnalyzeDebug
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///C:/Code/Android/sms-backup-plus/app/build/reports/lint-results-debug.html
+Lint found 39 errors (and 22 errors filtered by baseline lint-baseline.xml)
+
+16 errors/warnings were listed in the baseline file (C:\Code\Android\sms-backup-plus\app\lint-baseline.xml) but not found in the project; perhaps they have been fixed?
+Lint found 39 errors. First failure:
+C:\Code\Android\sms-backup-plus\app\src\test\java\com\zegoggles\smssync\contacts\ContactAccessorTest.java:110: Error: The result of assertThat is not used [CheckResult]
+        assertThat(ids.getIds().contains(123L));
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+> Task :app:lintDebug FAILED
+Lint found 39 errors (and 22 errors filtered by baseline lint-baseline.xml). First failure:
+
+C:\Code\Android\sms-backup-plus\app\src\test\java\com\zegoggles\smssync\contacts\ContactAccessorTest.java:110: Error: The result of assertThat is not used [CheckResult]
+        assertThat(ids.getIds().contains(123L));
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The full lint text report is located at:
+  C:\Code\Android\sms-backup-plus\app\build\intermediates\lint_intermediate_text_report\debug\lintReportDebug\lint-results-debug.txt
+
+> Task :app:compileReleaseKotlin
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/activity/MainViewModel.kt:55:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt:116:26 'fun startActivityForResult(p0: Intent!, p1: Int): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt:121:22 'fun startActivityForResult(p0: Intent!, p1: Int): Unit' is deprecated. Deprecated in Java.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:81:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt:331:17 'val coroutineContext: CoroutineDispatcher' is deprecated. use withContext(...) inside doWork() instead.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt:311:21 'val coroutineContext: CoroutineDispatcher' is deprecated. use withContext(...) inside doWork() instead.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt:399:21 'val coroutineContext: CoroutineDispatcher' is deprecated. use withContext(...) inside doWork() instead.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/service/SharedPreferencesCheckpointStore.kt:49:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///C:/Code/Android/sms-backup-plus/app/src/main/java/com/zegoggles/smssync/service/WorkerEngineFactory.kt:61:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+
+> Task :app:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :app:hiltSyncRelease
+> Task :app:processReleaseJavaRes
+> Task :app:hiltAggregateDepsRelease
+> Task :app:mergeReleaseJavaResource
+> Task :app:hiltJavaCompileRelease
+> Task :app:generateReleaseLintVitalReportModel
+> Task :app:transformReleaseClassesWithAsm
+> Task :app:mergeReleaseGeneratedProguardFiles
+> Task :app:expandReleaseArtProfileWildcards
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease SKIPPED
+> Task :app:lintVitalRelease SKIPPED
+> Task :app:minifyReleaseWithR8
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:assembleRelease
+
+[Incubating] Problems report is available at: file:///C:/Code/Android/sms-backup-plus/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:lintDebug' (registered by plugin 'com.android.internal.application').
+> Lint found errors in the project; aborting build.
+  
+  Fix the issues identified by lint, or add the issues to the lint baseline via `gradlew updateLintBaseline`.
+  For more details, see https://developer.android.com/studio/write/lint#snapshot
+  
+  Lint found 39 errors (and 22 errors filtered by baseline lint-baseline.xml). First failure:
+  
+  C:\Code\Android\sms-backup-plus\app\src\test\java\com\zegoggles\smssync\contacts\ContactAccessorTest.java:110: Error: The result of assertThat is not used [CheckResult]
+          assertThat(ids.getIds().contains(123L));
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+  The full lint text report is located at:
+    C:\Code\Android\sms-backup-plus\app\build\intermediates\lint_intermediate_text_report\debug\lintReportDebug\lint-results-debug.txt
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1m 16s
+172 actionable tasks: 106 executed, 66 up-to-date

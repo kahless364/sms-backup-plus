@@ -1,0 +1,134 @@
+Picked up JAVA_TOOL_OPTIONS:  -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider -Djdk.net.unixdomain.tmpdir=/nonexistent
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
+Build file 'C:\Code\Android\sms-backup-plus\build.gradle': line 35
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('url = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_f17g7p6uoihium8p70xz1cgw0$_run_closure1$_closure5$_closure6.doCall$original(C:\Code\Android\sms-backup-plus\build.gradle:35)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_f17g7p6uoihium8p70xz1cgw0$_run_closure1$_closure5.doCall$original(C:\Code\Android\sms-backup-plus\build.gradle:35)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+
+> Configure project :app
+Build file 'C:\Code\Android\sms-backup-plus\app\build.gradle': line 20
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('namespace = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:20)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_420rvhxxrmt25yw14ghfg44fn.run(C:\Code\Android\sms-backup-plus\app\build.gradle:19)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+Build file 'C:\Code\Android\sms-backup-plus\app\build.gradle': line 44
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('buildConfig = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1$_closure13.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:44)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:41)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+Build file 'C:\Code\Android\sms-backup-plus\app\build.gradle': line 55
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('signingConfig = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1$_closure14$_closure20.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:55)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1$_closure14.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:48)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+Build file 'C:\Code\Android\sms-backup-plus\app\build.gradle': line 67
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('warningsAsErrors = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1$_closure15.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:67)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:65)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+Build file 'C:\Code\Android\sms-backup-plus\app\build.gradle': line 68
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('baseline = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1$_closure15.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:68)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_420rvhxxrmt25yw14ghfg44fn$_run_closure1.doCall$original(C:\Code\Android\sms-backup-plus\app\build.gradle:65)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+
+> Configure project :k9mail-vendored
+Build file 'C:\Code\Android\sms-backup-plus\k9mail-vendored\build.gradle': line 51
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('namespace = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_4mwknjov6x5w4pb47h39zcwfk$_run_closure1.doCall$original(C:\Code\Android\sms-backup-plus\k9mail-vendored\build.gradle:51)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_4mwknjov6x5w4pb47h39zcwfk.run(C:\Code\Android\sms-backup-plus\k9mail-vendored\build.gradle:50)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+Build file 'C:\Code\Android\sms-backup-plus\k9mail-vendored\build.gradle': line 91
+Properties should be assigned using the 'propName = value' syntax. Setting a property via the Gradle-generated 'propName value' or 'propName(value)' syntax in Groovy DSL has been deprecated. This is scheduled to be removed in Gradle 10. Use assignment ('abortOnError = <value>') instead. Consult the upgrading guide for further information: https://docs.gradle.org/9.5.1/userguide/upgrading_version_8.html#groovy_space_assignment_syntax
+	at build_4mwknjov6x5w4pb47h39zcwfk$_run_closure1$_closure7.doCall$original(C:\Code\Android\sms-backup-plus\k9mail-vendored\build.gradle:91)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+	at build_4mwknjov6x5w4pb47h39zcwfk$_run_closure1.doCall$original(C:\Code\Android\sms-backup-plus\k9mail-vendored\build.gradle:90)
+	(Run with --stacktrace to get the full stack trace of this deprecation warning.)
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :k9mail-vendored:preBuild UP-TO-DATE
+> Task :k9mail-vendored:preDebugBuild UP-TO-DATE
+> Task :k9mail-vendored:processDebugNavigationResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :k9mail-vendored:generateDebugResources UP-TO-DATE
+> Task :k9mail-vendored:packageDebugResources UP-TO-DATE
+> Task :k9mail-vendored:parseDebugLocalResources UP-TO-DATE
+> Task :k9mail-vendored:generateDebugRFile UP-TO-DATE
+> Task :k9mail-vendored:compileDebugKotlin NO-SOURCE
+> Task :k9mail-vendored:javaPreCompileDebug UP-TO-DATE
+> Task :k9mail-vendored:compileDebugJavaWithJavac UP-TO-DATE
+> Task :k9mail-vendored:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :k9mail-vendored:generateDebugAssets UP-TO-DATE
+> Task :k9mail-vendored:mergeDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :k9mail-vendored:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:hiltSyncDebug UP-TO-DATE
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug UP-TO-DATE
+> Task :k9mail-vendored:writeDebugAarMetadata UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :k9mail-vendored:extractDeepLinksDebug UP-TO-DATE
+> Task :k9mail-vendored:processDebugManifest UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :k9mail-vendored:compileDebugLibraryResources UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:transformDebugClassesWithAsm UP-TO-DATE
+> Task :app:dexBuilderDebug UP-TO-DATE
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :k9mail-vendored:processDebugJavaRes NO-SOURCE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeProjectDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :k9mail-vendored:mergeDebugJniLibFolders UP-TO-DATE
+> Task :k9mail-vendored:mergeDebugNativeLibs NO-SOURCE
+> Task :k9mail-vendored:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:packageDebug UP-TO-DATE
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug UP-TO-DATE
+
+[Incubating] Problems report is available at: file:///C:/Code/Android/sms-backup-plus/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 10s
+56 actionable tasks: 56 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.1/userguide/configuration_cache_enabling.html

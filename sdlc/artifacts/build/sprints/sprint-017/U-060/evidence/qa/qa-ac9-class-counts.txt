@@ -1,0 +1,26 @@
+package                                       cls_base cls_head  line_base    line_head    ok
+com.zegoggles.smssync                               15       15    20/34        18/30      OK
+com.zegoggles.smssync.activity                      72       74   191/1020     199/1011    OK
+com.zegoggles.smssync.activity.auth                 15       15     0/139        0/135     OK
+com.zegoggles.smssync.activity.donation             14       14    79/236       79/236     OK
+com.zegoggles.smssync.activity.events                2        2     0/8          0/8       OK
+com.zegoggles.smssync.activity.fragments            42       42    58/483       58/483     OK
+com.zegoggles.smssync.auth                          12       12   185/235      185/235     OK
+com.zegoggles.smssync.calendar                       3        3    37/50        37/50      OK
+com.zegoggles.smssync.compat                         5        5    17/73        16/73      OK
+com.zegoggles.smssync.contacts                       7        7    41/53        41/53      OK
+com.zegoggles.smssync.di                            20       20     2/29         2/29      OK
+com.zegoggles.smssync.mail                          28       28   531/743      531/743     OK
+com.zegoggles.smssync.mail.transport                14       14   241/287      241/287     OK
+com.zegoggles.smssync.preferences                   15       15   315/413      315/413     OK
+com.zegoggles.smssync.receiver                       4        4    31/58        29/58      OK
+com.zegoggles.smssync.scheduler                      9        9   140/188      140/188     OK
+com.zegoggles.smssync.service                       59       59   631/823      632/822     OK
+com.zegoggles.smssync.service.exception              9        9    15/19        15/19      OK
+com.zegoggles.smssync.service.state                 24       24   115/123      115/122     OK
+com.zegoggles.smssync.tasks                          2        2     0/20         0/20      OK
+com.zegoggles.smssync.utils                         11       11    30/200       30/199     OK
+com.zegoggles.smssync.worker                         2        2     0/16         0/16      OK
+dagger.hilt.internal.aggregatedroot.codegen          1        1     0/1          0/1       OK
+hilt_aggregated_deps                                14       14     0/14         0/14      OK
+total classes base=399 head=401; packages with fewer classes: 0

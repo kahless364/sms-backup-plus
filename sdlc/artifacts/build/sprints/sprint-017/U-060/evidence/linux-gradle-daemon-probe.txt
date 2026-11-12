@@ -1,0 +1,4 @@
+=== A: repo gradle.properties as shipped (jvmargs with WindowsSelectorProvider), stock-conditional gradlew
+BUILD SUCCESSFUL in 6s
+=== B: Linux-safe jvmargs override via GRADLE_USER_HOME gradle.properties (user-home beats project)
+BUILD SUCCESSFUL in 3s

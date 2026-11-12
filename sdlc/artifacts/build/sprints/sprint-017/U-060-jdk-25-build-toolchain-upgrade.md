@@ -1,6 +1,6 @@
 ---
 type: story
-status: in-progress
+status: done
 artifact_type: user-story
 priority: medium
 complexity: high
@@ -20,8 +20,9 @@ title: Run the build on JDK 25 (Gradle 9.x / AGP 9.x toolchain upgrade) while ke
 pipeline: ''
 domain: build
 requirement_source: bug:BUG-017
-updated_at: '2026-11-11T22:39:35.532Z'
-current_build_phase: implementation
+updated_at: '2026-11-12T16:27:53.792Z'
+resolution: done
+updated_date: 2026-11-12
 ---
 
 # U-060: Run the build on JDK 25 (Gradle 9.x / AGP 9.x toolchain upgrade) while keeping the Java 17 bytecode target
