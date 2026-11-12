@@ -1,0 +1,172 @@
+### merged debug
+115,125d114
+<     <uses-permission android:name="com.android.vending.BILLING" />
+< 
+<     <queries>
+<         <intent>
+<             <action android:name="com.android.vending.billing.InAppBillingService.BIND" />
+<         </intent>
+<         <intent>
+<             <action android:name="com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND" />
+<         </intent>
+<     </queries>
+< 
+181d169
+<         <activity android:name="com.zegoggles.smssync.activity.donation.DonationActivity" />
+299,320d286
+<         <meta-data
+<             android:name="com.google.android.play.billingclient.version"
+<             android:value="7.1.1" />
+< 
+<         <activity
+<             android:name="com.android.billingclient.api.ProxyBillingActivity"
+<             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+<             android:exported="false"
+<             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+<         <activity
+<             android:name="com.android.billingclient.api.ProxyBillingActivityV2"
+<             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+<             android:exported="false"
+<             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+<         <activity
+<             android:name="com.google.android.gms.common.api.GoogleApiActivity"
+<             android:exported="false"
+<             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+< 
+<         <meta-data
+<             android:name="com.google.android.gms.version"
+<             android:value="@integer/google_play_services_version" />
+413,424d378
+<         <service
+<             android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+<             android:exported="false" >
+<             <meta-data
+<                 android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+<                 android:value="cct" />
+<         </service>
+<         <service
+<             android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+<             android:exported="false"
+<             android:permission="android.permission.BIND_JOB_SERVICE" >
+<         </service>
+426,428d379
+<         <receiver
+<             android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+<             android:exported="false" />
+diff-exit=1
+### merged release
+115,125d114
+<     <uses-permission android:name="com.android.vending.BILLING" />
+< 
+<     <queries>
+<         <intent>
+<             <action android:name="com.android.vending.billing.InAppBillingService.BIND" />
+<         </intent>
+<         <intent>
+<             <action android:name="com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND" />
+<         </intent>
+<     </queries>
+< 
+180d168
+<         <activity android:name="com.zegoggles.smssync.activity.donation.DonationActivity" />
+298,319d285
+<         <meta-data
+<             android:name="com.google.android.play.billingclient.version"
+<             android:value="7.1.1" />
+< 
+<         <activity
+<             android:name="com.android.billingclient.api.ProxyBillingActivity"
+<             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+<             android:exported="false"
+<             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+<         <activity
+<             android:name="com.android.billingclient.api.ProxyBillingActivityV2"
+<             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+<             android:exported="false"
+<             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+<         <activity
+<             android:name="com.google.android.gms.common.api.GoogleApiActivity"
+<             android:exported="false"
+<             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+< 
+<         <meta-data
+<             android:name="com.google.android.gms.version"
+<             android:value="@integer/google_play_services_version" />
+412,423d377
+<         <service
+<             android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+<             android:exported="false" >
+<             <meta-data
+<                 android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+<                 android:value="cct" />
+<         </service>
+<         <service
+<             android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+<             android:exported="false"
+<             android:permission="android.permission.BIND_JOB_SERVICE" >
+<         </service>
+425,427d378
+<         <receiver
+<             android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+<             android:exported="false" />
+diff-exit=1
+### packaged debug (normalised)
+68,76d67
+<       E: uses-permission
+<         A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.android.vending.BILLING" (Raw: "com.android.vending.BILLING")
+<       E: queries
+<           E: intent
+<               E: action
+<                 A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.android.vending.billing.InAppBillingService.BIND" (Raw: "com.android.vending.billing.InAppBillingService.BIND")
+<           E: intent
+<               E: action
+<                 A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND" (Raw: "com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND")
+123,124d113
+<           E: activity
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.zegoggles.smssync.activity.donation.DonationActivity" (Raw: "com.zegoggles.smssync.activity.donation.DonationActivity")
+218,237d206
+<           E: meta-data
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.play.billingclient.version" (Raw: "com.google.android.play.billingclient.version")
+<             A: http://schemas.android.com/apk/res/android:value(0x01010024)="7.1.1" (Raw: "7.1.1")
+<           E: activity
+<             A: http://schemas.android.com/apk/res/android:theme(0x01010000)=@0x01030010
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.android.billingclient.api.ProxyBillingActivity" (Raw: "com.android.billingclient.api.ProxyBillingActivity")
+<             A: http://schemas.android.com/apk/res/android:exported(0x01010010)=false
+<             A: http://schemas.android.com/apk/res/android:configChanges(0x0101001f)=0x000005b0
+<           E: activity
+<             A: http://schemas.android.com/apk/res/android:theme(0x01010000)=@0x01030010
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.android.billingclient.api.ProxyBillingActivityV2" (Raw: "com.android.billingclient.api.ProxyBillingActivityV2")
+<             A: http://schemas.android.com/apk/res/android:exported(0x01010010)=false
+<             A: http://schemas.android.com/apk/res/android:configChanges(0x0101001f)=0x000005b0
+<           E: activity
+<             A: http://schemas.android.com/apk/res/android:theme(0x01010000)=@0x01030010
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.gms.common.api.GoogleApiActivity" (Raw: "com.google.android.gms.common.api.GoogleApiActivity")
+<             A: http://schemas.android.com/apk/res/android:exported(0x01010010)=false
+<           E: meta-data
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.gms.version" (Raw: "com.google.android.gms.version")
+<             A: http://schemas.android.com/apk/res/android:value(0x01010024)=@0x7fRESID
+325,337d293
+<           E: service
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery" (Raw: "com.google.android.datatransport.runtime.backends.TransportBackendDiscovery")
+<             A: http://schemas.android.com/apk/res/android:exported(0x01010010)=false
+<               E: meta-data
+<                 A: http://schemas.android.com/apk/res/android:name(0x01010003)="backend:com.google.android.datatransport.cct.CctBackendFactory" (Raw: "backend:com.google.android.datatransport.cct.CctBackendFactory")
+<                 A: http://schemas.android.com/apk/res/android:value(0x01010024)="cct" (Raw: "cct")
+<           E: service
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService" (Raw: "com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService")
+<             A: http://schemas.android.com/apk/res/android:permission(0x01010006)="android.permission.BIND_JOB_SERVICE" (Raw: "android.permission.BIND_JOB_SERVICE")
+<             A: http://schemas.android.com/apk/res/android:exported(0x01010010)=false
+<           E: receiver
+<             A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver" (Raw: "com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver")
+<             A: http://schemas.android.com/apk/res/android:exported(0x01010010)=false
+diff-exit=1
+### packaged release (normalised): NOT PRODUCED - release R8 build failed (see log)
+
+### Annotation (merged manifests, debug lines / release lines; every hunk is a pure deletion, 0 lines start with '>')
+- 115-125: BILLING uses-permission + whole <queries> (both billing intents)            [AC-3 items 1,2]
+- 181 / 180: .activity.donation.DonationActivity                                        [AC-3 item 5]
+- 299-320 / 298-319: billingclient.version meta-data; ProxyBillingActivity; ProxyBillingActivityV2; GoogleApiActivity; gms.version meta-data   [AC-3 items 3,4,6]
+- 413-424 / 412-423: TransportBackendDiscovery + backend: meta-data; JobInfoSchedulerService   [AC-3 item 6]
+- 426-428 / 425-427: AlarmManagerSchedulerBroadcastReceiver                             [AC-3 item 6]
+Packaged debug: 4 deletion-only hunks (68-76, 123-124, 218-237, 325-337) = the same elements as the merged debug diff (queries+BILLING, DonationActivity, billing/GoogleApi/gms.version block, datatransport block). 
+Packaged release: not produced (R8 failure, see implementation-log I8).

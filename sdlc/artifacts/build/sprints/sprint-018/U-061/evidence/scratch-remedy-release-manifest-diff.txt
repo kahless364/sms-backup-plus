@@ -1,0 +1,6 @@
+# INFORMATIONAL: scratch-copy release build (HEAD + I8 edit + ONE candidate proguard line '-dontwarn com.google.errorprone.annotations.**'), NOT the repository tree
+68,76d67
+122,123d112
+217,236d205
+324,336d292
+(no '>' lines above = pure deletions)

@@ -1,0 +1,39 @@
+# IC-11 device check, AVD Pixel_9_Pro (API 36)
+ls_rc=0 runas_err_lines=0 prefs_listed=1
+cat_rc=0 has_map=1
+match: name="third_party_integration" value="true"
+STATE: ON (unchanged by Developer). IC-11 evidence below was gathered with the setting ON. PO WAIVER PENDING: third-party integration setting was ON during the IC-11 device check
+## install
+Performing Streamed Install
+Success
+installed:  versionCode=1602 minSdk=21 targetSdk=35  versionName=1.6.0-BETA2 
+## queries visibility after install
+com.zegoggles.smssync can see com.android.vending: no
+com.zegoggles.smssync can see com.google.android.gms: no
+forceQueryable (global) contains vending: 1  gms: 1
+## launch
+Status: ok
+LaunchState: WARM
+## top dump
+titles: ['IMAP settings', 'Backup settings', 'Auto backup', 'Auto backup settings', 'Advanced settings']
+last_title: Advanced settings
+donat_nodes: 0
+RESULT: PASS
+exit=0
+## relaunch (fresh logcat window starts here)
+Status: ok
+LaunchState: COLD
+## bottom dump (plan expected last title 'Auto backup settings'; the final PreferenceScreen in preferences.xml is 'Advanced settings' (AdvancedSettings$Main, line 222), so --expect-last 'Advanced settings' is used)
+titles: ['IMAP settings', 'Backup settings', 'Auto backup', 'Auto backup settings', 'Advanced settings']
+last_title: Advanced settings
+donat_nodes: 0
+RESULT: PASS
+exit=0
+## Auto backup settings row (main screen), text only
+title='Auto backup settings' summary=[<redacted: main-screen row, not recorded>] row_enabled=true row_clickable=true
+## Auto backup settings screen: use_old_scheduler row (title/summary/enabled only)
+title='Old backup scheduler' summary=['Force use of old backup scheduler'] row_enabled=true row_clickable=true
+## logcat since T0 (launch, Settings, Auto backup settings, back)
+fatal_count=0
+google_play_services_lines=0
+logcat_lines=3056

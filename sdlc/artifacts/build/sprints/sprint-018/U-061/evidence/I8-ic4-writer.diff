@@ -1,0 +1,1 @@
+diff-exit=0 (compared with --strip-trailing-cr: the writer emits CRLF, the committed blob is LF; raw byte diff differs only in line endings)

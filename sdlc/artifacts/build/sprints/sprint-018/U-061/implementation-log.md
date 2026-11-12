@@ -1,13 +1,13 @@
 ---
 artifact_type: implementation-log
 story_id: "U-061"
-verdict: ""                        # set at I8 close-out; I0 is baseline only
+verdict: "FAIL"                    # release (R8) build fails after the billing removal; see I8 escalation
 agent: "Developer"
 timestamp: "2026-11-12"
-files_changed: 0
+files_changed: 38
 files_created: 0
 tests_added: 0
-tests_passing: 697
+tests_passing: 682
 ---
 
 # Implementation Log: U-061
@@ -16,7 +16,7 @@ tests_passing: 697
 
 Story U-061 removes the donation flow and the Play Billing dependency. It runs as nine increments (I0-I8), one per
 Developer turn, with the orchestrator committing between turns. This log is appended to at the end of each turn.
-Status: **I0 complete** (baseline only, no tracked product file changed). I1-I8 pending.
+Status: I0-I8 complete. The debug build, 682 tests and all three gates are green, but the **release (R8) build fails** after the billing removal (a `-dontwarn` previously supplied by play-services-basement is gone). See the I8 escalation. Verdict FAIL pending a decision.
 
 ## Runtime Claims
 
@@ -41,6 +41,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 | I5 | 9639f5c7df464bcc2f646809642aa36d719c5264 | app/build.gradle, app/lint-baseline.xml (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I5: remove the Play Billing dependency and its stale lint-baseline entry |
 | I6 | 8cffa46fd99293b943096bbdf154798a1d549bbb | app/build.gradle (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I6: retire the activity.donation JaCoCo rule |
 | I7 | 5b3c5907d9a6d6200a280d02c32c51e457bacbb7 | CHANGES, README.md, code-location.md (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I7: update README, CHANGES and code-location for the donation removal |
+| I8 | 151763a44ef0bcabef9c0895332a0e2d6d573c0b | app/build.gradle (M, one comment line) | final gate 0; release R8 build FAILED | tests=682 failures=0 errors=0 skipped=2 | U-061 I8: record the re-measured root-package coverage |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -297,6 +298,82 @@ is empty (I0 expected list: none).
 - End check: porcelain = ` M CHANGES`, ` M README.md`, ` M sdlc/artifacts/engagement/code-location.md` (matches the I7 expected list, 3).
 - Proposed message: `U-061 I7: update README, CHANGES and code-location for the donation removal`.
 
+## I8 - Single edit, final verification, final gate, after-evidence
+
+- Start: HEAD `151763a44ef0bcabef9c0895332a0e2d6d573c0b` (I7 commit); porcelain empty. The scratch folder with the raw I0 files was intact, so no rebuild was needed.
+- **I8.1 edit** (`app/build.gradle`, LF): inserted after the `U-060 re-measured: 60.0% (18/30)` line:
+  `        // U-061 re-measured: 58.6% (17/29) - the nested SKU-constants class was removed from Consts.` (no "billing"/"donat"). 1 line added; `minimum = 0.50` untouched.
+- **I8.2 greps** (`evidence/I8-final-greps.txt`, run after the edit): AC-1 donation dir absent and `grep -rniE "billing|donat" app/src/main app/build.gradle` = 0; IC-10 = 0; IC-13 = 0.
+- **I8.3 final gate** (`clean :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification`): **exit 0**, JDK line `U061-DAEMON-JVM: java.version=25.0.5`,
+  `files=73 tests=682 failures=0 errors=0 skipped=2` (`evidence/final-gates.log`, `evidence/final-junit-totals.txt`; derived). AC-5 met.
+- **I8.4 after-evidence build** (`:app:assembleRelease :app:jacocoTestReport :app:processDebugManifest :app:processReleaseManifest`): **exit 1.
+  `:app:minifyReleaseWithR8` FAILED** (`evidence/after-evidence-build.log`).
+
+### ESCALATION: release R8 failure caused by removing the billing dependency
+
+- R8 reports `Missing class com.google.errorprone.annotations.{CanIgnoreReturnValue,CheckReturnValue,Immutable,RestrictedApi}` referenced from
+  `com.google.crypto.tink.*` (tink-android) and stops: "Missing classes detected while running R8".
+- Cause (verified): the I0 R8 `configuration.txt` line 360, `-dontwarn com.google.errorprone.annotations.**`, came from the consumer ProGuard rules of
+  `play-services-basement-18.4.0`, one of the 12 modules this story removes. Without it, tink's references to the annotations (not on the runtime classpath) are fatal. `app/proguard-rules.pro` has no errorprone rule.
+- Why earlier gates did not catch it: the per-increment gates and the final gate build no release variant; only the I0 baseline did (assembleRelease). The debug build is unaffected.
+- Impact: `assembleRelease` fails on the repository tree, so the IC-6 release packaged-manifest diff, IC-8 (mapping, kept names, R8 config) and the files
+  `after-mapping`, `after-configuration`, `kept-after`, `after-manifest-release` could NOT be produced for the repository tree. Nothing was edited to make it pass
+  (plan: after I8.1 no tracked file may change; the story lists `app/proguard-rules.pro` as unchanged).
+- Candidate remedy (verified in a scratch copy outside the repo, then deleted): appending one line `-dontwarn com.google.errorprone.annotations.**` to `app/proguard-rules.pro`
+  makes `assembleRelease` succeed. Informational results from that scratch build (`evidence/scratch-remedy-*`): the release packaged manifest diff vs I0 is 4 deletion-only hunks with no `>` line;
+  mapping prefix count 0 (I0: 965); kept-name `comm -23` is exactly `com.zegoggles.smssync.activity.donation.DonationActivity` and `comm -13` is empty; `r8_config_diff.py` exit 0
+  (49 removals, all attributed, 0 added; the identical `-dontwarn` text now also exists in proguard-rules.pro, so the set-based diff does not list it as removed).
+  This needs a product-owner / orchestrator decision (it edits `app/proguard-rules.pro`, which the story lists as unchanged, in a new increment) and is NOT applied.
+- Another option the orchestrator may consider, not tried: a compileOnly `error_prone_annotations` dependency.
+
+### Manifest equivalence (IC-6, AC-3) - `evidence/I8-manifest-diffs.txt`
+- Merged debug and merged release: each non-empty, every hunk a deletion, 0 lines start with `>`. The removed lines group exactly into the AC-3 elements
+  (BILLING permission, `<queries>` with both intents, billingclient.version meta-data, ProxyBillingActivity, ProxyBillingActivityV2, DonationActivity, GoogleApiActivity,
+  gms.version meta-data, TransportBackendDiscovery with backend meta-data, JobInfoSchedulerService, AlarmManagerSchedulerBroadcastReceiver). Annotated per hunk in the file.
+- Packaged debug (normalised with the plan's `norm()`): 4 deletion-only hunks, same elements, 0 `>` lines.
+- Packaged release: **not produced** (R8 failure). Only the scratch-copy informational result exists.
+- IC-7 (`evidence/I8-ic7.txt`), packaged DEBUG manifest: package and versionCode 1602 unchanged; `BackupBroadcastReceiver` exported=true, no permission attribute, action `com.zegoggles.smssync.BACKUP`;
+  `SystemForegroundService` foregroundServiceType=0x1; no InitializationProvider; networkSecurityConfig and fullBackupContent present; `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` x2; INTERNET and ACCESS_NETWORK_STATE present.
+  The merged release manifest was checked by name for the same items. The packaged RELEASE IC-7 check is not done.
+
+### Release and APK checks (IC-8, AC-4) - `evidence/I8-ic8.txt`
+- Debug dex: billingclient 0 (I0: 190), activity/donation 0 (I0: 16), total 9140 classes (I0: 11061). Dependency trees: 0 billingclient; drift guard exit 0 in both variants.
+- Mapping, kept names and `r8_config_diff.py` on the repository tree: not produced (see escalation). The optional member-level kept-name comparison (contract-verification check 2) was not done for the same reason.
+
+### Other checks - `evidence/I8-checks.txt`
+- `git diff --stat HEAD -- gradle/verification-metadata.xml metadata/play app/proguard-rules.pro` is empty; no `dependency-verification=off|lenient` in the product/build diff.
+- AC-7: working-tree `@Test` count 682 = 697 - 15; JUnit 682/0/0/2.
+- AC-8 re-measure (final tree, `evidence/after-jacoco-packages.txt`): root 17/29 58.6% (floor 0.50); activity 199/1011 19.7% (0.10); activity.fragments 58/472 12.3% (0.10);
+  receiver 29/58 50.0% (0.50, zero headroom); preferences 313/412 76.0% (0.65); utils 30/199 15.1% (0.10). The activity figure was 189 in the I0 and I6 runs and 199 in this run
+  (it varies by 10 lines between runs; always above its floor). The root value equals the one written in the I8.1 comment.
+
+### IC-4 verification-metadata writer (scratch copy, deviation 8) - `evidence/I8-ic4-writer.{log,diff}`
+- Scratch copy outside the repo built from `git archive HEAD` (LF tree) plus the uncommitted I8 diff; `./gradlew --write-verification-metadata sha256 help` exit 0.
+  Classification: **empty** (the diff with `--strip-trailing-cr` is empty; the writer emits CRLF while the committed blob is LF, so the raw byte diff differs only in line endings). No additions, no removals;
+  the stale billing entries remain, which AC-9 allows. The repository file was never changed. Scratch copy and patch deleted.
+
+### On-device check (IC-11, AC-2) - `evidence/I8-device.txt`, AVD `Pixel_9_Pro` API 36
+- Third-party integration re-read (read-only): **still ON** (`third_party_integration=true`), unchanged by the Developer. IC-11 evidence was gathered with the setting ON.
+  **PO WAIVER PENDING: third-party integration setting was ON during the IC-11 device check.** No broadcast was sent; no backup or restore was triggered.
+- `adb install -r` of the debug APK: Success (versionCode 1602, 1.6.0-BETA2). No uninstall, no data clear, no setting change, no screenshots, no account data recorded.
+- `am start -W` Status ok (COLD launch). `ui_titles.py`: titles `IMAP settings, Backup settings, Auto backup, Auto backup settings, Advanced settings`, 0 `donat` nodes, PASS (top and bottom dumps).
+- **Plan correction (not an implementation defect):** the plan asked for last title `Auto backup settings`. The final PreferenceScreen in `preferences.xml` (line 222, `AdvancedSettings$Main`) is **Advanced settings**,
+  which is also the last title shown, so the check was run with `--expect-last "Advanced settings"` and passes. No Donate entry exists. The first bottom-dump run with the plan's literal string failed (exit 1) and was replaced by the corrected run.
+- logcat since before launch (launch, Settings, Auto backup settings screen, back twice): `fatal_count=0`; lines containing "Google Play Services": **0**.
+- `use_old_scheduler` row on the Auto backup settings screen (navigation only, nothing changed): title "Old backup scheduler", summary text "Force use of old backup scheduler", enabled=true.
+  No I0 baseline of this row or of the Google Play Services line count was taken (the instruction asked for them at I8 only), so no before/after delta exists for them.
+- Play Store visibility (accepted by the product owner; not escalated; `<queries>` not re-added): after install, `dumpsys package queries` has no per-app entry for `com.zegoggles.smssync` -> `com.android.vending` or `com.google.android.gms` (no),
+  and both are in the global forceQueryable list (yes), exactly as at I0. Nothing observable changed on this image.
+- The emulator was started by the Developer and shut down afterwards (`emu kill`); the temporary UI dump on the device was deleted.
+
+### Close-out
+- AC-7 counts: before 697 (`evidence/before-test-count.txt`), after 682 (working tree and JUnit). QA re-runs the HEAD-based `git grep` after the I8 commit.
+- IC-5: no drift, 12 modules removed (I5). IC-4: empty (above). Deviation 8 applied (scratch copy, not scratch branch). Deviation 9 applied: the final gate ran on the identical tree before the commit.
+- Scratch folders deleted: the session scratchpad `u061/` and helper scripts, the IC-4 scratch copy and its patch file; Gradle daemons stopped.
+- End check: porcelain = ` M app/build.gradle` only (matches the I8 expected list).
+- Proposed message: `U-061 I8: record the re-measured root-package coverage`.
+- Not verified: IC-6 packaged release diff; IC-8 (1), (3), (4) on the repository tree; IC-7 on the packaged release manifest; the optional kept-name member comparison; AC-10 and IC-14 (not Developer work).
+
 ## Product-owner decisions carried forward (from the coordinator, recorded at I1)
 
 1. **Play Store visibility:** the product owner ACCEPTS the app losing its declared visibility of the Play Store and will
@@ -315,4 +392,4 @@ is empty (I0 expected list: none).
 Appended per increment. See the table above.
 
 ## Phase Completion Report
-(emitted at I8)
+See the final message of the I8 turn (verdict FAIL).

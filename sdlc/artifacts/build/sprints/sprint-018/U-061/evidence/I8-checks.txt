@@ -1,0 +1,8 @@
+- deps_drift.py before vs after-deps-debugRuntime and releaseRuntime: exit 0 and exit 0 (95 -> 83 modules, 12 removed == expected, no drift, none added).
+- git diff --stat HEAD -- gradle/verification-metadata.xml metadata/play app/proguard-rules.pro: empty (0 lines).
+- git diff HEAD (product/build paths) | grep -nE 'dependency-verification=off|lenient': 0 matches.
+- verification-metadata <configuration> block unchanged: verify-metadata=true, verify-signatures=false, trusted-artifacts javadoc/sources.
+- AC-7 arithmetic: working-tree @Test count 682 = 697 - 15; final JUnit totals tests=682 failures=0 errors=0 skipped=2 (final-junit-totals.txt).
+- JaCoCo re-measure (after-jacoco-packages.txt, report from the final tree): root 17/29 58.6% (equals I6, equals the I8.1 comment value).
+  activity 199/1011 19.7% (I6 and I0 runs gave 189; the figure varies by 10 lines between runs; floor 0.10), fragments 58/472 12.3%,
+  receiver 29/58 50.0% (floor 0.50, zero headroom), preferences 313/412 76.0% (I6 314/412), utils 30/199 15.1%. All floors met.

@@ -1,0 +1,15 @@
+## IC-7, packaged DEBUG manifest only (release packaged manifest not produced)
+package: 1  versionCode1602: 1
+-- BackupBroadcastReceiver element:
+143:            A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.zegoggles.smssync.receiver.BackupBroadcastReceiver" (Raw: "com.zegoggles.smssync.receiver.BackupBroadcastReceiver")
+145-            A: http://schemas.android.com/apk/res/android:exported(0x01010010)=true
+147-                  E: action 
+148-                    A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.zegoggles.smssync.BACKUP" (Raw: "com.zegoggles.smssync.BACKUP")
+SystemForegroundService foregroundServiceType: 1
+InitializationProvider: 0
+networkSecurityConfig: 1  fullBackupContent: 1
+DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION count: 2
+INTERNET: 1  ACCESS_NETWORK_STATE: 1
+## same invariants in merged RELEASE manifest (by name)
+versionCode: 1 BackupBroadcastReceiver exported: 1 BACKUP action: 1 fgsType: 3
+networkSecurityConfig: 1 fullBackupContent: 1 InitializationProvider: 0

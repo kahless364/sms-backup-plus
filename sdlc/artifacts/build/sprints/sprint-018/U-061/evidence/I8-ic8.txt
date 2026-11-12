@@ -1,0 +1,7 @@
+IC-8 / AC-4 on the REPOSITORY tree (HEAD + the single I8 comment edit)
+1. Release mapping prefix count: NOT PRODUCED. :app:minifyReleaseWithR8 FAILED (see implementation-log I8 "ESCALATION: release R8 failure").
+   after-mapping.txt, after-configuration.txt, kept-after.txt, after-manifest-release.txt do not exist for the repository tree.
+2. Debug dex (dexdump, deviation 3): after-dex-counts.txt -> billingclient=0, activity_donation=0 (I0: 190 and 16); after-dex-classes.txt has 9140 classes (I0: 11061).
+3. comm / kept names: NOT PRODUCED for the repository tree (see 1). Informational scratch-copy result: scratch-remedy-ic8.txt.
+4. r8_config_diff.py: NOT RUN on the repository tree (see 1). Informational scratch-copy result: scratch-remedy-r8-config-diff.txt.
+5. grep -c com.android.billingclient after-deps-{debug,release}Runtime.txt -> 0 and 0.

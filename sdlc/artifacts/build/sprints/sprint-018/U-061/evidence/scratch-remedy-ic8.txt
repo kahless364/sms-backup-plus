@@ -1,0 +1,4 @@
+mapping prefix count: 0 (before 965)
+comm -23 (lost):
+com.zegoggles.smssync.activity.donation.DonationActivity
+comm -13 (new):

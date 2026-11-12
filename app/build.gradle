@@ -396,6 +396,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
         // Rule 4: root package com.zegoggles.smssync (App.java + a few utils).
         // MEASURED: 52.9% (18/34 lines). Floor set just below at 50%.
         // U-060 re-measured: 60.0% (18/30) - Kotlin 2.3 code generation no longer emits some inlined helper lines.
+        // U-061 re-measured: 58.6% (17/29) - the nested SKU-constants class was removed from Consts.
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync']
