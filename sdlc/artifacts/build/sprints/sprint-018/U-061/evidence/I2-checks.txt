@@ -1,0 +1,50 @@
+## grep key="donate" preferences.xml
+(rc=1)
+## grep DONATE|DonationActivity in app/src/main java+xml excluding /activity/donation/
+(rc-of-pipeline-last=1)
+## AC-12: git grep at HEAD (pre-I2) for "donate"|DONATE in app/src/main
+app/src/main/java/com/zegoggles/smssync/activity/donation/DonationActivity.java:48:import static com.zegoggles.smssync.activity.donation.DonationActivity.DonationStatusListener.State.DONATED;
+app/src/main/java/com/zegoggles/smssync/activity/donation/DonationActivity.java:50:import static com.zegoggles.smssync.activity.donation.DonationActivity.DonationStatusListener.State.NOT_DONATED;
+app/src/main/java/com/zegoggles/smssync/activity/donation/DonationActivity.java:61:            DONATED,
+app/src/main/java/com/zegoggles/smssync/activity/donation/DonationActivity.java:62:            NOT_DONATED,
+app/src/main/java/com/zegoggles/smssync/activity/donation/DonationActivity.java:303:     *                 {@link DonationStatusListener.State#DONATED},
+app/src/main/java/com/zegoggles/smssync/activity/donation/DonationActivity.java:304:     *                 {@link DonationStatusListener.State#NOT_DONATED},
+app/src/main/java/com/zegoggles/smssync/activity/donation/DonationActivity.java:342:                                                userHasDonated(purchases) ? DONATED : NOT_DONATED);
+app/src/main/java/com/zegoggles/smssync/activity/fragments/MainSettings.java:24:import static com.zegoggles.smssync.preferences.Preferences.Keys.DONATE;
+app/src/main/java/com/zegoggles/smssync/activity/fragments/MainSettings.java:171:                        case DONATED:
+app/src/main/java/com/zegoggles/smssync/activity/fragments/MainSettings.java:172:                            Preference donate = findPreference(DONATE.key);
+app/src/main/java/com/zegoggles/smssync/preferences/Preferences.java:101:        DONATE("donate"),
+app/src/main/res/values-ca/strings.xml:289:  <string name="donate">Donació</string>
+app/src/main/res/values-da/strings.xml:285:  <string name="donate">Donering</string>
+app/src/main/res/values-de/strings.xml:242:  <string name="donate">Spenden</string>
+app/src/main/res/values-fr/strings.xml:283:  <string name="donate">Donation</string>
+app/src/main/res/values-gl/strings.xml:311:  <string name="donate">Doar</string>
+app/src/main/res/values-gr/strings.xml:272:  <string name="donate"> Δωρεά </string>
+app/src/main/res/values-hu/strings.xml:283:  <string name="donate">Támogatás</string>
+app/src/main/res/values-ko/strings.xml:315:  <string name="donate">기부</string>
+app/src/main/res/values-nl/strings.xml:322:  <string name="donate">Doneren</string>
+app/src/main/res/values-pl/strings.xml:3:    <string name="donate">Darowizna</string>
+app/src/main/res/values-pt-rPT/strings.xml:180:  <string name="donate">Doar</string>
+app/src/main/res/values-ru/strings.xml:263:  <string name="donate">Пожертвование</string>
+app/src/main/res/values-sk/strings.xml:4:    <string name="donate">Podporiť</string>
+app/src/main/res/values-sq/strings.xml:213:  <string name="donate">Dhuroni</string>
+app/src/main/res/values-sr/strings.xml:292:  <string name="donate">Донација</string>
+app/src/main/res/values-sv/strings.xml:314:  <string name="donate">Donera</string>
+app/src/main/res/values-tr/strings.xml:314:  <string name="donate">Bağış</string>
+app/src/main/res/values-uk/strings.xml:218:<string name="donate">Віддячити</string>
+app/src/main/res/values-zh-rCN/strings.xml:310:  <string name="donate">捐赠</string>
+app/src/main/res/values-zh-rTW/strings.xml:314:  <string name="donate">捐贈</string>
+app/src/main/res/values/strings.xml:339:  <string name="donate">Donate</string>
+app/src/main/res/xml/preferences.xml:320:            android:key="donate"
+## write uses (putX/edit) of the donate key: none expected
+(rc=1)
+## Preferences.reset() body
+254:    public void reset() {
+255-        preferences.edit()
+256-            .remove(SMS_DEFAULT_PACKAGE_CHANGE_SEEN.key)
+257-            .remove(SMS_DEFAULT_PACKAGE.key)
+258-            .commit();
+259-    }
+260-
+261-    public boolean isNotificationEnabled() {
+262-        return preferences.getBoolean(NOTIFICATIONS.key, false);

@@ -126,7 +126,6 @@
         </activity>
 
         <activity android:name=".activity.auth.AccountManagerAuthActivity"/>
-        <activity android:name=".activity.donation.DonationActivity"/>
 
         <!-- U-049: SmsBackupService, SmsRestoreService deleted (dual-dispatch layer retired).
              Foreground notification is now provided by BackupWorker/RestoreWorker via

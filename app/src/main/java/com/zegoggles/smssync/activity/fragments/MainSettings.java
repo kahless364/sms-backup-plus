@@ -2,7 +2,6 @@ package com.zegoggles.smssync.activity.fragments;
 
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
@@ -11,17 +10,13 @@ import androidx.preference.Preference;
 // U-020: import com.squareup.otto.Subscribe removed
 import com.zegoggles.smssync.App;
 import com.zegoggles.smssync.R;
-import com.zegoggles.smssync.activity.donation.DonationActivity;
-import com.zegoggles.smssync.activity.donation.DonationActivity.DonationStatusListener;
 import com.zegoggles.smssync.mail.DataType;
 import com.zegoggles.smssync.preferences.AuthPreferences;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.zegoggles.smssync.App.TAG;
 import static com.zegoggles.smssync.preferences.Preferences.Keys.BACKUP_SETTINGS_SCREEN;
-import static com.zegoggles.smssync.preferences.Preferences.Keys.DONATE;
 import static com.zegoggles.smssync.preferences.Preferences.Keys.ENABLE_AUTO_BACKUP;
 import static com.zegoggles.smssync.preferences.Preferences.Keys.INCOMING_TIMEOUT_SECONDS;
 import static com.zegoggles.smssync.preferences.Preferences.Keys.REGULAR_TIMEOUT_SECONDS;
@@ -72,7 +67,6 @@ public class MainSettings extends SMSBackupPreferenceFragment {
     public void onResume() {
         super.onResume();
 
-        checkUserDonationStatus();
         updateAutoBackupPreferences();
         addPreferenceListener(ENABLE_AUTO_BACKUP.key);
     }
@@ -159,25 +153,5 @@ public class MainSettings extends SMSBackupPreferenceFragment {
 
     private CheckBoxPreference findAutoBackupPreference() {
         return (CheckBoxPreference) findPreference(ENABLE_AUTO_BACKUP.key);
-    }
-
-    private void checkUserDonationStatus() {
-        try {
-            DonationActivity.checkUserDonationStatus(getContext(), new DonationStatusListener() {
-                @Override
-                public void userDonationState(State state) {
-                    switch (state) {
-                        case NOT_AVAILABLE:
-                        case DONATED:
-                            Preference donate = findPreference(DONATE.key);
-                            if (donate != null) {
-                                getPreferenceScreen().removePreference(donate);
-                            }
-                    }
-                }
-            });
-        } catch (Exception e) {
-            Log.w(TAG, e);
-        }
     }
 }

@@ -35,6 +35,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 |-----|---------------|-----------------|-----------|--------|------------------|
 | I0 | e0c51d421659ab3bf3deff7662e7201da6c4fe62 | none | 0 | tests=697 failures=0 errors=0 skipped=2 | U-061 I0: baseline evidence (no product change) |
 | I1 | 8866f805b861a153b57cc88e9c1cd050f66a9414 | EnrollmentDialogThemeTest.java | 0 | tests=697 failures=0 errors=0 skipped=2 (isolated 3/3) | U-061 I1: re-host EnrollmentDialogThemeTest on a nested ThemeActivity subclass |
+| I2 | 3257a1491e46fa3d33e00a0162157d6a3322c68a | AndroidManifest.xml, MainSettings.java, Preferences.java, preferences.xml | 0 | tests=697 failures=0 errors=0 skipped=2 | U-061 I2: remove donation entry points (settings, MainSettings, Keys.DONATE, manifest) |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -164,6 +165,33 @@ is empty (I0 expected list: none).
 - End check: porcelain = ` M app/src/test/java/com/zegoggles/smssync/activity/fragments/EnrollmentDialogThemeTest.java` (matches the I1 list).
 - Proposed message: `U-061 I1: re-host EnrollmentDialogThemeTest on a nested ThemeActivity subclass`.
 - Note: git warns that LF will be replaced by CRLF (core.autocrlf); this is the plan's known LF-file state, not a change.
+
+## I2 - Remove the entry points (AC-2, AC-12)
+
+- Start: HEAD `3257a1491e46fa3d33e00a0162157d6a3322c68a` (I1 commit); product-pathspec porcelain empty.
+- Line endings: all four files are CRLF in the working tree (LF in the index). Edits were made byte-preserving with a
+  scratch script that deletes exact line ranges after asserting each line's content, so CRLF is kept and the diff is
+  deletions only (`git diff --numstat`: manifest 0/1, MainSettings 0/26, Preferences 0/1, preferences.xml 0/10).
+- `preferences.xml`: deleted lines 318-327 (blank line plus the `donate` Preference block); `</PreferenceScreen>` now follows
+  the inner `</PreferenceScreen>` directly.
+- `MainSettings.java`: deleted lines 5 (`Log` import), 14-15 (DonationActivity imports), 22 (`App.TAG` static import, deviation 2),
+  24 (`Keys.DONATE` import), 75 (`checkUserDonationStatus();` call) and 163-182 (blank line plus the method). `onResume()` is now
+  `super.onResume();`, blank line, `updateAutoBackupPreferences();`, `addPreferenceListener(ENABLE_AUTO_BACKUP.key);`.
+  `Preference`, `ArrayList`, `List` imports kept.
+- `Preferences.java`: deleted line 101 `DONATE("donate"),`. `reset()` untouched (removes only `SMS_DEFAULT_PACKAGE_CHANGE_SEEN`
+  and `SMS_DEFAULT_PACKAGE`).
+- `AndroidManifest.xml`: deleted line 129 (`<activity android:name=".activity.donation.DonationActivity"/>`) only.
+- Checks (`evidence/I2-checks.txt`): `grep 'key="donate"' preferences.xml` empty; `grep DONATE|DonationActivity` over app/src/main
+  java+xml excluding `/activity/donation/` empty.
+- AC-12 reviewed-code evidence: the pre-I2 `git grep` of `"donate"|DONATE` in app/src/main shows `Keys.DONATE` only at
+  `Preferences.java:101` (definition) and `MainSettings.java:24` (import) and `:172` (`findPreference(DONATE.key)`, a read);
+  `preferences.xml:320` has the XML key. The broader pattern also lists DonationActivity's `DONATED`/`NOT_DONATED` enum constants
+  (a different symbol, deleted in I3) and the `donate` string resources (I4). No `put*`/`edit()`/`remove` use of the key exists
+  (grep rc=1), so nothing was ever persisted for it. No key is migrated, written or deleted.
+- Gate G: exit 0, `files=75 tests=697 failures=0 errors=0 skipped=2` (`evidence/I2-gates.log`, `evidence/I2-junit-totals.txt`;
+  derived). The donation tests still run against the undeclared `DonationActivity`.
+- End check: porcelain = the four ` M` paths above (matches the I2 expected list, 4).
+- Proposed message: `U-061 I2: remove donation entry points (settings, MainSettings, Keys.DONATE, manifest)`.
 
 ## Product-owner decisions carried forward (from the coordinator, recorded at I1)
 
