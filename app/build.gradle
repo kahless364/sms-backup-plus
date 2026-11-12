@@ -407,7 +407,7 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
         }
 
         // Rule 5: activity root package (MainActivity, StatusPreference, etc.).
-        // MEASURED: activity=15.4%, activity.auth=0%, activity.donation=33.5%,
+        // MEASURED: activity=15.4%, activity.auth=0%,
         //           activity.events=0%, activity.fragments=12.0%.
         // The sub-packages are split into individual rules so each gets a
         // meaningful (not artificially low) floor rather than a single 0% floor.
@@ -429,16 +429,6 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
                 minimum = 0.00 // MEASURED 0% (0/139) — TODO: raise to 50%+ after auth tests
-            }
-        }
-        // activity.donation: DonationActivity coverage.
-        rule {
-            element = 'PACKAGE'
-            includes = ['com.zegoggles.smssync.activity.donation*']
-            limit {
-                counter = 'LINE'
-                value = 'COVEREDRATIO'
-                minimum = 0.30 // MEASURED 33.5% (79/236) — TODO: raise to 70%
             }
         }
         // activity.events: UI event data classes — 0% LINE coverage.

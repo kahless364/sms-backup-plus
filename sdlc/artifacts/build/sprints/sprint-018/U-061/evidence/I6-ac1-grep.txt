@@ -1,0 +1,4 @@
+$ ls app/src/main/java/com/zegoggles/smssync/activity/donation/
+  ls: cannot access 'app/src/main/java/com/zegoggles/smssync/activity/donation/': No such file or directory
+$ grep -rniE "billing|donat" app/src/main app/build.gradle
+match_count=0

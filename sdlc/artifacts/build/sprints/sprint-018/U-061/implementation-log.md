@@ -39,6 +39,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 | I3 | 5cb305f839e88c8c876f702d0cf84df4cc4c2a81 | Consts.java (M); 3 donation main classes, 2 donation test classes (D) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I3: delete the donation package, its tests and Consts.Billing |
 | I4 | 68d06796459673cfbb7fdeadcb9d99af914b1326 | 22 strings.xml files (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I4: remove donation strings from all 22 strings.xml files |
 | I5 | 9639f5c7df464bcc2f646809642aa36d719c5264 | app/build.gradle, app/lint-baseline.xml (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I5: remove the Play Billing dependency and its stale lint-baseline entry |
+| I6 | 8cffa46fd99293b943096bbdf154798a1d549bbb | app/build.gradle (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I6: retire the activity.donation JaCoCo rule |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -250,6 +251,34 @@ is empty (I0 expected list: none).
 - `gradle/verification-metadata.xml` untouched (D4).
 - End check: porcelain = ` M app/build.gradle`, ` M app/lint-baseline.xml` (matches the I5 expected list, 2).
 - Proposed message: `U-061 I5: remove the Play Billing dependency and its stale lint-baseline entry`.
+
+## I6 - Retire the JaCoCo rule (AC-8, IC-9) and the binding coverage read
+
+- Start: HEAD `8cffa46fd99293b943096bbdf154798a1d549bbb` (I5 commit); product-pathspec porcelain empty.
+- `app/build.gradle` (LF, kept): Rule 5 comment `// MEASURED: activity=15.4%, activity.auth=0%, activity.donation=33.5%,` ->
+  `// MEASURED: activity=15.4%, activity.auth=0%,`; deleted the donation rule with its comment (10 lines, from
+  `// activity.donation: DonationActivity coverage.` through its closing `}`). numstat 1 added / 11 deleted. The only
+  `minimum` line changed is `- minimum = 0.30 ... activity.donation` (self-check passed).
+- Gate (`clean :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestReport :app:jacocoTestCoverageVerification`): **exit 0**,
+  `files=73 tests=682 failures=0 errors=0 skipped=2` (`evidence/I6-gates.log`, `evidence/I6-junit-totals.txt`; derived).
+  `activity.donation` package is absent from the report; `grep -c HostActivity` on the JaCoCo XML = 0.
+- Re-measured LINE coverage (`evidence/I6-jacoco-packages.txt`; raw XML kept outside the repo), against the I0 baseline and floor:
+
+| Package | I0 baseline | I6 measured | Floor | Result |
+|---------|-------------|-------------|-------|--------|
+| root `com.zegoggles.smssync` | 18/30 60.0% | **17/29 58.6%** | 0.50 | pass (prediction 58.6% confirmed) |
+| activity | 189/1011 18.7% | 189/1011 18.7% | 0.10 | pass |
+| activity.fragments | 58/483 12.0% | 58/472 12.3% | 0.10 | pass |
+| receiver | 29/58 50.0% | 29/58 50.0% | 0.50 | pass (zero headroom, unchanged) |
+| preferences | 315/413 76.3% | 314/412 76.2% | 0.65 | pass |
+| utils | 30/199 15.1% | 30/199 15.1% | 0.10 | pass |
+
+  No floor breached, so the IC-9 route was not needed; no test was added. The I8.1 root-rule comment will use
+  `58.6% (17/29)` (to be re-confirmed at I8.4).
+- **AC-1 first full assertion** (`evidence/I6-ac1-grep.txt`): `ls app/src/main/java/com/zegoggles/smssync/activity/donation/` fails (no such directory);
+  `grep -rniE "billing|donat" app/src/main app/build.gradle` = **0 results**.
+- End check: porcelain = ` M app/build.gradle` (matches the I6 expected list; no IC-9 test).
+- Proposed message: `U-061 I6: retire the activity.donation JaCoCo rule`.
 
 ## Product-owner decisions carried forward (from the coordinator, recorded at I1)
 
