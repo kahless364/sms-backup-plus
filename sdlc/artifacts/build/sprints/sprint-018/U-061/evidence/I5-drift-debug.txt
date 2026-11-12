@@ -1,0 +1,6 @@
+before=95 after=83 common=83
+version drift (STOP if any): none
+added modules (STOP if any): none
+removed modules: ['com.android.billingclient:billing', 'com.google.android.datatransport:transport-api', 'com.google.android.datatransport:transport-backend-cct', 'com.google.android.datatransport:transport-runtime', 'com.google.android.gms:play-services-base', 'com.google.android.gms:play-services-basement', 'com.google.android.gms:play-services-location', 'com.google.android.gms:play-services-places-placereport', 'com.google.android.gms:play-services-tasks', 'com.google.firebase:firebase-encoders', 'com.google.firebase:firebase-encoders-json', 'com.google.firebase:firebase-encoders-proto']
+removed == expected 12: True | unexpected removals: none | expected but still present: none
+exit=0

@@ -1,0 +1,5 @@
+# derived from raw gate G run (machine paths withheld)
+U061-DAEMON-JVM: java.version=25.0.5
+BUILD SUCCESSFUL in 1m 26s
+69 actionable tasks: 29 executed, 40 up-to-date
+exit=0

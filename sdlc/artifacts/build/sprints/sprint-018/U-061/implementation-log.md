@@ -38,6 +38,7 @@ check, not a runtime-claim probe. Declared empty on purpose.
 | I2 | 3257a1491e46fa3d33e00a0162157d6a3322c68a | AndroidManifest.xml, MainSettings.java, Preferences.java, preferences.xml | 0 | tests=697 failures=0 errors=0 skipped=2 | U-061 I2: remove donation entry points (settings, MainSettings, Keys.DONATE, manifest) |
 | I3 | 5cb305f839e88c8c876f702d0cf84df4cc4c2a81 | Consts.java (M); 3 donation main classes, 2 donation test classes (D) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I3: delete the donation package, its tests and Consts.Billing |
 | I4 | 68d06796459673cfbb7fdeadcb9d99af914b1326 | 22 strings.xml files (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I4: remove donation strings from all 22 strings.xml files |
+| I5 | 9639f5c7df464bcc2f646809642aa36d719c5264 | app/build.gradle, app/lint-baseline.xml (M) | 0 | tests=682 failures=0 errors=0 skipped=2 | U-061 I5: remove the Play Billing dependency and its stale lint-baseline entry |
 
 Evidence folder: `sdlc/artifacts/build/sprints/sprint-018/U-061/evidence/` (referred to below as `evidence/`).
 
@@ -228,6 +229,27 @@ is empty (I0 expected list: none).
 - Gate G: exit 0, `files=73 tests=682 failures=0 errors=0 skipped=2` (`evidence/I4-gates.log`, `evidence/I4-junit-totals.txt`; derived).
 - End check: porcelain = 22 ` M` paths (`values/strings.xml` and the 21 locale files; matches the I4 expected list, 22).
 - Proposed message: `U-061 I4: remove donation strings from all 22 strings.xml files`.
+
+## I5 - Dependency, BuildConfig comment, lint baseline (AC-4, IC-5, AC-12)
+
+- Start: HEAD `9639f5c7df464bcc2f646809642aa36d719c5264` (I4 commit); product-pathspec porcelain empty.
+- `app/build.gradle` (LF, kept): line 43 comment now `// app uses BuildConfig.DEBUG in App.java and auth/OAuth2Client.java.`
+  (deviation 1, accepted by the orchestrator); deleted line 132 `implementation 'com.android.billingclient:billing:7.1.1' // U-028 ...`.
+  numstat 1 added / 2 deleted (the reworded comment is the 1 added line). No `dependency-verification` flag anywhere.
+- `app/lint-baseline.xml` (CRLF, kept): deleted lines 114-124 (billing 2.1.0 `GradleDependency` issue plus the blank after it).
+  numstat `0 11`; `grep -c billing app/lint-baseline.xml` = 0 (AC-12).
+- **IC-5 / D4a drift guard** (`deps_drift.py`, `evidence/I5-drift-{debug,release}.txt`), both variants **exit 0**:
+  - before=95 modules, after=83, common=83.
+  - **Modules removed (12, exactly the expected set):** `com.android.billingclient:billing`;
+    `com.google.android.datatransport:{transport-api,transport-backend-cct,transport-runtime}`;
+    `com.google.android.gms:{play-services-base,play-services-basement,play-services-location,play-services-places-placereport,play-services-tasks}`;
+    `com.google.firebase:{firebase-encoders,firebase-encoders-json,firebase-encoders-proto}`. Unexpected removals: none; expected but still present: none.
+  - **Version drift of any surviving module: none. Modules added: none.** No pin or `constraints {}` added.
+  - `grep -c com.android.billingclient` over `evidence/I5-deps-{debug,release}Runtime.txt` = 0 (AC-4 part 1).
+- Gate G: exit 0, `files=73 tests=682 failures=0 errors=0 skipped=2` (`evidence/I5-gates.log`, `evidence/I5-junit-totals.txt`; derived).
+- `gradle/verification-metadata.xml` untouched (D4).
+- End check: porcelain = ` M app/build.gradle`, ` M app/lint-baseline.xml` (matches the I5 expected list, 2).
+- Proposed message: `U-061 I5: remove the Play Billing dependency and its stale lint-baseline entry`.
 
 ## Product-owner decisions carried forward (from the coordinator, recorded at I1)
 

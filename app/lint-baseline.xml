@@ -113,17 +113,6 @@
 
     <issue
         id="GradleDependency"
-        message="A newer version of com.android.billingclient:billing than 2.1.0 is available: 9.0.0"
-        errorLine1="    implementation &apos;com.android.billingclient:billing:2.1.0&apos;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="92"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
         message="A newer version of androidx.annotation:annotation than 1.1.0 is available: 1.10.0"
         errorLine1="    implementation &apos;androidx.annotation:annotation:1.1.0&apos;"
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">

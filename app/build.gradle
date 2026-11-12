@@ -40,7 +40,7 @@ android {
 
     buildFeatures {
         // AGP disables BuildConfig generation by default; re-enable since the
-        // app uses BuildConfig.DEBUG in DonationActivity and App.java.
+        // app uses BuildConfig.DEBUG in App.java and auth/OAuth2Client.java.
         buildConfig true
     }
 
@@ -129,7 +129,6 @@ dependencies {
     // coordinate exists. No JitPack tag points to this exact commit (sms-backup-plus-1.5.11
     // branch HEAD). Path C (vendor) selected per ADR-009-A — see k9mail-vendored/NOTICE.
     implementation project(':k9mail-vendored')
-    implementation 'com.android.billingclient:billing:7.1.1' // U-028 pinned 2026-06-02; latest stable 7.x
     // U-017: firebase-jobdispatcher:0.8.6 removed (Gate G3 — AC-7).
     // WorkManagerScheduler (work-runtime-ktx:2.9.1 below) is now the sole scheduler.
     implementation 'androidx.annotation:annotation:1.1.0'
