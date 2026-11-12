@@ -1,6 +1,6 @@
 ---
 type: story
-status: ready
+status: planned
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -12,6 +12,7 @@ design_docs:
   - DES-MODERNIZATION-013
 integration_contracts: []
 dependencies: []
+sprint: '018'
 change_records: []
 platforms: []
 tags: []
@@ -21,7 +22,7 @@ title: Remove the donation flow and the Play Billing dependency
 pipeline: ''
 domain: modernization
 alignment_audit: passed
-updated_at: '2026-11-12T18:13:47.378Z'
+updated_at: '2026-11-12T18:22:26.512Z'
 ---
 
 # U-061: Remove the Donation Flow and the Play Billing Dependency
@@ -35,7 +36,7 @@ Product owner decision (verbatim): "remove the donation flow". This story supers
 
 ## Scope and Delivery Shape
 
-One story, eight ordered increments (DES-MODERNIZATION-013 D1), committed in this order. Each increment must pass `:app:assembleDebug :app:testDebugUnitTest` before the next starts. The JaCoCo gate runs at I0, I6 and I8.
+One story, ordered increments I0-I8 (DES-MODERNIZATION-013 D1), committed in this order. Each increment must pass `:app:assembleDebug :app:testDebugUnitTest` before the next starts. The JaCoCo gate runs at I0, I6 and I8.
 
 | Inc | Change |
 |-----|--------|
@@ -83,7 +84,7 @@ Numbered AC-1 to AC-12 are carried from REQ-MODERNIZATION-018 (as amended by CR-
 These come from the design (DES-MODERNIZATION-013), not the requirement. No new production component is created. The only new class is the test-only `HostActivity` (IC-3).
 
 - [ ] IC-1: (D1 I0) Before any edit, the following baseline evidence is captured under `sdlc/artifacts/build/sprints/<sprint>/U-061/evidence/` (naming per D5): merged debug and release manifests from `./gradlew :app:processDebugManifest :app:processReleaseManifest`, copied from `app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml` and `app/build/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml` as `before-merged-{debug|release}.xml` (confirm the release path exists with `ls`); packaged debug and release manifests from `aapt2 dump xmltree --file AndroidManifest.xml` as `before-manifest-{debug|release}.txt`; release `mapping.txt` and `configuration.txt`; the `debugRuntimeClasspath` and `releaseRuntimeClasspath` dependency trees; Gradle test totals; the JaCoCo XML; and the CLAUDE.md `git grep` `@Test` count. Evidence is text only.
-- [ ] IC-2: (D1) Each increment I1 to I7 is committed separately in order, and `:app:assembleDebug :app:testDebugUnitTest` passes after each. `:app:jacocoTestCoverageVerification` is run at I0, I6 and I8.
+- [ ] IC-2: (D1) Each increment I1 to I7 is committed separately in order, and `:app:assembleDebug :app:testDebugUnitTest` passes after each. `:app:jacocoTestCoverageVerification` is run at I0, I6 and I8. The single I8 edit (the root-rule JaCoCo comment in `app/build.gradle`, AC-8) is its own commit, followed by the final gate run (`:app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification`).
 - [ ] IC-3: (D1 I1, risk R4) After I1 and before I2, `EnrollmentDialogThemeTest` is run in isolation and passes 3/3 with `HostActivity` as host. `HostActivity` is `public static class HostActivity extends ThemeActivity {}` nested in the test, is not registered anywhere (manifest or otherwise), and is not a top-level helper class, so it stays under the JaCoCo `**/*Test*.*` filter. Each of the three call sites reads `HostActivity activity = Robolectric.buildActivity(HostActivity.class).create().get()`, and `{@link DonationActivity}` becomes `{@link HostActivity}`. No assertion changes.
 - [ ] IC-4: (D4) `gradle/verification-metadata.xml` is left unchanged and its `<configuration>` block (`verify-metadata=true`, `verify-signatures=false`) is not touched. `./gradlew --write-verification-metadata sha256 help` is run once on a scratch branch purely as evidence. Its result is accepted only if it is a removal with no additions. The result is recorded in the implementation log.
 - [ ] IC-5: (D4a) At I5, the resolved `debugRuntimeClasspath` and `releaseRuntimeClasspath` trees are diffed against the I0 trees. If any module that remains on the classpath resolves to a different version, stop and escalate before continuing. A `constraints {}` pin is an option to put to the product owner and is not pre-approved.
@@ -92,9 +93,10 @@ These come from the design (DES-MODERNIZATION-013), not the requirement. No new 
 - [ ] IC-8: (D6, release mapping check) At I8, on the release build: (1) in the release `mapping.txt`, `grep -cE '^(com\.android\.billingclient|com\.android\.vending\.billing|com\.google\.android\.(gms|datatransport)|com\.google\.firebase\.encoders|com\.zegoggles\.smssync\.activity\.donation)\.'` returns 0 (U-060 had 98 `com.android.billingclient` entries); (2) `apkanalyzer dex packages --defined-only` on the debug APK lists no `com.android.billingclient` or `activity.donation` package; (3) the U-060 C-2 kept-name check `comm -23 kept-before.txt kept-after.txt` prints exactly one line, `com.zegoggles.smssync.activity.donation.DonationActivity`; (4) every line in the `configuration.txt` diff is one of the removals listed in AC-3. Any other kept name that disappears is a release regression: stop and escalate.
 - [ ] IC-9: (D3 breach routing) If any remaining JaCoCo rule falls below its floor, a characterization test for real behavior in that package is added until the rule passes and the shortfall is escalated in the implementation log. Lowering a floor, adding an exclusion, or renaming a helper so the `*Test*` filter catches it is forbidden.
 - [ ] IC-10: (D2 call-site audit) After I2 and I3, `grep -rn "DonationActivity\|Consts.Billing\|Keys.DONATE\|DONATE" app/src` finds no reference to a removed symbol. `Keys.DONATE` is shown by reviewed evidence to have been used only at `MainSettings` (lines 24 and 172 before removal).
-- [ ] IC-11: (D6 and the Design Validation on-device check) Install the debug APK on the API 36 emulator AVD `Pixel_9_Pro` with `adb install -r`, and open Settings. Text evidence only: the `uiautomator dump` output contains no `Donate` title; the last visible entry is the final `PreferenceScreen`; `logcat` shows 0 `FATAL EXCEPTION` across launch, Settings and back. Third-party integration is confirmed off before the run (sprint-017 broadcast incident).
+- [ ] IC-11: (Design Validation, on-device check) Install the debug APK on the API 36 emulator AVD `Pixel_9_Pro` with `adb install -r`, and open Settings. Text evidence only: the `uiautomator dump` output contains no `Donate` title; the last visible entry is the final `PreferenceScreen`; `logcat` shows 0 `FATAL EXCEPTION` across launch, Settings and back. Third-party integration is confirmed off before the run (sprint-017 broadcast incident).
 - [ ] IC-12: (D1 count rule) If another story lands first and changes the test count, re-baseline from the I0 Gradle report and `git grep` count instead of reusing 697.
 - [ ] IC-13: (AC-1 proof gap, inventory item 7) After I4, `grep -rn "purchase errors" app/src/main/res` returns zero results. The `<!-- purchase errors -->` comment (present in 18 strings files, e.g. `app/src/main/res/values/strings.xml:346`, `app/src/main/res/values-uk/strings.xml:224`) matches neither "billing" nor "donat", so the AC-1 grep cannot detect it if left behind.
+- [ ] IC-14: (D8 supersession records; performed by the Artifact Librarian / Requirements Analyst, not the developer; the orchestrator dispatches it in sprint-018; complete before the story closes) (a) A supersession change record exists and is listed in REQ-MODERNIZATION-010's `change_records`, stating that its intent is superseded by REQ-MODERNIZATION-018 (decision date 2026-11-12). (b) The same change record id is listed in REQ-MODERNIZATION-018's `change_records` alongside CR-003. (c) DES-MODERNIZATION-010 carries a superseded annotation that names DES-MODERNIZATION-013.
 
 ## Affected Code
 
@@ -108,7 +110,7 @@ These come from the design (DES-MODERNIZATION-013), not the requirement. No new 
 | `app/src/main/java/com/zegoggles/smssync/activity/fragments/MainSettings.java` | `checkUserDonationStatus()` called from `onResume()`; `DonationActivity` imports and `DONATE` static import | Remove; `onResume()` becomes `super.onResume(); updateAutoBackupPreferences(); addPreferenceListener(ENABLE_AUTO_BACKUP.key);` (I2) |
 | `app/src/main/java/com/zegoggles/smssync/preferences/Preferences.java` | `Keys.DONATE("donate")` (line 101) | Remove constant (I2). `reset()` unchanged |
 | `app/src/main/java/com/zegoggles/smssync/Consts.java` | `Consts.Billing` (`DONATION_PREFIX`, `SKU_DONATION_1..3`, `ALL_SKUS`), lines 36-50 | Remove (I3) |
-| `app/src/main/res/values/strings.xml` and `app/src/main/res/values-{ca,da,de,fr,gl,gr,hu,it,ko,nl,pl,pt-rPT,ru,sk,sq,sr,sv,tr,uk,zh-rCN,zh-rTW}/strings.xml` (22 files) | Strings `donate`, `donate_summary`, `ui_dialog_donate_message`, `ui_donation_success_message`, `ui_donation_failure_message`, `donation_error_iab_unavailable`, `donation_error_unavailable`, `donation_error_canceled`, `donation_error_already_owned`, `donation_unspecified_error`, plus the `<!-- donation related -->` and `<!-- purchase errors -->` comments (default file lines 338-351; per-file matching lines range from 3 to 12) | Remove all, by `name` attribute, in one commit (I4) |
+| `app/src/main/res/values/strings.xml` and `app/src/main/res/values-{ca,da,de,fr,gl,gr,hu,it,ko,nl,pl,pt-rPT,ru,sk,sq,sr,sv,tr,uk,zh-rCN,zh-rTW}/strings.xml` (22 files) | Strings `donate`, `donate_summary`, `ui_dialog_donate_message`, `ui_donation_success_message`, `ui_donation_failure_message`, `donation_error_iab_unavailable`, `donation_error_unavailable`, `donation_error_canceled`, `donation_error_already_owned`, `donation_unspecified_error`, plus the `<!-- donation related -->` and `<!-- purchase errors -->` comments (default file lines 338-351; lines to remove per file range from 3 to 12; in the default file that is 10 strings plus 2 comments. This is a count of lines to remove, not of `grep -iE "billing|donat"` matches, which is 11 in the default file because `<!-- purchase errors -->` matches neither term) | Remove all, by `name` attribute, in one commit (I4) |
 | `app/build.gradle` | `implementation 'com.android.billingclient:billing:7.1.1'` (line 132); BuildConfig comment naming `DonationActivity` (line 43); JaCoCo rule `includes = ['com.zegoggles.smssync.activity.donation*']`, floor 0.30 (lines 411, 435-444) | Remove dependency and reword comment (I5); delete rule, its comments and Rule 5 note; update root-rule comments with re-measured value (I6, I8) |
 | `app/lint-baseline.xml` | GradleDependency entry for billing 2.1.0, stale (lines 114-123) | Delete entry only (I5) |
 | `gradle/verification-metadata.xml` | `billing` 7.1.1 `.aar` and `.pom` (line 931) plus billing-only transitives | Unchanged (D4) |
@@ -142,7 +144,7 @@ Run Gradle in a shell without `MSYS_NO_PATHCONV=1` set. Set `JAVA_HOME` per CLAU
 7. AC-7: Read run and skipped totals from `app/build/test-results/testDebugUnitTest/` (682 run, 2 skipped). Run `git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"` before and after, and confirm a drop of exactly 15. Record both in the implementation log.
 8. AC-8: Diff `app/build.gradle` and confirm the only JaCoCo-block edits are the donation rule with its comment lines, the `activity.donation=33.5%` Rule 5 note, and the root-rule comments. Read per-package figures from `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml`. Confirm the root value is at least 50%, and record the five other values in the implementation log.
 9. AC-9: `git diff gradle/verification-metadata.xml` is empty (or removal-only if produced by the writer per IC-4). Grep the repo diff for `dependency-verification=off` and `lenient` (zero).
-10. AC-10: Confirm `change_records` on REQ-MODERNIZATION-010 states the supersession (2026-11-12, "remove the donation flow") and marks AC-1 to AC-4 not applicable, that REQ-MODERNIZATION-018 carries the reciprocal reference, and that DES-MODERNIZATION-010 has the superseded annotation.
+10. AC-10 (and IC-14): Confirm `change_records` on REQ-MODERNIZATION-010 states the supersession (2026-11-12, "remove the donation flow") and marks AC-1 to AC-4 not applicable, that REQ-MODERNIZATION-018 carries the reciprocal reference, and that DES-MODERNIZATION-010 has the superseded annotation. Check all three by grep: (a) `grep -n "change_records" -A4 sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-010-*.md` shows the supersession change record id; (b) `grep -n "change_records" -A4 sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-018-*.md` shows the same id alongside `CR-003`; (c) `grep -n "DES-MODERNIZATION-013" sdlc/artifacts/design/modernization/DES-MODERNIZATION-010-*.md` finds the superseded annotation in its frontmatter or notes.
 11. AC-11: Diff `README.md`, `CHANGES` and `sdlc/artifacts/engagement/code-location.md`. Confirm lines 40-41 of README are still present. Confirm `git diff --stat -- metadata/play` is empty.
 12. AC-12: Review `Preferences.java` and confirm `Keys.DONATE` was referenced only at `MainSettings` and that `reset()` is unchanged. Confirm only the billing entry of `app/lint-baseline.xml` is deleted.
 13. IC-1 to IC-12: check the implementation log and evidence folder for each item.
@@ -152,7 +154,7 @@ Run Gradle in a shell without `MSYS_NO_PATHCONV=1` set. Set `JAVA_HOME` per CLAU
 | Platform | Scope | Agent |
 |----------|-------|-------|
 | Android (Java, Gradle) | I0 to I8: code, resource, build, test and doc deletions; evidence capture | Developer |
-| Artifacts | AC-10 supersession records on REQ-MODERNIZATION-010 and DES-MODERNIZATION-010 | Artifact Librarian / Requirements Analyst |
+| Artifacts | AC-10 and IC-14 supersession records on REQ-MODERNIZATION-010, REQ-MODERNIZATION-018 and DES-MODERNIZATION-010. The Developer pipeline will not do this: the orchestrator must dispatch this artifact work in sprint-018 | Artifact Librarian / Requirements Analyst |
 
 ## Technical Context
 
