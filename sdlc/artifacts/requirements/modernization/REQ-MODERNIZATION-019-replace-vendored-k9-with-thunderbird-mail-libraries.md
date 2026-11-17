@@ -130,3 +130,5 @@ Part A can run in parallel with REQ-MODERNIZATION-015/016 but its findings on Ko
 ## Traceability
 
 EPIC-MODERNIZATION-006; REQ-MODERNIZATION-002 (TLS), -009 and -012 (ACL), DES-MODERNIZATION-009; `sdlc/artifacts/build/sprints/sprint-017/retro.md`.
+
+The Part A feasibility analysis was produced by story U-062 at `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. The product owner accepted it on 2026-11-17 (decision Record 3, "Product owner decision" appendix), and the recorded direction is to proceed with the migration under the analysis's conditions (`go-with-conditions`).

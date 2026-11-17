@@ -160,3 +160,4 @@ Populated as REQ-* artifacts are authored. Planned requirements:
 - `sdlc/artifacts/build/sprints/sprint-017/U-060/qa-results.md`
 - `sdlc/analysis/20260623-post-migration-assessment/outputs/sms-backup-plus/post-migration-health-report.md`
 - Format reference: `sdlc/artifacts/requirements/modernization/EPIC-MODERNIZATION-005-modernization-debt-closure.md`
+- The Part A feasibility analysis was produced by story U-062 at `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. The product owner accepted it on 2026-11-17 (decision Record 3, "Product owner decision" appendix), and the recorded direction is to proceed with the migration under the analysis's conditions (`go-with-conditions`).
