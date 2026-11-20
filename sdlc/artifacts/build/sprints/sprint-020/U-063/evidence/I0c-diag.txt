@@ -1,0 +1,327 @@
+# I0c diagnostic output (sanitised). Three Gradle test runs; each section is the verbatim U063-DIAG output of one run.
+# RUN 1: blocks S, V (variants 1 to 4), N (server-side recording; server failed), C
+# file TEST-com.zegoggles.smssync.mail.ssl.U063DiagOffTest.xml
+U063-DIAG C.providers=[SUN, SunRsaSign, SunEC, SunJSSE, SunJCE, SunJGSS, SunSASL, XMLDSig, SunPCSC, JdkLDAP, JdkSASL, SunMSCAPI, SunPKCS11, BC]
+U063-DIAG C.sslcontext_tls_provider=SunJSSE
+U063-DIAG C.default_hostname_verifier_class=javax.net.ssl.HttpsURLConnection$DefaultHostnameVerifier
+U063-DIAG C.default_supported_protocols=[TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, SSLv3, SSLv2Hello]
+U063-DIAG C.default_enabled_protocols=[TLSv1.3, TLSv1.2]
+U063-DIAG C.supported_and_enabled_sets_equal=false
+U063-DIAG C.default_supported_has_TLSv1=true
+U063-DIAG C.default_supported_has_TLSv1.1=true
+U063-DIAG C.default_enabled_has_TLSv1=false
+U063-DIAG C.default_enabled_has_TLSv1.1=false
+U063-DIAG C.default_enabled_ciphers=[TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-DIAG C.factory_socket_enabled_protocols=[TLSv1.2, TLSv1.1, TLSv1, TLSv1.3, SSLv2Hello]
+U063-DIAG C.factory_socket_enabled_ciphers=[TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-DIAG C.factory_socket_has_TLSv1=true
+U063-DIAG C.factory_socket_has_TLSv1.1=true
+U063-DIAG C.factory_static_ENABLED_PROTOCOLS=[TLSv1.2, TLSv1.1, TLSv1, TLSv1.3, SSLv2Hello]
+U063-DIAG C.factory_static_ENABLED_CIPHERS=[TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-DIAG C.factory_protocols_equal_I0b_conscrypt_hardened_protocols=false
+U063-DIAG C.hs_implicit_right.client_result=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:java.net.SocketException ms=2632
+U063-DIAG C.hs_implicit_right.client_read_after_handshake=n/a
+U063-DIAG C.hs_implicit_right.client_session_protocol=n/a
+U063-DIAG C.hs_implicit_right.client_session_suite=n/a
+U063-DIAG C.hs_implicit_right.client_thrown=javax.net.ssl.SSLHandshakeException: (certificate_unknown) Hostname 'imap.right.test' was not verified against the server certificate | com.fsck.k9.mail.CertificateChainException: Hostname 'imap.right.test' was not verified against the server certificate | javax.net.ssl.SSLException: Hostname 'imap.right.test' was not verified against the server certificate
+U063-DIAG C.hs_implicit_right.server_context_provider=SunJSSE
+U063-DIAG C.hs_implicit_right.server_listening_socket_class=sun.security.ssl.SSLServerSocketImpl
+U063-DIAG C.hs_implicit_right.server_connection_socket_class=sun.security.ssl.SSLSocketImpl
+U063-DIAG C.hs_implicit_right.server_need_client_auth=false
+U063-DIAG C.hs_implicit_right.server_want_client_auth=false
+U063-DIAG C.hs_implicit_right.server_enabled_protocols=[TLSv1.3, TLSv1.2]
+U063-DIAG C.hs_implicit_right.server_step_at_end=handshake
+U063-DIAG C.hs_implicit_right.server_outcome=FAILED:java.net.SocketException
+U063-DIAG C.hs_implicit_right.server_exception=java.net.SocketException: An established connection was aborted by the software in your host machine
+U063-DIAG C.hs_implicit_right.server_cause_chain=java.net.SocketException: An established connection was aborted by the software in your host machine
+U063-DIAG C.hs_implicit_right.server_session_protocol=n/a
+U063-DIAG C.hs_implicit_right.server_after_handshake=writes one byte 0x2A, flushes, closes the socket
+U063-DIAG C.restore_ok=true
+# file TEST-com.zegoggles.smssync.mail.ssl.U063DiagTest.xml
+U063-DIAG hs_implicit_right_server_variant_1=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=338
+U063-DIAG hs_implicit_other_server_variant_1=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=91
+U063-DIAG hs_implicit_untrusted_server_variant_1=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=13
+U063-DIAG hs_implicit_expired_server_variant_1=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=60
+U063-DIAG hs_starttls_right_server_variant_1=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=15
+U063-DIAG hs_starttls_other_server_variant_1=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=16
+U063-DIAG hs_starttls_untrusted_server_variant_1=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=59
+U063-DIAG hs_starttls_expired_server_variant_1=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=105
+U063-DIAG pin_accept_server_variant_1=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=44
+U063-DIAG pin_reject_server_variant_1=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=java.security.cert.CertificateException chain=javax.net.ssl.SSLHandshakeException>java.security.cert.CertificateException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=33
+U063-DIAG V.variant_1.server_context_provider=Conscrypt
+U063-DIAG V.variant_1.meets_condition=false
+U063-DIAG V.variant_2=skipped: the server context is not SunJSSE (default SSLContext provider is Conscrypt)
+U063-DIAG hs_implicit_right_server_variant_3=ERROR java.lang.ExceptionInInitializerError ms=11
+U063-DIAG hs_implicit_other_server_variant_3=ERROR java.lang.NoClassDefFoundError ms=0
+U063-DIAG hs_implicit_untrusted_server_variant_3=ERROR java.lang.NoClassDefFoundError ms=0
+U063-DIAG hs_implicit_expired_server_variant_3=ERROR java.lang.NoClassDefFoundError ms=1
+U063-DIAG hs_starttls_right_server_variant_3=ERROR java.net.SocketTimeoutException ms=10031
+U063-DIAG hs_starttls_other_server_variant_3=ERROR java.net.SocketTimeoutException ms=10013
+U063-DIAG hs_starttls_untrusted_server_variant_3=ERROR java.net.SocketTimeoutException ms=10020
+U063-DIAG hs_starttls_expired_server_variant_3=ERROR java.net.SocketTimeoutException ms=10009
+U063-DIAG pin_accept_server_variant_3=ERROR java.lang.NoClassDefFoundError ms=0
+U063-DIAG pin_reject_server_variant_3=ERROR java.lang.NoClassDefFoundError ms=0
+U063-DIAG V.variant_3.server_context_provider=SunJSSE
+U063-DIAG V.variant_3.meets_condition=false
+U063-DIAG hs_implicit_right_server_variant_4=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=19
+U063-DIAG hs_implicit_other_server_variant_4=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=18
+U063-DIAG hs_implicit_untrusted_server_variant_4=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=15
+U063-DIAG hs_implicit_expired_server_variant_4=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=19
+U063-DIAG hs_starttls_right_server_variant_4=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=42 server=OK ms=22
+U063-DIAG hs_starttls_other_server_variant_4=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=22
+U063-DIAG hs_starttls_untrusted_server_variant_4=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=20
+U063-DIAG hs_starttls_expired_server_variant_4=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=19
+U063-DIAG pin_accept_server_variant_4=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=18
+U063-DIAG pin_reject_server_variant_4=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=java.security.cert.CertificateException chain=javax.net.ssl.SSLHandshakeException>java.security.cert.CertificateException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=14
+U063-DIAG V.variant_4.server_context_provider=Conscrypt
+U063-DIAG V.variant_4.meets_condition=false
+U063-DIAG V.satisfied=none
+U063-DIAG V.restore_ok=true
+U063-DIAG N.sunjsse_server.server_context_provider=SunJSSE
+U063-DIAG N.sunjsse_server.a_default_implicit_dnshost.error=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups
+U063-DIAG N.sunjsse_server.b_default_layered_dnshost.error=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups
+U063-DIAG N.sunjsse_server.c_default_layered_ipv6.error=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups
+U063-DIAG N.sunjsse_server.d_pinned_implicit_dnshost.error=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups
+U063-DIAG N.sunjsse_server.e_pinned_layered_dnshost.error=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups
+U063-DIAG N.sunjsse_server.f_pinned_layered_ipv6.error=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups
+U063-DIAG N.default_server.server_context_provider=Conscrypt
+U063-DIAG N.default_server.a_default_implicit_dnshost.client_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG N.default_server.a_default_implicit_dnshost.client_server_names_before_handshake=null
+U063-DIAG N.default_server.a_default_implicit_dnshost.client_handshake=completed protocol=TLSv1.3
+U063-DIAG N.default_server.a_default_implicit_dnshost.client_server_names_after_handshake=null
+U063-DIAG N.default_server.a_default_implicit_dnshost.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG N.default_server.a_default_implicit_dnshost.server_step_at_end=handshake
+U063-DIAG N.default_server.a_default_implicit_dnshost.server_matcher_saw=n/a (no matcher on this server)
+U063-DIAG N.default_server.a_default_implicit_dnshost.server_requested_names_from_session=n/a
+U063-DIAG N.default_server.a_default_implicit_dnshost.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG N.default_server.b_default_layered_dnshost.client_handshake=completed protocol=TLSv1.3
+U063-DIAG N.default_server.b_default_layered_dnshost.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG N.default_server.b_default_layered_dnshost.server_step_at_end=handshake
+U063-DIAG N.default_server.b_default_layered_dnshost.server_matcher_saw=n/a (no matcher on this server)
+U063-DIAG N.default_server.b_default_layered_dnshost.server_requested_names_from_session=n/a
+U063-DIAG N.default_server.b_default_layered_dnshost.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG N.default_server.c_default_layered_ipv6.client_handshake=threw javax.net.ssl.SSLHandshakeException: Hostname '2001:0db8:0000:0000:0000:0000:0000:0001' was not verified against the server certificate | com.fsck.k9.mail.CertificateChainException: Hostname '2001:0db8:0000:0000:0000:0000:0000:0001' was not verified against the server certificate | javax.net.ssl.SSLException: Hostname '2001:0db8:0000:0000:0000:0000:0000:0001' was not verified against the server certificate
+U063-DIAG N.default_server.c_default_layered_ipv6.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG N.default_server.c_default_layered_ipv6.server_step_at_end=handshake
+U063-DIAG N.default_server.c_default_layered_ipv6.server_matcher_saw=n/a (no matcher on this server)
+U063-DIAG N.default_server.c_default_layered_ipv6.server_requested_names_from_session=n/a
+U063-DIAG N.default_server.c_default_layered_ipv6.server_exception=javax.net.ssl.SSLHandshakeException: Read error: ssl=000002ADCBABD2F8: Failure in SSL library, usually a protocol error error:10000416:SSL routines:OPENSSL_internal:SSLV3_ALERT_CERTIFICATE_UNKNOWN (..\ssl\tls_record.cc:594 000002ADCEFF6008:0x00000001) | javax.net.ssl.SSLProtocolException: Read error: ssl=000002ADCBABD2F8: Failure in SSL library, usually a protocol error error:10000416:SSL routines:OPENSSL_internal:SSLV3_ALERT_CERTIFICATE_UNKNOWN (..\ssl\tls_record.cc:594 000002ADCEFF6008:0x00000001)
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.client_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.client_server_names_before_handshake=null
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.client_handshake=completed protocol=TLSv1.3
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.client_server_names_after_handshake=null
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.server_step_at_end=handshake
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.server_matcher_saw=n/a (no matcher on this server)
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.server_requested_names_from_session=n/a
+U063-DIAG N.default_server.d_pinned_implicit_dnshost.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG N.default_server.e_pinned_layered_dnshost.client_handshake=completed protocol=TLSv1.3
+U063-DIAG N.default_server.e_pinned_layered_dnshost.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG N.default_server.e_pinned_layered_dnshost.server_step_at_end=handshake
+U063-DIAG N.default_server.e_pinned_layered_dnshost.server_matcher_saw=n/a (no matcher on this server)
+U063-DIAG N.default_server.e_pinned_layered_dnshost.server_requested_names_from_session=n/a
+U063-DIAG N.default_server.e_pinned_layered_dnshost.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG N.default_server.f_pinned_layered_ipv6.client_handshake=completed protocol=TLSv1.3
+U063-DIAG N.default_server.f_pinned_layered_ipv6.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG N.default_server.f_pinned_layered_ipv6.server_step_at_end=handshake
+U063-DIAG N.default_server.f_pinned_layered_ipv6.server_matcher_saw=n/a (no matcher on this server)
+U063-DIAG N.default_server.f_pinned_layered_ipv6.server_requested_names_from_session=n/a
+U063-DIAG N.default_server.f_pinned_layered_ipv6.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG N.restore_ok=true
+U063-DIAG S.hs_implicit_right.client_result=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=17
+U063-DIAG S.hs_implicit_right.client_read_after_handshake=returned -1 (end of stream)
+U063-DIAG S.hs_implicit_right.client_session_protocol=TLSv1.3
+U063-DIAG S.hs_implicit_right.client_session_suite=TLS_AES_128_GCM_SHA256
+U063-DIAG S.hs_implicit_right.client_thrown=none
+U063-DIAG S.hs_implicit_right.server_context_provider=Conscrypt
+U063-DIAG S.hs_implicit_right.server_listening_socket_class=org.conscrypt.ConscryptServerSocket
+U063-DIAG S.hs_implicit_right.server_connection_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG S.hs_implicit_right.server_need_client_auth=false
+U063-DIAG S.hs_implicit_right.server_want_client_auth=false
+U063-DIAG S.hs_implicit_right.server_enabled_protocols=[TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]
+U063-DIAG S.hs_implicit_right.server_step_at_end=handshake
+U063-DIAG S.hs_implicit_right.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG S.hs_implicit_right.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG S.hs_implicit_right.server_cause_chain=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG S.hs_implicit_right.server_session_protocol=n/a
+U063-DIAG S.hs_implicit_right.server_after_handshake=writes one byte 0x2A, flushes, closes the socket
+U063-DIAG S.hs_starttls_right.client_result=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=18
+U063-DIAG S.hs_starttls_right.client_read_after_handshake=returned -1 (end of stream)
+U063-DIAG S.hs_starttls_right.client_session_protocol=TLSv1.3
+U063-DIAG S.hs_starttls_right.client_session_suite=TLS_AES_128_GCM_SHA256
+U063-DIAG S.hs_starttls_right.client_thrown=none
+U063-DIAG S.hs_starttls_right.server_context_provider=Conscrypt
+U063-DIAG S.hs_starttls_right.server_listening_socket_class=java.net.ServerSocket
+U063-DIAG S.hs_starttls_right.server_connection_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG S.hs_starttls_right.server_need_client_auth=false
+U063-DIAG S.hs_starttls_right.server_want_client_auth=false
+U063-DIAG S.hs_starttls_right.server_enabled_protocols=[TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]
+U063-DIAG S.hs_starttls_right.server_step_at_end=handshake
+U063-DIAG S.hs_starttls_right.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG S.hs_starttls_right.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG S.hs_starttls_right.server_cause_chain=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG S.hs_starttls_right.server_session_protocol=n/a
+U063-DIAG S.hs_starttls_right.server_after_handshake=writes one byte 0x2A, flushes, closes the socket
+U063-DIAG S.pin_accept.client_result=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=15
+U063-DIAG S.pin_accept.client_read_after_handshake=returned -1 (end of stream)
+U063-DIAG S.pin_accept.client_session_protocol=TLSv1.3
+U063-DIAG S.pin_accept.client_session_suite=TLS_AES_128_GCM_SHA256
+U063-DIAG S.pin_accept.client_thrown=none
+U063-DIAG S.pin_accept.server_context_provider=Conscrypt
+U063-DIAG S.pin_accept.server_listening_socket_class=org.conscrypt.ConscryptServerSocket
+U063-DIAG S.pin_accept.server_connection_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG S.pin_accept.server_need_client_auth=false
+U063-DIAG S.pin_accept.server_want_client_auth=false
+U063-DIAG S.pin_accept.server_enabled_protocols=[TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]
+U063-DIAG S.pin_accept.server_step_at_end=handshake
+U063-DIAG S.pin_accept.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG S.pin_accept.server_exception=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG S.pin_accept.server_cause_chain=javax.net.ssl.SSLHandshakeException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd | java.lang.reflect.InaccessibleObjectException: Unable to make java.net.InetAddress$InetAddressHolder java.net.InetAddress.holder() accessible: module java.base does not "opens java.net" to unnamed module @3d36e4cd
+U063-DIAG S.pin_accept.server_session_protocol=n/a
+U063-DIAG S.pin_accept.server_after_handshake=writes one byte 0x2A, flushes, closes the socket
+U063-DIAG S.hs_implicit_other.client_result=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=17
+U063-DIAG S.hs_implicit_other.client_read_after_handshake=n/a
+U063-DIAG S.hs_implicit_other.client_session_protocol=n/a
+U063-DIAG S.hs_implicit_other.client_session_suite=n/a
+U063-DIAG S.hs_implicit_other.client_thrown=javax.net.ssl.SSLHandshakeException: Hostname 'imap.right.test' was not verified against the server certificate | com.fsck.k9.mail.CertificateChainException: Hostname 'imap.right.test' was not verified against the server certificate | javax.net.ssl.SSLException: Hostname 'imap.right.test' was not verified against the server certificate
+U063-DIAG S.hs_implicit_other.server_context_provider=Conscrypt
+U063-DIAG S.hs_implicit_other.server_listening_socket_class=org.conscrypt.ConscryptServerSocket
+U063-DIAG S.hs_implicit_other.server_connection_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG S.hs_implicit_other.server_need_client_auth=false
+U063-DIAG S.hs_implicit_other.server_want_client_auth=false
+U063-DIAG S.hs_implicit_other.server_enabled_protocols=[TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]
+U063-DIAG S.hs_implicit_other.server_step_at_end=handshake
+U063-DIAG S.hs_implicit_other.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG S.hs_implicit_other.server_exception=javax.net.ssl.SSLHandshakeException: Read error: ssl=000002ADCBAC2878: Failure in SSL library, usually a protocol error error:10000416:SSL routines:OPENSSL_internal:SSLV3_ALERT_CERTIFICATE_UNKNOWN (..\ssl\tls_record.cc:594 000002ADCEFFBFA8:0x00000001)
+U063-DIAG S.hs_implicit_other.server_cause_chain=javax.net.ssl.SSLHandshakeException: Read error: ssl=000002ADCBAC2878: Failure in SSL library, usually a protocol error error:10000416:SSL routines:OPENSSL_internal:SSLV3_ALERT_CERTIFICATE_UNKNOWN (..\ssl\tls_record.cc:594 000002ADCEFFBFA8:0x00000001) | javax.net.ssl.SSLProtocolException: Read error: ssl=000002ADCBAC2878: Failure in SSL library, usually a protocol error error:10000416:SSL routines:OPENSSL_internal:SSLV3_ALERT_CERTIFICATE_UNKNOWN (..\ssl\tls_record.cc:594 000002ADCEFFBFA8:0x00000001)
+U063-DIAG S.hs_implicit_other.server_session_protocol=n/a
+U063-DIAG S.hs_implicit_other.server_after_handshake=writes one byte 0x2A, flushes, closes the socket
+U063-DIAG S.restore_ok=true
+diag_lines=195
+# RUN 2: S2 (failure origin), SunJSSE init, V5 (extra variant), N (raw ClientHello capture), C (repeated, plus C2 with the test SAN verifier)
+# file TEST-com.zegoggles.smssync.mail.ssl.U063DiagOffTest.xml
+U063-DIAG C.providers=[SUN, SunRsaSign, SunEC, SunJSSE, SunJCE, SunJGSS, SunSASL, XMLDSig, SunPCSC, JdkLDAP, JdkSASL, SunMSCAPI, SunPKCS11, BC]
+U063-DIAG C.sslcontext_tls_provider=SunJSSE
+U063-DIAG C.default_hostname_verifier_class=javax.net.ssl.HttpsURLConnection$DefaultHostnameVerifier
+U063-DIAG C.default_supported_protocols=[TLSv1.3, TLSv1.2, TLSv1.1, TLSv1, SSLv3, SSLv2Hello]
+U063-DIAG C.default_enabled_protocols=[TLSv1.3, TLSv1.2]
+U063-DIAG C.supported_and_enabled_sets_equal=false
+U063-DIAG C.default_supported_has_TLSv1=true
+U063-DIAG C.default_supported_has_TLSv1.1=true
+U063-DIAG C.default_enabled_has_TLSv1=false
+U063-DIAG C.default_enabled_has_TLSv1.1=false
+U063-DIAG C.default_enabled_ciphers=[TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-DIAG C.factory_socket_enabled_protocols=[TLSv1.2, TLSv1.1, TLSv1, TLSv1.3, SSLv2Hello]
+U063-DIAG C.factory_socket_enabled_ciphers=[TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-DIAG C.factory_socket_has_TLSv1=true
+U063-DIAG C.factory_socket_has_TLSv1.1=true
+U063-DIAG C.factory_static_ENABLED_PROTOCOLS=[TLSv1.2, TLSv1.1, TLSv1, TLSv1.3, SSLv2Hello]
+U063-DIAG C.factory_static_ENABLED_CIPHERS=[TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-DIAG C.factory_protocols_equal_I0b_conscrypt_hardened_protocols=false
+U063-DIAG C.hs_implicit_right.client_result=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=647
+U063-DIAG C.hs_implicit_right.client_read_after_handshake=n/a
+U063-DIAG C.hs_implicit_right.client_session_protocol=n/a
+U063-DIAG C.hs_implicit_right.client_session_suite=n/a
+U063-DIAG C.hs_implicit_right.client_thrown=javax.net.ssl.SSLHandshakeException: (certificate_unknown) Hostname 'imap.right.test' was not verified against the server certificate | com.fsck.k9.mail.CertificateChainException: Hostname 'imap.right.test' was not verified against the server certificate | javax.net.ssl.SSLException: Hostname 'imap.right.test' was not verified against the server certificate
+U063-DIAG C.hs_implicit_right.server_context_provider=SunJSSE
+U063-DIAG C.hs_implicit_right.server_listening_socket_class=sun.security.ssl.SSLServerSocketImpl
+U063-DIAG C.hs_implicit_right.server_connection_socket_class=sun.security.ssl.SSLSocketImpl
+U063-DIAG C.hs_implicit_right.server_need_client_auth=false
+U063-DIAG C.hs_implicit_right.server_want_client_auth=false
+U063-DIAG C.hs_implicit_right.server_enabled_protocols=[TLSv1.3, TLSv1.2]
+U063-DIAG C.hs_implicit_right.server_step_at_end=handshake
+U063-DIAG C.hs_implicit_right.server_outcome=FAILED:javax.net.ssl.SSLHandshakeException
+U063-DIAG C.hs_implicit_right.server_exception=javax.net.ssl.SSLHandshakeException: (certificate_unknown) Received fatal alert: certificate_unknown
+U063-DIAG C.hs_implicit_right.server_cause_chain=javax.net.ssl.SSLHandshakeException: (certificate_unknown) Received fatal alert: certificate_unknown
+U063-DIAG C.hs_implicit_right.server_session_protocol=n/a
+U063-DIAG C.hs_implicit_right.server_after_handshake=writes one byte 0x2A, flushes, closes the socket
+U063-DIAG C.restore_ok=true
+U063-DIAG C2.hs_implicit_right=OK protocol=TLSv1.3 suite=TLS_AES_256_GCM_SHA384 byte=42 server=OK ms=10036
+U063-DIAG C2.hs_starttls_right=OK protocol=TLSv1.3 suite=TLS_AES_256_GCM_SHA384 byte=42 server=TIMEOUT ms=10029
+U063-DIAG C2.hs_implicit_other=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:java.net.SocketException ms=9
+U063-DIAG C2.hs_implicit_untrusted=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>sun.security.validator.ValidatorException>sun.security.provider.certpath.SunCertPathBuilderException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=12
+U063-DIAG C2.hs_implicit_expired=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>sun.security.validator.ValidatorException>java.security.cert.CertPathValidatorException>java.security.cert.CertificateExpiredException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=14
+U063-DIAG C2.pin_accept=OK protocol=TLSv1.3 suite=TLS_AES_256_GCM_SHA384 byte=42 server=TIMEOUT ms=10012
+U063-DIAG C2.pin_reject=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=java.security.cert.CertificateException chain=javax.net.ssl.SSLHandshakeException>java.security.cert.CertificateException marker=true server=FAILED:java.net.SocketException ms=8
+U063-DIAG C2.restore_ok=true
+U063-DIAG C2.verifier_restore_ok=true
+# file TEST-com.zegoggles.smssync.mail.ssl.U063DiagTest.xml
+U063-DIAG J.sunjsse_context_init=OK provider=SunJSSE
+U063-DIAG J.sunjsse_client_side=EXCEPTION java.lang.ExceptionInInitializerError: null || chain: java.lang.ExceptionInInitializerError: null | java.security.InvalidParameterException: unhandled field class java.security.spec.ECFieldF2m || frames: java.security.InvalidParameterException @ org.conscrypt.OpenSSLECGroupContext.getInstance <- org.conscrypt.ECParameters.engineInit <- java.security.AlgorithmParameters.init <- sun.security.ssl.NamedGroup.<init> <- sun.security.ssl.NamedGroup.<init> <- sun.security.ssl.NamedGroup.<clinit> <- sun.security.ssl.NamedGroup$SupportedGroups.<clinit> <- sun.security.ssl.SSLConfiguration.<init> <- sun.security.ssl.TransportContext.<init> <- sun.security.ssl.SSLSocketImpl.<init>
+U063-DIAG J.NamedGroup_SupportedGroups_init=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups || chain: java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups | java.lang.ExceptionInInitializerError: Exception java.lang.ExceptionInInitializerError [in thread "SDK 29 Main Thread"] || frames: java.lang.ExceptionInInitializerError @ sun.security.ssl.NamedGroup$SupportedGroups.<clinit> <- sun.security.ssl.SSLConfiguration.<init> <- sun.security.ssl.TransportContext.<init> <- sun.security.ssl.SSLSocketImpl.<init> <- sun.security.ssl.SSLSocketFactoryImpl.createSocket <- com.zegoggles.smssync.mail.ssl.U063DiagTest.sunjsse_block <- jdk.internal.reflect.DirectMethodHandleAccessor.invoke <- java.lang.reflect.Method.invoke <- org.junit.runners.model.FrameworkMethod$1.runReflectiveCall <- org.junit.internal.runners.model.ReflectiveCallable.run <- org.junit.runners.model.FrameworkMethod.invokeExplosively <- org.junit.internal.runners.statements.InvokeMethod.evaluate
+U063-DIAG J.sunjsse_server_socket=EXCEPTION java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups || chain: java.lang.NoClassDefFoundError: Could not initialize class sun.security.ssl.NamedGroup$SupportedGroups | java.lang.ExceptionInInitializerError: Exception java.lang.ExceptionInInitializerError [in thread "SDK 29 Main Thread"] || frames: java.lang.ExceptionInInitializerError @ sun.security.ssl.NamedGroup$SupportedGroups.<clinit> <- sun.security.ssl.SSLConfiguration.<init> <- sun.security.ssl.TransportContext.<init> <- sun.security.ssl.SSLSocketImpl.<init> <- sun.security.ssl.SSLSocketFactoryImpl.createSocket <- com.zegoggles.smssync.mail.ssl.U063DiagTest.sunjsse_block <- jdk.internal.reflect.DirectMethodHandleAccessor.invoke <- java.lang.reflect.Method.invoke <- org.junit.runners.model.FrameworkMethod$1.runReflectiveCall <- org.junit.internal.runners.model.ReflectiveCallable.run <- org.junit.runners.model.FrameworkMethod.invokeExplosively <- org.junit.internal.runners.statements.InvokeMethod.evaluate
+U063-DIAG S2.hs_implicit_right.server_step_at_end=handshake
+U063-DIAG S2.hs_implicit_right.server_top_frames_of_root_cause=java.lang.reflect.InaccessibleObjectException @ java.lang.reflect.AccessibleObject.throwInaccessibleObjectException <- java.lang.reflect.AccessibleObject.checkCanSetAccessible <- java.lang.reflect.AccessibleObject.checkCanSetAccessible <- java.lang.reflect.Method.checkCanSetAccessible <- java.lang.reflect.Method.setAccessible <- org.conscrypt.Platform.getOriginalHostNameFromInetAddress <- org.conscrypt.AbstractConscryptSocket.getHostnameOrIP <- org.conscrypt.OpenSSLSocketImpl.getHostnameOrIP <- org.conscrypt.AbstractConscryptSocket$1.getHostnameOrIP <- org.conscrypt.ConscryptEngine.getPeerHost <- org.conscrypt.ConscryptEngine.handshake <- org.conscrypt.ConscryptEngine.wrap <- javax.net.ssl.SSLEngine.wrap <- org.conscrypt.ConscryptEngine.wrap
+U063-DIAG S2.hs_starttls_right.server_step_at_end=handshake
+U063-DIAG S2.hs_starttls_right.server_top_frames_of_root_cause=java.lang.reflect.InaccessibleObjectException @ java.lang.reflect.AccessibleObject.throwInaccessibleObjectException <- java.lang.reflect.AccessibleObject.checkCanSetAccessible <- java.lang.reflect.AccessibleObject.checkCanSetAccessible <- java.lang.reflect.Method.checkCanSetAccessible <- java.lang.reflect.Method.setAccessible <- org.conscrypt.Platform.getOriginalHostNameFromInetAddress <- org.conscrypt.AbstractConscryptSocket.getHostnameOrIP <- org.conscrypt.OpenSSLSocketImpl.getHostnameOrIP <- org.conscrypt.AbstractConscryptSocket$1.getHostnameOrIP <- org.conscrypt.ConscryptEngine.getPeerHost <- org.conscrypt.ConscryptEngine.handshake <- org.conscrypt.ConscryptEngine.wrap <- javax.net.ssl.SSLEngine.wrap <- org.conscrypt.ConscryptEngine.wrap
+U063-DIAG S2.restore_ok=true
+U063-DIAG N.a_default_implicit_dnshost.client_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG N.a_default_implicit_dnshost.client_server_names_before_handshake=null
+U063-DIAG N.a_default_implicit_dnshost.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.a_default_implicit_dnshost.client_server_names_after_handshake=null
+U063-DIAG N.a_default_implicit_dnshost.client_hello_on_the_wire=server_name present, names=[type0:localhost]; hello_record_length=250; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43]
+U063-DIAG N.b_default_layered_dnshost.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.b_default_layered_dnshost.client_hello_on_the_wire=server_name present, names=[type0:imap.right.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N.c_default_layered_ipv6.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.c_default_layered_ipv6.client_hello_on_the_wire=server_name extension ABSENT; hello_record_length=232; extension_types=[23, 65281, 10, 11, 5, 13, 51, 45, 43]
+U063-DIAG N.d_pinned_implicit_dnshost.client_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG N.d_pinned_implicit_dnshost.client_server_names_before_handshake=null
+U063-DIAG N.d_pinned_implicit_dnshost.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.d_pinned_implicit_dnshost.client_server_names_after_handshake=null
+U063-DIAG N.d_pinned_implicit_dnshost.client_hello_on_the_wire=server_name present, names=[type0:localhost]; hello_record_length=250; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43]
+U063-DIAG N.e_pinned_layered_dnshost.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.e_pinned_layered_dnshost.client_hello_on_the_wire=server_name present, names=[type0:imap.right.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N.f_pinned_layered_ipv6.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.f_pinned_layered_ipv6.client_hello_on_the_wire=server_name extension ABSENT; hello_record_length=232; extension_types=[23, 65281, 10, 11, 5, 13, 51, 45, 43]
+U063-DIAG N.g_default_implicit_ipv6.client_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG N.g_default_implicit_ipv6.client_server_names_before_handshake=null
+U063-DIAG N.g_default_implicit_ipv6.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.g_default_implicit_ipv6.client_server_names_after_handshake=null
+U063-DIAG N.g_default_implicit_ipv6.client_hello_on_the_wire=server_name present, names=[type0:localhost]; hello_record_length=250; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43]
+U063-DIAG N.h_pinned_implicit_ipv6.client_socket_class=org.conscrypt.ConscryptEngineSocket
+U063-DIAG N.h_pinned_implicit_ipv6.client_server_names_before_handshake=null
+U063-DIAG N.h_pinned_implicit_ipv6.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N.h_pinned_implicit_ipv6.client_server_names_after_handshake=null
+U063-DIAG N.h_pinned_implicit_ipv6.client_hello_on_the_wire=server_name present, names=[type0:localhost]; hello_record_length=250; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43]
+U063-DIAG N.restore_ok=true
+U063-DIAG hs_implicit_right_server_variant_5=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=42 server=OK ms=8
+U063-DIAG hs_implicit_other_server_variant_5=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=9
+U063-DIAG hs_implicit_untrusted_server_variant_5=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=7
+U063-DIAG hs_implicit_expired_server_variant_5=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=13
+U063-DIAG hs_starttls_right_server_variant_5=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=42 server=OK ms=8
+U063-DIAG hs_starttls_other_server_variant_5=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=8
+U063-DIAG hs_starttls_untrusted_server_variant_5=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=7
+U063-DIAG hs_starttls_expired_server_variant_5=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=8
+U063-DIAG pin_accept_server_variant_5=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=42 server=OK ms=7
+U063-DIAG pin_reject_server_variant_5=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=java.security.cert.CertificateException chain=javax.net.ssl.SSLHandshakeException>java.security.cert.CertificateException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=6
+U063-DIAG V5.meets_condition=true
+U063-DIAG V5.restore_ok=true
+diag_lines=95
+# RUN 3: N2 (implicit and layered shapes against loopback addresses that carry a host name)
+# file TEST-com.zegoggles.smssync.mail.ssl.U063DiagTest.xml
+U063-DIAG N2.1_default_implicit_host_eq_addressname.address_host_name=imap.right.test
+U063-DIAG N2.1_default_implicit_host_eq_addressname.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.1_default_implicit_host_eq_addressname.client_hello_on_the_wire=server_name present, names=[type0:imap.right.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N2.2_default_implicit_host_differs_from_addressname.address_host_name=other.example.test
+U063-DIAG N2.2_default_implicit_host_differs_from_addressname.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.2_default_implicit_host_differs_from_addressname.client_hello_on_the_wire=server_name present, names=[type0:other.example.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N2.3_default_implicit_ipv6_host_addressname_dns.address_host_name=imap.right.test
+U063-DIAG N2.3_default_implicit_ipv6_host_addressname_dns.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.3_default_implicit_ipv6_host_addressname_dns.client_hello_on_the_wire=server_name present, names=[type0:imap.right.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N2.4_pinned_implicit_host_eq_addressname.address_host_name=imap.right.test
+U063-DIAG N2.4_pinned_implicit_host_eq_addressname.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.4_pinned_implicit_host_eq_addressname.client_hello_on_the_wire=server_name present, names=[type0:imap.right.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N2.5_pinned_implicit_host_differs_from_addressname.address_host_name=other.example.test
+U063-DIAG N2.5_pinned_implicit_host_differs_from_addressname.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.5_pinned_implicit_host_differs_from_addressname.client_hello_on_the_wire=server_name present, names=[type0:other.example.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N2.6_default_layered_host_differs_from_addressname.address_host_name=other.example.test
+U063-DIAG N2.6_default_layered_host_differs_from_addressname.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.6_default_layered_host_differs_from_addressname.client_hello_on_the_wire=server_name present, names=[type0:imap.right.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N2.7_default_layered_ipv6_host_addressname_dns.address_host_name=imap.right.test
+U063-DIAG N2.7_default_layered_ipv6_host_addressname_dns.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.7_default_layered_ipv6_host_addressname_dns.client_hello_on_the_wire=server_name extension ABSENT; hello_record_length=232; extension_types=[23, 65281, 10, 11, 5, 13, 51, 45, 43]
+U063-DIAG N2.8_pinned_layered_host_differs_from_addressname.address_host_name=other.example.test
+U063-DIAG N2.8_pinned_layered_host_differs_from_addressname.client_handshake=threw javax.net.ssl.SSLHandshakeException
+U063-DIAG N2.8_pinned_layered_host_differs_from_addressname.client_hello_on_the_wire=server_name present, names=[type0:imap.right.test]; hello_record_length=512; extension_types=[0, 23, 65281, 10, 11, 5, 13, 51, 45, 43, 21]
+U063-DIAG N2.restore_ok=true
+diag_lines=25

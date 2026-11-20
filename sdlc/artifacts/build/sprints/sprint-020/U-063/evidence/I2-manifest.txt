@@ -1,0 +1,9 @@
+# I2 manifest. git status --porcelain --untracked-files=all -- PP  (verbatim)
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/TlsTestFixtures.java
+# hash path (git hash-object) for each U-063 product file
+4e013b43d6384048126e6ff6c580e5da5cd90d4d app/src/test/java/com/zegoggles/smssync/mail/ssl/TlsTestFixtures.java
+4eafda53d64522a3a1f579d4a2a5656714571af9 app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+36eedaeef53813bad3519e0c501a4173a77375fa app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+# count_worktree=684 count_head=682

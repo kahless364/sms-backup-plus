@@ -1,0 +1,16 @@
+# I7.6 IC-5 coverage and class-name checks (final clean gate)
+mail: I0 531/743 71.5% -> I7 538/743 72.4% (not lower; rises through PinnedCertificateSocketFactory.createSocket)
+mail.transport: I0 241/287 84.0% -> I7 241/287 84.0% (equal)
+jacocoTestCoverageVerification: passed in the final gate (BUILD SUCCESSFUL, exit 0) with no floor changed
+other packages, I0 versus I7 (all 23 rows compared): only com.zegoggles.smssync.activity differs: I0 199/1011 19.7%, I7 189/1011 18.7% (10 lines fewer). Unrelated to U-063 (no test or code of this story touches that package). The figure alternates between 199 and 189 from run to run: I0 199, I1 189, I2 189, I2b 199, I3 199, I4 199, I5 199, I6a 189, I6b 189, I6c 189, I7 189, with production unchanged throughout. Recorded as measured, not explained away; the cause was not investigated. The verification task passed.
+jacoco report text mentions of TlsTestFixtures, LoopbackTlsTestServer, HandshakeTest, HardeningTest, CreateSocketTest, JdkProviderTest: 0
+compiled U-063 test classes under app/build/intermediates (names only):
+  DefaultTrustedSocketFactoryHandshakeTest.class
+  DefaultTrustedSocketFactoryHardeningTest.class
+  DefaultTrustedSocketFactoryJdkProviderTest.class
+  LoopbackTlsTestServer$Mode.class
+  LoopbackTlsTestServer.class
+  PinnedCertificateSocketFactoryCreateSocketTest.class
+  TlsTestFixtures.class
+classes whose name lacks 'Test': 0
+git diff --quiet BASE -- app/build.gradle: exit 0 (no floor changed)

@@ -1,0 +1,18 @@
+# I6c manifest (turn stopped after M-E2). git status --porcelain --untracked-files=all -- PP  (verbatim)
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/TlsTestFixtures.java
+# hash path (git hash-object) for each U-063 product file
+4e013b43d6384048126e6ff6c580e5da5cd90d4d app/src/test/java/com/zegoggles/smssync/mail/ssl/TlsTestFixtures.java
+4eafda53d64522a3a1f579d4a2a5656714571af9 app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+36eedaeef53813bad3519e0c501a4173a77375fa app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+9fda86c2709b6b4703580895437eb990be71e52b app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+ed535dc90bfbe1cafb869297f752fccb5478d27b app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+22a57393adb7c866677410910a0219ba504ff048 app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+7c8cd6acceef566182edceb954032308eaf0121c app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+# count_worktree=710 count_head=682
+# production files at base blobs: DTSF d543927166b3c5e1da0aaa8ab584072a43bf7521, TMF 3b448058a393c5455ba9524f4b1a5fe9e2926c88, PCSF 8a0fbb64fb171624591fbebafb818555f28efd58

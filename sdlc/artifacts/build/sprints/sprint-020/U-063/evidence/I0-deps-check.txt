@@ -1,0 +1,3 @@
+sdlc/artifacts/build/sprints/sprint-020/U-063/evidence/I0-deps-debugUnitTestCompileClasspath.txt:363:|    +--- org.bouncycastle:bcprov-jdk18on:1.80
+sdlc/artifacts/build/sprints/sprint-020/U-063/evidence/I0-deps-debugUnitTestRuntimeClasspath.txt:160:|    +--- org.conscrypt:conscrypt-openjdk-uber:2.5.2
+sdlc/artifacts/build/sprints/sprint-020/U-063/evidence/I0-deps-debugUnitTestRuntimeClasspath.txt:233:|    +--- org.bouncycastle:bcprov-jdk18on:1.80

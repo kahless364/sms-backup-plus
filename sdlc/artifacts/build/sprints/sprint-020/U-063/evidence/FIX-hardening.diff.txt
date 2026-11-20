@@ -1,0 +1,22 @@
+--- a/app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java (pre-remediation)
++++ b/app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+@@ -264,7 +264,8 @@
+      * AC-15: the enabled cipher suites of the factory's socket are the provider defaults minus the
+      * blocked names (i), with the known suites in the recorded order (ii), all before any unknown
+      * suite (iii). (ii) and (iii) are evaluated without the provider-fixed suites F (deviation 7).
+-     * F is measured live; the test fails, naming D6'', if a bound on F does not hold.
++     * F is measured live; the test fails, naming D6'', if a bound on F does not hold or if no
++     * unknown suite remains once F is removed.
+      */
+     @Test
+     public void createSocket_enabledCipherSuites_areProviderDefaultsMinusBlockedWithKnownFirst()
+@@ -299,6 +300,9 @@
+         assertWithMessage("D6'': after removing the provider-fixed suites " + fixed + " fewer than "
+                 + "2 known ciphers remain, so the order checks would be empty; remainder="
+                 + remainder).that(knownInRemainder.size()).isAtLeast(2);
++        assertWithMessage("D6'': no unknown suite remains after removing the provider-fixed suites "
++                + fixed + ", so check (iii) would be empty; remainder=" + remainder)
++                .that(remainder.size() - knownInRemainder.size()).isAtLeast(1);
+ 
+         // (ii) the known ciphers present appear in the literal order.
+         List<String> actualKnownOrder = new ArrayList<>();

@@ -1,0 +1,14 @@
+# I6-clean (IC-7, IC-2) at the end of I6c, after Gate G
+commit: 395000956bb46cb2acc6d66e62d4b5ef933a2d90
+$ git diff --stat BASE -- app/src/main k9mail-vendored build.gradle app/build.gradle settings.gradle gradle gradle.properties
+(end of output; empty means clean)
+$ git diff --quiet BASE -- (same paths)
+exit=0
+$ git status --porcelain -- app/src/main k9mail-vendored
+(end of output; empty means clean)
+$ git diff --stat BASE -- gradle/verification-metadata.xml
+(end of output)
+hash-object versus base blob:
+d543927166b3c5e1da0aaa8ab584072a43bf7521 d543927166b3c5e1da0aaa8ab584072a43bf7521 k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java
+3b448058a393c5455ba9524f4b1a5fe9e2926c88 3b448058a393c5455ba9524f4b1a5fe9e2926c88 k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/TrustManagerFactory.java
+8a0fbb64fb171624591fbebafb818555f28efd58 8a0fbb64fb171624591fbebafb818555f28efd58 app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java

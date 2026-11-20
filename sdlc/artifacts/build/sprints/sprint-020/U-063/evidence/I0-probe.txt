@@ -1,0 +1,66 @@
+U063-PROBE hs_implicit_right=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=42
+U063-PROBE hs_implicit_other=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=9
+U063-PROBE hs_implicit_untrusted=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=8
+U063-PROBE hs_implicit_expired=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=14
+U063-PROBE hs_starttls_right=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=8
+U063-PROBE hs_starttls_other=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=8
+U063-PROBE hs_starttls_untrusted=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=7
+U063-PROBE hs_starttls_expired=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>java.security.cert.CertificateException>java.security.cert.CertPathValidatorException marker=false server=FAILED:javax.net.ssl.SSLHandshakeException ms=7
+U063-PROBE p9_restore_ok=true
+U063-PROBE pin_accept=OK protocol=TLSv1.3 suite=TLS_AES_128_GCM_SHA256 byte=-1 server=FAILED:javax.net.ssl.SSLHandshakeException ms=8
+U063-PROBE pin_reject=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=java.security.cert.CertificateException chain=javax.net.ssl.SSLHandshakeException>java.security.cert.CertificateException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=7
+U063-PROBE negotiated_protocols=[hs_implicit_right:TLSv1.3, hs_starttls_right:TLSv1.3, pin_accept:TLSv1.3]
+U063-PROBE sni_ctor_eight_group=IAE Contains non-LDH ASCII characters
+U063-PROBE sni_ctor_1to8=IAE Contains non-LDH ASCII characters
+U063-PROBE fixtures_load=OK
+U063-PROBE hv_default_class=org.robolectric.android.internal.AndroidTestEnvironment$1
+U063-PROBE hv_right_on_right=true
+U063-PROBE hv_right_on_other=false
+U063-PROBE tmf_default_tm_class=org.conscrypt.TrustManagerImpl
+U063-PROBE tmf_field_rw=OK
+U063-PROBE localkeystore_null=true
+U063-PROBE p8_restore_ok=true
+U063-PROBE sni_obs_dns=null
+U063-PROBE sni_obs_ipv6=null
+U063-PROBE sni_obs_pinned_implicit=null
+U063-PROBE default_supported_protocols=[TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]
+U063-PROBE default_enabled_protocols=[TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]
+U063-PROBE hardened_enabled_protocols=[TLSv1.2, TLSv1.1, TLSv1, TLSv1.3]
+U063-PROBE reflected_enabled_protocols=[TLSv1.2, TLSv1.1, TLSv1, TLSv1.3]
+U063-PROBE default_enabled_ciphers=[TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_128_GCM_SHA256, TLS_RSA_WITH_AES_256_GCM_SHA384, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-PROBE hardened_enabled_ciphers=[TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_RSA_WITH_AES_128_GCM_SHA256, TLS_RSA_WITH_AES_256_GCM_SHA384, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-PROBE reflected_enabled_ciphers=[TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, TLS_RSA_WITH_AES_128_GCM_SHA256, TLS_RSA_WITH_AES_256_GCM_SHA384, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+U063-PROBE blocked_in_default=[]
+U063-PROBE fixed_suites_F=[TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256]
+U063-PROBE f_bound_known_disjoint=true
+U063-PROBE f_bound_no_with=true
+U063-PROBE f_bound_remainder_ge2=true
+U063-PROBE f_bound_baseline_in_default=true
+U063-PROBE tls10_supported=true
+U063-PROBE tls10_default=true
+U063-PROBE tls10_hardened=true
+U063-PROBE tls11_supported=true
+U063-PROBE tls11_default=true
+U063-PROBE tls11_hardened=true
+U063-PROBE sslv3_supported=false
+U063-PROBE sslv2hello_supported=false
+U063-PROBE cipher_order_differs=true
+U063-PROBE protocols_differ=true
+U063-PROBE supported_minus_sslv3_equals_default_set=true
+U063-PROBE cipher_order_matches_reflected=true
+U063-PROBE protocol_order_matches_reflected=true
+U063-PROBE layered_equals_implicit_ciphers=true
+U063-PROBE layered_equals_implicit_protocols=true
+U063-PROBE pinned_implicit_equals_default=true
+U063-PROBE pinned_layered_equals_default=true
+U063-PROBE sdk_int=29
+U063-PROBE java_version=25.0.5.0.3
+U063-PROBE providers=[Conscrypt:1.0, SUN:25.0, SunRsaSign:25.0, SunEC:25.0, SunJSSE:25.0, SunJCE:25.0, SunJGSS:25.0, SunSASL:25.0, XMLDSig:25.0, SunPCSC:25.0, JdkLDAP:25.0, JdkSASL:25.0, SunMSCAPI:25.0, SunPKCS11:25.0, BC:1.8]
+U063-PROBE prov_sslcontext_tls=Conscrypt
+U063-PROBE prov_tmf_x509=Conscrypt
+U063-PROBE prov_kmf_default=SunJSSE
+U063-PROBE prov_keystore_default=SUN
+U063-PROBE prov_certfactory_x509=Conscrypt
+U063-PROBE prov_keyfactory_rsa=Conscrypt
+U063-PROBE jdk_tls_disabled_algorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage HandshakeSignature, ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
+probe_lines=65

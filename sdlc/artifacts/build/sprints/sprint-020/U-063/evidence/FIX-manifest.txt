@@ -1,0 +1,17 @@
+# FIX manifest. git status --porcelain --untracked-files=all -- PP (verbatim)
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+?? app/src/test/java/com/zegoggles/smssync/mail/ssl/TlsTestFixtures.java
+# hash path (git hash-object)
+4e013b43d6384048126e6ff6c580e5da5cd90d4d app/src/test/java/com/zegoggles/smssync/mail/ssl/TlsTestFixtures.java
+4eafda53d64522a3a1f579d4a2a5656714571af9 app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+36eedaeef53813bad3519e0c501a4173a77375fa app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+049a115232392ea84f1c518f39cdbcd9e2665dfa app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+7e0344374c66287c400aad581d90cb8b08b4c8d1 app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+5704390e81a107b11b1f5d7e427182b4c483b48d app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+dac59ccab1322e0f74f2a5d39f27befd71143226 app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+# count_worktree=710 count_head=682

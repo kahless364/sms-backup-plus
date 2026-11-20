@@ -239,6 +239,69 @@ public class DefaultTrustedSocketFactorySniTest {
     }
 
     // -----------------------------------------------------------------------
+    // U-063 Group A (AC-1, AC-2): SNI for a true eight-group IPv6 literal
+    //
+    // What these two tests can prove: the host-name filter in DefaultTrustedSocketFactory
+    // treats an IPv6 literal written with all eight groups (no "::" shorthand) as a
+    // non-DNS name, so SNI is skipped for it. RFC 6066 section 3 says the server name
+    // list carries DNS host names only, never literal IP addresses, which is the rule
+    // the filter exists to follow. Both tests are provider-independent: they use a
+    // Mockito SSLSocket and reflection, so they behave the same under any TLS provider.
+    //
+    // What they cannot prove: that a real socket ends up without a server name. A
+    // socket-level check (the factory's createSocket with this literal, and the DNS-host
+    // control that shows the observable can report a name) lives in
+    // DefaultTrustedSocketFactoryJdkProviderTest (AC-3, AC-4). It is there because the
+    // default test provider (Conscrypt) reports no server names whatever the factory sets.
+    // Nothing here shows what a device's TLS stack sends on the wire.
+    //
+    // Mutations that must break them:
+    //   AC-1 breaks when both the early return in setSniViaSSLParameters (guard) and
+    //        the catch of IllegalArgumentException are removed: the literal then reaches
+    //        SNIHostName, which rejects colons, and the exception escapes. Removing only
+    //        one of the two layers does not break AC-1, because the guard and the safety
+    //        net overlap by design; AC-2 covers the guard alone.
+    //   AC-2 breaks when the IPv6 branch of isIpOrBlankHostname (the test for a colon in
+    //        the host name) is removed or narrowed to "contains a double colon".
+    //
+    // After the CR-009 move: a missing field, method or class means this test's seam
+    // needs retargeting to the moved class; a failed behavioural assertion is a
+    // regression, and the test is never edited to pass.
+    // -----------------------------------------------------------------------
+
+    /**
+     * AC-1: A full eight-group IPv6 literal does not throw and SNI is skipped
+     * (setSSLParameters is never called). RFC 6066 section 3.
+     */
+    @Test
+    public void setSniViaSSLParameters_ipv6EightGroupLiteral_doesNotThrowAndSkipsSNI() {
+        SSLSocket mockSocket = mock(SSLSocket.class);
+        SSLParameters params = new SSLParameters();
+        when(mockSocket.getSSLParameters()).thenReturn(params);
+
+        // Must not throw for the uncompressed eight-group form.
+        DefaultTrustedSocketFactory.setSniViaSSLParameters(
+                mockSocket, "2001:0db8:0000:0000:0000:0000:0000:0001");
+
+        verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
+    }
+
+    /**
+     * AC-2: isIpOrBlankHostname answers true for the eight-group literal and for the
+     * shortest eight-group form, with no "::" in either. Called by reflection because the
+     * method is package-private in the production class.
+     */
+    @Test
+    public void isIpOrBlankHostname_ipv6EightGroupLiteral_isTrue() throws Exception {
+        java.lang.reflect.Method m = DefaultTrustedSocketFactory.class
+                .getDeclaredMethod("isIpOrBlankHostname", String.class);
+        m.setAccessible(true);
+
+        assertThat((Boolean) m.invoke(null, "2001:0db8:0000:0000:0000:0000:0000:0001")).isTrue();
+        assertThat((Boolean) m.invoke(null, "1:2:3:4:5:6:7:8")).isTrue();
+    }
+
+    // -----------------------------------------------------------------------
     // Helper: call the private setHostnameViaReflection via reflection for testing
     // -----------------------------------------------------------------------
 

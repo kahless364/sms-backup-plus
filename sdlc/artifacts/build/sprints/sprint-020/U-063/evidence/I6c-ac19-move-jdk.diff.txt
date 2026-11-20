@@ -1,0 +1,73 @@
+--- before: app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
++++ after: app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+@@ -1,6 +1,7 @@
+ package com.zegoggles.smssync.mail.ssl;
+ 
+ import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
++import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
+ 
+ import org.junit.Before;
+ import org.junit.Test;
+@@ -27,6 +28,8 @@
+ 
+ import static com.google.common.truth.Truth.assertThat;
+ import static com.google.common.truth.Truth.assertWithMessage;
++import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.OTHER_HOST_CERT;
++import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.certificate;
+ import static org.junit.Assert.fail;
+ import static org.robolectric.annotation.ConscryptMode.Mode.OFF;
+ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -34,7 +37,10 @@
+ /**
+  * Characterisation tests for {@link DefaultTrustedSocketFactory} that run on the JDK's own TLS
+  * provider (SunJSSE) instead of the Conscrypt provider that Robolectric installs by default
+- * (story U-063, acceptance criteria AC-3, AC-4 and the supported-protocols clause of AC-16).
++ * (story U-063, acceptance criteria AC-3, AC-4 and the supported-protocols clause of AC-16). It also
++ * holds AC-19 for the pinned factory, because that check needs the same provider: under Conscrypt the
++ * server-name observable reads nothing whatever is set, so mutation M-E2 was not detected there
++ * (product owner decision of 2026-11-20).
+  *
+  * <p><b>Why this class exists.</b> Under Conscrypt, the default test provider, three things cannot
+  * be observed. The socket reports no server names before or after a handshake whatever the factory
+@@ -85,6 +91,8 @@
+  *       protocols (M-D11); SSLv3 no longer blocked (M-D2); the known order changed (M-D5); the
+  *       hardening call removed (M-D8) or its protocol part removed (M-D13).
+  *   <li>AC-16 second test: M-D11; TLS 1.0 added to the blocked protocols (M-D12).
++ *   <li>AC-19 (pinned factory): the pinned factory's {@code createSocket} made to set a server name
++ *       (M-E2).
+  * </ul>
+  *
+  * <p><b>Guard A1-G3 is a permanent tripwire.</b> If the JDK's TLS classes were initialised under
+@@ -287,6 +295,32 @@
+         } finally {
+             closeQuietly(socket);
+         }
++    }
++
++    /**
++     * AC-19, implicit shape, unconnected: the pinned factory's socket for the DNS host reports no server
++     * name. The control is AC-4 in this class, which shows that the observable can report a name on this
++     * provider. The mutation that must break this test is M-E2 (the pinned factory made to set a server
++     * name).
++     *
++     * <p>What it cannot prove: this is a desktop JDK provider, not a device's. The environment
++     * diagnostic's capture of the first handshake message found that the default test provider puts a
++     * name into the client hello on its own for both factories, so "the factory sets no name" is not
++     * "no name is sent". The layered shape is not asserted, because a provider may add a name itself.
++     */
++    @Test
++    public void pinnedFactory_createSocket_implicit_setsNoServerNames_jdkProvider() throws Exception {
++        SSLSocket socket = (SSLSocket) new PinnedCertificateSocketFactory(
++                RuntimeEnvironment.getApplication(), DNS_HOST, certificate(OTHER_HOST_CERT))
++                .createSocket(null, DNS_HOST, 993, null);
++        try {
++            assertThat(socket).isInstanceOf(SSLSocket.class);
++            List<SNIServerName> names = socket.getSSLParameters().getServerNames();
++            assertWithMessage("server names on the pinned implicit socket")
++                    .that(names == null || names.isEmpty()).isTrue();
++        } finally {
++            closeQuietly(socket);
++        }
+     }
+ 
+     // -----------------------------------------------------------------------

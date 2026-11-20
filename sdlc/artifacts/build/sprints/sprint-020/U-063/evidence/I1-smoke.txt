@@ -1,0 +1,8 @@
+U063-PROBE smoke_pin_accept=OK protocol=TLSv1.3 byte=42 server=OK ms=339
+U063-PROBE smoke_starttls_other=REJECTED top=javax.net.ssl.SSLHandshakeException direct_cause=com.fsck.k9.mail.CertificateChainException chain=javax.net.ssl.SSLHandshakeException>com.fsck.k9.mail.CertificateChainException>javax.net.ssl.SSLException marker=true server=FAILED:javax.net.ssl.SSLHandshakeException ms=166
+U063-PROBE smoke_starttls_other_restore_ok=true
+U063-PROBE smoke_starttls_right=OK protocol=TLSv1.3 byte=42 server=OK ms=127
+U063-PROBE smoke_starttls_right_restore_ok=true
+U063-PROBE smoke_implicit_right=OK protocol=TLSv1.3 byte=42 server=OK ms=126
+U063-PROBE smoke_implicit_right_restore_ok=true
+probe_lines=7

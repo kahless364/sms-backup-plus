@@ -1,0 +1,185 @@
+package com.zegoggles.smssync.mail.ssl;
+
+import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.*;
+
+import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
+import com.fsck.k9.mail.ssl.TrustedSocketFactory;
+import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+
+import java.lang.reflect.Field;
+import java.net.Socket;
+
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSocket;
+
+/**
+ * U-063 I1 THROWAWAY helper smoke test: prints U063-PROBE lines, never fails. Deleted in the same increment.
+ */
+@RunWith(RobolectricTestRunner.class)
+public class U063HelperSmokeTest {
+
+    private static final String HOST = RIGHT_HOST_NAME;
+    private static final String HOST_MARKER = "was not verified against the server certificate";
+    private static final String PIN_MARKER = "Pinned certificate mismatch";
+
+    private static String describe(Throwable e, String marker) {
+        boolean m = false;
+        StringBuilder chain = new StringBuilder();
+        Throwable t = e;
+        for (int i = 0; i < 20 && t != null; i++) {
+            chain.append(i > 0 ? ">" : "").append(t.getClass().getName());
+            if (t.getMessage() != null && t.getMessage().contains(marker)) {
+                m = true;
+            }
+            t = t.getCause();
+        }
+        return "top=" + e.getClass().getName() + " direct_cause="
+                + (e.getCause() == null ? "null" : e.getCause().getClass().getName())
+                + " chain=" + chain + " marker=" + m;
+    }
+
+    private static String run(LoopbackTlsTestServer.Mode mode, String leaf, String key, String issuer,
+                              TrustedSocketFactory factory, String marker) {
+        long t0 = System.nanoTime();
+        LoopbackTlsTestServer server = null;
+        Socket plain = null;
+        Socket client = null;
+        try {
+            server = LoopbackTlsTestServer.start(mode, serverContext(leaf, key, issuer));
+            int port = server.port();
+            if (mode == LoopbackTlsTestServer.Mode.STARTTLS) {
+                plain = LoopbackTlsTestServer.connectPlain(port);
+                String greeting = LoopbackTlsTestServer.readLine(plain);
+                if (!LoopbackTlsTestServer.GREETING.equals(greeting)) {
+                    return "ERROR unexpected greeting: " + greeting;
+                }
+                client = factory.createSocket(plain, HOST, port, null);
+            } else {
+                client = factory.createSocket(null, HOST, port, null);
+                LoopbackTlsTestServer.connect(client, port);
+            }
+            SSLSocket ssl = (SSLSocket) client;
+            ssl.startHandshake();
+            int b = ssl.getInputStream().read();
+            String proto = ssl.getSession().getProtocol();
+            return "OK protocol=" + proto + " byte=" + b + " server=" + server.awaitOutcome()
+                    + " ms=" + (System.nanoTime() - t0) / 1000000;
+        } catch (SSLException e) {
+            closeAll(client, plain);
+            return "REJECTED " + describe(e, marker) + " server=" + (server == null ? "NOSERVER" : server.awaitOutcome())
+                    + " ms=" + (System.nanoTime() - t0) / 1000000;
+        } catch (Throwable e) {
+            return "ERROR " + e.getClass().getName() + ": " + e.getMessage();
+        } finally {
+            closeAll(client, plain);
+            if (server != null) {
+                server.close();
+            }
+        }
+    }
+
+    private static void closeAll(Socket... sockets) {
+        for (Socket s : sockets) {
+            if (s != null) {
+                try {
+                    s.close();
+                } catch (Exception ignored) {
+                    // best effort
+                }
+            }
+        }
+    }
+
+    private static void print(String key, String value) {
+        System.out.println("U063-PROBE " + key + "=" + value);
+    }
+
+    @Test
+    public void smoke_implicitRightHostControl() {
+        Field field = null;
+        Object original = null;
+        try {
+            field = com.fsck.k9.mail.ssl.TrustManagerFactory.class.getDeclaredField("defaultTrustManager");
+            field.setAccessible(true);
+            original = field.get(null);
+            field.set(null, trustManagerFor(TRUSTED_CA_CERT));
+            print("smoke_implicit_right", run(LoopbackTlsTestServer.Mode.IMPLICIT_TLS, RIGHT_HOST_CERT,
+                    RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT,
+                    new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication()), HOST_MARKER));
+        } catch (Throwable e) {
+            print("smoke_implicit_right", "EXCEPTION " + e);
+        } finally {
+            try {
+                field.set(null, original);
+                print("smoke_implicit_right_restore_ok", String.valueOf(field.get(null) == original));
+            } catch (Throwable e) {
+                print("smoke_implicit_right_restore_ok", "EXCEPTION " + e);
+            }
+        }
+    }
+
+    @Test
+    public void smoke_starttlsOtherHostRejection() {
+        Field field = null;
+        Object original = null;
+        try {
+            field = com.fsck.k9.mail.ssl.TrustManagerFactory.class.getDeclaredField("defaultTrustManager");
+            field.setAccessible(true);
+            original = field.get(null);
+            field.set(null, trustManagerFor(TRUSTED_CA_CERT));
+            print("smoke_starttls_other", run(LoopbackTlsTestServer.Mode.STARTTLS, OTHER_HOST_CERT,
+                    OTHER_HOST_KEY_PKCS8, TRUSTED_CA_CERT,
+                    new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication()), HOST_MARKER));
+        } catch (Throwable e) {
+            print("smoke_starttls_other", "EXCEPTION " + e);
+        } finally {
+            try {
+                field.set(null, original);
+                print("smoke_starttls_other_restore_ok", String.valueOf(field.get(null) == original));
+            } catch (Throwable e) {
+                print("smoke_starttls_other_restore_ok", "EXCEPTION " + e);
+            }
+        }
+    }
+
+    @Test
+    public void smoke_starttlsRightHostControl() {
+        Field field = null;
+        Object original = null;
+        try {
+            field = com.fsck.k9.mail.ssl.TrustManagerFactory.class.getDeclaredField("defaultTrustManager");
+            field.setAccessible(true);
+            original = field.get(null);
+            field.set(null, trustManagerFor(TRUSTED_CA_CERT));
+            print("smoke_starttls_right", run(LoopbackTlsTestServer.Mode.STARTTLS, RIGHT_HOST_CERT,
+                    RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT,
+                    new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication()), HOST_MARKER));
+        } catch (Throwable e) {
+            print("smoke_starttls_right", "EXCEPTION " + e);
+        } finally {
+            try {
+                field.set(null, original);
+                print("smoke_starttls_right_restore_ok", String.valueOf(field.get(null) == original));
+            } catch (Throwable e) {
+                print("smoke_starttls_right_restore_ok", "EXCEPTION " + e);
+            }
+        }
+    }
+
+    @Test
+    public void smoke_pinnedAccept() {
+        try {
+            PinnedCertificateSocketFactory factory = new PinnedCertificateSocketFactory(
+                    RuntimeEnvironment.getApplication(), HOST, certificate(OTHER_HOST_CERT));
+            print("smoke_pin_accept", run(LoopbackTlsTestServer.Mode.IMPLICIT_TLS, OTHER_HOST_CERT,
+                    OTHER_HOST_KEY_PKCS8, TRUSTED_CA_CERT, factory, PIN_MARKER));
+        } catch (Throwable e) {
+            print("smoke_pin_accept", "EXCEPTION " + e);
+        }
+    }
+}

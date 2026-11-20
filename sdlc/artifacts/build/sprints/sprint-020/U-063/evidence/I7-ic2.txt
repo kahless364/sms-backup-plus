@@ -1,0 +1,23 @@
+# I7.2 IC-2 and IC-10 (working-tree forms; the literal HEAD..range forms wait for a commit)
+$ git diff --name-only BASE -- . :(exclude)sdlc
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+$ git ls-files --others --exclude-standard -- PP   (the 6 new files, nothing else)
+app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+app/src/test/java/com/zegoggles/smssync/mail/ssl/TlsTestFixtures.java
+$ git diff --stat BASE -- PROD   (empty)
+(end)
+$ git diff --stat BASE -- gradle/verification-metadata.xml   (empty)
+(end)
+SNI test: git diff --numstat = 63	0 (added, deleted); deleted lines (U0 diff, lines starting with a minus) = 0; the 10 existing methods are untouched (IC-10)
+PinnedCertificateSocketFactoryTest.java (8 tests): git diff --quiet BASE exit 0; hash-object 611331b0e650f531f185061b422296894aa50a22 equals blob at BASE 611331b0e650f531f185061b422296894aa50a22 (IC-10)
+$ git status --porcelain --untracked-files=all -- <workspace>  (workspace files, names only)
+  ?? sdlc/artifacts/build/sprints/sprint-020/U-063/contract-verification.md
+  ?? sdlc/artifacts/build/sprints/sprint-020/U-063/expert-depth-check.md
+  ?? sdlc/artifacts/build/sprints/sprint-020/U-063/implementation-log.md
+  ?? sdlc/artifacts/build/sprints/sprint-020/U-063/plan-review.md
+  ?? sdlc/artifacts/build/sprints/sprint-020/U-063/plan.md
+  (evidence files not listed one by one: 125 untracked)

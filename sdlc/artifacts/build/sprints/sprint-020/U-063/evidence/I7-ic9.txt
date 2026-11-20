@@ -1,0 +1,7 @@
+# I7.4 IC-9 ordered suites (JUnit 4 Suite, children in declaration order, one JVM)
+forward order: Handshake, Hardening, JDK-provider, Pinned createSocket, SNI, K9MailTransportTest, BackupImapStoreTest (tools/U063OrderedSuiteForwardTest.java.txt)
+reverse order: the opposite (tools/U063OrderedSuiteReverseTest.java.txt)
+forward: exit 0, BUILD SUCCESSFUL in 40s, files=7 cases=93 pass=93 fail=0 error=0 skip=0 (I7-ic9-forward-cases.txt)
+reverse: exit 0, BUILD SUCCESSFUL in 1m 5s, files=7 cases=93 pass=93 fail=0 error=0 skip=0 (I7-ic9-reverse-cases.txt)
+per-class cases in each run: Handshake 8, Hardening 9, JDK-provider 5, Pinned createSocket 4, SNI 12, K9MailTransportTest 44, BackupImapStoreTest 11 (the last two equal I0-suite-children-baseline.txt); total 38 + 55 = 93
+after both runs: suite sweep = nothing listed; product-path porcelain equals I6c-manifest.txt; all seven hashes equal it; count C = 710; stale suite classes purged by recompiling the unit-test sources (two compile-only tasks) and removing two javac transaction backups; no U063 file under app/build

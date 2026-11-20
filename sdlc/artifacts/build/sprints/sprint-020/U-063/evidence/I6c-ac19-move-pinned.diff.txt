@@ -1,0 +1,78 @@
+--- before: app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
++++ after: app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+@@ -12,9 +12,7 @@
+ import java.net.ServerSocket;
+ import java.net.Socket;
+ import java.security.cert.CertificateException;
+-import java.util.List;
+ 
+-import javax.net.ssl.SNIServerName;
+ import javax.net.ssl.SSLContext;
+ import javax.net.ssl.SSLException;
+ import javax.net.ssl.SSLSocket;
+@@ -39,6 +37,11 @@
+  * actually installs, by running real handshakes, and the socket it returns. Nothing the existing test
+  * covers is repeated, and the seam is not used here.
+  *
++ * <p>AC-19 (the pinned factory sets no server name) is tested in
++ * {@code DefaultTrustedSocketFactoryJdkProviderTest}, not here. The default test provider reports no server
++ * name whatever is set, as mutation M-E2 showed on 2026-11-17: a pinned factory made to set a name still
++ * passed the test. This class therefore holds AC-18, AC-20 and AC-21 (4 tests).
++ *
+  * <p><b>What the code does, and what these tests record.</b> The pinned factory builds a plain TLS context
+  * with its own pinning trust manager and returns an unconnected socket or one layered over a plain socket.
+  * It calls neither the SNI setter nor any cipher or protocol hardening, it does not verify the host name
+@@ -50,7 +53,6 @@
+  *       those of an unhardened socket from a fresh default TLS context. This records that the pinned path
+  *       does <em>not</em> harden, unlike the default factory. It is present behaviour, not an approved
+  *       design; whether it should change is a separate matter and is not decided here.</li>
+- *   <li>AC-19: on the implicit shape the socket reports no server name before any connect.</li>
+  *   <li>AC-20: a handshake against a server presenting the enrolled certificate is accepted although the
+  *       host name asked for ({@code imap.right.test}) is not in that certificate (it is valid for
+  *       {@code imap.other.test}). The pin replaces host-name verification. The control assertions are those
+@@ -65,14 +67,6 @@
+  * <ul>
+  *   <li>The provider is a desktop test provider, not a device's. The enabled lists compared in AC-18 are
+  *       the provider's defaults here; what a device enables by default is not shown.</li>
+- *   <li>AC-19 is weak under this provider: the server-name observable reads {@code null} whatever the
+- *       factory sets (it was {@code null} even for the default factory, which does set a name). A capture
+- *       of the first handshake message in the environment diagnostic showed that the provider sends a name
+- *       on its own (the connect address's host name on the implicit shape, the host given to
+- *       {@code createSocket} on the layered shape), and that the pinned factory sends the same names as the
+- *       default factory. So the test shows only that the pinned factory leaves the parameters object without
+- *       a server name; it does not show what goes on the wire, and no wire-level test is added. The layered
+- *       shape is deliberately not asserted, because a provider may add a name itself.</li>
+  *   <li>Every handshake here ran at TLS 1.3 (environment probe). Nothing is shown about TLS 1.2 or earlier.</li>
+  *   <li>The rejection test relies on a fresh TLS context for every {@code createSocket} call (the pinned
+  *       factory builds a new context each time), because a resumed session skips the certificate check. If
+@@ -88,9 +82,6 @@
+  * <p><b>Mutations that must break each test</b> (ids as in the U-063 mutation log).
+  * <ul>
+  *   <li>AC-18, both tests: a protocol or cipher call added to the pinned {@code createSocket} (M-E1).</li>
+- *   <li>AC-19: a server name set by the pinned {@code createSocket} (M-E2). Under this provider the
+- *       observable may not report it, in which case the mutation is recorded as not detected for the reason
+- *       given above.</li>
+  *   <li>AC-20: a host-name comparison added to the pinning trust manager (M-E3), or the fingerprint
+  *       comparison inverted (M-E4).</li>
+  *   <li>AC-21: the fingerprint comparison inverted (M-E4), or the pinning trust manager replaced by an
+@@ -163,20 +154,6 @@
+     }
+ 
+     /**
+-     * AC-19, implicit shape only, unconnected: no server name is reported. See the class comment for how
+-     * little this shows under this provider. Breaks when M-E2 is applied (if the observable can report it).
+-     */
+-    @Test
+-    public void createSocket_implicit_setsNoServerNames() throws Exception {
+-        client = (SSLSocket) factory().createSocket(null, RIGHT_HOST_NAME, 993, null);
+-
+-        List<SNIServerName> names = client.getSSLParameters().getServerNames();
+-
+-        assertWithMessage("server names on the pinned implicit socket").that(names == null || names.isEmpty())
+-                .isTrue();
+-    }
+-
+-    /**
+      * AC-20: the enrolled certificate is accepted although its names do not include the host asked for. A
+      * control: the byte is read and the server reports OK. Breaks when M-E3 or M-E4 is applied.
+      */

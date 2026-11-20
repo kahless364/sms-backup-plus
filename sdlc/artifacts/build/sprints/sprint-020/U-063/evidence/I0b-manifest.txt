@@ -1,0 +1,3 @@
+# I0b manifest. git status --porcelain --untracked-files=all -- PP  (verbatim; empty = no output below)
+# U-063 product files (hash path): none (probe deleted)
+# count_worktree=682 count_head=682

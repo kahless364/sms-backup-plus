@@ -1,0 +1,19 @@
+# I7.1 greps (working-tree forms; raw hit lines outside the U-063 files and the explained hits are listed; IC-8 stream and host/user values are never written)
+IC-6 words in the six new files: 0
+IC-6 words in the SNI-test additions: 0
+IC-6 words elsewhere in the mail test folder (existing file, comment text only, not U-063): K9MailTransportCreateOpenTest.java lines 265 and 267 (2 lines)
+forbidden-construct grep over the six new files, hits (all explained):
+  ConscryptMode in DefaultTrustedSocketFactoryJdkProviderTest.java: import (line 11), static import (line 34), annotation (line 107): ALLOWED by A1
+  LoopbackTlsTestServer.java: import of TimeoutException (line 17), setSoTimeout (lines 101, 169, 191), catch of TimeoutException (line 134): these are the bounded waits that IC-6 requires; the plan pattern word 'Timeout' was meant to catch JUnit timeout rules (none present). Explained, not a violation.
+forbidden-construct grep over the SNI additions: 0
+LooperMode appears only in DefaultTrustedSocketFactoryJdkProviderTest.java (import, static import, annotation, one Javadoc mention); ConscryptMode only there too
+startHandshake in the JDK-provider class: 0
+imports of org.conscrypt or org.bouncycastle: six new files 0, SNI additions 0
+qualified annotations: six new files 0, SNI additions 0
+IC-12 (LocalKeyStore|setKeyStoreLocation|addCertificate in app/src/main): 0
+every new class has Test in its name: yes (6 of 6)
+annotations in the six new files: After 2, Before 3, ConscryptMode 1, LooperMode 1, Override 1, RunWith 4, Test 26; all short form
+text '@Test' outside an annotation line: 0 (26 in the six new files + 2 added to the SNI test = 28 new)
+evidence tooling: evidence/tools/U063HelperSmokeTest.java.txt and evidence/tools/ExtractFixtures.java carry no key material (0 hits for PEM markers, PRIVATE, base64 key bodies); they live under sdlc/, which no source set references, so no compile task sees them; the file checks (IC-2 pathspecs, IC-6, annotation greps) are limited to app/src/test and do not scan them; the IC-8 scan does include them.
+IC-8 scan (first pass, I7.1): pattern_hits=0 host_hits=0 user_hits=0
+IC-8 final scan (after the log and every evidence file were final): pattern_hits=0 host_hits=0 user_hits=0

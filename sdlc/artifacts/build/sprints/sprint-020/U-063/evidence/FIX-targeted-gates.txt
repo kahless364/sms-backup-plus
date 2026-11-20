@@ -1,0 +1,4 @@
+U063-DAEMON-JVM: java.version=25.0.5.1
+> Task :app:testDebugUnitTest
+BUILD SUCCESSFUL in 53s
+exit=0

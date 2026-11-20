@@ -1,0 +1,18 @@
+package com.zegoggles.smssync.mail;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
+
+@RunWith(Suite.class)
+@SuiteClasses({
+        com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest.class,
+        com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest.class,
+        com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryJdkProviderTest.class,
+        com.zegoggles.smssync.mail.PinnedCertificateSocketFactoryCreateSocketTest.class,
+        com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactorySniTest.class,
+        com.zegoggles.smssync.mail.transport.K9MailTransportTest.class,
+        com.zegoggles.smssync.mail.BackupImapStoreTest.class
+})
+public class U063OrderedSuiteForwardTest {
+}

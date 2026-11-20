@@ -1,0 +1,6 @@
+# I7.7 IC-4 counts (working-tree form and the CLAUDE.md HEAD form)
+count C (working tree, git grep --untracked) = 710
+count at HEAD (CLAUDE.md form, nothing committed) = 682
+arithmetic: 682 + 2 (SNI, AC-1 AC-2) + 5 (JDK-provider: AC-3, AC-4, AC-16 x2, AC-19) + 9 (Hardening) + 8 (Handshake) + 4 (pinned create-socket: AC-18 x2, AC-20, AC-21) = 710; 28 new tests
+Gradle totals of the final gate (I7-junit-totals.txt): files=77 tests=710 failures=0 errors=0 skipped=2
+skipped (I7-skipped.txt): the 2 baseline tests (AppTest, AuthPreferencesTest); no U-063 test is ignored (DP-2 Option A)

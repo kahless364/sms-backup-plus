@@ -1,0 +1,10 @@
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#implicitTls_expiredChain_rejected PASS
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#implicitTls_otherHost_rejectedByHostnameCheck FAIL java.lang.AssertionError
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#implicitTls_rightHost_handshakeCompletes PASS
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#implicitTls_untrustedChain_rejected PASS
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#startTls_expiredChain_rejected PASS
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#startTls_otherHost_rejectedByHostnameCheck FAIL java.lang.AssertionError
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#startTls_rightHost_handshakeCompletes PASS
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest#startTls_untrustedChain_rejected PASS
+CLASS com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHandshakeTest cases=8
+files=1 cases=8 pass=6 fail=2 error=0 skip=0

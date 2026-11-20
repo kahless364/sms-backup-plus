@@ -1,0 +1,12 @@
+--- a/app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java (pre-remediation)
++++ b/app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+@@ -170,8 +170,7 @@
+             }
+         }
+         String verifierName = originalVerifier.getClass().getName();
+-        if (verifierName.contains("SanDnsHostnameTestVerifier")
+-                || verifierName.startsWith("com.zegoggles.smssync.mail.ssl.")) {
++        if (verifierName.startsWith("com.zegoggles.smssync.mail.ssl.")) {
+             fail("leak guard: the current default host-name verifier is a test class: " + verifierName);
+         }
+ 
