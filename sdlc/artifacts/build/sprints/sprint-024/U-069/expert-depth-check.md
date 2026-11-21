@@ -13,10 +13,10 @@ severity: warning
 agent: "Solution Architect"
 reviewer_agent: amp/agents/solution-architect
 reviewer_mode: separate_instance
-iteration: 1
-timestamp: "2026-11-21T12:24:14Z"
-produced_at: 2026-11-21T12:24:14Z
-recommendations_count: 2
+iteration: 2
+timestamp: "2026-11-21T13:17:42Z"
+produced_at: 2026-11-21T13:17:42Z
+recommendations_count: 1
 criterion_results:
   - criterion: "Pattern grounding"
     verdict: satisfied
@@ -28,7 +28,7 @@ criterion_results:
     verdict: satisfied
     deficit_present: false
   - criterion: "Citation depth"
-    verdict: satisfied_with_recommendation
+    verdict: satisfied
     deficit_present: false
   - criterion: "NFR and quality-attribute coverage"
     verdict: satisfied
@@ -48,47 +48,59 @@ criterion_results:
 
 ## Gate: expert-depth-check @ plan-gate
 
-## Verdict: PASS (severity warning, observe-only), 2 recommendations
+## Verdict: PASS (severity warning, observe-only), 1 recommendation
+
+## History
+
+- **Iteration 1** (2026-11-21T12:24:14Z): PASS with 2 recommendations:
+  - Criterion 4: the Meszaros chapter was wrong; Ports and Adapters and the debounce had no source; the unique-work
+    contract was not cited.
+  - Criterion 8: three unchanged-behaviour edge cases were missing (a running backup, process death, the periodic
+    trigger).
+- **Iteration 2** (this report): both recommendations taken up. One narrower recommendation remains on Criterion 8.
+  It concerns how the periodic-trigger finding is stated, and it comes with an observation for the orchestrator.
 
 ## Summary
 
-The plan is iteration 1 (plan.md:9), planned at `4300ffa9` (plan.md:10). I am a separate reviewer instance, and I
-judged it as a senior Android engineer who knows WorkManager and Hilt.
+Iteration 2 makes every change iteration 1 asked for, and each one is accurate.
 
-Its strongest feature is that it describes the Hilt and WorkManager mechanism from the library code itself, not from
-memory:
-- **How the factory finds the worker.** `HiltWorkerFactory.createWorker` does a map lookup, then `Provider.get()`,
-  then `create`. The plan takes this, and the annotation retentions, from `javap` on hilt-work 1.2.0 and dagger 2.59.2
-  (L8, plan.md:73).
-- **What KSP generates.** It reads hilt-compiler 1.2.0's `WorkerStep` and `WorkerElement`, and the existing
-  `RestoreWorker` output, including the `@StringKey` map binding and the `newMapBuilder(n)` line in the component
-  (L6, L7, plan.md:71-72).
-- **The release keep rules.** It reads both consumer `proguard.txt` files (L9, plan.md:74).
-- **`REPLACE` versus `KEEP`.** It reads `EnqueueRunnable` in both 2.9.1 and 2.12.0 (L12, plan.md:77).
+**Criterion 4 changes:**
+- **Meszaros chapters.** Assertion Roulette is now ch. 16 (plan.md:177) and Fragile Test ch. 16 (plan.md:253). Test
+  Logic in Production stays ch. 15 (plan.md:154).
+- **Ports and Adapters.** It is named, with Cockburn 2005, and applied to this code (plan.md:155-158).
+- **The debounce.** INV-4 is named as a trailing-edge debounce, with `REPLACE` doing the coalescing (plan.md:159-162).
+- **The vendor contract.** It is cited beside L12 and marked "not fetched in this session" (plan.md:112).
 
-The plan also states the limits of its own evidence:
-- what the custom-factory harness proves and does not prove about the production factory (2.6, plan.md:249-258);
-- which check detects which wiring failure, including that IC-4 detects neither annotation removal
-  (2.5, plan.md:232-247).
+**Criterion 8 changes:** Section 2.4 gains three items:
+- item 11, a trigger during a running backup (plan.md:280-285);
+- item 12, process death inside `doWork()` (plan.md:286-289);
+- item 13, the periodic trigger (plan.md:290-296).
 
-Two recommendations remain, and neither blocks:
-- **Criterion 4.** One literature anchor is wrong. Assertion Roulette and Fragile Test are Meszaros ch. 16, not
-  ch. 15. Two principles the brief expects are named without a source: Ports and Adapters, and the debounce.
-- **Criterion 8.** The edge-case list leaves out three cases a WorkManager reviewer would ask about:
-  - a trigger while the incoming backup is `RUNNING`, where `REPLACE` cancels a running backup;
-  - process death inside `doWork()`;
-  - what the periodic, content-URI-triggered `CONTENT_TRIGGER` does between periods.
+The Reliability row now names the first two (plan.md:1725). BUG-024 is handed over as a case for its own fix (section
+7 item 12, plan.md:1550-1551).
 
-Each of these is behaviour the story leaves unchanged, so none is a defect in the fix.
+**The other changes, judged:**
+- **The coverage premise is corrected, and on good evidence.** L24 (plan.md:124) reads today's JaCoCo XML. The
+  generated `BackupWorker_*` and `RestoreWorker_*` classes there have no counter. `_Factory` and
+  `_AssistedFactory_Impl` carry `@DaggerGenerated` with CLASS retention, and they do have `LineNumberTable`
+  attributes, so JaCoCo filters their lines rather than finding none. JaCoCo 0.8.14's `AnnotationGeneratedFilter`
+  holds the constant `Generated`. JaCoCo documents that it filters classes and methods annotated with an annotation
+  whose simple name contains "Generated" and whose retention is CLASS or RUNTIME, which matches the evidence.
+  - Iteration 1's "about 0.35" is withdrawn explicitly (N6, plan.md:132).
+  - The 0.95-under-1.00 floor is a recorded ruling (Record 18 ruling 46, L26). Its trade-off is stated: one uncovered
+    worker line could slip under the floor, but the tests and mutants still see it (plan.md:257).
+  - The cost to future work is handed over: any later story that adds code to `worker` must cover its own new lines
+    (plan.md:1525-1526).
+- **M-T12 closes a real gap.** AC-7's 60 s equals the default (L15), so a delay hard-coded to 60 would have survived
+  every test. `ac9_allowedState_…` now asserts 75 000 ms, and M-T12 must fail only that test, while `ac7` and both
+  `ac3` pass (plan.md:238, :240, :1385). This is the right way to keep a test from passing by coincidence with a
+  default value.
 
-What this review checked, read-only:
-- **The plan.** Read in full, in parts: sections 0-3, 4.0, I0-I7, 7, 8, 9, 10, 11 and 12. The 4.8 mutation table and
-  the section 6 decision rows were read by heading and the rows the criteria depend on.
-- **Source at `4300ffa9`, by `git show`.** `BackupWorker.kt:100-118` (the `@HiltWorker` / `@AssistedInject` form the
-  plan copies), `App.java:128-168` (the `HiltWorkerFactory` field, the existing `App.getScheduler`, the configuration),
-  `WorkManagerScheduler.kt:128-160` (`scheduleIncoming()`) and `:195-280` (the `CONTENT_TRIGGER` registration, a
-  `PeriodicWorkRequest` with `addContentUriTrigger`, enqueued with `ExistingPeriodicWorkPolicy.UPDATE`). Every line
-  the plan cites from these ranges matches.
+I checked against source at `4300ffa9`, read-only:
+- **The receiver path.** `SmsBroadcastReceiver.java:56-62` calls `scheduleIncoming()`. The manifest
+  (`AndroidManifest.xml:146-153`) declares the receiver `exported="false"` with `BROADCAST_SMS`. The story records that
+  it is not delivered `SMS_RECEIVED` on Android 11 and newer (story `:68`, PO-3).
+- **The `CONTENT_TRIGGER` registration.** `WorkManagerScheduler.kt:232-256`.
 
 ## Findings
 
@@ -96,27 +108,16 @@ What this review checked, read-only:
 
 **Verdict:** satisfied
 
-**Evidence present:** Section 2.0 (plan.md:103-134) names seven principles. Each is applied to a specific site in this
-story:
-- **DRY and Duplicated Code.** Hunt and Thomas ch. 2, "The Evils of Duplication"; Fowler, *Refactoring* 2nd ed.,
-  ch. 3. They are applied to the defect itself: "two builders of the same `INCOMING` request that drifted apart". The
-  AC-3 equality test is named as the fitness function that keeps the second builder deleted (plan.md:107-110). This
-  is the single-source-of-truth framing the brief asks for.
-- **Dependency Inversion and Constructor Injection.** Martin ch. 11; Seemann and van Deursen ch. 4. The worker
-  depends on the `BackupScheduler` port, not on `WorkManagerScheduler` (plan.md:111-116).
-- **Published versus public interface.** Fowler, IEEE Software 2002. It explains why the fully qualified class name
-  is frozen: it is persisted in every device's `WorkSpec` and is the `HiltWorkerFactory` map key (plan.md:122-124).
-  The brief asks for this, and it is the right principle.
-- **Logs as an operational interface.** Nygard ch. 10, "Transparency". It explains why the trigger line is kept byte
-  for byte (plan.md:125-127).
-- **Others.** A sociable unit test (Fowler; Freeman and Pryce ch. 8), mutation analysis (DeMillo, Lipton and Sayward,
-  1978) and the coverage ratchet (Ford, Parsons and Kua ch. 2).
+**Evidence present:** Section 2.0 (plan.md:141-182) keeps every iteration-1 principle and adds two:
+- **Ports and Adapters** (Cockburn, 2005). `BackupScheduler` is the driven port and `WorkManagerScheduler` its
+  adapter, and both incoming triggers are "primary actors that reach the incoming rule only through the port"
+  (plan.md:155-158).
+- **A trailing-edge debounce** (plan.md:159-162). The plan links it to the tests that pin it: AC-7 for the delay and
+  AC-8 for the coalescing.
 
-The debounce is framed as the contract's two-stage trigger, INV-4: stage 1 is the content-URI change and stage 2 the
-delayed enqueue (plan.md:189-190 in the kept comment, and AC-7). Its preservation is tested by `ac7_debounce_…`.
+The ratchet bullet now states why the floor sits at 0.95 under 1.00 (plan.md:179-182).
 
-**Evidence missing:** (none at criterion level). The hexagonal vocabulary ("port") is used without naming Ports and
-Adapters. That is a citation-depth point and is taken up under Criterion 4.
+**Evidence missing:** (none)
 
 **Passage:** (N/A)
 
@@ -126,16 +127,15 @@ Adapters. That is a citation-depth point and is taken up under Criterion 4.
 
 **Verdict:** satisfied
 
-**Evidence present:** The plan names the anti-patterns in the current code and in the rejected options:
-- **Duplicated Code.** This is the defect itself (plan.md:107-110).
-- **Service Locator** (Seemann and van Deursen ch. 5). This is rejected option A2, `App.getScheduler(…)`. The static
-  accessor exists at `4300ffa9` (`App.java:143-146`), so the temptation is real, not hypothetical (plan.md:114-116).
-- **Test Logic in Production.** Named as the cost of the seam that A2 would then need (plan.md:116).
-- **Assertion Roulette.** Answered by labelling every assertion message (plan.md:130-131).
-- **Fragile Test.** Named for the internal `WorkSpec` accessor and contained in one helper, verified in both
-  WorkManager versions (plan.md:205).
-- **Per-call `Preferences(applicationContext)` construction.** The plan ties it to U-022 / ARCH-002 as the reason not
-  to keep it (plan.md:202).
+**Evidence present:** Unchanged from iteration 1, and still accurate:
+- Duplicated Code: the defect;
+- Service Locator: rejected A2;
+- Test Logic in Production;
+- Assertion Roulette and Fragile Test, now correctly anchored;
+- per-call `Preferences` construction (ARCH-002).
+
+Iteration 2 also treats a passing-by-coincidence test as a defect: AC-7's 60 s equals the default, and M-T12 is added
+for that reason (plan.md:238).
 
 **Evidence missing:** (none)
 
@@ -147,26 +147,18 @@ Adapters. That is a citation-depth point and is taken up under Criterion 4.
 
 **Verdict:** satisfied
 
-**Evidence present:** Section 2.3 (plan.md:197-208) gives, for all eight decisions, what is gained, what gives way,
-what was not chosen and why. The brief names four alternatives, and the A1 row rejects each one:
-- **A2, a static accessor:** a Service Locator.
-- **A3, a Hilt `@EntryPoint`:** "a new pattern with the same test problem".
-- **A4, a shared builder function:** it "leaves two gate sites".
-- **A5, `CoroutineWorker`:** "adds nothing". Section 2.1 (plan.md:140-142) gives the reason: androidx.hilt accepts
-  any `ListenableWorker` (L6, from `WorkerStep`'s `isAssignableFrom`), `scheduleIncoming()` is synchronous, and
-  `Worker.doWork()` already runs on WorkManager's executor.
+**Evidence present:** Section 2.3 (plan.md:245-257) gives all four elements for every row. The rows changed in
+iteration 2:
+- **The A1 row** now says what gives way: four generated classes join `worker` but report no lines.
+- **A new floor row**, "Floor 0.95 under a measured 1.00":
+  - gained: robustness to a JaCoCo line-counting change in U-071;
+  - gives way: one uncovered line could pass the floor;
+  - not chosen: a floor of 1.00;
+  - why: ruled.
+- **The P-1 and P-2 rows** now cite their ruling (Record 18 ruling 45).
 
-The plan's smaller choices also carry their trade-offs:
-- `Result.success()` on a declined enqueue: no retry storm, and the periodic trigger is never marked failed. The cost
-  is that the result cannot tell declined from enqueued; the log tells it.
-- The second `Preferences` read for the log value, with its staleness risk carried to R14.
-- Writing the red run before the fix, with a two-argument factory line rather than a reflective factory.
-- The two-line Rule 15 change, raised as P-1 with a default and a fallback row.
-
-**Evidence missing:** (none at criterion level). A note for the plan's owner, which needs no change: the A2 reason "a
-hidden dependency that is null under Robolectric" (plan.md:115) is not sourced. Robolectric runs the manifest
-application's `onCreate`, and whether Hilt's injection then populates `App.scheduler` in this test set-up was not
-shown. The Service Locator reason carries the rejection on its own, so the conclusion holds either way.
+**Evidence missing:** (none at criterion level). Iteration 1's note still applies: "null under Robolectric"
+(plan.md:153) is unsourced. The Service Locator reason carries the rejection without it.
 
 **Passage:** (N/A)
 
@@ -174,65 +166,39 @@ shown. The Service Locator reason carries the rejection on its own, so the concl
 
 ### Criterion 4 — Citation depth
 
-**Verdict:** satisfied_with_recommendation
+**Verdict:** satisfied
 
-**Evidence present:**
-- **Literature.** Every literature citation carries a chapter, an article and year, or a bliki entry
-  (plan.md:107-134). The plan is open that the chapters are "cited as commonly given; I did not re-read them in this
-  session" (plan.md:105).
-- **Toolchain and library claims.** These are anchored more strongly than any book could anchor them: to the artifact
-  and member read with `javap` or the sources jar, and for 2.12.0 to file and line (L6 to L14, plan.md:71-79; L11
-  gives `WorkInfo.kt:35-39`, `EnqueueRunnable.kt:224-249` and others).
-- **Project claims.** Anchored to line ranges at a named commit throughout.
+**Evidence present:** Every iteration-1 correction is made:
+- Meszaros ch. 16, "Behavior Smells", for Assertion Roulette (plan.md:177) and Fragile Test (plan.md:253). Ch. 15,
+  "Code Smells", stays for Test Logic in Production (plan.md:154).
+- Cockburn, "Hexagonal Architecture (Ports and Adapters)", 2005 (plan.md:155).
+- The documented unique-work contract (Android Developers, "Managing work", "Unique Work"; `ExistingPeriodicWorkPolicy`
+  in the API reference) next to the code reading in L12. It is marked honestly as cited by name and not fetched
+  (plan.md:112).
 
-Well over 80% of citations are anchored, so the criterion is met.
+The new claims are anchored to the artifact and member read:
+- L24: the JaCoCo XML, `javap -v` on the generated class files, and `javap -c -constants` on `org.jacoco.core-0.8.14`;
+- L25: `javap -c -p` on `SystemJobInfoConverter` in `work-runtime-2.9.1`.
 
-**Evidence missing:**
-1. **One anchor is wrong.** Meszaros, *xUnit Test Patterns*, puts Test Logic in Production in ch. 15, "Code Smells".
-   But **Assertion Roulette** and **Fragile Test** are behaviour smells, in **ch. 16, "Behavior Smells"**. The plan
-   cites ch. 15 for both (plan.md:131 and plan.md:205).
-2. **Two principles are used without a source.**
-   - **Ports and Adapters.** The plan's whole dependency argument is "the worker depends on the `BackupScheduler`
-     port" (plan.md:113), but the style is never named. The canonical source is Cockburn, "Hexagonal Architecture
-     (Ports and Adapters)", 2005.
-   - **The debounce.** It appears only as the project's INV-4. It is a two-stage, trailing-edge debounce with
-     coalescing by unique-work `REPLACE`, and it is never tied to a named pattern.
-3. **No vendor documentation is cited for the WorkManager policy semantics** the tests rely on (L12, AC-8). Reading the
-   library code is stronger evidence, but a reviewer verifying intent wants the documented contract next to it.
+The one platform claim that was not read, how JobScheduler treats a content change that arrives before the minimum
+latency has elapsed, is marked "plausible, not verified" (plan.md:293-294).
 
-**Passage:** Section 2.0 (plan.md:111-116, :130-131); section 2.3, row "Backoff and input read from the internal
-`WorkSpec`" (plan.md:205); L12 (plan.md:77).
+**Evidence missing:** (none)
 
-**Recommendation / Remediation:**
-- **Correct the Meszaros anchors.** In plan.md:131 write "the **Assertion Roulette** smell (Meszaros, ch. 16,
-  'Behavior Smells')". In plan.md:205 write "(a **Fragile Test** risk, Meszaros ch. 16)". Test Logic in Production at
-  plan.md:116 stays ch. 15.
-- **Add to the Dependency Inversion bullet in 2.0:** "The port and its WorkManager adapter are the **Ports and
-  Adapters** style (Cockburn, 'Hexagonal Architecture', 2005): `BackupScheduler` is the driven port,
-  `WorkManagerScheduler` its adapter, and after this story both incoming triggers (the receiver and the content-URI
-  worker) are primary actors that reach the rule only through the port."
-- **Add one sentence on the debounce:** "INV-4 is a trailing-edge debounce. Stage 1 is the content-URI change; stage 2
-  is a delayed one-time request whose unique name and `REPLACE` policy coalesce a burst of changes into one backup
-  that runs `incomingTimeoutSecs` after the last of them."
-- **Add the documented contract to L12:** Android Developers, "Managing work", section "Unique Work" (the
-  `ExistingWorkPolicy` values `REPLACE`, `KEEP`, `APPEND`, `APPEND_OR_REPLACE`), and for the registration's `UPDATE`,
-  `ExistingPeriodicWorkPolicy.UPDATE` in the WorkManager API reference.
+**Passage:** (N/A)
+
+**Recommendation / Remediation:** (none)
 
 ### Criterion 5 — NFR and quality-attribute coverage
 
 **Verdict:** satisfied
 
-**Evidence present:** Section 11 (plan.md:1586-1597) evaluates all eight ISO/IEC 25010 characteristics by name, with
-sub-characteristics. Usability is marked not applicable, with the reason (no UI) and the user-visible effect.
-Highlights:
-- **Compatibility:** the persisted `CONTENT_TRIGGER` resolves through the unchanged name and key, and the 2.12.0
-  accessors are verified.
-- **Security:** the U-054 gate now covers the trigger path.
-- **Reliability:** single flight, and success on decline.
-- **Portability:** the R8 keep rules.
+**Evidence present:** Section 11 (plan.md:1717-1728) still evaluates all eight ISO/IEC 25010 characteristics.
+Reliability now covers the running-backup stop and the process-death window (plan.md:1725).
 
-**Evidence missing:** (none at criterion level). The Reliability row says nothing about `REPLACE` cancelling a
-*running* backup. That is taken up as an edge case under Criterion 8.
+**Evidence missing:** (none at criterion level). The periodic-trigger latency of 2.4 item 13 is a Performance
+Efficiency (time behaviour) fact visible to the user. It is not in that row. The Criterion 8 recommendation carries
+it.
 
 **Passage:** (N/A)
 
@@ -242,18 +208,13 @@ Highlights:
 
 **Verdict:** satisfied
 
-**Evidence present:** Deterministic signals are cited and interpreted:
-- **Library classes and resources:** `javap` output from hilt-compiler, hilt-work, dagger, work-runtime,
-  work-testing and shadows-framework, and the two `proguard.txt` files (L6 to L14).
-- **The existing KSP and Hilt build output:** the `RestoreWorker` generated classes and the component's map builder
-  (L7).
-- **Coverage:** the `worker` package's measured JaCoCo baseline, 0/16 lines in 2 classes (U-061 I9, U-063), and the
-  filter analysis. That analysis predicts that the generated `_Factory` and `_AssistedFactory_Impl` will be counted and
-  will pull the ratio to about 0.35 (L17, N6, plan.md:82, :94). The floor is then set from measurement, not from that
-  estimate (I4 step 3, E-G2).
-- **Hashes and expected greps:** blob hashes, `--numstat` and the hunk header, all derived by simulation on scratch
-  copies of the post-U-068 text (L19, L20).
-- **Expected grep outputs** for AC-10, AC-12 and IC-2, by file and line (I0 step 5, I6 step 4).
+**Evidence present:** Iteration 2 adds three measured signals and corrects a conclusion with them:
+- **The JaCoCo XML read class by class** (L24, plan.md:124). It replaces iteration 1's inferred "about 0.35" with an
+  expected 1.0000. The `LineNumberTable` check separates "filtered" from "no lines", which is the distinction the
+  conclusion rests on.
+- **`javap` on `SystemJobInfoConverter`** (L25). It shows no `setPeriodic` call, a `setMinimumLatency` computed from
+  `calculateNextRunTime()`, and `addTriggerContentUri` with the update and maximum delays.
+- **Expected numbers re-derived.** The test blobs were re-derived after the 75 s assertion (L19).
 
 **Evidence missing:** (none)
 
@@ -265,21 +226,12 @@ Highlights:
 
 **Verdict:** satisfied
 
-**Evidence present:** Increments I0 to I7 (plan.md:1062-1247) are chained by explicit data dependencies:
-- I2's red run uses I1's two-argument test, so the red evidence exists before production code moves. The rationale is
-  the 2.3 row "Red run before the fix".
-- I3 step 4 records the pristine worker hashes `HW` and `SW` that the I5 mutation protocol restores to.
-- I6 step 1 takes the floor values from I4 step 3. The section titles state the reason: "Measurement gate (floor
-  unchanged)", then "The floor".
-- I5 copies the scheduler's pristine file and hashes before its first scheduler mutant.
-- IC-3's precondition is "no mutation entry lacks `restored`" (plan.md:1498-1499).
+**Evidence present:** The I0 to I7 chain is unchanged. M-T12 is placed last among the scheduler mutants, after the
+scheduler's pristine copy is taken (plan.md:1262-1264). It shares its text-check entry with M-T5, as `M-T5/M-T12`
+(plan.md:1006), so the protocol's "exactly once" precondition covers it. The floor still follows the measurement:
+I6 step 1 uses I4 step 3, and D19 (a) and (b) handle a measurement other than 1.00.
 
-The start state depends on U-068 closing first, and that dependency is gated by I0 step 2's checks: the ancestor
-check, the U-068 commits and status, and `oldtext_check.py start`.
-
-**Evidence missing:** (none at criterion level). One note: the plan does not say in so many words that no step can run
-in parallel. The constraints make that true: Gradle runs foreground only, there is one working tree, and the mutation
-protocol edits it in place. A one-line statement would close the point, but the gate does not require it here.
+**Evidence missing:** (none)
 
 **Passage:** (N/A)
 
@@ -289,113 +241,118 @@ protocol edits it in place. A one-line statement would close the point, but the 
 
 **Verdict:** satisfied_with_recommendation
 
-**Evidence present:** None of the nine doctrine anti-patterns degrades the plan.
+**Evidence present:** Items 11 and 12 (plan.md:280-289) are correct and go beyond what iteration 1 asked:
+- **Item 11** ties the running-backup stop to U-067, which made the stop real, and to BUG-024. It says AC-8 covers
+  only `ENQUEUED`.
+- **Item 12** states the process-death window and who recovers it.
 
-The work a senior reviewer usually has to ask for is already there:
-- **The production runtime path, step by step.** From `CONTENT_TRIGGER` through `HiltWorkerFactory.createWorker`, the
-  map lookup and the assisted factory to `scheduleIncoming()` (plan.md:162-167).
-- **The fallback when the map has no entry.** WorkManager's reflective default, which finds no
-  `(Context, WorkerParameters)` constructor and logs "Could not instantiate …". The text was taken from the
-  `WorkerFactory` constant pool (L22), and IC-3 searches for it (plan.md:224-226).
-- **What the custom-factory harness cannot prove.** The plan states that `TestListenableWorkerBuilder` with a test
-  factory proves the rules on the trigger path but not that the production factory builds the worker. It closes the
-  gap in three layers:
-  - `ic1_…` reflects on the generated `_AssistedFactory` and `_HiltModule.bind` and its `@StringKey` (RUNTIME
-    retention, L8);
-  - EV-G greps both components for the map entry;
-  - IC-3 runs on a device.
-  It also names what remains unproven (2.5, 2.6).
-- **Mutants with stated outcomes.** Each mutant names the tests that must fail and those that must pass. M-T6 (`KEEP`)
-  is detected only because AC-8 (b) and (c) were made stricter, and the plan says so (P-3).
-- **Risks with likelihood and impact.** Each risk carries both, with a cited basis, and a concrete mitigation
-  (section 8.3, R1 to R14).
+Item 13 (plan.md:290-296) rests on L25, read from the class that does the conversion, and is right in substance:
+- **The mechanism is correct.** WorkManager does not hand JobScheduler a periodic job. Each period is a one-shot
+  `JobInfo` with a minimum latency up to the next period and the content-URI triggers. JobScheduler runs a job only
+  when all its constraints hold. So the trigger worker can start at most once per period, and only after a content
+  change. "Stage 1 can fire at most once per 15-minute period" is therefore a correct reading.
+- **Its consequence is correct.** "the effective delay after a burst is up to the rest of the period plus
+  `incomingTimeoutSecs`". The plan hands this to DES-005 (section 7 item 7, plan.md:1533-1535).
+- **The unverified part is labelled.** The plan states openly that the platform's handling of a change inside the
+  window is not verified.
 
-**Evidence missing:** Section 2.4 (plan.md:210-230) covers most of the edge cases the brief lists:
-- encryption degraded after registration (item 1);
-- auto backup switched off between registration and firing (item 2);
-- a delay of zero or negative (item 3);
-- two triggers inside the delay, or a trigger and the receiver (item 5);
-- the first trigger after an upgrade with the trigger work already persisted (item 7);
-- `scheduleIncoming()` throwing (item 9).
+**Evidence missing:** Three points:
+1. **The user effect is not spelled out, and the reason it matters is in another section.** Item 13 speaks of "a
+   burst" and "stage 1". It does not tell the reader the practical effect, and it does not connect that effect to the
+   fact that makes it matter. On Android 11 and newer the SMS receiver is not delivered (story `:68`, PO-3; R1 at
+   plan.md:1594 says "the receiver is not delivered"). So the content trigger is the **only** automatic path for an
+   incoming message on the owner's devices. The plan's own facts give this sequence with the default 60 s delay:
+   - The first SMS after a quiet spell fires the trigger and is backed up about 60 s later.
+   - A second SMS a few minutes later cannot start the trigger until that 15-minute period ends. It is backed up up
+     to roughly 15 minutes plus 60 s after the first trigger.
+   - Several messages in the window are coalesced into that one later backup.
+   This is a real limit on how soon an incoming message is backed up. It applies on top of Doze and app-standby
+   deferral, which the plan does not need to cover. It is a pre-existing product behaviour, unchanged by this story.
+2. **The anchor of the period is asserted, not read.** L25 says the next job waits "at least until its next period
+   (15 minutes after the last run)". The latency comes from `calculateNextRunTime()`, which uses the spec's
+   `lastEnqueueTime` and period count. Which time a finished periodic run writes back is set by WorkManager's
+   periodic reset in `WorkerWrapper`, and the plan did not read it. Two readings fit what was read:
+   - If the run writes its finish time, the next trigger is at least 15 minutes after the last run.
+   - If it keeps the period grid, a trigger after a long quiet gap can run with zero latency, and the limit is "at
+     most once per period window", not "15 minutes after each run".
+   The worst-case bound of roughly 15 minutes plus the delay holds either way. Only the wording "15 minutes after the
+   last run" depends on which reading is right.
+3. **One claim in item 13 is stated without a label.** "Changes that land while the trigger worker runs are seen by
+   the next scheduled job" (plan.md:295-296) carries no source and no `plausible, not verified` label, unlike the
+   sentence before it. Whether JobScheduler carries the changes seen during a run over to the next scheduled `JobInfo`
+   is platform behaviour, and the plan did not read it.
 
-It leaves out three cases a WorkManager reviewer would raise. All three are behaviour this story leaves unchanged, but
-the plan should say so:
-1. **The trigger fires while the incoming backup is `RUNNING`.** `REPLACE` applies to unfinished work, which includes
-   running work: L12's own reading of `EnqueueRunnable` shows `CancelWorkRunnable.forName` on the existing chain. So an
-   SMS that arrives during an incoming backup cancels that backup, which is stopped, and starts a new delayed one.
-   This is unchanged from the old worker, which also used `REPLACE`, and from the receiver path. But AC-8 tests only
-   the `ENQUEUED` case. The case also meets BUG-024 directly: a cancelled backup is logged and reported as a failure.
-   Edge case 5 says only "one `INCOMING` survives and the newest request's delay applies".
-2. **Process death inside `doWork()`, before `enqueueUniqueWork` has committed.** Who re-runs the trigger, and when?
-   The periodic work is rescheduled when WorkManager next initialises, and the rescheduled job has content-URI
-   triggers again, so it may wait for the next content change. The SMS that fired the lost run may therefore wait for
-   the next change or the regular backup. The cost of the window is unchanged, but it is not stated.
-3. **What the periodic `CONTENT_TRIGGER` does between runs.** The registration is a `PeriodicWorkRequest` with
-   `addContentUriTrigger` and the 15-minute minimum interval, enqueued with `ExistingPeriodicWorkPolicy.UPDATE`
-   (`WorkManagerScheduler.kt:232-256` at `4300ffa9`). After `Result.success()` the trigger is re-armed for its next
-   period. The plan never says whether that period also limits how often stage 1 can fire, which makes stage 1 a
-   rate limit as well as a trigger. It also never says what happens to content changes that land while the trigger
-   worker is running. Section 2.1's "Runtime path" says only "a content change runs `CONTENT_TRIGGER`". The
-   `REPLACE` / `KEEP` analysis is sourced, but the periodic content-trigger behaviour the debounce rests on is not.
+**Passage:** Section 2.4 item 13 (plan.md:290-296); L25 (plan.md:125); section 7 item 7 (plan.md:1533-1535);
+section 11, Performance Efficiency row.
 
-**Passage:** Section 2.4 (plan.md:210-230), item 5 in particular; section 2.1 "Runtime path after the fix"
-(plan.md:162-167); section 11, Reliability row (plan.md:1594).
+**Recommendation / Remediation:** These are plan-text changes only. No step, test or count changes.
+- **Append to 2.4 item 13:**
+  > For the user: on Android 11 and newer the SMS receiver is not delivered (story `:68`, PO-3), so this trigger is the
+  > only automatic path for an incoming message. The first message after a quiet spell is backed up about
+  > `incomingTimeoutSecs` (60 s by default) after it arrives. A further message within that 15-minute period waits for
+  > the period to end: it is backed up up to about 15 minutes plus `incomingTimeoutSecs` after the first trigger, and
+  > several such messages are backed up together. This is a pre-existing product behaviour, not this story's defect.
+  > It is recorded for the owner with PO-3, because restoring a working SMS-received path, or registering the trigger
+  > differently, would change it.
+- **Qualify L25's parenthesis.** Change it to "(the next period boundary from `calculateNextRunTime()`; whether a
+  finished run re-anchors it to its finish time is set by `WorkerWrapper`'s periodic reset, not read: plausible, not
+  verified)". Or read that method in 2.9.1 with `javap -c` and state the anchor.
+- **Label the last sentence of item 13** "plausible, not verified" as well.
+- **Add to section 11, Performance Efficiency:** "Time behaviour (pre-existing): an incoming message after the first
+  in a 15-minute period waits up to the period's end plus `incomingTimeoutSecs` (2.4 item 13)."
 
-**Recommendation / Remediation:** Add three items to 2.4. Each is a statement plus its source, and none needs a new
-test.
+## Observation for the orchestrator (pre-existing product behaviour, not this story's defect)
 
-> 11. **A trigger while the incoming backup is running:** `REPLACE` cancels unfinished work, running included (L12:
-> `EnqueueRunnable` → `CancelWorkRunnable.forName`), so the running `BackupWorker` is stopped and a new delayed
-> request replaces it. This is unchanged by this story: the old worker and the receiver both used `REPLACE`. The
-> stopped run is reported as BUG-024 describes. AC-8 covers the `ENQUEUED` case only; the `RUNNING` case is BUG-024's,
-> and it is recorded for it.
->
-> 12. **Process death inside `doWork()`:** if the process dies before `enqueueUniqueWork` commits, no `INCOMING` work
-> exists. The `CONTENT_TRIGGER` run is rescheduled at WorkManager's next initialisation and may wait for the next
-> content change, so the message is backed up by the next trigger or by the regular backup. This is unchanged: the
-> old worker had the same window.
->
-> 13. **The periodic content trigger:** `CONTENT_TRIGGER` is a `PeriodicWorkRequest` with content-URI triggers at the
-> 15-minute minimum interval, registered with `UPDATE`. Read `SystemJobInfoConverter` in work-runtime 2.9.1 (local
-> cache, `javap -c`) for how a periodic spec with content-URI triggers is turned into a `JobInfo` (minimum latency
-> versus content-trigger delays), and state whether stage 1 can fire more than once per period. If it cannot, the
-> effective debounce is the longer of the period and `incomingTimeoutSecs`. Unchanged by this story; recorded for
-> DES-005.
+How soon an incoming SMS is backed up automatically is limited by the content trigger's 15-minute period. The evidence:
+- **Registration.** `WorkManagerScheduler.kt:240-253` at `4300ffa9` registers `CONTENT_TRIGGER` as a
+  `PeriodicWorkRequest` at `PERIODIC_MIN_INTERVAL_SECS` with `addContentUriTrigger(Consts.SMS_PROVIDER, true)`.
+- **Conversion.** WorkManager 2.9.1's `SystemJobInfoConverter` turns each period into a one-shot `JobInfo` with
+  `setMinimumLatency` up to the next period plus the content-URI triggers (plan L25, `javap`). So the trigger worker
+  runs at most once per period, and only after a content change.
+- **No second path.** The SMS-received receiver is not delivered on Android 11 and newer (story `:68`, PO-3).
+  `scheduleIncoming()` also uses `REPLACE` with a 60 s default delay.
 
-Add to the Reliability row of section 11: "`REPLACE` also stops a running incoming backup (2.4 item 11; BUG-024)."
+**The consequence:** the first message after a quiet spell is backed up about a minute after it arrives. Further
+messages within that period wait until the period ends, up to about 16 minutes with the defaults, and are backed up
+together. It is unchanged by U-069 and was the same before it.
 
-## Edge-case review (the brief's list)
+It belongs with PO-3 (restore or remove the receiver) and DES-005's debounce description. Either of these would bound
+the latency by `incomingTimeoutSecs` instead:
+- a working SMS-received path;
+- a one-time content-URI-triggered request that is re-registered after each run, instead of a periodic one.
 
-| Edge case | Plan coverage |
-|-----------|---------------|
-| Trigger while a previous incoming backup is pending | 2.4 item 5; AC-8 (a) to (c) with the id check (P-3) |
-| Trigger while a previous incoming backup is running | **Not stated**: Criterion 8, item 11 |
-| Auto backup switched off between registration and firing | 2.4 item 2; `ac5_…` changes the stub after `registerContentTrigger()`; PO-1 stays open |
-| App upgraded with trigger work already enqueued | 2.0 (published interface), 2.1 runtime path, 2.4 item 7, `ic1_…`, IC-3 (`install -r`, data kept) |
-| Process death between the trigger and the enqueue | **Not stated**: Criterion 8, item 12 |
+Each is a product decision. Neither is in scope here.
+
+## Edge-case review (iteration 1's list, re-checked)
+
+| Edge case | Iteration 2 coverage |
+|-----------|----------------------|
+| Trigger while the incoming backup is pending | 2.4 item 5; AC-8 (a) to (c) with the id check |
+| Trigger while the incoming backup is running | 2.4 item 11: `REPLACE` stops it; real since U-067; reported as a failure until BUG-024; handed to BUG-024 (section 7 item 12) |
+| Auto backup off between registration and firing | 2.4 item 2; `ac5_…` |
+| App upgraded with trigger work already persisted | 2.0, 2.1, 2.4 item 7, `ic1_…`, IC-3 |
+| Process death inside `doWork()` | 2.4 item 12; section 11 Reliability |
 | Encryption-degraded state changing | 2.4 item 1; `ac4_…`, second AC-9 test, M-T2 |
-| Delay of zero (and negative) | 2.4 item 3; two `ac6_…` tests; M-T4, with N9 for `setInitialDelay(-1)` |
-| `Worker` versus `CoroutineWorker` | 2.1 and 2.3 (A5) |
-| `REPLACE` versus `KEEP` versus `UPDATE` | `REPLACE` / `KEEP` sourced (L12) and mutated (M-T6); `UPDATE` noted only as the registration's divergence from the CNTR-004 example (3.4). The periodic semantics are Criterion 8, item 13 |
-| Constraints, initial delay and backoff on a `OneTimeWorkRequest` | AC-1 to AC-3 and AC-7 read them from `WorkInfo` and the `WorkSpec`; `DEFAULT_BACKOFF_DELAY_MILLIS = 30000` (L10); the harness leaves delayed, constrained work unrun (L13) |
-| R8 | L9 (two keep rules), 2.5, IC-4 (mapping, dex, key string), R2 |
-| What a custom-factory test does not prove | 2.5, 2.6, `ic1_…`, EV-G, IC-3 |
+| Delay zero or negative | 2.4 item 3; two `ac6_…` tests; M-T4 |
+| A delay hard-coded to the default | `ac9_allowedState_…` at 75 s; M-T12 (new) |
+| The periodic content trigger | 2.4 item 13 from L25: correct in mechanism. The user effect and the anchor wording are the recommendation |
 
 ## Overall Verdict
 
 **Verdict:** PASS
 
-**Rationale:** The plan explains the Hilt-worker mechanism and the WorkManager unique-work policy from the library code
-it will run against, and checks its claims against two library versions. Its test design is honest about what the
-custom-factory harness cannot prove, and it closes that gap with three detectors in layers. Every decision carries a
-four-part trade-off, and every risk carries likelihood and impact with a basis. Six criteria are satisfied and two are
-satisfied with a recommendation, which is within the gate's limit of two:
-- **Criterion 4:** correct the Meszaros chapter for Assertion Roulette and Fragile Test (ch. 16); name Ports and
-  Adapters (Cockburn 2005) and the trailing-edge debounce; add the documented unique-work contract next to L12.
-- **Criterion 8:** add three unchanged-behaviour edge cases: a trigger during a running backup, which ties to
-  BUG-024; process death inside `doWork()`; and the periodic content-trigger semantics the debounce rests on.
+**Rationale:** Iteration 2 takes up both iteration-1 recommendations accurately. It corrects the coverage premise
+from the measured JaCoCo report and the class files, instead of defending the earlier estimate. It adds M-T12 to
+remove a test that passed because its value equalled the default. Seven criteria are satisfied, and Criterion 8 is
+satisfied with one recommendation. That recommendation asks for three things:
+- state 2.4 item 13's effect in user terms, and say it is the only automatic incoming path on Android 11 and newer;
+- mark the period anchor in L25, and the during-run sentence in item 13, as not verified;
+- add the latency to the Performance Efficiency row.
 
-**Iteration:** 1
+The same fact is raised above as an observation for the orchestrator: a pre-existing product behaviour that belongs
+with PO-3 and DES-005.
+
+**Iteration:** 2
 
 **Rework routing (FAIL only):** Not applicable (PASS).
 
