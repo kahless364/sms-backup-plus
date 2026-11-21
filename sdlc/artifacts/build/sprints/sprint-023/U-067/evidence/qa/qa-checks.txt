@@ -1,0 +1,78 @@
+U-067 QA read-only checks (2026-11-21). S = c9770c30 (story start), E = c12a2788 (story commit). Output copied from the commands; no machine details.
+
+== Documents only between start and parent ==
+$ git diff --stat c9770c30..d73017de -- app k9mail-vendored build.gradle gradle settings.gradle
+(no output)
+
+== Authoritative count (REQ-MODERNIZATION-015 AC-13 as amended by CR-016) ==
+$ git grep -h "@Test" <commit> -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
+count-start (c9770c30) = 746
+count-end   (c12a2788) = 753
+$ git diff S E -- app/src/test | grep -E '^[-+].*@Test'
+7 lines, all '+    @Test' (none removed)
+Added test functions (git diff S E -- app/src/test | grep -E '^\+\s*fun '):
++ backupCursors_cancelledAfterSecondAppend_stopsAtNextPass        (BackupWorkerLoopCancellationTest)
++ backupCursors_notCancelled_appendsEveryRow                      (BackupWorkerLoopCancellationTest)
++ executeRestoreWithValues_cancelledAfterThirdInsert_stopsAtNextPass (RestoreWorkerCheckpointTest)
++ executeRestoreWithValues_cancelledBeforeFirstPass_insertsNothing  (RestoreWorkerCheckpointTest)
++ executeRestoreWithValues_notCancelled_insertsEveryItem          (RestoreWorkerCheckpointTest)
++ doWork_imapRestore_cancelledDuringSecondImport_stopsAtNextPass  (RestoreWorkerIntegrationTest)
++ doWork_imapRestore_notCancelled_restoresEveryItem              (RestoreWorkerIntegrationTest)
+(+ setUp in the new class, not a test)
+Removed lines in app/src/test (git diff S E -- app/src/test | grep '^-' | grep -v '^---'): the four Javadoc lines of BackupWorkerTest.kt:27-30 only.
+
+== AC-8 ==
+$ git diff --name-only S E -- app/src/main k9mail-vendored
+app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt
+app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt
+$ git diff -U0 S E -- app/src/main | grep '^@@'
+@@ -57 +57 @@ import java.util.Locale
+@@ -305 +305,2 @@ class BackupWorker @AssistedInject constructor(
+@@ -331 +332 @@ class BackupWorker @AssistedInject constructor(
+@@ -66 +66 @@ import java.util.HashSet
+@@ -311 +311 @@ class RestoreWorker @AssistedInject constructor(
+@@ -399 +399 @@ class RestoreWorker @AssistedInject constructor(
+$ git diff --numstat S E -- app/src/main
+4	3	app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt
+3	3	app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt
+
+== AC-12 ==
+$ git diff --stat S E -- build.gradle app/build.gradle k9mail-vendored/build.gradle settings.gradle gradle
+(no output)
+$ git diff --quiet S E -- gradle/verification-metadata.xml; echo vm-exit=$?
+vm-exit=0
+$ git diff S E -- app/src/test | grep -cE '^\+.*(@Ignore|Assume)'
+0
+@Ignore lines (authoritative pattern, includes comment mentions): start=6 end=6
+Annotated @Ignore at E: AppTest.java:13 (shouldGetVersionName); AuthPreferencesTest.java:1079 (u012_robolectricSmoke_encryptedPrefsSecretStore_migrateFromPlaintext)
+
+== IC-1 ==
+$ git grep -n "backupCursors(" E -- app/src
+BackupWorker.kt:255 (fetchAndBackupItems call), :285 (Javadoc), :306 (declaration, internal), :463 (handleAuthError retry call)
+BackupWorkerLoopCancellationTest.kt:92, :124 (test calls)
+BackupWorker constructor E:106-116 and RestoreWorker constructor E:119-136: no hunk (hunks above only).
+
+== IC-2 ==
+$ git diff --name-only S E | grep -E 'StatusPreference.java|WorkManagerCancelCollector.kt|MainViewModel.kt'
+(no output)
+
+== IC-3 ==
+$ git grep -n "coroutineContext" E -- .../BackupWorker.kt .../RestoreWorker.kt; echo exit=$?
+exit=1 (no output)
+$ git grep -n "ensureActive()" E -- app/src/main
+BackupWorker.kt:72   (comment)
+BackupWorker.kt:286  (comment)
+BackupWorker.kt:330  (comment)
+BackupWorker.kt:332                  currentCoroutineContext().ensureActive()
+RestoreWorker.kt:84  (comment)
+RestoreWorker.kt:311                     currentCoroutineContext().ensureActive()
+RestoreWorker.kt:399                     currentCoroutineContext().ensureActive()
+WorkManagerCancelCollector.kt:23 (comment)
+
+== Exception types (catch analysis, AC-1 (c) cursor half and AC-1 (d)) ==
+MailException.java:36 extends Exception; XOAuth2FailedException.java:28 extends MailException; RequiresLoginException.java:5 extends Exception.
+RestoreCheckpointStore.kt:64 NO_CHECKPOINT = 0
+
+== Hygiene (the 47 files of c12a2788, content at the commit) ==
+e-mail / user-profile / application-data pattern: 1 file, RestoreWorkerIntegrationTest.kt:84, the synthetic IMAP user of setUp in the reserved .local test domain ( present at c9770c30:81, not in the story's diff)
+user name: 0 files; host name: 0 files

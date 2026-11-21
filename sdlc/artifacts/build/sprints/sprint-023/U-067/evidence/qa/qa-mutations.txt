@@ -1,0 +1,61 @@
+### Q-M1b APPLYING 2026-11-21T11:12:10Z
+status-before:
+status-before-end
+committed=eb535f5c9c384e639f5077ce8ed3bd0ad7af350d worktree=eb535f5c9c384e639f5077ce8ed3bd0ad7af350d
+mutated-line:                 if (false) currentCoroutineContext().ensureActive()
+diff:
+@@ -332 +332 @@ class BackupWorker @AssistedInject constructor(
+-                currentCoroutineContext().ensureActive()
++                if (false) currentCoroutineContext().ensureActive()
+run_exit=1
+com.zegoggles.smssync.service.BackupWorkerLoopCancellationTest#backupCursors_cancelledAfterSecondAppend_stopsAtNextPass FAIL com.google.common.truth.ComparisonFailureWithFacts
+CLASS com.zegoggles.smssync.service.BackupWorkerLoopCancellationTest cases=2
+CLASS com.zegoggles.smssync.service.RestoreWorkerCheckpointTest cases=18
+CLASS com.zegoggles.smssync.service.RestoreWorkerIntegrationTest cases=11
+files=3 cases=31 pass=30 fail=1 error=0 skip=0
+message="com.google.common.truth.ComparisonFailureWithFacts: expected: 2&#10;but was : 4"
+restored 2026-11-21T11:14:27Z: committed=eb535f5c9c384e639f5077ce8ed3bd0ad7af350d worktree=eb535f5c9c384e639f5077ce8ed3bd0ad7af350d
+status-after:
+status-after-end
+
+### Q-M2a APPLYING 2026-11-21T11:14:45Z
+status-before:
+status-before-end
+committed=ffa9c57e90761dc56a5967e06b303e2d9080f81b worktree=ffa9c57e90761dc56a5967e06b303e2d9080f81b
+mutated-line:                     coroutineContext.ensureActive()
+diff:
+@@ -311 +311 @@ class RestoreWorker @AssistedInject constructor(
+-                    currentCoroutineContext().ensureActive()
++                    coroutineContext.ensureActive()
+run_exit=1
+com.zegoggles.smssync.service.RestoreWorkerIntegrationTest#doWork_imapRestore_cancelledDuringSecondImport_stopsAtNextPass FAIL com.google.common.truth.ComparisonFailureWithFacts
+CLASS com.zegoggles.smssync.service.BackupWorkerLoopCancellationTest cases=2
+CLASS com.zegoggles.smssync.service.RestoreWorkerCheckpointTest cases=18
+CLASS com.zegoggles.smssync.service.RestoreWorkerIntegrationTest cases=11
+files=3 cases=31 pass=30 fail=1 error=0 skip=0
+message="com.google.common.truth.ComparisonFailureWithFacts: expected: 2&#10;but was : 4"
+restored 2026-11-21T11:17:07Z: committed=ffa9c57e90761dc56a5967e06b303e2d9080f81b worktree=ffa9c57e90761dc56a5967e06b303e2d9080f81b
+status-after:
+status-after-end
+
+### Q-M3b APPLYING 2026-11-21T11:17:21Z
+status-before:
+status-before-end
+committed=ffa9c57e90761dc56a5967e06b303e2d9080f81b worktree=ffa9c57e90761dc56a5967e06b303e2d9080f81b
+mutated-line:                     if (false) currentCoroutineContext().ensureActive()
+diff:
+@@ -399 +399 @@ class RestoreWorker @AssistedInject constructor(
+-                    currentCoroutineContext().ensureActive()
++                    if (false) currentCoroutineContext().ensureActive()
+run_exit=1
+com.zegoggles.smssync.service.RestoreWorkerCheckpointTest#executeRestoreWithValues_cancelledAfterThirdInsert_stopsAtNextPass FAIL com.google.common.truth.ComparisonFailureWithFacts
+com.zegoggles.smssync.service.RestoreWorkerCheckpointTest#executeRestoreWithValues_cancelledBeforeFirstPass_insertsNothing FAIL com.google.common.truth.ComparisonFailureWithFacts
+CLASS com.zegoggles.smssync.service.BackupWorkerLoopCancellationTest cases=2
+CLASS com.zegoggles.smssync.service.RestoreWorkerCheckpointTest cases=18
+CLASS com.zegoggles.smssync.service.RestoreWorkerIntegrationTest cases=11
+files=3 cases=31 pass=29 fail=2 error=0 skip=0
+message="com.google.common.truth.ComparisonFailureWithFacts: expected: 0&#10;but was : 5"
+message="com.google.common.truth.ComparisonFailureWithFacts: expected: 3&#10;but was : 5"
+restored 2026-11-21T11:19:42Z: committed=ffa9c57e90761dc56a5967e06b303e2d9080f81b worktree=ffa9c57e90761dc56a5967e06b303e2d9080f81b
+status-after:
+status-after-end

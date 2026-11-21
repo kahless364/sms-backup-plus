@@ -1,10 +1,10 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-023
 sprint: '023'
-updated_at: '2026-11-21T09:45:46.037Z'
+updated_at: '2026-11-21T11:23:39.032Z'
 ---
 
 # Sprint Plan: Sprint 023
@@ -18,7 +18,7 @@ updated_at: '2026-11-21T09:45:46.037Z'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-067 | Make the backup and restore workers' three cancellation checks observe the running job, and prove each one with a test that cancels the work mid-loop | - | developer | sonnet | (unassigned) | U-066 (done) | in-progress | medium |
+| U-067 | Make the backup and restore workers' three cancellation checks observe the running job, and prove each one with a test that cancels the work mid-loop | - | developer | sonnet | (unassigned) | U-066 (done) | done | medium |
 
 ## Execution Waves
 

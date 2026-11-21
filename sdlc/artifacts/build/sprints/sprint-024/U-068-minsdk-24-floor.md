@@ -295,6 +295,14 @@ Risks: (1) `receiver` and `scheduler` coverage at their floors (AC-3, AC-15); (2
 - **P-3 (baseline entries stale for other reasons):** kept and explained one by one, as the plan has it. Only the eleven entries the floor makes stale are removed.
 - **P-5 (`compat` coverage ends with no line to spare):** the plan's pre-written contingency test C-1 is authorised and is added in this story, in the increment the plan assigns it, so that the package keeps a margin for the toolchain story. The story then adds three tests, not two; AC-14's "two added" reads "three added" by this ruling, and the count rule is otherwise unchanged. The plan's corrections of two figures are accepted: `compat` falls from 16/73 to 15/71 before C-1 (design D8 says it rises), and the `scheduler` margin is the measured one, not the comment's.
 
+**Plan gates, iteration 2 (2026-11-21): plan review PASS, contract verification PASS, depth check PASS.** Iteration 1 failed plan review on six mechanical blockers; all are closed. Three corrections from the iteration-2 plan review are binding on the developer in addition to the plan's text:
+
+- In the plan's last increment (I7), the check of "this story's own files" uses `git diff --name-only HEAD` limited to the story's own path list (the files of the plan's table 2.1, the story file and the story's workspace folder). Other people's uncommitted documents elsewhere in the checkout are not this story's and are not listed as such.
+- The "no code commit by anyone else" check covers `sdlc/artifacts/engagement/code-location.md` only, not the whole `sdlc/artifacts/engagement` folder. A documents-only commit to another file there is not a stop.
+- The plan's Gradle-run tally is 25, not 23 (the baseline step runs three times, the last increment twice).
+- Wording only: I5 step 3 says "the four `SmsReceiverTest` cases"; after step 1a there are five. The checked values (`tests=C0+3`, `cases=5`) are right.
+- **Start commit:** the commit that closes story U-067 (subject "Sprint-023 closed: U-067 done ..."). The developer reads it at the baseline step; U-067's fix is commit `c12a2788`.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 

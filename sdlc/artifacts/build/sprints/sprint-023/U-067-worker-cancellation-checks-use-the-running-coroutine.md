@@ -1,6 +1,6 @@
 ---
 type: story
-status: in-progress
+status: done
 sprint: '023'
 artifact_type: user-story
 priority: medium
@@ -36,8 +36,9 @@ title: Make the backup and restore workers' three cancellation checks observe th
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-022
-updated_at: '2026-11-21T11:03:26.232Z'
-current_build_phase: review
+updated_at: '2026-11-21T11:23:38.868Z'
+resolution: done
+updated_date: 2026-11-21
 ---
 
 # U-067: Make the Backup and Restore Workers' Three Cancellation Checks Observe the Running Job, and Prove Each One With a Test That Cancels the Work Mid-Loop
@@ -216,6 +217,15 @@ Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew --versio
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
+
+Summarised by the orchestrator from the workspace `sdlc/artifacts/build/sprints/sprint-023/U-067/` on 2026-11-21. The fix commit is `c12a2788`. Test count by the authoritative command: 746 at the start (`c9770c30`), 753 at `c12a2788`; seven tests added, none removed, 2 skipped as before.
+
+- **Plan checks.** Iteration 1 with Amendment A1: plan review PASS (seven observations), contract verification PASS (four observations), depth check FAIL at warning level only (text additions: named principles, sources, edge cases). All observations were taken into the amendment; no edit, test or mutation changed.
+- **Code review: PASS** (`review-code.md`). No blocker and no warning. The production change is exactly the three call lines, the two imports and the visibility of `backupCursors`. Low or Info observations, none to fix now: the tests do not close their cursors in a `finally`; one assertion cannot fail on its own; the KDoc above `backupCursors` does not mention the new visibility; two comments say "next suspension point" where "next pass" is exact.
+- **Security review: PASS** (`review-security.md`). No Critical, High or Medium finding. No new window for a lost or duplicated message: the append and the watermark write, and the insert and the checkpoint write, have no suspension point between them. Three Low findings, deferred with reasons: W-1, a cancelled run is caught by the workers' broad catches, logged at error level and returned as a failure (raised as BUG-024); W-2, a cancelled IMAP restore skips the conversation-thread refresh (display only; recorded in BUG-024 as a separate concern); W-3, that WorkManager's own stop reaches the loop through the same job is not verified, because it needs a device run this story does not have.
+- **QA: PASS** (`qa-results.md`). 16 of 16 criteria met; AC-1 (c) and AC-4 with deviations ruled or stated before the build (the cursor close is judged by reading; the zero-row assertion carries AC-4); IC-4 does not apply. QA's own gate run: 753 tests, 0 failures, 2 skipped; coverage check and release build passed. QA re-applied three of the six mutations at three sites and saw the plan's failing sets. The forced Kotlin compile shows 6 warnings, none naming `coroutineContext` or either worker (9 before, 3 of them these).
+- **BUG-022: closed.** QA found every criterion of the bug satisfied. The bug was moved to done through the bug state machine by the orchestrator.
+- **Carried forward.** BUG-024 (a cancelled run reported as a failure; it also records a hazard for the runtime-library story: WorkManager 2.12.0 treats a cancellation that is not its own stop as a failure). The toolchain story (its Kotlin increment) and the runtime-library story (its coroutines and WorkManager increments) re-run this story's six mutations, not only its tests. Contract line citations into `BackupWorker.kt` shift by one line; the next contract amendment cites by function name.
 
 ## Notes
 

@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: done
 artifact_type: bug
 severity: low
 priority: medium
@@ -27,7 +27,8 @@ id: BUG-022
 title: Backup and restore workers' cancellation checks are bound to a dispatcher and never throw
 domain: build
 origin: code-review
-updated_at: '2026-11-21T08:18:32.327Z'
+updated_at: '2026-11-21T11:24:49.790Z'
+resolution: done
 ---
 
 # BUG-022: Backup and restore workers' cancellation checks are bound to a dispatcher and never throw
@@ -157,6 +158,8 @@ As far as the cited sources show (the design's D10 table, `DES-MODERNIZATION-014
 | Kotlin 2.4 (and 2.3.x) | Not found in D10 as read | Not verified |
 
 ## Acceptance Criteria
+
+**Closed, 2026-11-21 (added by the orchestrator).** Fixed by story U-067, commit `c12a2788`: the three loop checks call `currentCoroutineContext().ensureActive()` and stop a cancelled run at the next pass. QA of U-067 (`sdlc/artifacts/build/sprints/sprint-023/U-067/qa-results.md`) found every criterion below satisfied; for AC-2 the IMAP restore loop is tested by cancelling mid-loop rather than before the first pass, as the story specifies. What a cancelled run then reports (a failure result and an error-level log line) was left out of this bug on purpose and is BUG-024. The status was moved to done through the bug state machine by the orchestrator, under the standing goal and Record 12; the acceptance criteria below are left as written.
 
 The criteria say what must be true after the fix. They do not say how to write it.
 
