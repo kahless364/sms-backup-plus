@@ -1,9 +1,10 @@
 ---
-status: draft
+status: active
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-024
 sprint: '024'
+updated_at: '2026-11-21T10:00:40.510Z'
 ---
 
 # Sprint Plan: Sprint 024
@@ -22,7 +23,7 @@ Sprint 024 does not start until sprint 023 is completed (U-067, the fix for BUG-
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-068 | Raise minSdk to 24 and remove what the floor makes dead (code branches, two manifest permissions, retargeted tests, stale lint baseline entries, stale text) | - | developer | sonnet | (unassigned) | U-066 (done) | planned | high |
+| U-068 | Raise minSdk to 24 and remove what the floor makes dead (code branches, two manifest permissions, retargeted tests, stale lint baseline entries, stale text) | - | developer | sonnet | (unassigned) | U-066 (done) | in-progress | high |
 | U-069 | Make the content-trigger worker start the incoming backup through the scheduler's scheduleIncoming(), and give the worker its first tests | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-068 | planned | high |
 | U-070 | Back up an SMS that becomes visible after later messages were backed up, exactly once, with a 6-hour look-back and a local upload record | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-069 | planned | high |
 
@@ -56,6 +57,7 @@ None. The deterministic check (`detectFileOverlaps`) was run over the three stor
 ## Notes
 
 - **Serial, one checkout.** No parallelism. Each story is committed before the next starts. Sprint 024 starts only after sprint 023 is completed.
+- **Orchestrator note, 2026-11-21: planning of U-068 begins while sprint 023 is still building.** The start condition exists because the stories share one checkout and one Gradle. Planning and the plan gates read files and write only documents in the story's workspace, so U-068's plan and its plan gates are prepared while U-067 is built. No code change and no Gradle run for any sprint 024 story happens before sprint 023 is completed, and U-068's implementation re-reads its start state (its baseline step) at the commit that closes U-067. U-067 and U-068 share no file (U-068 AC-9: empty diff for both workers).
 - **Device checks are run by the orchestrator only**, never by a subagent. U-068 IC-3 and U-069 IC-3 run on the Android 16 emulator. U-068 IC-4 (an API 24 device) needs the product owner's decision PO-A; without it, it is recorded "not run" (the story states what stands instead).
 - **U-068 commits.** U-068's developer makes per-increment local commits (S1-I1 to S1-I7), by ruling 22. No push, no merge to `master`.
 - **BUG-021 does not close with U-070** (ruling 27): the Android 17 measurement and the device check of the fixed build belong to the targetSdk 37 story and its QA step (REQ-MODERNIZATION-020 AC-25).

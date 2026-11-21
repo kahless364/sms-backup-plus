@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: in-progress
 sprint: '024'
 artifact_type: user-story
 priority: high
@@ -48,7 +48,7 @@ pipeline: ''
 domain: modernization
 requirement_source: authored
 alignment_audit: passed
-updated_at: '2026-11-21T09:57:24.982Z'
+updated_at: '2026-11-21T10:00:41.382Z'
 ---
 
 # U-068: Raise minSdk to 24 and Remove What the Floor Makes Dead
