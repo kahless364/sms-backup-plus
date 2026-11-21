@@ -14,7 +14,8 @@ related_requirements:
 related_stories: []
 related_design_docs: []
 traces_to: []
-change_records: []
+change_records:
+  - CR-015
 notes: |
   Traceability: TECH-002/DEP-002 (gaps), ARCH-003 (patterns), STRUCT-003 (gaps); migration unit MU-005 (THE SPINE); source assessment 20260529-modernization. Highest-leverage single migration — one binding flip retires four dead mechanisms.
 ---
@@ -82,3 +83,5 @@ WorkManager's durable work-state is the prerequisite for safe, resumable restore
 Boundary: `service/BackupJobs.java`, `service/SmsJobService.java`, `service/BackupTask.java`,
 `service/RestoreTask.java`, `service/AlarmManagerDriver.java`.
 Traceability: TECH-002/DEP-002, ARCH-003, STRUCT-003; MU-005; source assessment 20260529-modernization.
+
+Amended 2026-11-21 by CR-015: AC-3(d), "content-URI trigger (with broadcast fallback below API 24)", is unchanged in wording. Since minSdk 24 (REQ-MODERNIZATION-015, CR-011) no supported level is below API 24, so the clause has no case and no test of it is required; AC-3(d) is met by the content-URI trigger tests; their lowest-level assertion is made at API 24 once story S1 of DES-MODERNIZATION-014 retargets `inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast` (CNTR-MODERNIZATION-004 v3, INV-4 note). The `SMS_RECEIVED` path is not removed. Ruled not a behavioural break of CNTR-MODERNIZATION-004 (v3).

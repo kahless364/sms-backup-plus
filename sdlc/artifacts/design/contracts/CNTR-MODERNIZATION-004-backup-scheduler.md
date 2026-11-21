@@ -4,11 +4,14 @@ artifact_type: interface-contract
 consumers: []
 related_requirements:
   - REQ-MODERNIZATION-013
+  - REQ-MODERNIZATION-015
 related_design_docs:
   - DES-MODERNIZATION-012
+  - DES-MODERNIZATION-014
 related_stories: []
 change_records:
   - CR-001
+  - CR-015
 id: CNTR-MODERNIZATION-004
 title: ''
 domain: modernization
@@ -35,7 +38,7 @@ This is a **service / module-interface contract** across one internal boundary (
 | Side | Component | Module | Role |
 |------|-----------|--------|------|
 | **Producer (port owner)** | `BackupScheduler` interface | core | Declares the scheduling contract; owns the value objects (`BackupType`, `SchedulerConfig`, `SchedulerState`). No Android scheduler type in any signature. |
-| **Producer (sole production impl)** | `WorkManagerScheduler` adapter | app | Implements the port by mapping each call to `WorkRequest`s; version-branches the content-URI trigger (`SDK_INT >= 24`); re-imposes the 300s backoff cap at the worker (DES-MODERNIZATION-005 §System Architecture, ADR-005-A/B). |
+| **Producer (sole production impl)** | `WorkManagerScheduler` adapter | app | Implements the port by mapping each call to `WorkRequest`s; the content-URI trigger needs no version branch at the minSdk 24 floor (REQ-MODERNIZATION-015; the code branch that served the lower levels is removed by story S1 of DES-MODERNIZATION-014); re-imposes the 300s backoff cap at the worker (DES-MODERNIZATION-005 §System Architecture, ADR-005-A/B). |
 | **Producer (debug-only impls)** | `LegacyScheduler` (wraps today's `BackupJobs`) and `CompositeScheduler` (delegates to both, logs divergence) | app (debug) | Parallel-run / branch-by-abstraction validation only; never in release builds. |
 | **Consumers** | Broadcast receiver(s), boot receiver, package-replaced receiver, content-URI observer path, settings UI | app | Resolve the **injected** `BackupScheduler` (Hilt; DES-008) and call its operations. They depend on the port, never on a concrete mechanism (AC-1). |
 
@@ -61,8 +64,8 @@ Methods:
       // REPLACE/UPDATE on a stable unique name. (BackupJobs.java:78)
   scheduleContentTrigger(): Unit
       // recurring content-URI observer over SMS provider (+ call-log when
-      // isCallLogBackupAfterCallEnabled()); API 24+ only; pre-24 falls back to
-      // the broadcast→scheduleIncoming() path. (BackupJobs.java:82)
+      // isCallLogBackupAfterCallEnabled()); available on every supported level
+      // (minSdk 24). (BackupJobs.java:82)
   scheduleBootup(): Unit
       // if !isAutoBackupEnabled() -> cancelAll(); else schedule regular.
       // boot delay = BOOT_BACKUP_DELAY = 60s. (BackupJobs.java:86, :56,:92)
@@ -167,7 +170,7 @@ Fields:
                                            // INCOMING = getIncomingTimeoutSecs();
                                            // bootup = BOOT_BACKUP_DELAY = 60 (:56,:92)
   recurring: Boolean                       // BackupType.isRecurring() / content-trigger=true
-  contentUriTriggers: List<ContentUriTrigger>?  // content-trigger job only; API 24+
+  contentUriTriggers: List<ContentUriTrigger>?  // content-trigger job only
 
 Enum: NetworkRequirement
   UNMETERED   // adapter -> NetworkType.UNMETERED  ; when isWifiOnly()      (BackupJobs.java:199)
@@ -237,16 +240,19 @@ These four invariants are **binding clauses**. The producer (`WorkManagerSchedul
 | **INV-1 — single-flight (REPLACE enqueue)** | Enqueuing a job kind that is already pending MUST replace it; at most one non-terminal work item per unique name. | `setReplaceCurrent(true)` on **every** job (`BackupJobs.java:188`) | one-off → `ExistingWorkPolicy.REPLACE`; periodic → `enqueueUniquePeriodicWork(name, REPLACE/UPDATE, …)` with a stable unique name per `BackupType`. |
 | **INV-2 — network constraints (per type)** | Network requirement is **per job type**, not uniform: `UNMETERED` when `isWifiOnly()`, `CONNECTED` otherwise, and **NONE** for the immediate `BROADCAST_INTENT` backup. Charging is **never** required. | `ON_UNMETERED_NETWORK`/`ON_ANY_NETWORK` (`:199`); `BROADCAST_INTENT → new int[0]` (`jobConstraints`, `:197`); no charging anywhere (`:195-201`) | `NetworkType.UNMETERED` / `NetworkType.CONNECTED` / `Constraints.NONE` for immediate; `setRequiresCharging` never set. |
 | **INV-3 — backoff fidelity** | Retry MUST be **exponential, 30s initial, capped at 300s** — one strategy. The effective retry delay MUST never exceed 300s. | `newRetryStrategy(RETRY_POLICY_EXPONENTIAL, 30, 300)` (`:205`) | `setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, SECONDS)`; because WorkManager's internal ceiling is `MAX_BACKOFF_MILLIS` (~5h), the **300s cap is re-imposed at the worker** by capping retry scheduling. |
-| **INV-4 — content-URI trigger (+ pre-24 fallback)** | An SMS (and, when call-log-after-call is enabled, call-log) content change MUST trigger backup. On API 24+ via content-URI triggers; on API ≤23 via the **broadcast fallback** (`scheduleIncoming()`). The trigger MUST preserve the **two-stage debounce**: the content change enqueues a *delayed* incoming-backup (delay = `getIncomingTimeoutSecs()`), it does NOT back up on the raw change. | `Trigger.contentUriTrigger(observedUris())` over SMS + optional call-log (`:170,177-184`); follow-up `scheduleIncoming()` in `SmsJobService.onStartJob` (`:76`); `FLAG_NOTIFY_FOR_DESCENDANTS` (`:179,181`) | API 24+: `Constraints.addContentUriTrigger(uri, triggerForDescendants=true)` per observed URI; the triggered worker enqueues the delayed `OneTimeWorkRequest(initialDelay = incomingTimeoutSecs)`. API ≤23: SMS-received broadcast path calls `scheduler.scheduleIncoming()` → delayed one-off. The `SDK_INT >= 24` branch lives **inside the adapter**, so the port surface is version-agnostic. |
+| **INV-4 — content-URI trigger** | An SMS (and, when call-log-after-call is enabled, call-log) content change MUST trigger backup, on every supported level (minSdk 24 and above), via content-URI triggers. The trigger MUST preserve the **two-stage debounce**: the content change enqueues a *delayed* incoming-backup (delay = `getIncomingTimeoutSecs()`), it does NOT back up on the raw change. | `Trigger.contentUriTrigger(observedUris())` over SMS + optional call-log (`:170,177-184`); follow-up `scheduleIncoming()` in `SmsJobService.onStartJob` (`:76`); `FLAG_NOTIFY_FOR_DESCENDANTS` (`:179,181`) | `Constraints.addContentUriTrigger(uri, triggerForDescendants=true)` per observed URI; the triggered worker enqueues the delayed `OneTimeWorkRequest(initialDelay = incomingTimeoutSecs)` as unique work `INCOMING` (REPLACE). The port surface is version-agnostic. The SMS-received broadcast path (`SmsBroadcastReceiver` → `scheduler.scheduleIncoming()`) is unchanged and has no version check; see the note below the table. |
+
+> **INV-4 at the minSdk 24 floor (v3, CR-015).** Every supported level (minSdk 24, REQ-MODERNIZATION-015) has content-URI triggers, so INV-4 is one mechanism with no version split. The earlier clause "on API ≤23 via the broadcast fallback" is retired as obsolete scope, not as a lost capability: no supported level can run it, and this is not a behavioural break (see Breaking change policy). Below API 24 that clause was met at most by the SMS-received receiver, for incoming SMS only, and its API ≤23 assertion was never implemented. The SMS-received broadcast path (`SmsBroadcastReceiver`, manifest receiver for `SMS_RECEIVED`, no version check) is unchanged. When it is delivered, and auto backup is on, login information is set and the first backup has run, it calls `scheduler.scheduleIncoming()`. That enqueues a delayed one-off of `BackupWorker` under the same unique name (`INCOMING`, REPLACE) as the content trigger's follow-up, so INV-1 collapses the two at enqueue. It covers incoming SMS only: sent messages and call-log changes are seen only by the content trigger. Whether that path is itself a binding clause is not decided here; removing it would be a separate, recorded change. Test gate: INV-4's version-boundary assertion is made at the lowest supported level, API 24 (DES-MODERNIZATION-005 §Design Validation). The `SDK_INT < VERSION_CODES.N` branch of `WorkManagerScheduler.scheduleContentTrigger` and the test `inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast` are removed and retargeted by story S1 of DES-MODERNIZATION-014 (D4, row S-7 and table T). This contract states the target the code reaches with S1.
 
 > **Degenerate execution window (not a flex window).** `Trigger.executionWindow(inSeconds, inSeconds)` (`:162`) has start == end — there is no JobDispatcher flex window to reproduce. The mapping is a single `setInitialDelay(inSeconds)`. Confirmed by `AlarmManagerDriver` reading only `getWindowStart()` (`AlarmManagerDriver.java:134-135`). A consumer expecting flex-window timing semantics is mistaken.
 
 ## Versioning
 
-- **Current version:** v2 (amended in place by DES-MODERNIZATION-012 / REQ-MODERNIZATION-013; v1 introduced by MU-005 / DES-MODERNIZATION-005). Amended in place — the contract has not been implemented against the v2 surface yet, so no consumer migration is required; `status` remains `approved`.
+- **Current version:** v3 (amended in place by CR-015, 2026-11-21; v2 amended in place by DES-MODERNIZATION-012 / REQ-MODERNIZATION-013; v1 introduced by MU-005 / DES-MODERNIZATION-005). v3 is non-breaking: it changes no port signature, no `BackupType` value, no `SchedulerState` variant and no invariant's substance, so no consumer migration is required; `status` remains `approved`.
 
 ### Changelog
 
+- **v3 — 2026-11-21 (CR-015; REQ-MODERNIZATION-015 / CR-011; DES-MODERNIZATION-014 story S1).** Non-breaking amendment: the minSdk 24 floor retires the pre-API-24 clauses. 1. **INV-4 is one mechanism on every supported level.** Removed "on API ≤23 via the broadcast fallback" from the INV-4 clause and realization, and "(+ pre-24 fallback)" from its title. Kept: an SMS (and, when enabled, call-log) content change MUST trigger backup via content-URI triggers, with the two-stage debounce. 2. **Ruling: not a behavioural break.** No supported level can run the removed branch, which only returned `null`; the SMS-received broadcast path is unchanged; the debounce is intact. 3. Removed the API 24+ / pre-24 wording from `scheduleContentTrigger()`, `contentUriTriggers`, the producer row and the content-trigger example; added a note stating what the broadcast path covers (incoming SMS only). 4. **Test gate retargeted, not dropped:** the INV-4 version-boundary assertion moves to the lowest supported level, API 24. The API ≤23 assertion that DES-MODERNIZATION-005 required was never implemented (the only test asserted a `null` return). 5. No change to any port signature, `BackupType` value, `SchedulerState` variant, other invariant or Validation Rule. 6. Frontmatter: `CR-015` in `change_records`, `REQ-MODERNIZATION-015` in `related_requirements`, `DES-MODERNIZATION-014` in `related_design_docs`. 7. The branch and its test are deleted and retargeted by story S1 of DES-MODERNIZATION-014 (D4); this entry states the target.
 - **v2 — 2026-06-04 (DES-MODERNIZATION-012 / REQ-MODERNIZATION-013).** Additive amendment for the manual backup/restore dispatch migration off `startService(...)`→`AsyncTask` onto the scheduler.
   1. **Added port operation `scheduleManual(backupType: BackupType): Unit`** — an immediate one-off that carries the engine `BackupType` (`MANUAL` or `SKIP`) to the worker via the work tag (`addTag(backupType.name())`), so `BackupWorker.inferBackupType()` resolves it and `SKIP` reaches `executeSkip()`. Constraint-identical to `scheduleImmediate` (`Constraints.NONE`, REPLACE, EXPONENTIAL/30s, no delay) but with its own unique-work name (`backupType.name()`), so a manual run and a `BROADCAST_INTENT` automation run do not REPLACE each other. `scheduleImmediate()` is **unchanged** — existing callers and the `BROADCAST_INTENT` automation path are not broken. Net operation count: **nine → ten**.
   2. **Single-enum reconciliation.** Corrected the `BackupType` enum documentation: there is exactly **one** `BackupType` enum (`com.zegoggles.smssync.service.BackupType`, verified `BackupType.java:6-12`) shared by the scheduler and the engine; v1 documented only the three discriminator members (`REGULAR`/`INCOMING`/`BROADCAST_INTENT`). v2 enumerates the full member set (`+ UNKNOWN, MANUAL, SKIP`) and the `isBackground()` derived property. There is **no** separate engine-level backup-type enum; `MANUAL`/`SKIP` are members of this same enum.
@@ -257,8 +263,8 @@ These four invariants are **binding clauses**. The producer (`WorkManagerSchedul
 
 ### Breaking change policy
 
-- **Breaking change policy.** Breaking for **consumers** = any change to a method signature, the `BackupType` enum values, or the `SchedulerState` variant set. Breaking for the **behavioral contract** = any change to the four invariants (different `ExistingPolicy`, a network constraint on `BROADCAST_INTENT`, a backoff value other than `EXPONENTIAL`/30s/300s, or losing the content-trigger pre-24 fallback or its debounce). Behavioral breaks are the higher-severity class: they can silently change scheduling semantics without a compile error and MUST be gated by the INV-1..4 tests (DES-005 §Design Validation).
-- **Backward compatibility (non-breaking).** Swapping the bound implementation (`LegacyScheduler` ↔ `WorkManagerScheduler` ↔ `CompositeScheduler`) is non-breaking by construction — the port surface is identical, which is exactly what makes the cutover and rollback a binding flip with **no** call-site change. Adapter-internal changes (the `SDK_INT >= 24` branch, the worker-side 300s cap mechanism) are non-breaking. Adding a new `observe`-only state variant is a breaking change for exhaustive consumers and must be versioned.
+- **Breaking change policy.** Breaking for **consumers** = any change to a method signature, the `BackupType` enum values, or the `SchedulerState` variant set. Breaking for the **behavioral contract** = any change to the four invariants (different `ExistingPolicy`, a network constraint on `BROADCAST_INTENT`, a backoff value other than `EXPONENTIAL`/30s/300s, or losing the content-trigger or its debounce on any supported level). Behavioral breaks are the higher-severity class: they can silently change scheduling semantics without a compile error and MUST be gated by the INV-1..4 tests (DES-005 §Design Validation); where an invariant's realization depends on the API level, it is asserted at the lowest supported level. From v3 the pre-24 fallback is not on this list: the minSdk 24 floor (REQ-MODERNIZATION-015) retired the pre-24 levels, so removing the branch that served them loses no behaviour on any supported level (CR-015).
+- **Backward compatibility (non-breaking).** Swapping the bound implementation (`LegacyScheduler` ↔ `WorkManagerScheduler` ↔ `CompositeScheduler`) is non-breaking by construction — the port surface is identical, which is exactly what makes the cutover and rollback a binding flip with **no** call-site change. Adapter-internal changes (the worker-side 300s cap mechanism; an API-level branch inside the adapter, such as the `SDK_INT >= 24` branch of the content trigger that story S1 of DES-MODERNIZATION-014 removes, provided every supported level still meets INV-1..4) are non-breaking. Adding a new `observe`-only state variant is a breaking change for exhaustive consumers and must be versioned.
 
 ## Validation Rules
 
@@ -360,7 +366,7 @@ SchedulerConfig(
 )
 ```
 
-**Example: content-URI trigger (API 24+) and its debounce follow-up**
+**Example: content-URI trigger and its debounce follow-up**
 
 ```
 // scheduleContentTrigger() — recurring observer; SMS provider + call-log when enabled
@@ -378,9 +384,9 @@ SchedulerConfig(
 // On trigger, the worker does NOT back up directly — it calls scheduler.scheduleIncoming(),
 // enqueuing a delayed one-off (delay = getIncomingTimeoutSecs()). INV-4 two-stage debounce.
 
-// API <= 23 fallback (no content-URI triggers available):
-// the SMS-received broadcast path calls scheduler.scheduleIncoming() ->
-//   OneTimeWorkRequest(initialDelay = getIncomingTimeoutSecs())   // same debounce.
+// Separately, the SMS-received broadcast path (incoming SMS only) calls scheduler.scheduleIncoming() ->
+//   OneTimeWorkRequest(initialDelay = getIncomingTimeoutSecs())   // same debounce, same unique name INCOMING;
+//   INV-1 (REPLACE) collapses it with the content trigger's follow-up.
 ```
 
 ## Dependencies
@@ -400,5 +406,6 @@ SchedulerConfig(
 
 - **Three corrected misreadings carried from DES-MODERNIZATION-005 (verified against `BackupJobs.java`):** (1) `(30, 300)` is **one** exponential strategy — 30s initial, 300s cap — not two separate values and not backup-vs-restore; (2) the immediate `BROADCAST_INTENT` backup has **no** network constraint (`Constraints.NONE`); (3) the execution window is **degenerate** (`executionWindow(s, s)`), so there is no flex window to preserve. A consumer or adapter implemented from a summary rather than this contract is at risk of all three errors.
 - **Open verification items deferred to implementation planning** (flagged in DES-005 as "scope assumed — not verified"): the exact `com.zegoggles.smssync.BACKUP` receiver class + manifest `intent-filter` (owned by CNTR-MODERNIZATION-005), and the full set of external `BackupJobs` call sites that become port consumers. Both MUST be grep-confirmed before this contract's consumer list and the broadcast cross-reference are treated as exhaustive.
-- **Status:** approved (v2 amended in place per DES-MODERNIZATION-012 / REQ-MODERNIZATION-013). All paths relative to repo root (`C:/Code/Android/sms-backup-plus`).
+- **Status:** approved (v3 amended in place by CR-015; v2 amended in place per DES-MODERNIZATION-012 / REQ-MODERNIZATION-013). All paths are relative to the repository root.
 - **v2 implementation note (BackupScheduler.java javadoc).** The port interface javadoc (`BackupScheduler.java:36`) currently reads "all **nine** operations below … are binding clauses." When the implementing story adds `scheduleManual(BackupType)` to `BackupScheduler.java` + `WorkManagerScheduler.kt` (+ the debug `LegacyScheduler`/`CompositeScheduler` impls, if still present), it MUST update that javadoc count to **ten** and add the new method's javadoc. This is a source change owned by the REQ-MODERNIZATION-013 story, not by this contract amendment.
+- **Amended 2026-11-21 by CR-015 (v3):** the pre-API-24 clauses are removed because the minSdk 24 floor (REQ-MODERNIZATION-015, CR-011) leaves no supported level below API 24; ruled not a behavioural break. INV-4's version-boundary assertion moves to API 24. The code branch and the test follow in story S1 of DES-MODERNIZATION-014. See the Changelog, v3.

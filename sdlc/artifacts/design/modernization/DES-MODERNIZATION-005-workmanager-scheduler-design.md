@@ -12,7 +12,8 @@ related_design_docs: []
 integration_contracts:
   - CNTR-MODERNIZATION-004
   - CNTR-MODERNIZATION-005
-change_records: []
+change_records:
+  - CR-015
 type: ''
 id: DES-MODERNIZATION-005
 title: WorkManager Scheduler Spine Design
@@ -85,7 +86,7 @@ core (no Android scheduler types in signature)
   port: BackupScheduler
     scheduleIncoming()                  // one-off, delay = incomingTimeoutSecs
     scheduleRegular()                   // periodic / recurring, constraint-bound
-    scheduleContentTrigger()            // recurring content-URI observer (API 24+)
+    scheduleContentTrigger()            // recurring content-URI observer (every supported level, minSdk 24)
     scheduleBootup()                    // honors isAutoBackupEnabled(); cancelAll() if off
     scheduleImmediate()                 // one-off NOW, BROADCAST_INTENT, no constraint
     scheduleRestore(config)             // one-off restore (NEW — no scheduler today)
@@ -235,7 +236,7 @@ over `CoroutineWorker`.
 | AC-3 (a) REPLACE semantics | `ExistingWorkPolicy.REPLACE` / unique periodic work (Integration Design) |
 | AC-3 (b) 30s/300s exponential backoff | `BackoffPolicy.EXPONENTIAL`, 30s initial / 300s cap (Integration Design) |
 | AC-3 (c) UNMETERED/ANY_NETWORK per type | network-constraint mapping incl. empty-constraint for immediate (Integration Design) |
-| AC-3 (d) content-URI trigger + pre-24 fallback | `addContentUriTrigger` (24+) / delayed one-off (14–23) |
+| AC-3 (d) content-URI trigger (the clause "with broadcast fallback below API 24" has no case at minSdk 24; CR-015) | `addContentUriTrigger` on every supported level; the delayed one-off (`initialDelay = incomingTimeoutSecs`) as the second stage |
 | AC-4 public broadcast preserved | `com.zegoggles.smssync.BACKUP` → `scheduler.scheduleImmediate()`; ADB test |
 | AC-5 removals | ADR-005-A/B; build + source removal; grep gate |
 | AC-6 durable resumable restore | checkpoint + guaranteed re-execution + existing dedup guard |
@@ -254,7 +255,7 @@ content providers, with progress surfaced via WorkManager `WorkInfo` → `Schedu
 | Component | Module | Responsibility |
 |-----------|--------|----------------|
 | `BackupScheduler` (port) | core | Scheduling contract; no Android scheduler types in signature |
-| `WorkManagerScheduler` (adapter) | app | Sole production impl; maps port calls to `WorkRequest`s; version-branches content-URI trigger |
+| `WorkManagerScheduler` (adapter) | app | Sole production impl; maps port calls to `WorkRequest`s; the content-URI trigger needs no version branch at the minSdk 24 floor (CR-015; the code branch is removed by story S1 of DES-MODERNIZATION-014) |
 | `LegacyScheduler` (adapter) | app (debug) | Wraps today's `BackupJobs` machinery for parallel-run only |
 | `CompositeScheduler` | app (debug) | Delegates to both adapters; logs divergence |
 | `BackupWorker` | app | `@HiltWorker` `CoroutineWorker`; calls core backup use-case; emits progress |
@@ -278,7 +279,7 @@ construct in current source (line cited).
 | `setRecurring(backupType.isRecurring())` (`:163`); content-trigger `setRecurring(true)` (`:171`) | `PeriodicWorkRequest` for recurring types; `OneTimeWorkRequest` otherwise | timing |
 | `Trigger.NOW` when `inSeconds <= 0` (`:162`) | `OneTimeWorkRequest` with no initial delay | — |
 | `Trigger.executionWindow(inSeconds, inSeconds)` — **degenerate window, start == end** (`:162`) | `setInitialDelay(inSeconds, SECONDS)` (one-off) / `PeriodicWorkRequest(interval)` (recurring) | timing |
-| `Trigger.contentUriTrigger(observedUris())` over SMS + (optional) call-log providers (`:170,177-184`) | `Constraints.addContentUriTrigger(uri, triggerForDescendants=true)` per observed URI (API 24+); see fallback below | INV-4(d) |
+| `Trigger.contentUriTrigger(observedUris())` over SMS + (optional) call-log providers (`:170,177-184`) | `Constraints.addContentUriTrigger(uri, triggerForDescendants=true)` per observed URI (every supported level); see "Incoming-SMS trigger" below | INV-4(d) |
 | `newRetryStrategy(RETRY_POLICY_EXPONENTIAL, 30, 300)` — **30 = initial backoff, 300 = maximum/cap** (`:205`) | `setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, SECONDS)`; WorkManager caps backoff at `MAX_BACKOFF_MILLIS` (≈5 h), so the 300s ceiling is enforced at the worker by capping retry scheduling at 300s | INV-3 backoff fidelity |
 | `ON_UNMETERED_NETWORK` when `isWifiOnly()` (`:199`) | `Constraints.setRequiredNetworkType(NetworkType.UNMETERED)` | INV-2 |
 | `ON_ANY_NETWORK` otherwise (`:199`) | `Constraints.setRequiredNetworkType(NetworkType.CONNECTED)` | INV-2 |
@@ -314,23 +315,14 @@ Today this is two cooperating jobs: a recurring `contentTrigger` job
 (`scheduleContentTriggerJob`, `BackupJobs.java:82,168-175`) observing the SMS provider (and the
 call-log provider when call-log-after-call is enabled, `:180-181`), and a delayed `INCOMING`
 follow-up enqueued by `SmsJobService.onStartJob` (`:76`) with delay
-`getIncomingTimeoutSecs()`. The design preserves this two-stage debounce with a version split:
+`getIncomingTimeoutSecs()`. The design preserves this two-stage debounce with one mechanism on every supported level (minSdk 24, REQ-MODERNIZATION-015):
 
-- **API 24+ (preferred):** `Constraints.addContentUriTrigger(SMS_PROVIDER, triggerForDescendants
-  = true)` (the `FLAG_NOTIFY_FOR_DESCENDANTS` equivalent verified at `:179,181`), plus the call-log
-  URI under the same `isCallLogBackupAfterCallEnabled()` condition. The triggered worker enqueues
-  the delayed incoming-backup work (preserving the `getIncomingTimeoutSecs()` debounce) — it does
-  not back up on the raw content change, matching today's follow-up behavior.
-- **API 14–23 (the current floor up to pre-24):** content-URI triggers are unavailable. Retain the
-  **existing broadcast fallback** — the SMS-received path calls `scheduler.scheduleIncoming()`,
-  enqueueing a delayed `OneTimeWorkRequest(initialDelay = incomingTimeoutSecs)`. Mandated by AC-3(d)
-  ("broadcast fallback below API 24") and required because the project floor is API 14
-  (`app/build.gradle:14`; raised to 21 later by MU-011/REQ-MODERNIZATION-006). The fallback applies
-  to the whole pre-24 range regardless of whether that floor is 14 or the later 21.
+- **Content-URI trigger (every supported level):** `Constraints.addContentUriTrigger(SMS_PROVIDER, triggerForDescendants = true)` (the `FLAG_NOTIFY_FOR_DESCENDANTS` equivalent verified at `:179,181`), plus the call-log URI under the same `isCallLogBackupAfterCallEnabled()` condition. The triggered worker enqueues the delayed incoming-backup work (preserving the `getIncomingTimeoutSecs()` debounce) — it does not back up on the raw content change, matching today's follow-up behavior.
+- **SMS-received broadcast (no version check, unchanged):** when delivered, the SMS-received path calls `scheduler.scheduleIncoming()`, enqueueing a delayed `OneTimeWorkRequest(initialDelay = incomingTimeoutSecs)` as unique work `INCOMING` (REPLACE). It runs beside the content trigger for incoming SMS (INV-1 collapses the two at enqueue); it does not see sent messages or call-log changes.
 
-The version branch lives inside `WorkManagerScheduler.scheduleContentTrigger()` /
-`scheduleIncoming()` (an `SDK_INT >= 24` check), so the port surface is version-agnostic and
-callers are unaffected.
+History: before the minSdk 24 floor (CR-011, CR-015) the project floor was API 14, later 21, and AC-3(d)'s "broadcast fallback below API 24" was the only trigger on those levels, for incoming SMS only. Ruled by CR-015: the removal of that obligation is not a behavioural break of CNTR-MODERNIZATION-004.
+
+The content trigger needs no version branch: after story S1 of DES-MODERNIZATION-014 (D4, row S-7) `WorkManagerScheduler.scheduleContentTrigger()` has no `SDK_INT` check, so the port surface is version-agnostic and callers are unaffected.
 
 ### Public broadcast contract preservation (AC-4)
 
@@ -384,7 +376,7 @@ All run under the WorkManager test harness (`WorkManagerTestInitHelper.initializ
 | **INV-1 single-flight (AC-3a)** | Enqueue the same job kind twice via the port; query `WorkManager.getWorkInfosForUniqueWork(name)`; assert exactly one non-terminal work item — covering `ExistingWorkPolicy.REPLACE` / `enqueueUniquePeriodicWork`, the equivalent of `setReplaceCurrent(true)`. |
 | **INV-2 constraint fidelity (AC-3c)** | For `isWifiOnly()=true` assert enqueued `WorkSpec.constraints.requiredNetworkType == UNMETERED`; for `false` assert `CONNECTED`. For `scheduleImmediate` (`BROADCAST_INTENT`) assert **no network constraint** (`NetworkType.NOT_REQUIRED`). Assert charging is **not** required in all cases — matching verified `jobConstraints`. |
 | **INV-3 backoff fidelity (AC-3b)** | Assert `WorkSpec.backoffPolicy == EXPONENTIAL` and `backoffDelayDuration == 30_000ms`; assert effective retry delay is capped at `300s` (the maximum from `newRetryStrategy(…, 30, 300)`). |
-| **INV-4 content-URI trigger (AC-3d)** | API 24+: assert `WorkSpec.constraints.contentUriTriggers` includes the SMS provider URI (and call-log URI when `isCallLogBackupAfterCallEnabled()`), `triggerForDescendants=true`. API ≤23: assert the broadcast fallback enqueues a delayed `OneTimeWorkRequest(initialDelay = incomingTimeoutSecs)`. |
+| **INV-4 content-URI trigger (AC-3d)** | On every supported level, asserted at the lowest, API 24 (`@Config(sdk = [24])`): `scheduleContentTrigger()` returns a job, unique work `CONTENT_TRIGGER` is enqueued, and `WorkSpec.constraints.contentUriTriggers` includes the SMS provider URI with `triggerForDescendants=true`. The test that carries this after story S1 is named `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` (DES-MODERNIZATION-014 D4, table T; retargeted from `inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast`). The call-log URI case and the SMS-only case are asserted at API 29 by `inv4_contentTrigger_callLogEnabled_bothUrisPresent` and `inv4_contentTrigger_callLogDisabled_onlySmsUri`. The SMS-received path's receiver logic is asserted by `SmsBroadcastReceiverTest.shouldScheduleIncomingBackupAfterIncomingMessage` (`scheduleIncoming()` is called once); delivery of the broadcast to the receiver is not unit-tested. |
 
 ### Public broadcast contract — ADB test (AC-4)
 
@@ -441,7 +433,7 @@ tasks and in `SmsJobService.backupStateChanged` (`SmsJobService.java:110-126`).
 |-----------|-----------|---------|
 | `scheduleIncoming()` | delayed one-off, delay = `getIncomingTimeoutSecs()`, network per `isWifiOnly()` | unique `OneTimeWorkRequest` |
 | `scheduleRegular()` | recurring backup, network per `isWifiOnly()`, exponential backoff (30s→300s) | `enqueueUniquePeriodicWork(REGULAR, REPLACE/UPDATE)` |
-| `scheduleContentTrigger()` | recurring content-URI observer over SMS (+ call-log when enabled), API 24+ | `PeriodicWorkRequest` + content-URI triggers |
+| `scheduleContentTrigger()` | recurring content-URI observer over SMS (+ call-log when enabled), every supported level (minSdk 24) | `PeriodicWorkRequest` + content-URI triggers |
 | `scheduleBootup()` | if `!isAutoBackupEnabled()` → `cancelAll()`; else schedule regular | per-branch, mirrors `BackupJobs.scheduleBootup` |
 | `scheduleImmediate()` | immediate one-off, **no network constraint**, REPLACE | one-off, no delay, `Constraints.NONE` |
 | `scheduleRestore(config)` | one-off restore; resumable via durable checkpoint (NEW) | unique `OneTimeWorkRequest` |
@@ -515,3 +507,5 @@ must be owned before sprint planning: the `BackupScheduler` CNTR and the BACKUP 
 (both listed as needed). Open verification items deferred to implementation planning: exact
 BACKUP receiver class + manifest intent-filter, and the full set of `BackupJobs` external call
 sites — both flagged inline as "scope assumed — not verified" rather than asserted.
+
+Amended 2026-11-21 by CR-015: the pre-API-24 content-trigger fallback is retired by the minSdk 24 floor (REQ-MODERNIZATION-015, CR-011) and ruled not a behavioural break of CNTR-MODERNIZATION-004 (now v3). The INV-4 validation row now specifies the API 24 assertion. The code branch and the test follow in story S1 of DES-MODERNIZATION-014. Lines in ADR-005-A that name API 14 to 22 and the "AlarmManager fallback driver" row of the legacy-mechanism table under "WorkManager + CoroutineWorker: four mechanisms collapse to one, flipped once" describe WorkManager's own scheduler choice and the old floor as history and are not edited.
