@@ -291,6 +291,16 @@ Rulings carried in, recorded 2026-11-21 (see "Binding Rulings Carried In"): DP-1
 
 To record at build (not before): the start commit and the authoritative test count and skipped count with that commit id (AC-27); the failing-on-start output of AC-1 and the literal sequence of AC-6; how the empty record is treated on upgrade and why (AC-16); the largest expected record size (AC-20); the plan's choice of mechanism where it differs from Technical Context; each existing test changed, if any, with its reason (AC-23); the exact tests added, by name (AC-27); `mutation-log.md` (AC-24); the `MailTransport` Javadoc decision (AC-26); IC-4 outcome or "not run".
 
+**Rulings after the plan gates of iteration 1 (2026-11-21; decision appendix, Record 18).** Plan review FAIL (two blockers, both in test text and the mutation table; the design and the production edits were found correct against the code), contract verification PASS, depth check PASS. The plan goes to iteration 2 with these rulings:
+
+- **The mutation table (plan-review B-2):** it is met when every new test fails under at least one logged mutation and every mutation id is detected by at least one test. It does not require one particular test to fail under one particular mutation where the code shows it cannot.
+- **Rows the SQL contact-group clause excludes are never recorded.** If the group is widened later, SMS of the last six hours that now match are uploaded by the look-back. Accepted: neither a duplicate nor a loss, and bounded by the window. It is named in the "behavior preserved" evidence as a stated difference, with the sentence that it is the opposite of the consequence for rows the converter rejects (recorded, not looked at again). Both sentences go to the next requirements pass.
+- **The digest's input** is the raw characters of the fields (an encoding that is total and one-to-one over Java strings, with the fields kept apart unambiguously), not a UTF-8 encoding that maps malformed characters to the same byte. Two different messages must never get the same key because of the encoding.
+- **A restore running at the same time as a backup (contract-verification O-1):** the record is read after the provider queries return, so a row that a restore records and inserts in between is not uploaded. A test and a mutation show it.
+- **The developer's run is planned as two sessions** with a clean hand-over state between them; nothing is half-edited and no mutation is in place at a hand-over. The developer commits nothing in either session.
+- **Privacy of the record:** the plan states what the record reveals (dates in clear; a short code can be recovered from its digest by trying the code space) and where it lives (the app's private preferences; carried by Android's own backup). It decides, with reasons, whether a slower digest is used.
+- **Order with BUG-024:** BUG-024's fix is built after this story and relies on this story's provider double, recording transport and the test that cancels during an append; they are kept as planned.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 
