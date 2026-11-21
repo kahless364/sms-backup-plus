@@ -370,6 +370,13 @@ Risks (design Risks 3, 5, 6, 7, 8, 9, 10, 12, 13): (1) the Gradle/AGP/Kotlin set
 - **The `worker` package's coverage floor:** story U-069 writes 0.90 (ruling 47), which leaves one spare line at 16 counted lines. The plan's statement that the package has zero spare lines is superseded; its stop rule (never lower a floor) stands.
 - **Quotes and checksums (Q-1 to Q-12):** supplied by the orchestrator in `sdlc/artifacts/build/research/2026-11-21-u071-quote-supplement.md` (written 2026-11-21); the plan and the developer fetch nothing. Where AC-3 asks for "verbatim vendor quotes with URLs", the supplement meets it with exact table values and checksums and, for prose, the stated fact with the page's address and fetch date; longer verbatim reproduction of vendors' release notes is not made in this repository (orchestrator's ruling, stated in the supplement). Two facts from it bear on the plan's version resolution under D1a: the Android pages do not yet describe plugin version 9.5.2 (they name 9.5.1 and give 9.6.0 as the minimum Gradle for 9.5); and the Kotlin page's documented maxima for 2.4.21 are Gradle 9.7.0 and the Android Gradle Plugin 9.3.1, with newer versions allowed under a caution. The plan's iteration after the gates states how each is resolved.
 
+**Plan gates passed (2026-11-21; decision appendix, Records 21 and 22, rulings 58, 59, 63, 64, 65).** The plan is iteration 3 with Amendments A1 and A2. Plan review: FAIL at iterations 1, 2 and 3 and at the re-check of A1, PASS at the re-check of A2. Contract verification: FAIL at iteration 1, PASS at iterations 2 and 3. Depth check: PASS at iterations 1 and 2 (warning gate). Binding on the developer in addition to the plan's text:
+
+- **Ruling 58** (the plan's SC-P6): a difference in the kept members of the contract classes at I4, I5 or I6 is accepted and recorded only under the conditions the plan's row D42 now states; at I3 it stops.
+- **Ruling 65, item 3:** a mismatch that can only be a false stop (for example a byte comparison of evidence files that differ by line endings alone, plan-review observation O-25) is handled by stopping and reporting; the developer does not adapt a check.
+- **Start condition:** story U-075 reads `done`. The start commit and the start count are recorded at I0; no fixed test total applies.
+- **Vendor statements** Q-1 to Q-17 are in `sdlc/artifacts/build/research/2026-11-21-u071-quote-supplement.md`; nothing is fetched during the build.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 

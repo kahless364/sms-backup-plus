@@ -2506,3 +2506,23 @@ Under ruling 55 the orchestrator ran the restart procedure of BUG-027 on the And
 | PO-L | Should the app ever ask to be exempted from battery optimisation (BUG-029, question PO-2)? | No; the fix does not need it | Nothing |
 
 Recorder: Orchestrator.
+
+### Record 22 — 2026-11-21 (story U-069 done; story U-075 written and placed; the U-071 plan through its gates)
+
+Story U-069 passed code review, security review and QA on 2026-11-21 and is done (implementation commit `d7a69974`; 771 tests; the emulator check on Android 16 passed with the app kept on screen under ruling 61). BUG-023 is closed. Story U-075, the fix for BUG-029, is written and is wave 4 of sprint 024, after story U-070; its plan is being written while U-070 is built.
+
+**Further rulings by the orchestrator under Record 12** (continuing Records 13 to 21):
+
+| # | Subject | Question | Ruling | On whose recommendation | To reverse it |
+|---|---------|----------|--------|-------------------------|---------------|
+| 64 | U-071 plan | The plan-review gate failed the third iteration on one new point (an evidence line needed at the build-plugin increment that no step wrote), and three iterations are the gate's limit | One amendment round is allowed, followed by a re-check limited to the amendment, because the one remaining blocker was a single line whose fix the gate itself gave | Orchestrator | Stop the story's planning and ask the product owner |
+| 65 | U-071 plan | The re-check of that amendment found the blocker fixed and one new defect in a command the amendment had added (a line-ending mismatch that would stop the build where it should accept) | A second amendment limited to that defect, with a duty on the planner to test every command the two amendments added, end to end on this machine, and to list every other place where a file written by an embedded tool is compared with shell output. After it, a finding that can only cause a false stop, never a false pass, is an observation handled by the plan's own stop-and-amend route during the build, not a blocker. The gate then passed with one such observation | Orchestrator; plan-review gate | Not applicable |
+| 66 | BUG-029, U-075 | Ruling 60 names "a manual backup, a restore" as the work that may ask for the foreground and does not name the "skip" action | "Skip" is included: it is started by the user from the screen and the code treats it as not being background work. The story is written so | Requirements Analyst (the story); Solution Architect (the bug) | Not applicable |
+| 67 | The scheduler contract | Three contract changes were to be raised separately: the content-trigger example (story U-069, concern SC-1), the changes for BUG-026 and BUG-027 (ruling 55), and the removal of the SMS receiver (ruling 56) | One change record, CR-017, carries all of them as one version step of the contract. The fix stories stay as ruled: one for BUG-026 and BUG-027, one for the receiver | Orchestrator | Split the record |
+| 68 | Held questions of BUG-027 and BUG-029 | Whether to stop and ask the product owner before the change record and the fix stories are written | Not asked now. Each question has a recommended answer that changes nothing the owner cannot reverse later (no backup started by a restart beyond the regular schedule; no progress notification for automatic backups; no request to be exempted from battery optimisation). The record and the stories are written for those answers and state which sentences change if the owner decides otherwise. The questions stay listed for the owner | Solution Architect (the bugs' recommendations) | The owner answers; the record is amended |
+
+The U-071 plan (iteration 3 with Amendments A1 and A2) has passed plan review, contract verification and the depth check. Its build starts after story U-075 is done.
+
+Still held for the product owner: PO-B, PO-D, PO-E, PO-F, PO-H, PO-K, PO-L, the two questions of BUG-027, and a virtual device for Android 17.
+
+Recorder: Orchestrator.

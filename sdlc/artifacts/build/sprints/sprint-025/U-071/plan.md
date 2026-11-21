@@ -5,14 +5,17 @@ gate_id: "planning"
 checkpoint: "planning"
 verdict: "PASS"
 agent: "Solution Architect"
-timestamp: "2026-11-21T14:30:00Z"
-iteration: 1
-base_commit: "7c5e6073ebd4ddd2d9e737ded20e7c134b2fb97f"   # planning HEAD (PLAN_HEAD): U-068 S1-I6; the start commit is read at I0, after U-068, U-069, U-070 and U-074 are done
+timestamp: "2026-11-21T16:01:49Z"   # iteration 3; Amendment A1 written 2026-11-21 (ruling 64)
+iteration: 3
+amendment: "A2"   # A1 (ruling 64) and A2 (ruling 65)
+base_commit: "7c5e6073ebd4ddd2d9e737ded20e7c134b2fb97f"   # PLAN_HEAD of iteration 1 (U-068 S1-I6); iterations 2 and 3 re-read at 9aa6b76c and 0c99149e (build paths unchanged); the start commit is read at I0, after U-068, U-069, U-070, U-074 and the BUG-029 fix story are done
 contracts_verified:
   - CNTR-MODERNIZATION-001
+  - CNTR-MODERNIZATION-002
+  - CNTR-MODERNIZATION-003
   - CNTR-MODERNIZATION-004
   - CNTR-MODERNIZATION-005
-risks_identified: 18
+risks_identified: 22
 ---
 
 # Implementation Plan: U-071 — Build Toolchain and Test Tooling to the Latest Stable Release, One Component per Verified Increment
@@ -32,6 +35,17 @@ S1-I4) and HEAD no build file changed: the blobs of `build.gradle`, `app/build.g
 U-068 I7 (`CHANGES`, `DEVELOPMENT.md`, `code-location.md:28`, the bug-report template; no build file), U-069 (two lines of
 `app/build.gradle`, Rule 15, `:579` and `:586`, plus its worker and test), U-070 and U-074 (service, preferences and mail
 sources and tests; no build file). I0 re-reads this start state with decision rows (I0 step 1, rows D2 to D7).
+The fixes of BUG-025, BUG-026 and BUG-027 (raised 2026-11-21) are placed after story U-072, so no scheduler code changes
+before `<start>`; the I0 drift check would show such a change. **The BUG-029 fix story** (a backup started while the
+app is off screen fails at `setForeground`, `BackupWorker.kt:123`, on Android 12 and later; `sdlc/artifacts/stories/BUG-029-background-backup-fails-at-foreground-start.md`)
+runs after U-069 and U-070 and **before this story**: it will change `BackupWorker.kt` (where mutation anchor M-1
+sits), probably `RestoreWorker.kt`, and adds tests. Its commits are part of `<start>`; its tests are inside `C0`; I0
+records its commit ids, the `app/src/main` drift it brings, and re-checks every anchor by exact text (row D6).
+**The fix story is U-075** (`sdlc/artifacts/build/sprints/sprint-024/U-075-automatic-backup-runs-when-the-app-is-off-screen.md`,
+sprint 024 wave 4 after U-070, `e40a8f80`); by its text it changes `BackupWorker.kt` and `RestoreWorker.kt` and adds
+`app/src/main/java/com/zegoggles/smssync/service/WorkerForeground.kt` (plan-review O-23).
+**State at Amendment A1 (2026-11-21):** U-069 is done (implementation `d7a69974`, closed at `fd70325a`; 771 tests;
+its two predicted `app/build.gradle` lines are the only build-file drift); U-075 is being planned; U-070 is being built.
 
 **The start commit is not fixed by this plan.** `<start>` is `HEAD` when I0 runs, after U-074 (sprint 025 wave 1) is done.
 The start count `C0`, every coverage figure, the KSP list, the lint figures and the verification counts are measured
@@ -46,16 +60,186 @@ I5 11, I6 4, I7 5, I8 to I11 3 each, I12 4, I13 2, I14 3), plus up to about 12 c
 row D25; the re-runs after a forced edit under D55, D56, D58 or the flags of D69; one retry each under D20 and D73). **14 local commits**, one per increment I1 to I14 (13 if the KSP reorder fires), plus fix commits only if a
 later check fails because of an earlier, committed increment. Six developer sessions (section 7).
 
+**Iteration 2 count:** **71 Gradle runs planned** (I0 6, I1 5, I2 4, I3 4, I4 6, I5 13, I6 5, I7 6, I8 to I11 3 each,
+I12 4, I13 2, I14 4): the dependency report now runs once per configuration (two runs per DEP, plan-review O-3) and one
+up-to-date run follows G(2) and G(5) (depth check). The figures 63 and "I0 5 … I14 3" above are iteration 1's.
+
+## Iteration 2 (after the plan gates, 2026-11-21)
+
+Iteration 1's gates: plan-review FAIL (B-1 to B-5, O-1 to O-11), contract-verification FAIL (B-1, B-2, O-1 to O-5),
+expert-depth-check PASS with two recommendations (`plan-review.md`, `contract-verification.md`, `expert-depth-check.md`
+in this workspace). Rulings since then: Record 19 (rulings 47 to 51: SC-P1 to SC-P5, the `worker` floor 0.90), the
+supplement `sdlc/artifacts/build/research/2026-11-21-u071-quote-supplement.md` with its ruling on AC-3's form, Record 20
+(the product owner's device decisions, ruling 57). Re-read in this session at HEAD `e130182e`: the build paths and
+`app/src/main` are unchanged since PLAN_HEAD (`git diff --stat 7c5e6073 HEAD` empty), `code-location.md` differs only at
+`@@ -28 +28 @@` (U-068 I7). Every change is made in place; the table says where. No finding is declined.
+
+| Finding | Change, and where |
+|---------|-------------------|
+| plan-review B-1 (`I1-gradle-version.txt` written by no step) | I1 step 7 now sanitises it to `$E/I1-gradle-version.txt`. Every commit list re-checked against the steps that write it: 4.9 note "Writers" names, for each list entry, the step that writes it |
+| plan-review B-2 (`gradlew` may stage nothing) | I1 step 6 records `gradlew-unchanged-exit` (expected `0`: the 9.5.1 and 9.9.1 Unix templates are byte-identical); I1 step 8 expects an empty `gradlew` numstat in that case; CM step 5 now builds the expected staged list from the listed files that are changed or untracked (`git status --porcelain --untracked-files=all`), records every listed file that is unchanged, and compares only the rest; 4.9's I1 row says "`gradlew` (staged only if changed)". The rule applies to every increment |
+| plan-review B-3, contract-verification B-1 and B-2 (SC-P1 not carried; R8 comparison too narrow; headers make `configuration.txt` differ) | New R8 evidence R8-1 to R8-6 (tool `r8_check.py`, tested on U-068's files: header normalisation makes U-068 I0 and I5 equal section by section; the seven contract-bearing rules found; 27 manifest classes identity-mapped; 482 seeds and 1,775 usage entries in the contract prefixes): EV-B and CMP rewritten; new 2.10 "R8 checks and the allowed-section table"; D42 and D43 rewritten to ruling SC-P1 (Record 19 ruling 48) plus R8-4 and R8-5; 2.9 cells "= `<p>`, or accepted under SC-P1"; CMP's comparison against `<p>` decides, I0 is recorded; STD gains six files; 2.5, N7, 9.2, R2, H-2 and session B reworded |
+| plan-review B-4 (ruling 47: `worker` 0.90) | L17, 2.6, D60, R3, H-7, Verdict: floor 0.90, U-069 expects 10 of 10 counted lines, `⌈0.90·10⌉ = 9`, one spare line (also one at 16 lines); D60 now routes a breach to D38 and records a one-line drop within the floor; H-9 deleted (settled by ruling 47) |
+| plan-review B-5 (supplement form) | 2.2, 2.3, D1 and the compatibility record take the supplement's form: exact for table values and checksums, stated fact with address and fetch date for prose, each labelled so; nothing is called "verbatim" that is not; D1 stops only if an item is missing. Q-4 (no Android page names 9.5.2), Q-9 (Byte Buddy 1.17.5 notes carry Java 25; Mockito's are silent: D76 satisfied) and Q-12 (P1 now verified) recorded; the checksums carried into I1 and F2 |
+| Coordinator: resolve AGP 9.5.2 against the Android pages under D1a | 2.1 new "D1a resolution of the two supplement facts": D1a rules 1, 4 and 5 quoted; 9.5.2 is the newest non-pre-release artifact on Google Maven and no rule excludes a release whose notes are not yet published, so **9.5.2 stays the target** and F1 stays 9.5.1 (the version the notes describe). D1a decides it; no question is open |
+| Coordinator: Kotlin 2.4.21's documented maxima | 2.2: G2 carries Q-5's exact table cell `2.4.20–2.4.21 \| 7.6.3–9.7.0 \| 8.5.2–9.3.1` and the page's caution, as the known gap F2 exists for |
+| Coordinator: the tool timeout | New 4.L "Long runs": start in the foreground; if the harness backgrounds the run, wait for its completion notice, start nothing else, never poll, read the result from the log's `exit=` line; a log without `exit=` is a cut-off run (row D93: stop, never repeated at once); 4.R: a cut-off writer pass or gate is re-run once in a new session after the checks, a second cut-off stops |
+| plan-review O-1 (resume compares HEAD) | 4.R compares the newest `U-071 S2-` commit with the log and checks that no foreign commit touched the story's paths; other commits recorded |
+| plan-review O-2 (no work folder in a new session) | 4.R starts with `mkdir -p`; what is lost is stated (raw logs only; `gradlew-start` and the block are recreated from `git show $START:gradlew`) |
+| plan-review O-3 (plain `:app:dependencies`) | DEP runs two reports, `--configuration releaseRuntimeClasspath` and `--configuration debugUnitTestRuntimeClasspath`, as U-060 did; row D97 for a failing report |
+| plan-review O-4 (I7 steps 5, 6 order) | Swapped: DEP(7) is step 5, A21 step 6 |
+| plan-review O-5 (later cases keyed on names) | I0 step 13 classifies each later case of the NEW3 classes by the loop it drives (from U-070's and U-074's logs and the fixture it calls); I5 copies that table into `mutation-log.md` before M-1a; D64 applies to it |
+| plan-review O-6 (`git restore` writes CRLF `gradlew`) | D15, D17, 4.R use `git -c core.autocrlf=false restore --source=HEAD --worktree -- gradlew` and a normal restore for `gradle/wrapper` and `gradlew.bat` |
+| plan-review O-7 (D7 scan without baseline) | I0 step 6 runs the D7 scan on G(0)'s log and XML into `$E/I0-d7.txt` (I0SET) |
+| plan-review O-8 (SC-2 merged-manifest check) | I0 step 6 adds `grep -c 'android:minSdkVersion="24"' $E/I0-merged-debug.xml` → `1` |
+| plan-review O-9 (E14.1 KGP minimum) | E14.1's second and third lines reworded: AGP 9.5 needs Gradle 9.6.0 and JDK 17; "AGP 9 built-in Kotlin needs KGP >= 2.2.10" (still three comment lines: numstat and the `//` check unchanged); `oldtext_check.py` unchanged (old text) |
+| plan-review O-10 (checksum host) | I1 step 2 cites the supplement's `downloads.gradle.org` URLs and the redirect note |
+| plan-review O-11 (Robolectric content providers) | D37 names "content providers are now installed for lazily created applications" (Q-8) as a candidate cause for an application-context test change at I7 |
+| contract-verification O-1 (packaged backup descriptor) | EV-B dumps `xml/backup_descriptor` from both APKs (path resolved with `aapt2 dump resources`; release path is shortened, e.g. `res/mt.xml`); CMP expects 2 `exclude`, `credentials.xml`, `pinned_certs.xml` per APK (derived on the current APKs); `aapt2` verified present under the SDK's `build-tools/36.0.0` |
+| contract-verification O-2 (forced manifest or keep-rule edit) | New row D95: stop; the SA reads CNTR-005 `:158-165` and CNTR-004 `:266` and decides whether a change record and a contract version step are needed before any edit |
+| contract-verification O-3 (frontmatter, sources) | `contracts_verified` now equals 9.1 (001, 003, 004, 005, 006); 9.1 names CR-014 Amendment 1 as the source of the Robolectric/provider statement |
+| contract-verification O-4 (probe diff row) | New row D96: a changed `tls_provider`, provider list or default-enabled suite set with passing tests is classified in the log and reported in the session hand-off |
+| contract-verification O-5 (stale contract citations) | Hand-over H-8 adds CNTR-003 `:260` and CNTR-005 `:65` for the next contract amendment; not edited |
+| depth check, criterion 3 (four trade-offs) | 2.5 gains four rows: increments not one raise; versions inline, no catalog; what additions-only verification does and does not protect (signatures off, the two `<trust regex>` lines, same-host checksum files); caches off for comparison runs |
+| depth check, caches | G, ENF, TR, L, DEP and the up-to-date run pass `--no-build-cache --no-configuration-cache`; WP stays the design's exact command, and I0 step 1 proves without printing a path that no project or user-wide `gradle.properties` turns either cache on (row D94 adds the flags to WP if one does) |
+| depth check, criterion 8 (edge cases) | Kotlin daemon: the process checks match `gradle\|KotlinCompileDaemon` (Kotlin daemons recorded, not stopped), new row D92 for a failed delete (stop; never kill a process); incremental check after G(2) and G(5) (`I2-uptodate.txt`, `I5-uptodate.txt`; a re-run task is debt); AGP 9.1 to 9.5 behaviour changes: Q-13 to Q-17 asked of the orchestrator before I3, and 2.8 states which defaults the build sets explicitly; JaCoCo filters: risk R19 and the I12 reading in 2.9 and D40; the ordering-constraint table in 2.2; the timeout (4.L, D93) |
+| Coordinator: Record 20 (devices) | 10.2 rewritten: IC-5 is the orchestrator's procedure on `Pixel_9_Pro` (launch, manual backup, manual restore with the role hand-over and back, settings restored) and, if created by then, launch only on the new API 24 device unless the owner has configured an account there; IC-6 stays "not reached" |
+| Coordinator: U-069 Amendment A4 | L17 and the I0 drift check re-derived: U-069 still replaces `app/build.gradle:579` and `:586` in place (E-G1, E-G2; floor `0.90`, note "floor is the highest 0.05 step that leaves one spare line at this size"); no anchor of this plan sits on those lines; `ic1_…` still reads androidx.hilt's generated names (D66 unchanged) |
+| Coordinator: BUG-025 to BUG-027 | Planning state: their fixes come after U-072; no scheduler code changes before `<start>`; the I0 drift check would show one |
+
+## Iteration 3 (after the plan gates, 2026-11-21)
+
+Iteration 2's gates: plan-review FAIL (one blocker, B-6; O-12 to O-20), contract-verification PASS (O-6 to O-12),
+expert-depth-check PASS with two recommendations (should and could items). New binding inputs: ruling 58 (the
+orchestrator's answer to SC-P6), ruling 48 restated for plan-review O-14, the supplement's items Q-13 to Q-17 (commit
+`0c99149e`), and the BUG-029 fix story placed before this story. Re-read at HEAD `0c99149e`: build paths and
+`app/src/main` unchanged since PLAN_HEAD (`git diff --stat 7c5e6073 HEAD` empty). A Gradle daemon of another agent was
+live during this iteration, so no build output under `app/build` was read in iteration 3; the checker was re-tested on
+committed evidence and on synthetic inputs in the session scratch folder only. Every change is made in place.
+
+| Finding | Change, and where |
+|---------|-------------------|
+| plan-review B-6, contract-verification O-11, depth check (should): ruling 58 | D42's last sentence replaced by ruling 58's conditions (a) to (d); 2.9's R8-3 cells at I4, I5, I6 "= `<p>`, or accepted under ruling 58"; 2.10 R8-3 rewritten (hard stop except as ruling 58 accepts; the `usage-core` rule exempts lines accepted under ruling 58; "worker constructor line" defined, including the synthetic constructor with `DefaultConstructorMarker`); new `r8_check.py seeds-diff` mode run by CMP at every increment ≥ 1; SC-P6 marked ruled; R20, H-2 and the Verdict reworded. **Tests run (scratch only):** `normalize`/`compare`/`rules` on U-068's committed `I0-` and `I5-configuration.txt` (28 sections, `ALL EQUAL`, 10 `OK` lines, exit 0, as before); `seeds-diff` on synthetic variants of a 482-line `seeds-core` copy made earlier in this session: three Hilt lines at I4 → `MATCH Hilt_*`, `MATCH *_GeneratedInjector`, and `NOT-GENERATED *_HiltComponents*` for an app-package class without a generated source (exit 1); the same lines at I5 → 3 not accepted; at I5 a `$default(` member → `MATCH`, a Tink line and a worker synthetic constructor (`…DefaultConstructorMarker)`) → `FORBIDDEN` (exit 1); an equal pair → `changed=0`, exit 0 |
+| plan-review O-16 (seeds at I3) | D42 and 2.10: a `seeds-core` difference at I3 is outside ruling 58: stop and report with the changed lines; the orchestrator decides; named in R20 and H-2 |
+| Ruling 48 for plan-review O-14 | R8-5's table and D43: at I4 also `jar-rules:lib/META-INF/com.android.tools/r8/r8.pro` (Dagger's own jar rule; shown by `unzip -l` of the resolved `dagger-2.60.1.jar`), changed or added; at I5 a `jar-rules:` section changed **or added**, shown inside the resolved `kotlin-stdlib-2.4.21.jar`; at I6 `lib:hilt-work/proguard.txt` and any section shown inside an `androidx.hilt` 1.4.0 artifact |
+| Coordinator: Q-13 to Q-17 supplied | 2.3 rows; new 2.11 "What AGP 9.1 to 9.5 change at I3, and what the checks will see": repackaging (Q-13) and the `-keepattributes` wildcard change (Q-14) each with the expected effect on every check and the developer's action; no `-dontrepackage` and no keep rule is added (none is shown to be needed); D44 cites 2.11 |
+| Coordinator: BUG-029 fix story before this story | Planning state; D2 (the fix story `done`); I0 step 1's expected commits and its new `app/src/main` drift record (contract-verification O-12); I0 step 13's later-case classification includes its tests; D6 now says a moved anchor stops for an SA re-anchoring amendment; D41 note on a changed manifest |
+| plan-review O-12 (stale 2.5 row) | Replaced by the two-report row |
+| plan-review O-13 (D18 restore form) | D18 restores as D15 (`gradlew` with `core.autocrlf=false`) |
+| plan-review O-15, contract-verification O-7 (closure count) | `closure` prints every manifest class missing from `mapping.txt` (`NOT-IN-MAPPING`); CMP compares `manifest-classes-in-mapping` with `<p>`'s (row D42) |
+| plan-review O-17 (no `LAST` after an I0-only session) | 4.R: `LAST` is `START` when no `U-071 S2-` commit exists; the first command then prints nothing, as expected |
+| plan-review O-18 (IC-5 in the foreground) | IC-5 steps 2 to 4: the app stays in the foreground until the worker's result line; `third_party_integration` stays off and no setting that schedules a backup is toggled (BUG-029) |
+| contract-verification O-6 (worker map in the release dex) | EV-B records, per persisted worker name, the count of its dotted string in the release dex files, compared with `<p>` in CMP; **not verified** in planning (a Gradle run of another agent was live, so the release APK was not read): record-only, a difference is classified and reported, not a stop |
+| contract-verification O-8 (backup-descriptor stop row) | New D100 |
+| contract-verification O-9 (`contracts_verified`) | 001, 002, 003, 004, 005; 006 moved to "considered, no obligation" in 9.1 |
+| contract-verification O-10 (cite by heading) | D95 and 9.1 cite "CNTR-004, Breaking change policy" and "CNTR-005, Validation Rules", lines as hints |
+| depth check (should): `mapping.txt` header lines; no resource shrinker | EV-B records `# compiler`, `# compiler_version`, `# min_api` in `I<k>-r8.txt`; 2.9 row (`min_api: 24` everywhere; `compiler_version` changes at I3 only, recorded); 2.10 states that `app/build.gradle` has no `shrinkResources` (`git grep` at HEAD: none), so no resource-shrinker output exists |
+| depth check (could) | Taken: `dexdump -f` header counts of the release `classes.dex` (`dexdump.exe` verified present under the SDK's `build-tools/36.0.0`) and the SHA-256 of `assets/dexopt/baseline.prof` and `.profm` (both present in U-068's release entry list), all record-only in `I<k>-r8.txt`; D75's detector named (VMP step 4's groups at I8 to I12, and I14's test-classpath report); 4.R finds a cut-off through the D93 entry in the implementation log. **Declined:** dropping ENF — design D5 step 6 binds "Enforced re-run without writer mode: `./gradlew :app:assembleDebug`, then the full gates" (DES-014 `:910`) as its own run; it is also the first run with verification enforced after the writer pass, so a missing entry fails a 2-minute run rather than a 10-minute gate |
+
+## Amendment A1 to iteration 3 (ruling 64, 2026-11-21)
+
+One targeted amendment after plan-review iteration 3 (B-7); contract-verification passed. No other part is rewritten.
+Nothing under `app/build` or the working tree under `app/` was read (another build is live; U-070's developer has
+uncommitted edits). **Tests run (scratch only):** `r8_check.py services` on two fake release APKs built with Python's
+`zipfile` (I2 with `META-INF/services/q4.b0`, `v4.t` and a `CharsetProvider` entry; I3 with the same services renamed
+`b0`, `t` and the implementation renamed `x2.a` → `c`) and their mappings: the `PAIR` lines in original names are equal
+(`exit=0`), the `ENTRY` lines show the renames; a third APK whose implementation changed gives `exit=1`.
+`seeds-diff`: the five iteration-3 cases unchanged (I4 Hilt lines `MATCH`/`NOT-GENERATED`, exit 1; the same at I5,
+3 refused; the Tink line and the worker synthetic constructor `FORBIDDEN`, the `$default(` member `MATCH`; no generated
+root `NOT-GENERATED`; equal inputs exit 0), plus `androidx.work.impl.WorkDatabase_Factory` at I4 → `NO MATCH` (exit 1),
+`androidx.work.impl.Foo: … run$default(int)` at I5 → `NO MATCH` (exit 1), a removed `RestoreWorker_HiltModule` with no
+generated root → `NOT-GENERATED`, and with `--prev-ksp` listing `release/java/…/RestoreWorker_HiltModule.java` →
+`MATCH … (generated at the previous increment)`, exit 0. `section` writes the three-line Dagger `r8.pro` body from
+U-068's normalised `I5-configuration.txt`. The embedded tool is byte-equal to the tested copy.
+
+| Finding | Change, and where |
+|---------|-------------------|
+| plan-review B-7, contract-verification O-13 | New `r8_check.py services` mode; EV-B writes `$E/I<k>-services.txt` at every increment from that increment's own `mapping.txt` (`ENTRY <apk name> = <original>`; `PAIR <original interface> -> <implementations in original names>`); STD now 28 files, I0SET 40, Writers updated; CMP compares the `PAIR` lines with I0 and `<p>` (`services-pairs … exit=0` required at every increment, I3 included); 2.11's Q-13 row pairs by original name and names the stops; D101 |
+| plan-review O-21 | Taken: `seeds-diff --prev-ksp=<p>'s ksp-files.txt` accepts a removed generated class whose source `<p>` had; a Hilt component-source class (not in that list) still stops, stated in D42 as accepted strictness |
+| plan-review O-22 | Taken: "equal after dropping the leading `lib/`" (2.10) |
+| plan-review O-23 | Taken: U-075 and its file named in the planning state and I0 step 1 (`B29_ID=U-075`, `B29_STORY=…`); `WorkerForeground.kt` named |
+| contract-verification O-14 | Taken: the I5 F-1 grep is also run with `WorkerForeground.kt` (the story's own form is kept beside it); the I0 status line expects U-075 `done` and records the bug file's status |
+| contract-verification O-15 | Taken: `r8_check.py section` plus `unzip -p` of the jar file, compared with `git diff --no-index --quiet` (2.10) |
+| contract-verification O-16 | Taken: `seeds-diff` refuses lines under the four library prefixes at I4 to I6 and non-`smssync` lines at I5; re-tested (above) |
+| plan-review O-24 (info) | Taken: I0's expected drift for U-069 is `worker/BackupTriggerWorker.kt` only |
+| State changes | U-069 done (`d7a69974`, closed `fd70325a`, 771 tests; only the two predicted `app/build.gradle` lines); U-075 in sprint 024 wave 4, being planned; U-070 being built (planning state) |
+
+## Amendment A2 to iteration 3 (ruling 65, 2026-11-21)
+
+**B-8 fixed.** `r8_check.py section` now writes its output with `newline='\n'` (LF on every OS); the 2.10 command keeps
+`tr -d '\r'` on the jar side, so both sides are LF. One form, one place: no other A1 command compares a Python-written
+file with shell output byte for byte. Nothing else in the plan is changed. **Machine fact behind B-8, measured:** on
+this machine Python writes CRLF both in text mode and to redirected standard output (`print('a') > f` gives
+`a \r \n`), while the shell tools (`grep`, `sed`, `sort`, `unzip`, `git`) write LF; MSYS command substitution `$(…)`
+drops CR. So a Python-written file compares equal only with another file written the same way, which is the
+condition checked in table 2 below.
+
+**Self-test 1: every command and tool mode A1 and A2 added or changed** (Git Bash on this machine; inputs: committed
+evidence, the cached Dagger jar, synthetic files in the session scratch folder; no `app/build`, no working-tree file
+under `app/`; the plan's commands run as written, with `$E`, `$WORK`, `$TL` pointing at scratch folders and `<p>`, `<k>`
+replaced by increment numbers):
+
+| # | Command or mode (as in the plan) | Input | Expected | Observed |
+|---|-----------------------------------|-------|----------|----------|
+| 1 | B-8 reproduction with the **A1** tool: `r8_check.py section $E/I5-configuration-norm.txt 'jar-rules:lib/META-INF/com.android.tools/r8/r8.pro' $WORK/sec.txt; unzip -p <jar> META-INF/com.android.tools/r8/r8.pro \| tr -d '\r' > $WORK/jar.txt; git -c core.autocrlf=false diff --no-index --quiet -- $WORK/sec.txt $WORK/jar.txt; echo "section-equals-jar-exit=$?"` | U-068's committed `I5-configuration.txt` (normalised by `r8_check.py normalize`); the cached `dagger-2.59.2.jar` | `exit=1` (the defect) | `section-equals-jar-exit=1` |
+| 2 | The same command with the **A2** tool (the plan's command, unchanged) | the same | `exit=0`; 0 CR bytes in both files | `section-equals-jar-exit=0`; CR bytes `sec.txt` 0, `jar.txt` 0 |
+| 3 | Negative: the same comparison against a jar copy with one word changed (`static` → `STATIC`) | the same, altered | `exit=1` | `exit=1` |
+| 4 | Blank-line fallback of 2.10: jar copy with two trailing blank lines; raw comparison, then `grep -v '^[[:space:]]*$'` copies of both | the same | raw `1`, fallback `0` | raw `exit=1`, fallback `exit=0` |
+| 5 | EV-B line `r8_check.py services <release apk> $MAP/mapping.txt $E/I<k>-services.txt`, then CMP's `for b in I0 <p> I<k>; do grep '^PAIR ' $E/$b-services.txt > $WORK/svc-$b.txt; done` and `git -c core.autocrlf=false diff --no-index --quiet -- $WORK/svc-$b.txt $WORK/svc-I<k>.txt; echo "services-pairs vs $b exit=$?"` (k = 3, p = 2) | synthetic APKs (`zipfile`): I0 = I2 with `META-INF/services/q4.b0`, `v4.t`, `java.nio.charset.spi.CharsetProvider`; I3 with the services renamed `b0`, `t` and one implementation `x2.a` → `c`; their mappings | `services=3`; both comparisons `exit=0`; `ENTRY` lines show the new APK names | `services=3 unmapped=2` each; `services-pairs vs I0 exit=0`, `vs I2 exit=0`; `ENTRY b0 = kotlinx.coroutines.CoroutineExceptionHandler`, `ENTRY t = …MainDispatcherFactory` |
+| 6 | The same CMP lines with an APK whose implementation changed | synthetic `i3bad.apk` | both `exit=1` (a stop, D44/D101) | `services-pairs vs I0 exit=1`, `vs I2 exit=1` |
+| 7 | CMP line `r8_check.py seeds-diff $E/<p>-seeds-core.txt $E/I<k>-seeds-core.txt I<k> --prev-ksp=$E/<p>-ksp-files.txt app/build/generated/ksp/release/java app/build/generated/hilt/component_sources/release; echo "seeds-diff-exit=$?"` (k = 4, run from a scratch folder holding fake generated roots at those relative paths) | `seeds-core` files written by `r8_check.py core` (CRLF, 482 and 484 entries) from synthetic seeds; `--prev-ksp` file written by `printf` (LF) | two `MATCH` lines (`Hilt_*`, `*_HiltComponents*`), `changed=2 not-accepted=0`, exit 0 | as expected; `seeds-diff-exit=0` |
+| 8 | The same line at k = 6 for a removed `RestoreWorker_HiltModule`, its source only in the previous KSP list | the same, `I5-ksp-files.txt` listing `release/java/…/RestoreWorker_HiltModule.java` | `MATCH *_HiltModule (generated at the previous increment)`, exit 0 | as expected; `seeds-diff-exit=0` |
+| 9 | The same line at I3 | the I4 inputs | every line refused, exit 1 | `changed=2 not-accepted=2`, exit 1 |
+| 10 | `seeds-diff` refusals of contract-verification O-16 and the A1 cases (iteration-3 set) | synthetic lines | `androidx.work.impl.WorkDatabase_Factory` at I4 and `androidx.work.impl.Foo: … run$default(int)` at I5 → `NO MATCH`, exit 1; Tink line and worker synthetic constructor → `FORBIDDEN`; `$default(` in `smssync` at I5 → `MATCH` | as expected (run in A1 and repeated here on the same files) |
+| 11 | I5 step 3, both F-1 greps (`(BackupWorker\|RestoreWorker)\.kt` and `(BackupWorker\|RestoreWorker\|WorkerForeground)\.kt` … `\| grep -c 'coroutineContext'`) | U-067's committed `I7-kotlinc.txt` (6 `w:` lines) | `0` and `0` | `0` and `0` |
+| 12 | I0 step 1 U-075 lines (`git log … --grep="^$B29_ID"` with `B29_ID=U-075`; `grep -n '^status' "$B29_STORY" sdlc/artifacts/stories/BUG-029-*.md`) | HEAD (`fd70325a`), committed story files | the U-075 commits listed; both status lines printed (quoting of the path variable holds) | `d70afb52 U-075 written …` listed; `U-075-…md:3:status: in-progress`, `BUG-029-…md:3:status: ready` (at start U-075 must read `done`, D2) |
+| 13 | CMP line `for b in <p> I<k>; do echo "$b $(grep -E '^manifest-classes-in-mapping=' $E/$b-r8.txt) $(grep -E '^# min_api:' $E/$b-r8.txt)"; done` | `I<k>-r8.txt` built as in EV-B (a `{ …; python … closure …; …; } >` group) | one clean line per increment | `I3 manifest-classes-in-mapping=24 not-identity=0 # min_api: 24` (and I4); 0 CR bytes in the output (command substitution drops them) |
+
+**Self-test 2: every other place where a Python-written file is compared with, or hashed against, other output.**
+"Same producer" means both sides come from the same tool on this machine, so both carry the same line endings.
+
+| Place | The two sides | Both sides LF? | Same line endings? | Tested |
+|-------|---------------|----------------|--------------------|--------|
+| CMP loop, `seeds-core.txt`, `usage-core.txt` (`r8_check.py core`) | I<k> vs `<p>`/I0, both from `core` | no (CRLF both) | yes | yes: two runs equal (`exit=0`) |
+| CMP loop, `jacoco-inventory.json` (U-068 `jacoco_inventory.py`), `jacoco-classes.txt` (`jacoco_class_lines.py` to stdout) | same producers | no (CRLF both) | yes | yes: two runs on a synthetic JaCoCo XML equal |
+| CMP loop, `cases.txt` (`junit_cases.py` → `sanitize.py`) | same producers | yes (`sanitize.py` writes LF) | yes | yes: two runs on synthetic JUnit XML equal |
+| CMP totals (`junit_totals.py` stdout → `sed`) | same producers | no (CRLF both) | yes | yes: `totals sed exit=0` |
+| CMP, `configuration-norm.txt` via `r8_check.py compare` | Python reads both (universal newlines) | n/a (not a byte comparison) | n/a | yes: U-068 I0 vs I5 `ALL EQUAL` (iteration 2) and two runs equal |
+| CMP, `services` PAIR lines (`grep` of Python-written files) | same producer | no (CRLF both; `grep` keeps CR) | yes | yes: #5, #6 above |
+| CMP, `seeds-diff` reading `seeds-core` (CRLF) and `--prev-ksp` `ksp-files.txt` (LF, `find \| sed`) | Python reads both with `splitlines()`/`strip()` | n/a | n/a (CR removed on read) | yes: #7, #8 |
+| CMP loop, `kept-names*.txt`, `apk-entries-*.txt`, `javap.txt`, `ksp-files.txt`, merged manifests, normalised packaged manifests | shell on both sides | yes | yes | not re-run (no Python involved) |
+| I4/I5/I6 DEP comparison (`deps_resolved.py` coordinates, I<k> vs `<p>`/I0) | same producer | no (CRLF both) | yes | yes: two runs on U-060's report equal |
+| I5 step 2, `w:` lines (`sanitize.py` output → `grep \| sed \| sort`) | same producers | yes | yes | yes (sanitize writes LF) |
+| I12 inventory (`python -c` over two JSON files) and class names (`cut` of `jacoco-classes.txt`) | same producers | no (CRLF both) | yes | yes: `class-counts-equal True`, `class-names cut exit=0` |
+| 2.10 section vs jar | Python `section` vs `unzip \| tr -d '\r'` | **yes (after A2)** | yes | yes: #1 to #4 |
+| I0 step 2 block hash `sed -n 117,127p \| sha256sum` vs `45364f3d…` | shell vs a value derived by the same shell form | yes | yes | yes (iteration 1, L4) |
+| I1 `gradlew_block.py` (bytes of `git show` output, the generated copy, the final file) | git and generator output, read as bytes | yes (all LF; the tool fails on a CR) | yes | yes (iteration 1, L11) |
+| CM step 4, `comm` of `printf` list vs `git status --porcelain` | shell vs git | yes | yes | yes: on three real paths read-only (one unchanged tracked file listed by `comm`, one untracked and one modified file expected) |
+| VMP and I14 proofs (`vm_proof.py` parses both XML files) | Python reads both | n/a | n/a | yes (iteration 1) |
+
+No other place mixes a Python-written file with shell output in a byte comparison, so no further change is needed. One
+carried note (record, not a change): evidence written in an earlier session is compared from the working tree, where
+`git add` leaves its line endings as written; a fresh checkout of those files would turn them LF in the index and CRLF
+in the working tree (`core.autocrlf=true`) and could make a same-producer comparison differ only by line endings. That
+can only cause a false stop (ruling 65 item 3); the stop-and-amend route covers it.
+
 ## 0. Binding Inputs
 
 | Source | What binds this plan |
 |--------|----------------------|
-| Story, "Orchestrator rulings before planning" (Record 17) | Runs after U-069 and U-070 (SC-8, SC-9); one local commit per increment, explicit paths, the plan's subjects, no push, no amend, fixes are further commits; the orchestrator supplies a refreshed research file and nobody fetches pages; Scope Concerns 3, 4, 5, 7 to 10 acknowledged as written (a forced test edit stops the story for an SA amendment); IC-5, IC-6 recorded "not run: needs the product owner's decision" and judged "not applicable until decided"; **a fallback that fires stops the developer at that increment, who reports** |
+| Story, "Orchestrator rulings before planning" (Record 17) | Runs after U-069 and U-070 (SC-8, SC-9); one local commit per increment, explicit paths, the plan's subjects, no push, no amend, fixes are further commits; the orchestrator supplies a refreshed research file and nobody fetches pages; Scope Concerns 3, 4, 5, 7 to 10 acknowledged as written (a forced test edit stops the story for an SA amendment); IC-5, IC-6 recorded "not run: needs the product owner's decision" and judged "not applicable until decided" (for IC-5 superseded by Record 20, ruling 57: run by the orchestrator, 10.2); **a fallback that fires stops the developer at that increment, who reports** |
 | Delegation of 2026-11-21 (orchestrator) | The planning date is 2026-11-21 and `sdlc/artifacts/build/research/2026-11-21-latest-stable-versions.md` is the supplied research (ruling 30); missing verbatim quotes and checksums go to the orchestrator as `needs_check` (2.3); the U-069 test `ic1_…` is never edited silently; `.claude/CLAUDE.md` only through the Engine Librarian; Record 18: no external `diff` or `cmp`, modest shell use, stop on a vanished tool or an unexplained kill |
 | Story, Bound decisions | One component per increment in the design's order with the two pre-specified moves; D1 targets re-resolved by D1a; no triple is vendor-supported (A17 contradicted); warnings are debt, triggers are KGP/KSP/Hilt-plugin/AGP errors; F1 to F5 only; Build Tools 36.0.0; Truth in, JUnit unchanged; verification stays on, D5 per dependency increment; no floor lowered, no `@Ignore`, no loosened test; `-Werror` never removed; Robolectric default `sdk=29` and its comment unchanged; lint recorded, not gated |
 | DES-MODERNIZATION-014 | S2 table (`:554-575`); D1 rows (`:364-383`) and D1a (`:435-460`); D2 N-6 (`:590-596`); D3 (`:701-793`: reading, G1 to G6, evidence that decides, triggers, javac rule, F1 to F5, who decides); D5 (`:882-936`); D6 (`:938-979`); D7 (`:981-1015`); D8 (`:1017-1066`); D9 (`:1068-1084`); D10 F-1 rule (`:1104-1138`); D16 (`:1543-1604`); D17 (`:1606-1648`); D18 (`:1650-1673`); D19 (`:1675-1692`); A13 to A22 (`:247-256`); INT-001 to INT-006 (`:1734-1766`); Risks 3, 5 to 10, 12, 13 (`:2035-2045`); PO-2 to PO-4 (`:2067-2093`) |
 | REQ-MODERNIZATION-015 | AC-1 to AC-4, AC-11 to AC-18; AC-13 as amended by CR-016 Amendment 1 (start = HEAD before the first change, end = the last commit or the working tree with `--untracked`, foreign tests listed and not counted, no fixed baseline) |
-| Story AC-1 to AC-24, IC-1 to IC-6 | As written; where this plan reads a criterion in one of two ways it says so in 9.2 (SC-P1 to SC-P5) and takes the stricter reading by default |
+| Story AC-1 to AC-24, IC-1 to IC-6 | As written; where this plan reads a criterion in one of two ways it says so in 9.2 (SC-P1 to SC-P5, now ruled) |
+| Record 19, rulings 47 to 51 (story Implementation Notes, "Rulings on the plan's scope concerns") | SC-P1: a `configuration.txt` difference is accepted and recorded when the kept-name set equals the previous increment's and every changed rule comes from the raised component's own shipped rules, each source named; any other difference stops. SC-P2: the probe as planned. SC-P3 to SC-P5: as the plan states them. `worker` floor 0.90 (one spare line) |
+| The supplement and its ruling (`$SUPP`, "How to read it") | Q-1 to Q-12 supplied; AC-3's "verbatim vendor quotes with URLs" is met with exact table values and checksums and, for prose, the stated fact with the address and fetch date |
+| Ruling 58 (orchestrator, 2026-11-21; answers SC-P6) | A `seeds-core` difference at I4, I5 or I6 is accepted and recorded when (a) every changed line names a class generated by that increment's raised component (I4, I6: the Dagger/Hilt patterns of 2.10; I5: the Kotlin compiler-generated members only; matched on the simple class name; an app-package class also shown to have its source under the build's generated-sources folder), (b) each changed line is in the log with its pattern, (c) R8-1, R8-2 and R8-4 hold, (d) no `com.google.crypto.tink.` line and no worker-constructor line changes (Kotlin's synthetic constructor included). Anything else stops. At I3 a `seeds-core` difference is not covered: stop and report |
+| Ruling 48 restated (Record 19; for plan-review O-14) | A rule section that is new or changed and comes from the jar of the component raised in that increment (Dagger's own jar at I4; a Kotlin section added at I5) is inside the ruling |
+| Ruling 64 (orchestrator, 2026-11-21) | The gate's three iterations are used up; one amendment round (A1) for the single remaining blocker, then a delta re-check by plan-review |
+| Ruling 65 (orchestrator, 2026-11-21) | Amendment A2 for B-8; before returning, every command and tool mode that A1 and A2 added or changed is self-tested end to end in Git Bash on inputs that need neither `app/build` nor the working tree under `app/`, with line endings, path separators and quoting checked; every other place where a file an embedded Python tool writes is compared with or hashed against shell output is listed as "both sides LF / tested". After A2, plan-review re-checks B-8 and the self-test table only; a later finding that can only cause a false stop, never a false pass, is an observation handled by the plan's stop-and-amend route during the build, not a blocker |
+| Record 20 (product owner, 2026-11-21) and ruling 57 | An API 24 image and device may be created by the orchestrator; on `Pixel_9_Pro` restore with the role hand-over, setting toggles (restored) and backups to the other folders are allowed; a rollback that needs an app-data clear stops first; the device criteria of U-071 are run by the orchestrator; the hosted CI run (PO-B) stays open |
 
 ## 1. Assumption Ledger
 
@@ -82,22 +266,24 @@ and `:586` in place, so no line this plan names moves (L3).
 | L14 | U-068 measured: `C0`(U-068) 753, after I5 756; `receiver` 39/58 (spare 10), `compat` 18/71 (spare 3), `scheduler` 137/185; `activity` covered **alternates 199 / 189 between runs** (test-scheduling dependent); lint at I6 "33 errors (and 18 errors filtered by baseline)", baseline 26 entries; APKs `so=0`, debug 23 dex, release 1; 48 kept names, nine reflection-sensitive classes self-mapped; `extractNativeLibs` now `false` (declared); javap 61/61/52; the AC-21 invariant greps of 2.9 give 1/0/1/1/1/1 on its I5 files | verified (by reading evidence) | `sprint-024/U-068/implementation-log.md`; `…/evidence/I5-*` |
 | L15 | The current `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml` (U-068 state): `cov_floors.py` reads **18 rules**; `compat` spare 3, `receiver` 10, `scheduler` 26, `worker` 0/16 | verified (tool run read-only) | 4.0 tools |
 | L16 | U-067: check lines `BackupWorker.kt:332` (16 spaces) and `RestoreWorker.kt:311`, `:399` (20 spaces), each `currentCoroutineContext().ensureActive()`, with context lines `val item = msgs[currentRestoredItem]` (`:313`) and `val values = items[currentRestoredItem]` (`:401`); blobs `eb535f5c`, `ffa9c57e`; NEW3 = `BackupWorkerLoopCancellationTest`, `RestoreWorkerIntegrationTest`, `RestoreWorkerCheckpointTest` (31 cases at U-067); the six expected failing sets of `mutation-log.md:82-87` | verified | `git grep -A2`; U-067 plan `:298-305`, `:948-955`; mutation log |
-| L17 | U-069 (plan iteration 2): Rule 15 becomes `minimum = 0.95 // MEASURED <P>% …` and its note changes (`:579`, `:586`); `worker` holds only `BackupTriggerWorker` (16 lines today) plus generated classes JaCoCo filters (`@DaggerGenerated`); test `ic1_hiltWiring_assistedFactoryIsBoundUnderThePersistedClassName` reads `<Name>_AssistedFactory`, `<Name>_HiltModule` and `bind`; its AC-9 tests use `ShadowLog`. **Derived:** with 16 lines and a 0.95 floor, `⌈0.95·16⌉ = 16`, so the package has **zero spare lines**: one line more counted, or one line less covered, fails the gate (a floor of 0.95 tolerates a lost line only from 20 lines up) | verified (plan read; arithmetic) | U-069 plan `:948-966`, `:785-811`, `:1511-1516` |
+| L17 | U-069 (plan iteration 3 with Amendment A4; Record 19 ruling 47): E-G1 replaces the note at `app/build.gradle:579` and E-G2 the floor line `:586` with `                minimum = <F> // MEASURED <P>% (<c>/<t> lines, <YYYY-MM-DD>, U-069); floor is the highest 0.05 step that leaves one spare line at this size`, expected `<F>` = `0.90`, `10/10` (the fixed worker's class has 10 line entries; U-069 iteration 2 wrote 0.95, corrected by ruling 47); both edits are in place, so no line this plan names moves. `worker` holds only `BackupTriggerWorker` plus generated classes JaCoCo filters (`@DaggerGenerated`). Test `ic1_hiltWiring_assistedFactoryIsBoundUnderThePersistedClassName` reads `<Name>_AssistedFactory`, `<Name>_HiltModule` and `bind`; U-069's AC-9 tests use `ShadowLog`; Amendment A4's test reaches WorkManager's work spec by reflection. **Derived:** at 10 lines, `⌈0.90·10⌉ = 9`, **one spare line** (also one at 16 lines, `⌈0.90·16⌉ = 15`): one more uncovered or newly counted uncovered line is absorbed, a second fails the gate | verified (plan read; arithmetic) | U-069 plan `:124`, `:1038-1056`, `:1572`, `:785-811`, `:1511-1516`; story Implementation Notes (ruling 47) |
 | L18 | U-074 adds tests to `RestoreWorkerIntegrationTest` and `RestoreWorkerCheckpointTest` (R1 to R8, C1, C2) and leaves U-067's check lines alone ("The new call sits inside the catches, not on the check lines"); U-070 edits `service`, `preferences`, `mail`; neither edits a build file | verified (stories and plan read) | U-074 story AC-2, AC-3, AC-11, Affected Code; U-070 plan `:86-87`, `:3986` |
 | L19 | Risk 9 sites (Kotlin "annotation is currently applied to the value parameter only"): `MainViewModel.kt:55`, `WorkManagerScheduler.kt:80` (`:81` before U-068 I5), `SharedPreferencesCheckpointStore.kt:49`, `WorkerEngineFactory.kt:61`, each `    @ApplicationContext private val context: Context` (once per file). U-067 I7 recorded 6 `w:` lines, 4 of them these | verified | `git grep` on HEAD; `sprint-023/U-067/evidence/I7-kotlinc.txt` |
 | L20 | TLS: `DefaultTrustedSocketFactoryJdkProviderTest` has `@ConscryptMode(OFF)` `:140`, `@LooperMode(LEGACY)` `:141`, the `@Before checkIsolationGuards()` whose failure messages start `A1-G3`, `A1-G1`, `A1-G3 (via factory static init)`; the exact-list tests are in `DefaultTrustedSocketFactoryHardeningTest` (`containsExactlyElementsIn(ALLOWED_CIPHERS_…)`) and `…JdkProviderTest` (`…areExactlyTheAllowedList…`). No test uses `TextLayoutMode`, `shadows-httpclient` or `org.apache.http` (Robolectric 4.18 removes them); `ShadowLog` is used by nothing at HEAD (U-069 adds it) | verified | `git grep` on HEAD |
 | L21 | Tools on PATH: `python` 3.13.17 with PyYAML 6.0.2 under `-I`; `unzip`, `sha256sum`, `sha512sum`, `awk`, `sed`, `comm`; `diff` is gone (quarantined); `cmp` exists and is **not used**; `node` exists and is not used | verified | `python --version`, `python -I -c "import yaml"`, `command -v` |
 | L22 | `org.gradle.java.home` occurs only in prose: `.claude/CLAUDE.md:31` and `DEVELOPMENT.md:25`, `:28`, `:30`, `:49` (the last says the project "pins JDK 17 via `org.gradle.java.home`", stale since U-060) | verified | `git grep` on HEAD |
-| L23 | `gradle.properties`: `org.gradle.daemon=false` (`:21`): every Gradle call starts a single-use daemon, so no Gradle JVM outlives a run; `org.gradle.jvmargs` (`:20`) carries the Windows NIO flags | verified | file read |
+| L23 | `gradle.properties`: `org.gradle.daemon=false` (`:21`): every Gradle call starts a single-use daemon, so no Gradle JVM outlives a run (the Kotlin compile daemon is not covered by this and can outlive it, row D92); `org.gradle.jvmargs` (`:20`) carries the Windows NIO flags; neither `org.gradle.caching` nor `org.gradle.configuration-cache` is set, so both caches are off at project level. I0 step 1's cache check run read-only in planning printed `caches-on=0` twice and `gradle-opts-caches=0` (the user-wide file is checked without printing its path) | verified | file read; the check run |
+| L26 | `configuration.txt` section headers embed the Gradle version, a transform hash and the artifact version (U-068 `I5-configuration.txt:252`: `…\caches\9.5.1\transforms\<hash>\transformed\hilt-work-1.2.0\proguard.txt`; `:95` `…proguard-android-optimize.txt-9.0.1`). `r8_check.py normalize` reduces each to `<kind>:<artifact>`: U-068's I0 and I5 files give 28 sections, 28 keys, and `compare` prints `ALL EQUAL` (Gradle 9.5.1, AGP 9.0.1 in both; minSdk 21 → 24 changed no rule). `rules` finds all seven contract-bearing rules, the AGP `-keepattributes` with `Signature` and `RuntimeVisibleAnnotations`, and the `app:proguard-rules.pro` section byte-equal to the committed file with `-dontoptimize`. The current release outputs (U-068 state) list `configuration.txt`, `mapping.prt`, `mapping.txt`, `seeds.txt` (1,634 lines), `usage.txt` (25,582); `closure` finds 27 manifest classes in `mapping.txt`, all identity-mapped; `core` keeps 482 seeds entries (274 Tink, the worker constructors) and 1,775 usage entries (6,479 lines) | verified (tool runs on committed evidence and on build outputs, read-only) | `r8_check.py` (4.0) |
+| L27 | The packaged backup descriptor: `aapt2` exists under the SDK's `build-tools/36.0.0`; `aapt2 dump resources` maps `xml/backup_descriptor` to `res/xml/backup_descriptor.xml` (debug) and to a shortened path (release, `res/mt.xml` today); `aapt2 dump xmltree --file <path>` shows two `E: exclude` elements, `domain="sharedpref"` twice, `path="credentials.xml"` and `path="pinned_certs.xml"` once each, in both APKs, equal to `app/src/main/res/xml/backup_descriptor.xml` | verified (read-only on the current APKs; the SDK path is not written) | EV-B |
 | L24 | The research of 2026-11-21 carries every S2 version of the design's D1 table, so on the planning date (the same day) **no row moved** (2.1); it does not carry the three GitHub action versions (the design's D1 rows `:375-377`, read the same day, do), the Gradle 9.9.2 checksums, or several verbatim quotations AC-3 needs (2.3) | verified | research §1, §2.1, §2.2, §3.1, §6 |
 | L25 | Reused read-only tools exist and are tracked: `sprint-020/U-063/evidence/tools/{sanitize.py,junit_totals.py,junit_cases.py,jacoco_pkgs.py}`, `sprint-024/U-068/evidence/tools/{sdk_dir.py,jacoco_inventory.py,jacoco_lines.py,lint_ids.py}`; this workspace's `compiled-pipeline.json` is excluded in `.git/info/exclude` | verified | `git ls-files`; `.git/info/exclude:45` |
-| N1 | The Gradle 9.9.2 distribution and wrapper-jar SHA-256 values (Q-1, Q-2) | needs_check (orchestrator) | 2.3; rows D1, D22 |
+| N1 | The Gradle 9.9.2 distribution and wrapper-jar SHA-256 values (Q-1, Q-2) | supplied (supplement Q-1, Q-2: `971fcd7150ca4ba04852c0b2ca0d2d0ab9468e14b03473eab19528809914c76b` and `621008afc4f5d59357fcf06ffa644dd5aade5e091bdc363742710445f73cdaf8`, from `downloads.gradle.org` after the `services.gradle.org` redirect, equal to `gradle.org/release-checksums/`); the download's own check and D22 verify them at I1 | 2.3; rows D18, D22 |
 | N2 | The 9.9.2 `gradlew` template keeps the `case "$( uname )"` block and the `cygwin`/`msys` variables the LOCAL ADDITION block tests | needs_check | I1 step 6 (`gradlew_block.py`); row D17 |
 | N3 | `./gradlew wrapper` on 9.9.2 configures this build (the root `updateDaemonJvm { toolchainPlatforms = [] }` included) | needs_check | I1 step 5; row D21 |
 | N4 | KSP 2.3.14 runs on KGP 2.3.21 (C9) | needs_check | I2; row D54 |
 | N5 | A13: AGP 9.5.2 accepts `compileSdkVersion`/`minSdkVersion`/`targetSdkVersion` | needs_check | I3; row D56 |
 | N6 | The JaCoCo class roots of `:217-221` exist after `clean` on AGP 9.5.2 | needs_check | I3; row D55 |
-| N7 | `configuration.txt` is unchanged at I3 to I6 | needs_check (likely to differ, P2) | rows D43; SC-P1 |
+| N7 | `configuration.txt`, after R8-6 normalisation, is equal section by section at every increment except the sections 2.10 allows at I3 to I6 | needs_check (I3 to I6 likely to differ in their own section, P2) | 2.10; rows D42, D43 (ruling SC-P1) |
 | N8 | G4: the Hilt plugin 2.60.1 transform and `hiltJavaCompileDebug` on AGP 9.5.2 / Gradle 9.9.2 | needs_check | I4; row D59 |
 | N9 | JaCoCo still reports no lines for the Hilt/androidx.hilt generated classes in `worker` (L17) after I4, I6, I12 | needs_check | rows D38, D60 |
 | N10 | Risk 9: Kotlin 2.4's annotation-target default does not turn the four sites into a Hilt or KSP error | needs_check | I5; row D58 |
@@ -108,12 +294,12 @@ and `:586` in place, so no line this plan names moves (L3).
 | N15 | A21 on the artifact Gradle resolves at I7 | needs_check | I7 step 6; row D74 |
 | N16 | The Conscrypt that Robolectric 4.18.1 brings leaves U-066's exact-list results unchanged | needs_check | I7; row D72 |
 | N17 | The `android-all` artifacts Robolectric 4.18.1 resolves (names, versions) | needs_check | I7 step 7; row D73 |
-| N18 | ByteBuddy 1.17.7 Java 25 support statement (Q-9) | needs_check (orchestrator) | I8; row D76 |
+| N18 | ByteBuddy 1.17.7 Java 25 support statement (Q-9) | verified (supplement Q-9: Byte Buddy's release notes, 1.17.5, 30 March 2025, ASM 9.8 "to support Java 25"; the Mockito 5.24.0 entry is silent); the resolved Byte Buddy version is still read at I8 | I8; row D76 |
 | N19 | JaCoCo 0.8.16 class inventory equals 0.8.14's | needs_check | I12; row D79 |
 | N20 | A18 `ubuntu-22.04` still offered (Q-10) | needs_check (orchestrator) | I13; row D83 |
 | N21 | `lintVitalRelease` (inside `assembleRelease`) on AGP 9.5.2 finds no new fatal issue | needs_check | I3; row D51 |
 | N22 | Gradle 9.9.2's writer output parses as the same schema and the U-060 proof can compare it | needs_check | I2 onward; row D28 |
-| P1 | Gradle's user guide says the `wrapper` task must run a second time to update the jar (Q-12) | plausible, not verified | not relied on: L5 and the jar-checksum check (D22) decide |
+| P1 | Gradle's user guide says the `wrapper` task must run a second time to update the jar (Q-12) | verified (supplement Q-12: a single run updates `gradle-wrapper.properties` only) | L5 and the jar-checksum check (D22) still decide |
 | P2 | AGP 9.5's `proguard-android-optimize.txt` and the bumped libraries' consumer rules differ textually from today's, so `configuration.txt` differs at I3 to I6 | plausible, not verified | N7; SC-P1 |
 | P3 | Kotlin 2.4 changes the default use-site target of a constructor-parameter annotation (parameter plus property) | plausible, not verified | N10 |
 | P4 | Robolectric 4.18 resolves new `android-all` artifact names at test time | plausible, not verified | N17 |
@@ -183,12 +369,49 @@ applied; rule 4 (no pre-release) and rule 5 (no defective release) are applied w
 If the orchestrator's supplement (2.3) reports a newer non-pre-release for any row, row D14 applies: a newer patch is
 taken by substituting only the version token in that increment's edit and in the I14 texts that name it, the
 component's constraint rows are re-checked, and the substitution is recorded; a newer minor or major stops before I1
-for an SA amendment (D1a rule 3 needs a re-read of every constraint it takes part in).
+for an SA amendment (D1a rule 3 needs a re-read of every constraint it takes part in). The supplement reports no newer
+version for any row (Q-10 re-confirms the three action versions).
+
+**D1a resolution of the two facts the supplement adds (iteration 2).**
+
+*(a) AGP 9.5.2, which no Android page yet describes.* Facts (supplement Q-3, Q-4, fetched 2026-11-21): the about-agp
+table row reads `9.5 | 9.6.0`; the AGP 9.5 release notes' table gives Gradle `9.6.0 | 9.6.0`, SDK Build Tools
+`36.0.0 | 36.0.0`, JDK `17 | 17`, and maximum API level 37; the notes have a heading for 9.5.1 and **no entry for 9.5.2**;
+neither page names 9.5.2; Gradle 9.9.2's page says it is tested with AGP "9.0 through 9.5.0-alpha10". The version
+research of the same day lists 9.5.2 as published on Google Maven on 2026-11-20 and newest non-pre-release (9.6.0-alpha05
+is the newest pre-release). The design's rule D1a (`:439-453`), quoted:
+> 1. Each story re-resolves only its own rows, from the same sources, on its planning date, and records date, version and URL (REQ-015 AC-1, REQ-016 AC-1).
+> 4. Never a pre-release: […] AGP 9.6.0-alpha […]
+> 5. Never a release its vendor marks defective. KSP 2.3.13 is the precedent.
+
+and REQ-015's definition (`:95-96`): "'Latest stable' means the newest non-pre-release version on Maven Central, Google
+Maven, or the Gradle plugin portal on the date the implementing story is planned." The source D1 names for this row is
+"GM `com/android/tools/build/gradle`" (`:365`). 9.5.2 is a non-pre-release on that source and its vendor has not marked
+it defective; D1a has no rule that excludes a release whose notes are not yet published, and the design already
+foresees exactly this case as gap G5 ("AGP 9.5.2 has no release notes (§6.1) | Build; F1", `:734`) with F1 "AGP 9.5.2 →
+9.5.1 | 9.5.1 has notes" (`:766`). **Decision: the target stays 9.5.2; D1a decides it, so no question is open.** The
+record states that the release notes describe 9.5.1 and not 9.5.2 on the planning date, and that Gradle 9.9.2's tested
+range ends at a 9.5.0 alpha (G1). **Consequence for F1:** F1 stays as the design words it, 9.5.2 → 9.5.1, taken (by
+stop and report) on an AGP-originated error or a 9.5.2-only regression at I3 or later; 9.5.1 is the version the notes
+describe and is in the local Gradle cache (L12). (Had 9.5.1 been the target, F1 would have had no lower patch inside
+9.5 and would have become an SA amendment; that is one reason the design's value is kept.)
+
+*(b) Kotlin 2.4.21's documented maxima.* Q-5's table cell, exact: `2.4.20–2.4.21 | 7.6.3–9.7.0 | 8.5.2–9.3.1` (columns
+"KGP version | Gradle min and max versions | AGP min and max versions"); below it the page says that Gradle and AGP
+versions up to the latest releases can also be used, with the caution that deprecation warnings may appear or some new
+features might not work. Gradle 9.9.2 and AGP 9.5.2 are above both maxima. This does not move a row under D1a (it is a
+compatibility statement, not a version); it is recorded in the compatibility reading as gap **G2**, the known gap
+fallback **F2** exists for (Gradle 9.7.0 and AGP 9.3.1, both inside Kotlin's documented range), with its detector:
+KGP-originated warnings are debt, a KGP-originated error naming a Gradle or AGP API, version or behaviour is F2's
+trigger.
 
 ### 2.2 Compatibility reading (AC-3, AC-4; design D3 steps 1 and 2)
 
 The developer writes `$E/compatibility-record.md` at I0 step 11 from this text, the research's §3.1 and the
-orchestrator's supplement, quoting verbatim and never paraphrasing. Its sections:
+orchestrator's supplement, giving table values and checksums exactly and prose as the supplement states it (the
+orchestrator's ruling of 2026-11-21: the stated fact, the address and the fetch date), each labelled "table value",
+"checksum" or "stated fact"; nothing is called verbatim that is not, and nothing is paraphrased beyond the supplement's
+own wording. Its sections:
 
 1. **Reading applied** (U-060 SC-5 method): primary and binding = the Gradle 9.9.2 compatibility page and the AGP 9.5
    release notes (minimum Gradle, minimum JDK, Build Tools, maximum API level); secondary checks = the Kotlin Gradle
@@ -198,31 +421,83 @@ orchestrator's supplement, quoting verbatim and never paraphrasing. Its sections
    research §3.2 point 2) is contradicted** (design A17, D3 Context): the Gradle 9.7.x page, as read for U-060, lists
    Kotlin only "through 2.4.20-Beta1" and AGP "9.0 through 9.4.0-alpha03". It is not used as evidence. **F2 is "inside
    Kotlin's range", never "inside every range"** (FD-VAL-004).
-3. **Quotation table**: one row per C1 to C21 with the research's quoted text and URL, a column "verbatim in the
-   research: yes / partly / values read from a table or artifact", and, for each "partly" or "values" row the plan
-   relies on, the orchestrator's verbatim quotation from the supplement (Q-3 to Q-9). A citation that no longer says
+3. **Quotation table**: one row per C1 to C21 with the research's text and URL, a column "in the research: quoted /
+   partly quoted / values read from a table or artifact", and, for each row the plan relies on, the supplement's item
+   (Q-3 to Q-9: exact for table cells and checksums, stated fact with address and fetch date for prose), with its label.
+   A citation that no longer says
    what the research says is recorded as such (row D13). The research rows the plan relies on: C1, C2 (Gradle); C3, C4,
    C5, C6, C20 (AGP); C7, C8 (Kotlin); C9, C12 (KSP); C10, C11, C13 (Dagger); C14 (androidx.hilt); C15, C16
    (Robolectric); C17 (JaCoCo).
-4. **Residual gaps, verbatim from D3 (`:728-735`), with their detection and the planning-date re-read:**
+4. **Residual gaps, verbatim from D3 (`:728-735`; the design's own text), with their detection and the planning-date
+   re-read from the supplement:**
 
    | Gap | What the sources say | Detection | Re-read on 2026-11-21 |
    |-----|----------------------|-----------|-----------------------|
-   | G1 | The Gradle 9.9 page tests AGP "9.0 through 9.5.0-alpha10" (C2); AGP 9.5.2 is beyond that pre-release bound | Build plus `--warning-mode all`; any AGP-originated error | C2 (and Q-3 at the versioned URL) |
-   | G2 | KGP 2.4.21 is fully supported only up to Gradle 9.7.0 and AGP 9.3.1 (C7) | KGP-originated warnings (debt) or errors (trigger) | C7 (and Q-5) |
-   | G3 | KSP 2.3.14 is tested against AGP base 9.3.0-alpha01 (C9) | KSP tasks pass, and the KSP generated-file list equals the S2-I0 list (U-060: 49 files plus the four Hilt LazyMapKey additions) | C9 (and Q-6) |
-   | G4 | The Hilt Gradle plugin 2.60.1 has no statement for AGP 9.5 or Gradle 9.9 (§3.2 point 4) | `hiltJavaCompileDebug`, the ASM transform, Hilt tests, R8 C-2 | research §3.2 point 4, §6.5 (and Q-7) |
-   | G5 | AGP 9.5.2 has no release notes (§6.1) | Build; F1 | research §1, §6.1 (same day) |
-   | G6 | Robolectric 4.18.1 on JDK 25 without flags is not re-tested (§6.7) | D7 | research §6.7 (and Q-8) |
+   | G1 | The Gradle 9.9 page tests AGP "9.0 through 9.5.0-alpha10" (C2); AGP 9.5.2 is beyond that pre-release bound | Build plus `--warning-mode all`; any AGP-originated error | Q-3, stated fact at the versioned URL: "tested with the Android Gradle Plugin 9.0 through 9.5.0-alpha10" — holds |
+   | G2 | KGP 2.4.21 is fully supported only up to Gradle 9.7.0 and AGP 9.3.1 (C7) | KGP-originated warnings (debt) or errors (trigger) | Q-5, table value `2.4.20–2.4.21 \| 7.6.3–9.7.0 \| 8.5.2–9.3.1` and the page's caution — holds; F2 is the fallback for it (2.1 (b)) |
+   | G3 | KSP 2.3.14 is tested against AGP base 9.3.0-alpha01 (C9) | KSP tasks pass, and the KSP generated-file list equals the S2-I0 list (U-060: 49 files plus the four Hilt LazyMapKey additions) | Q-6, stated fact: six KSP-internal fixes and additions, no AGP statement — holds |
+   | G4 | The Hilt Gradle plugin 2.60.1 has no statement for AGP 9.5 or Gradle 9.9 (§3.2 point 4) | `hiltJavaCompileDebug`, the ASM transform, Hilt tests, R8 C-2 | Q-7, stated fact: two bug fixes (issues 5203, 5204), no AGP or Gradle statement — holds |
+   | G5 | AGP 9.5.2 has no release notes (§6.1) | Build; F1 | Q-4, stated fact: the 9.5 notes have no entry for 9.5.2 and neither Android page names it — holds (2.1 (a)) |
+   | G6 | Robolectric 4.18.1 on JDK 25 without flags is not re-tested (§6.7) | D7 | Q-8, table value `4.18 \| 24 → 37 \| 9.8.2 \| 9.5.0`; the 4.18.1 notes (stated fact) name no JDK flag change — holds |
 
    At I14 the record gains a column "symptom seen: none / <increment and evidence file>" per gap (AC-4, last sentence).
 5. **Fallbacks** (2.4) and the statement "not triggered" with the `--warning-mode all` evidence if none fired (AC-5).
+6. **Ordering constraints** (depth check, criterion 8): which component constrains which, the source, and what happens
+   if a statement does not hold:
 
-### 2.3 What the orchestrator must supply before the build (needs_check; nobody here fetches)
+   | Edge | Source | Order it decides | If the statement does not hold |
+   |------|--------|------------------|--------------------------------|
+   | AGP 9.5 needs Gradle ≥ 9.6.0 | C3; Q-4 table value `9.5 \| 9.6.0` | I1 before I3 | D13: stop before I1 |
+   | Gradle 9.9 tests AGP 9.0 | C2; Q-3 | I1 can build on AGP 9.0.1 | D26 detects it |
+   | KSP is independent of the Kotlin version since 2.3.0 | C9 | I2 before I5 | D54: the pre-specified reorder |
+   | An older KSP under a newer AGP is the riskier pairing (2.3.10 fixed R-class resolution with AGP 9 built-in Kotlin) | design S2 table (`:565`), C9 | I2 before I3 | — (an order choice; the build detects) |
+   | Hilt 2.60 is built with Kotlin 2.3.21 | C11 | I4 before I5 | D59, D35 |
+   | Kotlin 2.4 metadata needs Hilt 2.60 (Hilt 2.59.2 fails on it) | C10, C11 | I5 after I4 | F4 |
+   | androidx.hilt 1.3 and newer need minSdk 23 | C14 | I6 after S1 | — (S1 is done) |
+   | Robolectric 4.18 runs no test below SDK 24 | C15; Q-8 | I7 after S1 | — (S1 is done) |
+   | JaCoCo last among build changes, so a coverage change from JaCoCo itself is isolated | design S2 table (`:572`) | I12 after I11 | — |
 
-One file, `sdlc/artifacts/build/research/2026-11-21-u071-quote-supplement.md` (`$SUPP`), made from the vendors' own
-pages, each item with the verbatim text and its URL. **Q-1 to Q-9 are needed before I0 step 3** (row D1); Q-10 before
-I13 (row D83); Q-11 and Q-12 are optional.
+   Every edge has a build-time detector, so the supplement's items change the compatibility record and the D13 stop,
+   never the order.
+
+### 2.3 What the orchestrator supplied, and what is still needed (nobody here fetches)
+
+`sdlc/artifacts/build/research/2026-11-21-u071-quote-supplement.md` (`$SUPP`, commit `c9b3954d`) supplies Q-1 to Q-12
+in the orchestrator's ruled form: checksums and table cells exact, prose as the stated fact with the page's address and
+the fetch date (2026-11-21). The table below keeps iteration 1's request columns and adds what was supplied. **Q-13 to
+Q-17 are new (depth check): needed before I3** (row D44): without them an I3 difference that only those notes would
+explain stops the story. Q-18 is optional. **Iteration 3:** Q-13 to Q-17 are now supplied (row below; commit
+`0c99149e`); Q-18 was not fetched and stays optional.
+
+| Id | Supplied (supplement) |
+|----|-----------------------|
+| Q-1, Q-2 | 9.9.2: `971fcd71…9914c76b` (bin.zip), `621008af…5f73cdaf8` (wrapper jar), in full in N1; URLs `https://downloads.gradle.org/distributions/gradle-9.9.2-bin.zip.sha256` and `…-wrapper.jar.sha256` (the `services.gradle.org` address redirects there); equal to `https://gradle.org/release-checksums/`. F2: 9.7.0 `84fbba45c7f4c64abc77460e1c00f541e9f960e3c7ed2538f1ede19eacd873ae` (bin.zip), `7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d` (wrapper jar) |
+| Q-3 | Table value `25 \| 9.1.0 \| 9.1.0 and after`; stated facts: JVM 17 to 27 to run Gradle; tested with Kotlin 2.0.0 through 2.5.0-Beta1; tested with AGP 9.0 through 9.5.0-alpha10 |
+| Q-4 | Table values `9.5 \| 9.6.0`; Gradle `9.6.0 \| 9.6.0`, SDK Build Tools `36.0.0 \| 36.0.0`, JDK `17 \| 17`; stated facts: maximum API 37; a 9.5.1 heading, no 9.5.2 entry, no Android page names 9.5.2 |
+| Q-5 | Table value `2.4.20–2.4.21 \| 7.6.3–9.7.0 \| 8.5.2–9.3.1`; stated fact: newer Gradle and AGP allowed with a caution |
+| Q-6 | Stated facts: 2.3.14's six KSP-internal changes (incl. the fix for 2.3.13's concurrent-run regression and the incremental skip when no file is dirty); 2.3.13 carries "Defect in release" (issue 3286) |
+| Q-7 | Stated facts: 2.60.1 fixes issues 5203 (compiler options such as `fastInit`) and 5204 (`@CanIgnoreReturnValue` import) |
+| Q-8 | Table value `4.18 \| 24 → 37 \| 9.8.2 \| 9.5.0`; Java 21 for API 37; stated facts of 4.18.1, including "content providers are now installed for lazily created applications" |
+| Q-9 | Stated facts: the Mockito 5.24.0 entry says nothing about Java 25 or Byte Buddy; Byte Buddy's notes, 1.17.5 (30 March 2025): ASM updated to 9.8 to support Java 25 |
+| Q-10 | Stated fact: `ubuntu-22.04` listed without a deprecation note; latest checkout v7.0.1, setup-java v6.3.0, cache v6.1.0 (day and month shown, no year) |
+| Q-11 | Stated facts: 0.8.16 (2026/10/24): Java 27, experimental Java 28, platform class loader instrumentation, ASM 9.11.1; no filter change listed |
+| Q-12 | Stated fact: a single `wrapper` run updates only `gradle-wrapper.properties`; run it a second time for all files |
+| Q-13 to Q-17 (iteration 3) | Table values: Gradle minimum and default 9.3.1 (9.1), 9.4.1 (9.2), 9.5.0 (9.3), 9.6.0 (9.4, 9.5); SDK Build Tools `36.0.0 / 36.0.0` and JDK `17 / 17` for all five; KGP row `2.2.10 / 2.2.10` on 9.1 and 9.2 only. Stated facts: no page has a "Behavior changes" or "Breaking changes" section; 9.1 R8 repackages classes it may rename into the unnamed package by default (`-dontrepackage` turns it off); 9.2 wildcard `-keepattributes` patterns no longer keep the three `RuntimeInvisible…Annotations` attributes; 9.3 a new `analyzeReleaseR8Config` task, an `optimization` block (the earlier DSL still supported) and `src/<variant>/keepRules/*.keep`; 9.4 `android.newDsl.optOut`, a dynamic-feature variant warning; 9.5 experimental backup tests (off by default); no item on lint, unit tests, KSP, built-in Kotlin, the manifest merger, BuildConfig or R generation. How each bears on I3: 2.11 |
+
+New items, needed before I3:
+
+| Id | What | URL | Why |
+|----|------|-----|-----|
+| Q-13 | AGP 9.1 release notes: the "Behavior changes" entries and every entry that changes a default value (DSL, `android.*` property, lint, unit-test option, packaging, R8) | https://developer.android.com/build/releases/agp-9-1-0-release-notes | I3 crosses four minor versions; an I3 difference in the APK entries, manifests, R8 sections, coverage or lint is classified against these entries (2.8, D44) |
+| Q-14 | The same for AGP 9.2 | https://developer.android.com/build/releases/agp-9-2-0-release-notes | as Q-13 |
+| Q-15 | The same for AGP 9.3 | https://developer.android.com/build/releases/agp-9-3-0-release-notes | as Q-13 |
+| Q-16 | The same for AGP 9.4 | https://developer.android.com/build/releases/agp-9-4-0-release-notes | as Q-13 |
+| Q-17 | The same for AGP 9.5 (9.5.0 and 9.5.1) | https://developer.android.com/build/releases/agp-9-5-0-release-notes | as Q-13 |
+| Q-18 | (optional) Gradle's upgrade guide entries for 9.6 to 9.9 that change a default or a behaviour of tasks this build runs (test, JaCoCo, wrapper, dependency verification) | https://docs.gradle.org/9.9.2/userguide/upgrading_version_9.html | only if an I1 difference needs a source; without it an unexplained I1 difference stops (D26) |
+
+The original request table of iteration 1 (what was asked and why the research did not suffice) follows for the record
+only. Its word "verbatim" is superseded by the orchestrator's ruling: the answers are in the ruled form above, and the
+record labels them so.
 
 | Id | What | URL | Needed by | Why the research does not suffice |
 |----|------|-----|-----------|-----------------------------------|
@@ -239,8 +514,8 @@ I13 (row D83); Q-11 and Q-12 are optional.
 | Q-11 | (optional) JaCoCo 0.8.16 entry, verbatim, if the record wants more than C17's sentence | https://www.jacoco.org/jacoco/trunk/doc/changes.html | — | C17 is verbatim already |
 | Q-12 | (optional) Gradle user guide, "Upgrading the Gradle Wrapper": the sentence on running the `wrapper` task a second time | https://docs.gradle.org/9.9.2/userguide/gradle_wrapper.html | — | P1; the procedure stands on L5 and D22 without it |
 
-If a fallback fires, the orchestrator also supplies that fallback's inputs when it authorises resumption: F2 needs the
-Gradle 9.7.0 `bin.zip` and `wrapper.jar` SHA-256 values and the Gradle 9.7 compatibility page re-read.
+If F2 fires, the 9.7.0 checksums are already supplied (Q-1, Q-2 row above); the Gradle 9.7 compatibility page is read
+by the orchestrator then (the supplement says so).
 
 ### 2.4 Fallbacks (AC-5; design D3 steps 3 to 5) — stop and report when one fires
 
@@ -270,13 +545,17 @@ version token only; the orchestrator's resumption note lists the substitutions.
 |----------|--------|-----------|------------|-----|
 | Run the `wrapper` task twice (on 9.5.1, then on 9.9.2), re-applying the block after each (I1) | The jar and scripts are 9.9.2's own, so AC-6 (c) can compare the jar with the published 9.9.2 hash | One more short Gradle run; the block is re-applied twice | (a) one run as the design writes it; (b) U-060's bootstrap: hand-edit the properties first | (a) leaves the 9.5.1 jar (L5) and AC-6 (c) fails; (b) is a hand edit of a generated file, which AC-6 (a) reviews against "only what the generator changes" |
 | `clean` in every gate run, and the gate run carries `--warning-mode all` | Coverage after an AGP or Kotlin change is never measured on stale classes (U-060's stale Kotlin directory); one run gives both the gate and the warning record | About 3 extra minutes per gate | `clean` only after AGP/Kotlin; a separate warning-mode run | Uniform commands remove a class of mistakes; a separate run adds 11 Gradle runs for the same information |
-| The same evidence set at every increment (STD, 4.0) | Every commit list is derivable from one rule; every comparison is available at every increment | About 21 small files per increment | Evidence only where an AC names it | Plan-review B-4 of U-068 (a list naming a file no step writes) cannot recur |
+| The same evidence set at every increment (STD, 4.0) | Every commit list is derivable from one rule; every comparison is available at every increment | About 27 small files per increment | Evidence only where an AC names it | Plan-review B-4 of U-068 (a list naming a file no step writes) cannot recur |
 | A throwaway provider probe at I0 and I7 (4.P) | AC-12 (d)'s "both lists" exist whether or not a test fails; design D7 item 5's "environment probes" are run | A file copied into `app/src/test` twice for one targeted run each, under a write-ahead protocol | (a) no probe; (b) re-adding U-063's helper smoke test | (a) leaves only Truth's failure message, which shows the allow-list and the filtered result but not the provider's default-enabled set; (b) depends on fixtures whose API may have moved since U-063 (SC-P2) |
-| Strict equality for `configuration.txt` (AC-8 (c), AC-21 (b)), with the rule origin in the report | Nothing in R8's input changes unseen | Likely stops at I3 to I6 (P2), each needing an orchestrator decision | Accepting differences from the bumped component's own rules | The story says "any difference is a stop and is investigated, never waved"; SC-P1 asks for a standing ruling so the stops become one decision |
+| R8 compared at six levels (R8-1 to R8-6, 2.10) with ruling SC-P1 applied per normalised section | A changed rule is accepted only in the raised component's own section, and only while the kept classes, the manifest closure, the member-level seeds and the contract-bearing rules all hold; path and version noise in section headers cannot stop the story (I1, I2) | Six more evidence files per increment and one tool; a seeds difference from regenerated code stops for a decision (R20) | (a) iteration 1's raw-text equality of `configuration.txt`; (b) class names in four prefixes only | (a) stops at I1 on the Gradle version in every header and cannot judge "every changed rule" (contract-verification B-2); (b) cannot see Tink's protobuf fields, worker constructors or manifest classes outside the prefixes (B-1) |
+| Increments, not one raise | Every failure has one suspect; the verification additions can be attributed to one group (D5 step 5) | 14 commits, 71 Gradle runs, six sessions; two intermediate pairings no vendor table lists jointly (Gradle 9.9.2 with AGP 9.0.1 at I1; AGP 9.5.2 with Kotlin 2.3.21 at I3 and I4), each guarded by D26 and D35 | One raise of all versions in one commit | With twelve suspects per failure `git bisect` is useless and the group review cannot attribute an artifact; the design and REQ-015 "Increments" bind it anyway |
+| Versions stay inline; no version catalog | The exact-text edits stay valid (L11, `oldtext_check.py`); the AC-16 sweep and AC-23's file set apply unchanged | Version tokens stay spread over two build files and their comments | Moving to `gradle/libs.versions.toml` (it does not exist, research §2.1) | A catalog is a refactoring with its own characterisation (resolved classpaths equal before and after); in this story it would be a second change in every increment. Suitable after S4, as its own story |
+| Verification stays additions-only (D5) | No checksum can be removed or altered unseen: the set proof detects tampering with a recorded entry (INT-001) | The file keeps the old 9.0.1-era AGP and 2.3.x Kotlin entries and grows by several hundred; a clean-up needs its own story. **What it does not protect:** `verify-signatures` is `false` (L8), so the writer records whatever the repository serves during the pass (trust on first use: it protects against later substitution, not a bad first fetch; the trusted network and the group review are the only guard there); the two `<trust … regex="true"/>` lines exempt `-javadoc.jar` and `-sources.jar`; `android-all` jars are checked against `.sha512` files from the same host (integrity in transit only) | Wholesale regeneration; turning signature verification on | Regeneration makes a removed or altered checksum invisible to the proof; signatures would need a keyring for every group, which no requirement asks for (a recommendation for later) |
+| Caches off on every comparison run | No comparison depends on a developer's user-wide settings (`clean` does not stop `FROM-CACHE` outputs) | Nothing: both caches are off at project level (L23) | Relying on the defaults | `.claude/CLAUDE.md` warns that a user-wide `gradle.properties` replaces project settings; G, ENF, TR, L, DEP and the up-to-date runs pass `--no-build-cache --no-configuration-cache`; WP stays the design's exact command, so I0 step 1 proves no `gradle.properties` turns a cache on (D94) |
 | Stop on a fallback (ruled) | The product owner sees every fallback before the next increment builds on it | A pause per fallback | D3 step 5's "take it and continue" | Ruled |
 | Mutations before the I5 commit | The I5 commit carries its own mutation evidence (AC-24) | The protocol must prove the restore against the working tree, not only HEAD | Mutations after the commit | AC-24: each commit contains its increment's evidence |
 | Forced production fixes: only the pre-specified `@param:` edits; any other forced fix stops for an SA-supplied exact edit (SC-P4) | Every production edit is exact text a reviewer can check | A stop for a javac `-Werror` warning that D3 lets the developer fix | Letting the developer write the call-site fix | The delegation asks for exact old/new text for every edit; no such warning is predicted |
-| One `:app:dependencies` report per DEP step, parsed per configuration | One run gives both `releaseRuntimeClasspath` and `debugUnitTestRuntimeClasspath` | A large raw log in the work folder | Two `--configuration` runs | Half the runs |
+| Two `--configuration` reports per DEP step (U-060's form; iteration 2) | No run resolves configurations the writer pass never covers; each report parses one configuration exactly | One more short run per DEP | One plain `:app:dependencies` report | It may fail verification on androidTest or lint classpaths the gates never resolve (plan-review O-3; D97) |
 
 ### 2.6 Coverage arithmetic (re-derived at I0; rows D38, D39, D60, D79)
 
@@ -285,7 +564,7 @@ For a package with `c` covered of `t` lines and floor `f`, the gate needs `c/t �
 
 | Package (floor) | Expected at I0 | Spare | What can move it in this story |
 |-----------------|----------------|-------|--------------------------------|
-| `worker` (0.95, U-069) | 16/16 = 100 % (if U-069's measurement holds) | **0** | a generated class starting to report lines (Hilt 2.60.1 at I4, androidx.hilt 1.4.0 at I6, JaCoCo 0.8.16 filters at I12), or Kotlin 2.4 changing line attribution (I5) — any single line fails the gate; rows D38, D60 |
+| `worker` (0.90, U-069, ruling 47) | 10/10 = 100 % (U-069 Amendment A4; 16/16 in the ruling's example) | **1** (`⌈0.90·10⌉ = 9`; also 1 at 16 lines) | a generated class starting to report lines (Hilt 2.60.1 at I4, androidx.hilt 1.4.0 at I6, JaCoCo 0.8.16 filters at I12), or Kotlin 2.4 changing line attribution (I5): one more uncovered line is absorbed and recorded, a second fails the gate; rows D38, D60 |
 | `compat` (0.20) | 18/71 = 25.4 % | 3 | AGP unit-test manifest (I3), Kotlin (none: Java package) |
 | `receiver` (0.50) | 39/58 = 67.2 % | 10 | AGP 9.5's unit-test manifest (I3; AC-8 (d)) |
 | `scheduler` (0.60) | measured (U-069 edits it) | measured | Kotlin 2.4 (I5) |
@@ -303,7 +582,9 @@ amendment. "JaCoCo counting" is never given as a cause without the per-class and
 | Four gates green | The build compiles, every test passes, every floor holds, R8 runs | That runtime behaviour on a device is unchanged (IC-4 to IC-6) |
 | JUnit totals and the full case list equal to I0 | No test was lost, renamed or skipped by a toolchain change | That a test still detects what it was written to detect (only I5's mutations show that, for three loops) |
 | Merged and packaged manifests equal, invariants hold | No component, permission or attribute moved; CNTR-005 and BUG-016 invariants intact | Whether the platform honours them at run time |
-| Kept-name set and `configuration.txt` equal | R8's keep input and its kept classes are unchanged | Whether R8's optimisation of non-kept code changed (`-dontoptimize` is set; mapping line counts are recorded, not compared) |
+| R8-1 to R8-6 (2.10): kept classes, manifest closure, member seeds, contract-bearing rules, normalised sections | R8's keep input per source section, the classes and the members it keeps (Tink's protobuf fields, the worker constructors), and that every manifest class keeps its name | Whether R8's optimisation of non-kept code changed (`-dontoptimize` is set; mapping line counts and `usage-core` are recorded); behaviour of the kept code at run time (IC-4, IC-5) |
+| Packaged backup descriptor | The two `sharedpref` exclusions (`credentials.xml`, `pinned_certs.xml`, CNTR-003, CNTR-002) survive resource processing in both APKs | That the platform honours them in a real backup |
+| Clean gate runs, plus one up-to-date run after G(2) and G(5) | The full build from scratch; that KSP and Kotlin tasks are up to date on an unchanged tree (the Windows KSP2 recompilation the old KSP comment mentions) | Incremental correctness after a real source edit (no source is edited in this story) |
 | APK entry lists, `.so` = 0, dex counts | Packaging is unchanged except what the toolchain explains | Byte-level equality (APK hashes always differ) |
 | javap majors 61 / 52 | Bytecode targets unchanged (AC-15) | Anything about the bytecode beyond the version |
 | KSP file list equal | Hilt code generation produced the same set of files | That the generated code is identical (only names are compared) |
@@ -335,7 +616,24 @@ amendment. "JaCoCo counting" is never given as a cause without the per-class and
 - **A test-only bump shifts a test-classpath version of an S4 library** (Robolectric pulling a newer `androidx.*`
   onto `debugUnitTestRuntimeClasspath`): recorded at I7 and I14 (IC-1); only `releaseRuntimeClasspath` changes are
   AC-17 (e) stops.
-- **The harness moves a long Gradle run to the background**: wait for the completion notice, never poll (constraint 2).
+- **The harness moves a long Gradle run to the background**: the expected case for WP (12 to 16 min) and many G runs
+  (9 to 11 min, longer on the first run of a new Gradle version with cold caches), against the 600000 ms foreground
+  limit; 4.L: wait for the completion notice, never poll, read the result from the log. A run cut off instead is D93.
+- **A Kotlin compile daemon outlives the Gradle run** (`org.gradle.daemon=false` covers only Gradle's own daemon; at
+  I5 a 2.3.21 daemon may stay beside the 2.4.21 one): the process checks match `gradle|KotlinCompileDaemon` and record
+  Kotlin daemons without stopping; a Windows file lock that makes `clean` or `rm -rf $R` fail with "Unable to delete
+  file" is D92 (stop; no process is killed, nothing deleted by other means, no retry loop).
+- **Defaults AGP 9.1 to 9.5 change**: the build sets `buildFeatures { buildConfig true }` (`app/build.gradle:41-45`),
+  `minifyEnabled true` with the optimize file and `-dontoptimize`, the `lint` block, `testOptions.unitTests.includeAndroidResources`,
+  and in `gradle.properties` `android.nonTransitiveRClass=true` and `android.nonFinalResIds=true`; those cannot move.
+  Any other I3 difference is classified against Q-13 to Q-17's entries; an entry they do not explain stops (D44).
+- **JaCoCo 0.8.16 changes a Kotlin filter**: a package's `t` may change with the class inventory equal; Q-11 lists no
+  filter change; recorded with the per-class lines, a stop only if a package goes `BELOW` or the inventory differs
+  (2.9, D40, R19).
+- **The developer's user-wide `gradle.properties` turns the build or configuration cache on**: I0 step 1 checks
+  without printing a path; the comparison runs pass `--no-build-cache --no-configuration-cache` anyway (D94).
+- **Robolectric 4.18.1 now installs content providers for lazily created applications** (Q-8): a candidate cause if
+  an application-context test changes at I7 (D37); the manifest has no `InitializationProvider`, so nil effect expected.
 - **Endpoint security removes another tool** (`unzip`, `sha256sum`, `git` parts): stop and report (D52).
 - **A session ends mid-increment**: the resume protocol (4.R) and the write-ahead lines decide what is undone.
 - **The orchestrator commits documents while the developer runs**: every end check is scoped to this story's subjects
@@ -346,19 +644,26 @@ amendment. "JaCoCo counting" is never given as a cause without the per-class and
 
 ### 2.9 Invariants per increment (AC-21) and what may legitimately change
 
-"=" means equal to I0 (and to the previous increment); a difference is a stop unless the cell names it.
+"=" means equal to the previous increment `<p>` (which decides) and to I0 (recorded; after a difference accepted at an
+earlier increment, the I0 comparison carries exactly the accepted differences, listed in the log); a difference is a
+stop unless the cell names it.
 
 | Check | I1 | I2 | I3 | I4 | I5 | I6 | I7 | I8–I11 | I12 | I14 |
 |-------|----|----|----|----|----|----|----|--------|-----|-----|
-| Merged and packaged manifests (normalised), invariants | = | = | = | = | = | = | = | = | = | = |
-| Kept-name set | = | = | = | = | = | = | = | = | = | = |
-| `configuration.txt` | = | = | = (SC-P1) | = (SC-P1) | = (SC-P1) | = (SC-P1) | = | = | = | = |
-| APK entry lists | = | = | explained by AGP only | explained by Hilt only | explained by Kotlin only | explained by androidx.hilt only | = | = | = | = |
+| Merged and packaged manifests (normalised), invariants, backup descriptor | = | = | = | = | = | = | = | = | = | = |
+| R8-1 kept names (4 prefixes) | = | = | = | = | = | = | = | = | = | = |
+| R8-1 kept names (all); R8-2 closure (`not-identity=0`; `manifest-classes-in-mapping` = `<p>`) | = ; OK | = ; OK | = or traced (2.10); OK | = or traced; OK | = or traced; OK | = or traced; OK | = ; OK | = ; OK | = ; OK | = ; OK |
+| R8-3 `seeds-core` (`usage-core` classified) | = | = | = (a difference stops for the orchestrator, ruling 58 does not cover I3) | = `<p>`, or accepted under ruling 58 (Hilt/Dagger patterns) | = `<p>`, or accepted under ruling 58 (Kotlin compiler-generated members) | = `<p>`, or accepted under ruling 58 (Hilt/Dagger patterns) | = | = | = | = |
+| R8-4 contract-bearing rules | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
+| R8-5/R8-6 normalised `configuration.txt` sections | = | = | = `<p>`, or accepted under SC-P1 in `agp-default:proguard-android-optimize.txt` only | … in `lib:hilt-android/proguard.txt` or Dagger's `jar-rules:…/r8/r8.pro` | … in a `jar-rules:` section changed or added from the Kotlin stdlib jar | … in `lib:hilt-work/proguard.txt` or a section from an androidx.hilt 1.4.0 artifact | = | = | = | = |
+| `mapping.txt` header: `# min_api` / `# compiler_version` | 24 / = | 24 / = | 24 / changes (new R8 with AGP 9.5.2; recorded) | 24 / = | 24 / = | 24 / = | 24 / = | 24 / = | 24 / = | 24 / = |
+| Record-only (2.10): release-dex worker-name counts, `dexdump -f` header counts, baseline-profile hashes | recorded | recorded | recorded (counts and hashes expected to change with the new R8 and Q-14) | recorded | recorded | recorded | recorded | recorded | recorded | recorded |
+| APK entry lists | = | = | explained by AGP only (2.11: e.g. `META-INF/services/<obfuscated name>` entries renamed by repackaging) | explained by Hilt only | explained by Kotlin only | explained by androidx.hilt only | = | = | = | = |
 | `.so` count | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | KSP file list | = | = (AC-7) | = | differences explained (AC-9) | = I4's list (SC-P3) | = I4's list | = | = | = | = I4's list |
 | javap majors 61, 61, 52 | = | = | = | = | = | = | = | = | = | = |
 | Case list, JUnit totals | = | = | = | = | = | = | = | = | = | = |
-| Coverage `t` per package; class inventory | = | = | explained by AGP only | explained by Hilt only | explained by Kotlin only | explained by androidx.hilt only | = | = | = I11 (AC-14) | = |
+| Coverage `t` per package; class inventory | = | = | explained by AGP only | explained by Hilt only | explained by Kotlin only | explained by androidx.hilt only | = | = | inventory = I11 (AC-14); a `t` change with an equal inventory is recorded with the per-class lines and Q-11's change history, a stop only if a package goes `BELOW` (D38) | = |
 | `releaseRuntimeClasspath` (S4-owned versions) | — | — | — | = | = | = | = | — | — | = |
 
 The invariant greps run on the packaged manifests (`aapt2 dump xmltree`) and the merged ones, each expected `1` except
@@ -367,7 +672,124 @@ The invariant greps run on the packaged manifests (`aapt2 dump xmltree`) and the
 'foregroundServiceType(0x01010599)=0x00000001'`; `grep -c InitializationProvider F`; `grep -A2
 'android:name(0x01010003)="com.zegoggles.smssync.receiver.BackupBroadcastReceiver"' F | grep -c
 'exported(0x01010010)=true'`; the same `grep -A5 … | grep -c '"com.zegoggles.smssync.BACKUP"'`; `grep -c
-'minSdkVersion(0x0101020c)=24' F`; and in the merged files `grep -c 'android:minSdkVersion="24"'`.
+'minSdkVersion(0x0101020c)=24' F`; and in the merged files `grep -c 'android:minSdkVersion="24"'`. The backup
+descriptor dump (EV-B) per APK: `grep -c 'E: exclude'` → `2`, `grep -c 'domain="sharedpref"'` → `2`,
+`grep -c 'path="credentials.xml"'` → `1`, `grep -c 'path="pinned_certs.xml"'` → `1` (L27).
+
+### 2.10 R8 checks and the allowed-section table (contract-verification B-1, B-2; ruling SC-P1)
+
+No contract mentions R8; the contract obligations live in keep rules shipped by libraries (CNTR-004 and DES-008: the
+`@HiltWorker` class names WorkManager persists; CNTR-003: Tink's protobuf fields). So the comparison works at six levels,
+all from the release build's own outputs (`app/build/outputs/mapping/release/`; I0 lists the folder, row D98), via
+`r8_check.py` (4.0), at every increment k ≥ 1 against `<p>` (decides) and I0 (recorded):
+
+- **R8-1 Kept classes.** `kept-names.txt` (four prefixes, as U-060 C-2) must equal `<p>`: hard stop. `kept-names-all.txt`
+  (every identity line of `mapping.txt`): a difference outside the four prefixes is accepted only if traced to a changed
+  rule of the raised component's own section (R8-5); otherwise stop.
+- **R8-2 Manifest closure.** Every `android:name`/`appComponentFactory` value of the packaged release manifest that is a
+  class in `mapping.txt` is identity-mapped (27 classes today, L26): hard stop. The tool also prints `NOT-IN-MAPPING`
+  for each manifest class name absent from `mapping.txt` (actions and permissions are not listed), and CMP compares
+  `manifest-classes-in-mapping` with `<p>`'s: a lower count is a stop (plan-review O-15, contract-verification O-7).
+- **R8-3 Member seeds.** `seeds-core.txt` (`seeds.txt` restricted to `com.zegoggles.smssync.`, `androidx.work.`,
+  `com.google.crypto.tink.`, `androidx.core.app.CoreComponentFactory`, `androidx.profileinstaller.`,
+  `androidx.room.MultiInstance`) must equal `<p>` (it sees Tink's fields and the worker constructors): a hard stop,
+  **except as ruling 58 accepts at I4, I5 and I6**, judged by `r8_check.py seeds-diff` (CMP), which prints every added
+  (`+`) or removed (`-`) line with its verdict:
+  - `MATCH <pattern>`: at I4 and I6 the class's simple name (or, for an inner class, its top-level simple name) matches
+    one of the Dagger/Hilt patterns `Hilt_*`, `*_Factory`, `*_HiltModules*`, `*_HiltModule`, `*_AssistedFactory*`,
+    `*_MembersInjector`, `*_GeneratedInjector`, `*_HiltComponents*`, `*_ComponentTreeDeps`, `Dagger*`, or the full
+    name matches `hilt_aggregated_deps.*` or `dagger.hilt.internal.aggregatedroot.codegen.*`; and for a class in
+    `com.zegoggles.smssync.` its source file `<package path>/<TopLevel>.java` exists under one of the generated roots
+    passed to the tool (`app/build/generated/ksp/release/java`, `app/build/generated/hilt/component_sources/release`;
+    if AGP 9.5.2 writes them elsewhere, the developer lists `app/build/generated` one level deep, passes the folders
+    found and records it) — otherwise `NOT-GENERATED`. At I5 only the Kotlin compiler-generated members: the member
+    (or, for a class-only line, the simple name) contains `$default(`, `access$`, the word `Companion`,
+    `$WhenMappings`, `$EntriesMappings` or `$$delegatedProperties`; any other member is `NO MATCH` (a stop).
+  - `FORBIDDEN`: a line under `com.google.crypto.tink.`, or a **worker-constructor line** — a line of the form
+    `com.zegoggles.smssync.service.BackupWorker: BackupWorker(…`, `….service.RestoreWorker: RestoreWorker(…` or
+    `….worker.BackupTriggerWorker: BackupTriggerWorker(…` (the form `seeds.txt` uses, read earlier in this session:
+    `com.zegoggles.smssync.service.BackupWorker: BackupWorker(android.content.Context,androidx.work.WorkerParameters,…)`),
+    which includes Kotlin's synthetic constructor ending in `kotlin.jvm.internal.DefaultConstructorMarker)`.
+  - `NO MATCH` for anything else, for every changed line at an increment other than I4, I5, I6, for every line under
+    `androidx.work.`, `androidx.core.app.`, `androidx.profileinstaller.` or `androidx.room.`, and at I5 for every line
+    outside `com.zegoggles.smssync.` (Amendment A1, contract-verification O-16). A removed generated class may show its
+    source in `<p>`'s KSP file list instead (`--prev-ksp`, plan-review O-21).
+
+  The tool exits 0 only when every changed line is `MATCH`. Ruling 58 then also needs R8-1, R8-2 and R8-4 to hold and
+  each changed line copied into the log with its pattern (D42). **At I3** (the new R8 that comes with AGP 9.5.2) a
+  `seeds-core` difference is not covered by ruling 58: stop and report with the changed lines; the orchestrator decides
+  (plan-review O-16).
+  `usage-core.txt` (the same prefixes of `usage.txt`, class blocks with their removed members) is compared the same way
+  and every difference is classified in the log; it stops only when a removed entry is a class or member listed in
+  `<p>`'s `seeds-core.txt` or the closure (that would be a kept thing removed) — **except** a line that `seeds-diff`
+  accepted under ruling 58 at the same increment, which is recorded with it.
+- **R8-4 Contract-bearing rules present, whatever their source** (`r8_check.py rules`): (a) androidx.hilt's
+  `-keepnames @androidx.hilt.work.HiltWorker class * extends androidx.work.ListenableWorker` or (b) work-runtime's
+  `-keep public class * extends androidx.work.ListenableWorker {` with `public <init>(...);` — at least one, and the
+  three `@HiltWorker` classes identity-mapped (R8-1); (c) `-keep class androidx.work.WorkerParameters`; (d) Tink's
+  `-keepclassmembers class * extends com.google.crypto.tink.shaded.protobuf.GeneratedMessageLite {` with `<fields>;`;
+  (e) `-keep class androidx.work.impl.foreground.SystemForegroundService { <init>(); }`; (f) hilt-android's
+  `-keep,allowobfuscation,allowshrinking @dagger.hilt.EntryPoint class *`; (g) the `app:proguard-rules.pro` section
+  equal to the committed file, with `-dontoptimize`; and the AGP default file's `-keepattributes` still naming
+  `Signature` and `RuntimeVisibleAnnotations`. A missing or reworded rule among these stops the story even when it comes
+  from the raised component (a contract depends on it); the SA decides (D95).
+- **R8-5 Allowed sections** (ruling SC-P1's "the raised component's own shipped rules", made checkable):
+
+  | Increment | Section whose body may change (after R8-6) | Condition |
+  |-----------|--------------------------------------------|-----------|
+  | I1, I2, I7 to I12, I14 | none | every key `EQUAL` |
+  | I3 | `agp-default:proguard-android-optimize.txt` | its `-keepattributes` keeps `Signature` and `RuntimeVisibleAnnotations` (R8-4) |
+  | I4 | `lib:hilt-android/proguard.txt`; `jar-rules:lib/META-INF/com.android.tools/r8/r8.pro` (Dagger's own jar rule, `-identifiernamestring @dagger.internal.IdentifierNameString`, U-068 `I5-configuration.txt:623-628`), changed or added, shown by `unzip -l` of the resolved `dagger-2.60.1.jar` (ruling 48; plan-review O-14) | R8-4 (f) holds |
+  | I5 | a `jar-rules:` section **changed or added** (none comes from `kotlin-stdlib` at the start, so `ADDED` is the likely form), only if the developer shows the same path inside the resolved `kotlin-stdlib-2.4.21.jar` (`unzip -l` of the jar the build resolved; no path written) (ruling 48) | not a `coroutines.pro` section (coroutines are S4's) |
+  | I6 | `lib:hilt-work/proguard.txt`, and any section changed or added that the developer shows inside a resolved androidx.hilt 1.4.0 artifact (`hilt-work`, `hilt-common`) (ruling 48) | R8-4 (a) or (b) holds |
+
+  Every increment: the `aapt:aapt_rules.txt` section is manifest-derived, so any change there is a stop; a section
+  `ADDED` or `REMOVED` that belongs to another library is a stop (and a changed resolved S4 library is also D31); the
+  `generated:proguard.txt` and `unknown` sections must stay `EQUAL`. A section `ADDED` or `CHANGED` is inside ruling 48
+  only when the developer names the raised component's jar it comes from (`unzip -l`, the path in the jar equal to the
+  section key's path **after dropping the leading `lib/`** of `jar-rules:` keys, plan-review O-22) **and** shows that the
+  section body is that file's content (contract-verification O-15):
+  `python -I -X utf8 $TL/r8_check.py section $E/I<k>-configuration-norm.txt '<key>' $WORK/sec.txt; unzip -p <jar> <path in jar> | tr -d '\r' > $WORK/jar.txt; git -c core.autocrlf=false diff --no-index --quiet -- $WORK/sec.txt $WORK/jar.txt; echo "section-equals-jar-exit=$?"`
+  → `0`, recorded in the log (both sides LF: `section` writes LF on every OS and `tr -d '\r'` makes the jar copy LF,
+  Amendment A2; `section` strips leading and trailing blank lines; if only blank lines differ, the
+  comparison is repeated on `grep -v '^[[:space:]]*$'` copies of both files and that is recorded). Tested in planning: `section`
+  writes the three-line Dagger `r8.pro` body from U-068's normalised `I5-configuration.txt`.
+- **Record-only R8 and dex characterisation** (depth check; contract-verification O-6), written to `I<k>-r8.txt`:
+  the `mapping.txt` header lines `# compiler`, `# compiler_version`, `# min_api` (`min_api: 24` at every increment, a
+  stop if not; `compiler_version` changes at I3 only, recorded); for each persisted worker name
+  (`com.zegoggles.smssync.service.BackupWorker`, `…service.RestoreWorker`, `…worker.BackupTriggerWorker`) the count of
+  its dotted string in the release dex files (the `@StringKey` value of the worker map, which only the generated
+  component references) — **not verified in planning** (the release APK was not read while another agent's Gradle run
+  was live), so the count is recorded and compared with `<p>`, and a difference is classified and reported, never a
+  stop by itself; the `dexdump -f` header counts (`magic`, `class_defs_size`, `method_ids_size`, `field_ids_size`) of
+  the release `classes.dex`; and the SHA-256 of `assets/dexopt/baseline.prof` and `baseline.profm` (both present in
+  U-068's release entry list). **No resource shrinker:** `app/build.gradle` has no `shrinkResources` (`git grep` at
+  HEAD: none), so no resource-shrinker output exists; resources are covered by the APK entry lists and the manifest and
+  backup-descriptor dumps.
+- **R8-6 Header normalisation.** `r8_check.py normalize` reduces each section header to `<kind>:<artifact without
+  version>` (`aapt`, `agp-default`, `app`, `generated`, `lib:<artifact>/<file>`, `jar-rules:<path>`, `unknown`), dropping
+  the Gradle version, the transform hash and the version; sections are sorted by key; the raw `configuration.txt` is
+  kept as evidence. On U-068's I0 and I5 files the two normalised forms are equal (L26).
+
+**Ruling SC-P1 applied (D43):** a section difference is accepted and recorded when R8-1's four-prefix set equals `<p>`
+and every added or removed rule lies in the section R8-5 allows for this increment (its source named in the log, rule
+by rule), with R8-2, R8-3 (as ruling 58 reads it) and R8-4 holding; any other difference stops.
+
+### 2.11 What AGP 9.1 to 9.5 change at I3, and what the checks will see (Q-13 to Q-17)
+
+None of the five release-notes pages has a "Behavior changes" section (supplement). Two R8 changes bear on I3; the
+rest (9.3's analyzer task, `optimization` block and `keepRules` folder; 9.4's `newDsl.optOut` and dynamic-feature
+warning; 9.5's experimental backup tests, off by default) touch nothing this build uses: it keeps the earlier DSL
+(`minifyEnabled`, `proguardFiles`), which 9.3's page says is still supported, and has no dynamic-feature module.
+
+| Change | What each check sees at I3 | Recorded (explained by the item) | A stop |
+|--------|----------------------------|----------------------------------|--------|
+| **Q-13 (9.1): R8 repackages classes it may rename into the unnamed package by default** (as `-repackageclasses`; `-dontrepackage` turns it off) | `mapping.txt`: the obfuscated targets of renamed classes and the line count change; `kept-names*.txt` (identity lines) and `seeds-core`/`usage-core` (original names) do not; the R8 sections of `configuration.txt` do not (it is a default, not a rule); APK entries named after an obfuscated class change — U-068's release list has `META-INF/services/q4.b0` and `…/v4.t` (the two coroutines service interfaces), whose names will differ; the release-dex record-only counts change | the mapping-line count, and each `META-INF/services/<name>` entry whose APK name changed while its original name did not: `I<k>-services.txt` (Amendment A1; written at every increment from that increment's own `mapping.txt`, so no earlier `mapping.txt` is needed after I3's `clean`) gives each entry as `ENTRY <apk name> = <original name>`; the developer pairs I2's and I3's `ENTRY` lines **by original name** and lists each pair with Q-13 (for U-068's `q4.b0` and `v4.t` the originals are the two coroutines service interfaces); the number of `ENTRY` lines stays equal | a `PAIR` line (original interface → its implementations in original names, the same file) that differs from I0's or `<p>`'s (`services-pairs … exit=1`); an entry whose original name is `(unmapped)` (a non-obfuscated name) but whose APK name changed; an original name present at `<p>` and missing at I3; a kept class, a manifest class (R8-2), a `seeds-core` line or a `kept-names` line changing (D44, D101) |
+| **Q-14 (9.2): wildcard `-keepattributes` no longer keeps the three `RuntimeInvisible…Annotations` attributes** | the merged configuration at the start has one wildcard, `-keepattributes *Annotation*` in `lib:coordinatorlayout/proguard.txt` (U-068 `I5-configuration.txt:452`); the AGP default file and lifecycle-runtime name their attributes in full and name no `RuntimeInvisible…` one; the rule text does not change, so R8-5/R8-6 see no difference; runtime-invisible annotations cannot be read by reflection at run time, so no kept name, seed or manifest entry depends on them; the release dex may lose annotation items: record-only dex counts and APK size change | the dex header counts and sizes, with Q-14 | any R8-1 to R8-4 check failing |
+
+No `-dontrepackage` and no keep rule is added: no check is expected to fail from either change, and nothing in the
+app reads an obfuscated class name or a runtime-invisible annotation. If a check does fail, the developer stops (D42,
+D44, D95) and the SA decides with the evidence; adding a rule would be a `proguard-rules.pro` edit, outside AC-23.
 
 ## 3. Exact Changes
 
@@ -378,7 +800,7 @@ edits is given per row (L11). U-069's two Rule 15 lines are not touched by any e
 
 ### 3.1 S2-I1 — the wrapper (generator) and the `gradlew` block (hand, byte for byte)
 
-Generated by `./gradlew wrapper --gradle-version 9.9.2 --distribution-type bin --gradle-distribution-sha256-sum <Q-1>`
+Generated by `./gradlew wrapper --gradle-version 9.9.2 --distribution-type bin --gradle-distribution-sha256-sum 971fcd7150ca4ba04852c0b2ca0d2d0ab9468e14b03473eab19528809914c76b` (Q-1)
 run twice (I1 steps 2 and 5). The LOCAL ADDITION block re-applied after each run is `<start>`'s `gradlew:117-127`,
 verbatim:
 
@@ -492,8 +914,9 @@ directory AGP 9.5.2 writes (found by I3 step 9's `find`), comment `// U-071: AGP
 `      # AGP 9.5 needs Build Tools 36.0.0, its minimum and default (this step guards against runner-image drift).`
 
 Nothing else in the workflow changes: `runs-on` (`:13`), triggers, cache keys and paths, the `sdkmanager` step and both
-`./gradlew` commands keep their text (AC-15 (e), (h)). If Q-4's verbatim wording differs from "minimum and default",
-E13.4 and E13.5 keep this wording (it restates C4) and the log quotes Q-4 beside it.
+`./gradlew` commands keep their text (AC-15 (e), (h)). Q-4's table (Build Tools `36.0.0 | 36.0.0` under
+"Minimum version | Default version") is what "minimum and default" restates; the log gives Q-4's table values and URL
+beside it.
 
 ### 3.4 S2-I14 — comments and `code-location.md` (numstat `9 9`, `8 8`, `3 3`, L11)
 
@@ -501,7 +924,7 @@ E13.4 and E13.5 keep this wording (it restates C4) and the log quotes Q-4 beside
 
 | Id | `old_string` | `new_string` |
 |----|--------------|--------------|
-| E14.1 | the three lines `:7-9`: `        // U-060: Gradle 9.5.1 / AGP 9.0.1 / KGP 2.3.21 run the build on JDK 25 (app bytecode stays 17).` / `        // AGP 9.0 needs Gradle >= 9.1.0, JDK >= 17, KGP >= 2.2.10, SDK Build Tools >= 36.0.0` / `        // (developer.android.com/build/releases/agp-9-0-0-release-notes).` | `        // U-071: Gradle 9.9.2 / AGP 9.5.2 / KGP 2.4.21 run the build on JDK 25 (app bytecode stays 17).` / `        // AGP 9.5 needs Gradle >= 9.6.0, JDK >= 17, KGP >= 2.2.10 (built-in Kotlin); its SDK Build Tools` / `        // minimum and default is 36.0.0 (developer.android.com/build/releases/agp-9-5-0-release-notes).` |
+| E14.1 | the three lines `:7-9`: `        // U-060: Gradle 9.5.1 / AGP 9.0.1 / KGP 2.3.21 run the build on JDK 25 (app bytecode stays 17).` / `        // AGP 9.0 needs Gradle >= 9.1.0, JDK >= 17, KGP >= 2.2.10, SDK Build Tools >= 36.0.0` / `        // (developer.android.com/build/releases/agp-9-0-0-release-notes).` | `        // U-071: Gradle 9.9.2 / AGP 9.5.2 / KGP 2.4.21 run the build on JDK 25 (app bytecode stays 17).` / `        // AGP 9.5 needs Gradle >= 9.6.0 and JDK >= 17, SDK Build Tools minimum and default 36.0.0 (agp-9-5-0 notes);` / `        // AGP 9 built-in Kotlin needs KGP >= 2.2.10 (developer.android.com/build/releases/agp-9-0-0-release-notes).` |
 | E14.2 | `:12-13`: `        // U-060: KGP 2.3.21 (AGP 9 built-in Kotlin needs >= 2.2.10; declared here so a KGP newer than` / `        // AGP's runtime 2.2.10 is used). 2.4.x is excluded: Hilt 2.59.2 cannot read Kotlin 2.4 metadata.` | `        // U-060/U-071: KGP 2.4.21 (AGP 9 built-in Kotlin needs >= 2.2.10; declared here so a KGP newer than` / `        // AGP's runtime 2.2.10 is used). Kotlin 2.4 metadata needs Hilt 2.60 or newer (Dagger 2.60 release notes).` |
 | E14.3 | `:15-16`: `        // U-057/U-060: KSP replaces kapt for Hilt. KSP 2.3.x is KSP2-only and the first line (2.3.1+)` / `        // with AGP 9 built-in Kotlin support; 2.3.6 includes the Windows KSP2 recompilation fix.` | `        // U-057/U-071: KSP replaces kapt for Hilt. KSP 2.3.x is KSP2-only and no longer tied to the Kotlin` / `        // version; never 2.3.13 (marked "Defect in release"). Dagger's KSP support is stable from KSP 2.3.9.` |
 | E14.4 | `        // U-022/U-060: Hilt Gradle plugin (must precede app/build.gradle application of` | `        // U-022/U-071: Hilt Gradle plugin (must precede app/build.gradle application of` |
@@ -568,6 +991,7 @@ written into a repository file (evidence says "the work folder", "the SDK", "the
 | `cov_floors.py` | this plan (tested on the current report: `RULES 18`) | per-package ratio against every floor, spare lines (AC-20 (b)) |
 | `jacoco_class_lines.py` | this plan (tested on the current report) | per-class covered/total and classes without a counter (AC-14, AC-20 (d)) |
 | `scan.py` | the detection rules of U-063's `sanitize.py` (IC-8), one process for many files (tested on U-067/U-068 evidence: no false hit) | hygiene check of every evidence file before `git add` |
+| `r8_check.py` | this plan, iteration 2 (contract-verification R8-1 to R8-6; tested on U-068's `I0`/`I5-configuration.txt` and the current release outputs, L26) | header normalisation, section comparison, contract-bearing rules, manifest closure, contract-prefix seeds and usage |
 | `U071ProviderProbeTest.java.txt` | this plan (U-063 IC-11 form) | the throwaway probe source (4.P); a `.txt` so it is never compiled where it is stored |
 | `sanitize.py`, `junit_totals.py`, `junit_cases.py`, `jacoco_pkgs.py` | U-063 (`$T`, read-only) | log filtering with machine details replaced; XML totals; full case list; package ratios |
 | `sdk_dir.py`, `jacoco_inventory.py`, `jacoco_lines.py`, `lint_ids.py` | U-068 (`$T68`, read-only) | SDK folder; U-060 class inventory; per-line coverage; lint rule IDs |
@@ -852,6 +1276,220 @@ for path in sys.argv[1:]:
 sys.exit(rc)
 ```
 
+`r8_check.py` (iteration 2; `seeds-diff` mode and the `closure` count lines added in iteration 3):
+```python
+"""R8 evidence for U-071 (contract-verification R8-1 to R8-6). usage (from the repository root):
+  python -I -X utf8 r8_check.py normalize <configuration.txt> <out>     R8-6: one '=== <key>' line per section, then its
+        body; key = kind:artifact without version, Gradle version or transform hash; sections sorted by key
+  python -I -X utf8 r8_check.py compare <old normalized> <new normalized>   per key: EQUAL, CHANGED +a -r, ADDED, REMOVED
+  python -I -X utf8 r8_check.py rules <normalized> <proguard-rules.pro>    R8-4: the contract-bearing rules are present
+  python -I -X utf8 r8_check.py closure <packaged release manifest dump> <mapping.txt>   R8-2: manifest classes identity-mapped
+  python -I -X utf8 r8_check.py core <seeds.txt|usage.txt> <out>        R8-3: entries of the contract prefixes only
+  python -I -X utf8 r8_check.py seeds-diff <old seeds-core> <new seeds-core> <I4|I5|I6|other> [--prev-ksp=<file>] [<generated root> ...]
+        ruling 58: every added (+) or removed (-) line printed with the pattern it matched, or FORBIDDEN / NO MATCH /
+        NOT-GENERATED; a class of the app's own package must have its source under one of the generated roots (a
+        removed line may instead be found as '.../java/<path>.java' in the previous increment's KSP file list)
+  python -I -X utf8 r8_check.py services <release apk> <mapping.txt> <out>   Amendment A1: each META-INF/services entry
+        with its name and implementation lines translated to original names through mapping.txt
+  python -I -X utf8 r8_check.py section <normalized> <key> <out>        Amendment A1: the body of one section, to compare
+        with the jar file's own content
+Exit 1 when a check fails (compare: when any key is not EQUAL; seeds-diff: when any line is not MATCH)."""
+import fnmatch, os, re, sys, zipfile
+PREFIXES = ('com.zegoggles.smssync.', 'androidx.work.', 'com.google.crypto.tink.', 'androidx.core.app.CoreComponentFactory',
+            'androidx.profileinstaller.', 'androidx.room.MultiInstance')
+HEAD = '# The proguard configuration file for the following section is '
+END = '# End of content from '
+def key(path):
+    p = path.strip().replace('\\', '/')
+    if p == '<unknown>':
+        return 'unknown'
+    name = p.rsplit('/', 1)[-1]
+    if '/aapt_proguard_file/' in p:
+        return 'aapt:' + name
+    if '/default_proguard_files/' in p:
+        return 'agp-default:' + re.sub(r'-\d[\w.\-]*$', '', name)
+    if '/generated_proguard_file/' in p:
+        return 'generated:' + name
+    if p.endswith('/app/proguard-rules.pro'):
+        return 'app:proguard-rules.pro'
+    m = re.search(r'/transformed/shrink-rules/(.+)$', p)
+    if m:
+        return 'jar-rules:' + m.group(1)
+    m = re.search(r'/transformed/([^/]+)/(.+)$', p)
+    if m:
+        return 'lib:' + re.sub(r'-\d[\w.\-]*$', '', m.group(1)) + '/' + m.group(2)
+    return 'other:' + name
+def sections(path):
+    out, cur, body = [], None, []
+    for raw in open(path, encoding='utf-8', errors='replace'):
+        line = raw.rstrip('\r\n')
+        if line.startswith(HEAD):
+            cur, body = key(line[len(HEAD):]), []
+        elif line.startswith(END) and cur is not None:
+            out.append((cur, body)); cur = None
+        elif cur is not None:
+            body.append(line)
+    return out
+def read_norm(path):
+    d, cur = {}, None
+    for raw in open(path, encoding='utf-8'):
+        line = raw.rstrip('\n')
+        if line.startswith('=== '):
+            cur = line[4:]; d.setdefault(cur, [])
+        elif cur is not None:
+            d[cur].append(line)
+    return d
+mode = sys.argv[1]
+if mode == 'normalize':
+    secs = sections(sys.argv[2])
+    seen = {}
+    with open(sys.argv[3], 'w', encoding='utf-8') as f:
+        for k, body in sorted(secs, key=lambda s: s[0]):
+            n = seen[k] = seen.get(k, 0) + 1
+            f.write(f'=== {k}' + (f' #{n}' if n > 1 else '') + '\n' + ''.join(b + '\n' for b in body))
+    print(f'sections={len(secs)} keys={len(seen)}')
+    sys.exit(0 if secs else 1)
+if mode == 'compare':
+    a, b = read_norm(sys.argv[2]), read_norm(sys.argv[3])
+    bad = 0
+    for k in sorted(set(a) | set(b)):
+        if k not in b: print('REMOVED', k); bad += 1
+        elif k not in a: print('ADDED', k); bad += 1
+        elif a[k] == b[k]: print('EQUAL', k)
+        else:
+            add = sum(1 for x in b[k] if x not in a[k]); rem = sum(1 for x in a[k] if x not in b[k])
+            print(f'CHANGED +{add} -{rem}', k); bad += 1
+    print('ALL EQUAL' if not bad else f'DIFFERENT {bad}')
+    sys.exit(1 if bad else 0)
+if mode == 'rules':
+    d = read_norm(sys.argv[2]); text = '\n'.join(l for v in d.values() for l in v)
+    def has(s): return s in text
+    checks = [
+        ('a|b worker names or constructors', has('-keepnames @androidx.hilt.work.HiltWorker class * extends androidx.work.ListenableWorker')
+             or ('-keep public class * extends androidx.work.ListenableWorker {' in text and 'public <init>(...);' in text)),
+        ('a -keepnames @HiltWorker', has('-keepnames @androidx.hilt.work.HiltWorker class * extends androidx.work.ListenableWorker')),
+        ('b -keep ListenableWorker constructors', has('-keep public class * extends androidx.work.ListenableWorker {') and has('public <init>(...);')),
+        ('c -keep WorkerParameters', has('-keep class androidx.work.WorkerParameters')),
+        ('d Tink protobuf fields', has('-keepclassmembers class * extends com.google.crypto.tink.shaded.protobuf.GeneratedMessageLite {') and has('<fields>;')),
+        ('e SystemForegroundService <init>', has('-keep class androidx.work.impl.foreground.SystemForegroundService { <init>(); }')),
+        ('f Hilt @EntryPoint', has('-keep,allowobfuscation,allowshrinking @dagger.hilt.EntryPoint class *')),
+    ]
+    agp = next((v for k, v in d.items() if k.startswith('agp-default:proguard-android-optimize.txt')), [])
+    agptext = '\n'.join(agp)
+    checks.append(('AGP default -keepattributes has Signature and RuntimeVisibleAnnotations',
+                   '-keepattributes' in agptext and 'Signature' in agptext and 'RuntimeVisibleAnnotations' in agptext))
+    strip = lambda ls: [x for x in '\n'.join(ls).rstrip('\n').split('\n')]
+    app = strip(d.get('app:proguard-rules.pro', []))
+    pro = strip([l.rstrip('\r') for l in open(sys.argv[3], encoding='utf-8').read().split('\n')])
+    checks.append(('g app:proguard-rules.pro section equals the committed file', app == pro))
+    checks.append(('g -dontoptimize present', '-dontoptimize' in app))
+    for name, ok in checks: print(('OK   ' if ok else 'FAIL ') + name)
+    sys.exit(0 if all(ok for name, ok in checks if not name.startswith(('a -', 'b -'))) else 1)
+if mode == 'closure':
+    names = set(re.findall(r':(?:name|appComponentFactory)\(0x[0-9a-f]+\)="([A-Za-z0-9_.$]+)"', open(sys.argv[2], encoding='utf-8').read()))
+    mapped = {}
+    for line in open(sys.argv[3], encoding='utf-8', errors='replace'):
+        m = re.match(r'^([A-Za-z0-9_.$]+) -> ([A-Za-z0-9_.$]+):$', line.rstrip('\r\n'))
+        if m: mapped[m.group(1)] = m.group(2)
+    bad = 0
+    for n in sorted(names):
+        if n in mapped:
+            ok = mapped[n] == n; bad += not ok
+            print(('OK   ' if ok else 'FAIL ') + f'{n} -> {mapped[n]}')
+        elif re.match(r'^[a-z][\w]*(\.[\w$]+)+$', n) and re.match(r'^[A-Z]\w*[a-z]', n[n.rfind('.') + 1:]):
+            print(f'NOT-IN-MAPPING {n}')
+    print(f'manifest-classes-in-mapping={sum(1 for n in names if n in mapped)} not-identity={bad}')
+    sys.exit(1 if bad else 0)
+if mode == 'seeds-diff':
+    HILT = ['Hilt_*', '*_Factory', '*_HiltModules*', '*_HiltModule', '*_AssistedFactory*', '*_MembersInjector',
+            '*_GeneratedInjector', '*_HiltComponents*', '*_ComponentTreeDeps', 'Dagger*']
+    HILT_PKG = ['hilt_aggregated_deps.*', 'dagger.hilt.internal.aggregatedroot.codegen.*']
+    KOTLIN = [r'\$default\(', r'access\$', r'\bCompanion\b', r'\$WhenMappings', r'\$EntriesMappings', r'\$\$delegatedProperties']
+    WORKER = re.compile(r'^com\.zegoggles\.smssync\.(service\.BackupWorker|service\.RestoreWorker|worker\.BackupTriggerWorker): '
+                        r'(BackupWorker|RestoreWorker|BackupTriggerWorker)\(')
+    old = open(sys.argv[2], encoding='utf-8').read().splitlines()
+    new = open(sys.argv[3], encoding='utf-8').read().splitlines()
+    inc = sys.argv[4]
+    prev_ksp = [a.split('=', 1)[1] for a in sys.argv[5:] if a.startswith('--prev-ksp=')]
+    roots = [a for a in sys.argv[5:] if not a.startswith('--prev-ksp=')]
+    prev = [l.strip() for p in prev_ksp for l in open(p, encoding='utf-8')]
+    LIBRARY = ('androidx.work.', 'androidx.core.app.', 'androidx.profileinstaller.', 'androidx.room.')
+    from collections import Counter
+    co, cn = Counter(old), Counter(new)
+    changed = [('-', l) for l in sorted((co - cn).elements())] + [('+', l) for l in sorted((cn - co).elements())]
+    bad = 0
+    for sign, line in changed:
+        cls, _, member = line.partition(': ')
+        simple = cls[cls.rfind('.') + 1:]
+        top = simple.split('$')[0]
+        if cls.startswith('com.google.crypto.tink.') or WORKER.match(line):
+            verdict = 'FORBIDDEN'
+        elif cls.startswith(LIBRARY) or (inc == 'I5' and not cls.startswith('com.zegoggles.smssync.')):
+            verdict = 'NO MATCH'
+        elif inc in ('I4', 'I6'):
+            pat = next((p for p in HILT if fnmatch.fnmatchcase(simple, p) or fnmatch.fnmatchcase(top, p)), None) \
+                or next((p for p in HILT_PKG if fnmatch.fnmatchcase(cls, p)), None)
+            verdict = f'MATCH {pat}' if pat else 'NO MATCH'
+            if pat and cls.startswith('com.zegoggles.smssync.'):
+                rel = cls.split('$')[0].replace('.', '/') + '.java'
+                found = any(os.path.isfile(os.path.join(r, rel)) for r in roots)
+                if not found and sign == '-' and any(l.endswith('/java/' + rel) for l in prev):
+                    found, verdict = True, f'MATCH {pat} (generated at the previous increment)'
+                if not found:
+                    verdict = f'NOT-GENERATED {pat}'
+        elif inc == 'I5':
+            text = member or simple
+            pat = next((p for p in KOTLIN if re.search(p, text)), None)
+            verdict = f'MATCH {pat}' if pat else 'NO MATCH'
+        else:
+            verdict = 'NO MATCH'
+        bad += not verdict.startswith('MATCH')
+        print(f'{verdict} {sign} {line}')
+    print(f'changed={len(changed)} not-accepted={bad}')
+    sys.exit(1 if bad else 0)
+if mode == 'core':
+    blocks = []
+    for raw in open(sys.argv[2], encoding='utf-8', errors='replace'):
+        line = raw.rstrip('\r\n')
+        if line and not line[0].isspace():
+            blocks.append([line])
+        elif blocks and line:
+            blocks[-1].append(line)
+    keep = sorted([b[0]] + sorted(b[1:]) for b in blocks if b[0].startswith(PREFIXES))
+    out = [l for b in keep for l in b]
+    open(sys.argv[3], 'w', encoding='utf-8').write(''.join(l + '\n' for l in out))
+    print(f'core-entries={len(keep)} core-lines={len(out)}')
+    sys.exit(0 if out else 1)
+if mode == 'services':
+    orig = {}
+    for line in open(sys.argv[3], encoding='utf-8', errors='replace'):
+        m = re.match(r'^([A-Za-z0-9_.$]+) -> ([A-Za-z0-9_.$]+):$', line.rstrip('\r\n'))
+        if m: orig[m.group(2)] = m.group(1)
+    tr = lambda n: orig.get(n, n + ' (unmapped)')
+    entries, pairs = [], []
+    with zipfile.ZipFile(sys.argv[2]) as z:
+        for name in sorted(z.namelist()):
+            if not name.startswith('META-INF/services/') or name.endswith('/'):
+                continue
+            iface = name[len('META-INF/services/'):]
+            impls = [l.split('#')[0].strip() for l in z.read(name).decode('utf-8', 'replace').splitlines()]
+            impls = sorted(tr(i) for i in impls if i)
+            entries.append(f'ENTRY {iface} = {tr(iface)}')
+            pairs.append(f'PAIR {tr(iface)} -> ' + ', '.join(impls))
+    open(sys.argv[4], 'w', encoding='utf-8').write(''.join(l + '\n' for l in sorted(pairs) + entries))
+    print(f'services={len(entries)} unmapped={sum(l.count("(unmapped)") for l in pairs)}')
+    sys.exit(0 if entries else 1)
+if mode == 'section':
+    d = read_norm(sys.argv[2])
+    if sys.argv[3] not in d:
+        sys.exit(f'no section {sys.argv[3]}')
+    body = '\n'.join(d[sys.argv[3]]).strip('\n')
+    open(sys.argv[4], 'w', encoding='utf-8', newline='\n').write(body + '\n')   # LF on every OS (Amendment A2, B-8)
+    print(f'section {sys.argv[3]} lines={body.count(chr(10)) + 1}')
+    sys.exit(0)
+sys.exit('unknown mode')
+```
+
 `U071ProviderProbeTest.java.txt` (copied to `$PROBE` only under 4.P):
 ```java
 package com.zegoggles.smssync.mail.ssl;
@@ -902,16 +1540,36 @@ public class U071ProviderProbeTest {
 }
 ```
 
-**Gradle calls.** Foreground, tool timeout 600000 ms, output to the work folder, exit appended. Never two at once.
-- **G(k)** gate: `rm -rf $R; ./gradlew --console=plain --warning-mode all clean :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestReport :app:jacocoTestCoverageVerification :app:assembleRelease > $WORK/logs/I<k>-gates.log 2>&1; echo "exit=$?" >> $WORK/logs/I<k>-gates.log`
+**Gradle calls.** Foreground, tool timeout 600000 ms, output to the work folder, exit appended, run by 4.L. Never two
+at once. `NC='--no-build-cache --no-configuration-cache'` (depth check; both caches are off at project level, L23, and
+these flags keep a user-wide setting from changing that).
+- **G(k)** gate: `rm -rf $R; ./gradlew --console=plain $NC --warning-mode all clean :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestReport :app:jacocoTestCoverageVerification :app:assembleRelease > $WORK/logs/I<k>-gates.log 2>&1; echo "exit=$?" >> $WORK/logs/I<k>-gates.log`
   (the four gates plus `clean` and the report task that writes the XML; `--warning-mode all` is AC-18 (c)'s record).
-- **WP(k)** writer pass, the design's exact command (D5 step 3): `./gradlew --write-verification-metadata sha256 --continue clean help test lint jacocoTestReport assembleRelease :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification > $WORK/logs/I<k>-writer.log 2>&1; echo "exit=$?" >> $WORK/logs/I<k>-writer.log`
-- **ENF(k)** enforced re-run: `./gradlew --console=plain :app:assembleDebug > $WORK/logs/I<k>-enforced.log 2>&1; echo "exit=$?" >> …`
-- **KC(k)** forced full Kotlin compile (U-067 form, no init script): `./gradlew --console=plain :app:compileDebugKotlin --rerun --no-build-cache > $WORK/logs/I<k>-kotlinc.log 2>&1; echo "exit=$?" >> …`
-- **TR(name, fqcn…)** targeted: `rm -rf $R; ./gradlew --console=plain :app:testDebugUnitTest --tests "<fqcn>" [--tests …] > $WORK/logs/<name>.log 2>&1; echo "exit=$?" >> …`
-- **L(k)** lint: `./gradlew --console=plain :app:lintDebug > $WORK/logs/I<k>-lint.log 2>&1; echo "exit=$?" >> …` (expected `exit=1`, pre-existing, D17)
-- **DEP(k)**: `./gradlew --console=plain :app:dependencies > $WORK/logs/I<k>-deps.log 2>&1; echo "exit=$?" >> …`
+- **WP(k)** writer pass, the design's exact command (D5 step 3; no added flag, row D94): `./gradlew --write-verification-metadata sha256 --continue clean help test lint jacocoTestReport assembleRelease :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification > $WORK/logs/I<k>-writer.log 2>&1; echo "exit=$?" >> $WORK/logs/I<k>-writer.log`
+- **ENF(k)** enforced re-run: `./gradlew --console=plain $NC :app:assembleDebug > $WORK/logs/I<k>-enforced.log 2>&1; echo "exit=$?" >> …`
+- **UTD(k)** up-to-date check (I2, I5; depth check): right after EV-B(k), `./gradlew --console=plain $NC :app:assembleDebug > $WORK/logs/I<k>-uptodate.log 2>&1; echo "exit=$?" >> …` (no `clean`), sanitised with `'^> Task :app:(kspDebugKotlin|compileDebugKotlin|compileDebugJavaWithJavac|hiltJavaCompileDebug)|^BUILD |exit='` to `$E/I<k>-uptodate.txt`. Expected `exit=0` and those four tasks `UP-TO-DATE`; a task that re-runs is recorded as debt (KSP2 recompilation on Windows), not a stop
+- **KC(k)** forced full Kotlin compile (U-067 form, no init script): `./gradlew --console=plain $NC :app:compileDebugKotlin --rerun > $WORK/logs/I<k>-kotlinc.log 2>&1; echo "exit=$?" >> …`
+- **TR(name, fqcn…)** targeted: `rm -rf $R; ./gradlew --console=plain $NC :app:testDebugUnitTest --tests "<fqcn>" [--tests …] > $WORK/logs/<name>.log 2>&1; echo "exit=$?" >> …`
+- **L(k)** lint: `./gradlew --console=plain $NC :app:lintDebug > $WORK/logs/I<k>-lint.log 2>&1; echo "exit=$?" >> …` (expected `exit=1`, pre-existing, D17)
+- **DEP(k)** (two runs, as U-060; plan-review O-3): `./gradlew --console=plain $NC :app:dependencies --configuration releaseRuntimeClasspath > $WORK/logs/I<k>-deps-release.log 2>&1; echo "exit=$?" >> …` and the same with `--configuration debugUnitTestRuntimeClasspath` into `$WORK/logs/I<k>-deps-test.log`; `deps_resolved.py` then reads `$WORK/logs/I<k>-deps-release.log` for `releaseRuntimeClasspath` and `…-deps-test.log` for `debugUnitTestRuntimeClasspath` (row D97)
 - **VER(name)**: `./gradlew --version > $WORK/logs/<name>.log 2>&1; echo "exit=$?" >> …`
+
+### 4.L Long runs and the 600000 ms tool limit (every Gradle call)
+
+WP takes about 12 to 16 minutes and G about 9 to 11 (more on the first run of a new Gradle version, whose caches are
+cold), above the tool's 10-minute foreground limit. On this machine the harness then moves the run to the background
+and notifies when it ends (every long Gradle run of U-066 to U-069 went that way). The procedure:
+1. Start the command in the foreground with the 600000 ms timeout. The command itself writes the log and appends
+   `exit=$?`, so the result never depends on the tool's own output.
+2. If the harness reports that the run continues in the background: wait for its completion notice; start no other
+   command meanwhile (no Gradle, no git, no edit); never poll the log or the process list.
+3. After the notice (or the foreground end): read the last line of the log (`tail -n 1 $WORK/logs/<name>.log`) — it
+   must be `exit=<n>` — and proceed by that value as the step says.
+4. **A cut-off run**: the log has no `exit=` line, or the harness reports that the command was terminated rather than
+   moved to the background. Row D93: record it, check that no Gradle JVM is left (`"$JDKBIN/jps.exe" -l | grep -iE
+   'gradle|KotlinCompileDaemon'`), stop and report. The run is not repeated in the same session. In a later session
+   4.R allows one re-run of that step from its start (a writer pass from VMP step 1); a second cut-off of the same step
+   stops the story for the orchestrator.
 
 **Filters for `sanitize.py`** (`python -I -X utf8 $T/sanitize.py <in> <out> --grep '<regex>'`):
 - gate **G**: `'^(BUILD |FAILURE|> Task :app:|exit=)|tests completed|FAILED$'`
@@ -938,7 +1596,7 @@ python -I -X utf8 $TL/jacoco_class_lines.py $JX > $E/I<k>-jacoco-classes.txt
 python -I -X utf8 $TL/cov_floors.py app/build.gradle $JX > $E/I<k>-coverage.txt; echo "cov-floors-exit=$?"
 ```
 
-**EV-B(k)** (U-068 recipe plus the KSP list):
+**EV-B(k)** (U-068 recipe plus the KSP list, the R8 files of 2.10 and the packaged backup descriptor):
 ```bash
 find app/build/generated/ksp -type f | sed 's#.*/generated/ksp/##' | LC_ALL=C sort > $E/I<k>-ksp-files.txt
 MD=app/build/intermediates/merged_manifests
@@ -960,14 +1618,37 @@ for a in debug/app-debug release/app-release-unsigned; do unzip -Z1 app/build/ou
            "app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes/com/zegoggles/smssync/service/BackupWorker.class" \
            "k9mail-vendored/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/fsck/k9/mail/Address.class"; do
     echo "$c $("$JDKBIN/javap.exe" -v "$c" | grep 'major version')"; done } > $E/I<k>-javap.txt
+grep -oE '^([A-Za-z0-9_.$]+) -> \1:' $MAP/mapping.txt | sed 's/ -> .*//' | LC_ALL=C sort > $E/I<k>-kept-names-all.txt
+python -I -X utf8 $TL/r8_check.py normalize $E/I<k>-configuration.txt $E/I<k>-configuration-norm.txt
+python -I -X utf8 $TL/r8_check.py core $MAP/seeds.txt $E/I<k>-seeds-core.txt
+python -I -X utf8 $TL/r8_check.py core $MAP/usage.txt $E/I<k>-usage-core.txt
+{ ls $MAP
+  python -I -X utf8 $TL/r8_check.py rules $E/I<k>-configuration-norm.txt app/proguard-rules.pro; echo "rules-exit=$?"
+  python -I -X utf8 $TL/r8_check.py closure $E/I<k>-manifest-release.txt $MAP/mapping.txt; echo "closure-exit=$?"
+  grep -E '^# (compiler|compiler_version|min_api):' $MAP/mapping.txt
+  RA=app/build/outputs/apk/release/app-release-unsigned.apk
+  for n in service.BackupWorker service.RestoreWorker worker.BackupTriggerWorker; do
+    echo "dex-string com.zegoggles.smssync.$n=$(unzip -p $RA 'classes*.dex' | grep -a -o "com\.zegoggles\.smssync\.${n//./\\.}" | wc -l)"; done
+  unzip -p $RA classes.dex > $WORK/I<k>-classes.dex; "$SDK/build-tools/36.0.0/dexdump" -f $WORK/I<k>-classes.dex | grep -E '^(magic|class_defs_size|method_ids_size|field_ids_size)'
+  for p in assets/dexopt/baseline.prof assets/dexopt/baseline.profm; do echo "$p sha256=$(unzip -p $RA $p | sha256sum | cut -d' ' -f1)"; done
+} > $E/I<k>-r8.txt
+python -I -X utf8 $TL/r8_check.py services app/build/outputs/apk/release/app-release-unsigned.apk $MAP/mapping.txt $E/I<k>-services.txt   # Amendment A1 (B-7, contract O-13)
+{ for a in debug/app-debug release/app-release-unsigned; do f=app/build/outputs/apk/$a.apk
+    p=$("$AAPT2" dump resources $f | grep -A1 'xml/backup_descriptor$' | grep -o '(file) [^ ]*' | cut -d' ' -f2)
+    echo "== $a (descriptor entry ${p##*/})"; "$AAPT2" dump xmltree --file "$p" $f | sed 's/^ *//'; done
+} > $E/I<k>-backup-descriptor.txt
 ```
-Expected: `so=0` for both APKs; nine `self-mapped …=1`; `major version: 61`, `61`, `52`. If AGP 9.5.2 moves a class
-directory (row D55), the javap path follows and the log says so.
+Expected: `so=0` for both APKs; nine `self-mapped …=1`; `major version: 61`, `61`, `52`; in `I<k>-r8.txt` the folder
+lists `configuration.txt`, `mapping.txt`, `seeds.txt`, `usage.txt` (row D98 if `seeds.txt` or `usage.txt` is missing),
+every `rules` line `OK` with `rules-exit=0`, `not-identity=0` with `closure-exit=0` (each `NOT-IN-MAPPING` line
+recorded), `# min_api: 24`, the record-only dex, `dexdump` and baseline-profile lines (2.10); in `I<k>-backup-descriptor.txt` per
+APK two `E: exclude`, two `domain="sharedpref"`, one `path="credentials.xml"`, one `path="pinned_certs.xml"` (L27). If
+AGP 9.5.2 moves a class directory (row D55), the javap path follows and the log says so.
 
 **CMP(k)** (k ≥ 1, one call, into `$E/I<k>-compare.txt`; `norm` is U-061's packaged-manifest normaliser):
 ```bash
 norm() { sed -E 's/ ?\(line=[0-9]+\)//g; s/@0x7f[0-9a-f]{6}/@0x7fRESID/g' "$1"; }
-{ for f in merged-debug.xml merged-release.xml kept-names.txt configuration.txt apk-entries-debug.txt apk-entries-release.txt javap.txt ksp-files.txt cases.txt jacoco-inventory.json jacoco-classes.txt; do
+{ for f in merged-debug.xml merged-release.xml kept-names.txt kept-names-all.txt seeds-core.txt usage-core.txt apk-entries-debug.txt apk-entries-release.txt javap.txt ksp-files.txt cases.txt jacoco-inventory.json jacoco-classes.txt; do
     for b in I0 <p>; do git -c core.autocrlf=false diff --no-index --quiet -- $E/$b-$f $E/I<k>-$f; r=$?; echo "$f vs $b exit=$r"
       [ $r -ne 0 ] && git -c core.autocrlf=false diff --no-index --numstat -- $E/$b-$f $E/I<k>-$f | cut -f1,2; done; done
   for a in debug release; do norm $E/I<k>-manifest-$a.txt > $WORK/n-I<k>-$a.txt
@@ -978,13 +1659,29 @@ norm() { sed -E 's/ ?\(line=[0-9]+\)//g; s/@0x7f[0-9a-f]{6}/@0x7fRESID/g' "$1"; 
   for a in debug release; do F=$E/I<k>-manifest-$a.txt
     echo "$a fgs=$(grep -A4 'android:name(0x01010003)="androidx.work.impl.foreground.SystemForegroundService"' $F | grep -c 'foregroundServiceType(0x01010599)=0x00000001') init=$(grep -c InitializationProvider $F) bbr-exported=$(grep -A2 'android:name(0x01010003)="com.zegoggles.smssync.receiver.BackupBroadcastReceiver"' $F | grep -c 'exported(0x01010010)=true') bbr-action=$(grep -A5 'android:name(0x01010003)="com.zegoggles.smssync.receiver.BackupBroadcastReceiver"' $F | grep -c '"com.zegoggles.smssync.BACKUP"') minsdk=$(grep -c 'minSdkVersion(0x0101020c)=24' $F) merged-minsdk=$(grep -c 'android:minSdkVersion="24"' $E/I<k>-merged-$a.xml)"; done
   grep -oE '(entries|so|dex)=[0-9]+' $E/I<k>-apk.txt | paste -sd' '; grep -c 'self-mapped .*=1$' $E/I<k>-apk.txt
+  echo "seeds-diff vs <p>:"; python -I -X utf8 $TL/r8_check.py seeds-diff $E/<p>-seeds-core.txt $E/I<k>-seeds-core.txt I<k> --prev-ksp=$E/<p>-ksp-files.txt app/build/generated/ksp/release/java app/build/generated/hilt/component_sources/release; echo "seeds-diff-exit=$?"
+  for b in I0 <p> I<k>; do grep '^PAIR ' $E/$b-services.txt > $WORK/svc-$b.txt; done
+  for b in I0 <p>; do git -c core.autocrlf=false diff --no-index --quiet -- $WORK/svc-$b.txt $WORK/svc-I<k>.txt; echo "services-pairs vs $b exit=$?"; done
+  grep '^ENTRY ' $E/I<k>-services.txt
+  for b in <p> I<k>; do echo "$b $(grep -E '^manifest-classes-in-mapping=' $E/$b-r8.txt) $(grep -E '^# min_api:' $E/$b-r8.txt)"; done
+  for b in <p> I0; do echo "configuration-norm vs $b:"; python -I -X utf8 $TL/r8_check.py compare $E/$b-configuration-norm.txt $E/I<k>-configuration-norm.txt | grep -v '^EQUAL'; done
+  F=$E/I<k>-backup-descriptor.txt; echo "backup exclude=$(grep -c 'E: exclude' $F) sharedpref=$(grep -c 'domain="sharedpref"' $F) credentials=$(grep -c 'path="credentials.xml"' $F) pinned=$(grep -c 'path="pinned_certs.xml"' $F)"
 } > $E/I<k>-compare.txt
 ```
-Expected (2.9): every `exit=0` except the cells 2.9 allows; the invariant line `fgs=1 init=0 bbr-exported=1
-bbr-action=1 minsdk=1 merged-minsdk=1` for both APKs; `so=0` twice; `9` self-mapped. For each `exit=1` the developer
-saves the full `git diff --no-index` into the work folder and writes each differing line, classified, into the log
-(sanitised). The `jacoco-inventory.json` and `jacoco-classes` comparisons may differ in `activity` covered counts
-(the known alternation, 2.6) without further investigation; any other difference in them is classified by 2.9.
+Expected (2.9, 2.10): every `exit=0` except the cells 2.9 allows; **the comparison against `<p>` decides; the one
+against I0 is recorded** and may differ only by differences already accepted at earlier increments (each listed in the
+log with its increment); the invariant line `fgs=1 init=0 bbr-exported=1 bbr-action=1 minsdk=1 merged-minsdk=1` for both
+APKs; `so=0` twice; `9` self-mapped; `configuration-norm vs <p>:` followed by `ALL EQUAL`, or only by the `CHANGED`
+section R8-5 allows at this increment; `seeds-diff` with `changed=0` and `seeds-diff-exit=0`, or at I4, I5, I6 every
+changed line `MATCH` (ruling 58: each copied into the log with its pattern, D42); `manifest-classes-in-mapping` of
+I<k> not below `<p>`'s and `# min_api: 24` on both lines; `services-pairs vs I0 exit=0` and `services-pairs vs <p> exit=0`
+at every increment, I3 included (the (interface, implementations) pairs in original names are equal; the `ENTRY` lines
+record the APK names and may change at I3 only, D101; a pair difference is D44/D101, a stop); `backup exclude=4 sharedpref=4 credentials=2 pinned=2` (two
+APKs; D100). For each
+`exit=1` the developer saves the full `git diff --no-index` into the work folder and writes each differing line,
+classified, into the log (sanitised). The `jacoco-inventory.json` and `jacoco-classes` comparisons may differ in
+`activity` covered counts (the known alternation, 2.6) without further investigation; any other difference in them is
+classified by 2.9. `usage-core` differences are classified (2.10 R8-3), the raw `configuration.txt` is not compared.
 
 **CK(k)** increment checks, one call into `$E/I<k>-checks.txt` (k = 1 … 14; the increment adds its own lines):
 ```bash
@@ -1011,8 +1708,13 @@ Stale entries are kept; nothing is hand-edited or regenerated wholesale; writer 
 1. `git diff --cached --quiet; echo "index-clean-exit=$?"` → `0` (row D86).
 2. `ls -- <the list of 4.9> > /dev/null; echo "files-exist-exit=$?"` → `0` (row D87).
 3. `python -I -X utf8 $TL/scan.py <every file of the list under $W>; echo "scan-exit=$?"` → `0`, output saved to `$WORK/logs/I<k>-scan.log` (row D88).
-4. `git add -- <the same list>` (every path written out or brace-expanded by bash to explicit paths; never `-A`, `.`, `-u` or a bare directory).
-5. `git diff --cached --name-only | LC_ALL=C sort > $WORK/logs/I<k>-staged.txt; printf '%s\n' <the same list> | LC_ALL=C sort > $WORK/logs/I<k>-list.txt; git -c core.autocrlf=false diff --no-index --quiet -- $WORK/logs/I<k>-list.txt $WORK/logs/I<k>-staged.txt; echo "staged-equal-exit=$?"` → `0`. For I1 also `git diff --cached --summary -- gradlew` → no `mode change` line.
+4. Before staging, the expected set (plan-review B-2): `git status --porcelain --untracked-files=all -- <the same list> | cut -c4- | LC_ALL=C sort > $WORK/logs/I<k>-expected.txt; printf '%s\n' <the same list> | LC_ALL=C sort > $WORK/logs/I<k>-list.txt; LC_ALL=C comm -23 $WORK/logs/I<k>-list.txt $WORK/logs/I<k>-expected.txt > $WORK/logs/I<k>-unchanged.txt`
+   (verified read-only: the porcelain form with `--untracked-files=all` lists an explicitly named untracked file and
+   omits an unchanged tracked one).
+   Every line of `I<k>-unchanged.txt` is a listed file equal to HEAD (for example `gradlew` at I1, row D99); each is
+   recorded in the log as "listed, unchanged, not staged", and the list's other files are the expected staged set.
+   Then `git add -- <the same list>` (every path written out or brace-expanded by bash to explicit paths; never `-A`, `.`, `-u` or a bare directory; an unchanged tracked file stages nothing).
+5. `git diff --cached --name-only | LC_ALL=C sort > $WORK/logs/I<k>-staged.txt; git -c core.autocrlf=false diff --no-index --quiet -- $WORK/logs/I<k>-expected.txt $WORK/logs/I<k>-staged.txt; echo "staged-equal-exit=$?"` → `0`. For I1 also `git diff --cached --summary -- gradlew gradlew.bat` → no `mode change` line.
 6. Message with the Write tool into `$WORK/msg-I<k>.txt`: the subject of 4.9, a blank line, two to four body lines (the change, the "must hold" result, "Plan: sdlc/artifacts/build/sprints/sprint-025/U-071/plan.md, S2-I<k>"), a blank line, and the attribution trailer the developer's environment prescribes. Then `git commit -F "$WORK/msg-I<k>.txt"`. Never `--amend`, `-a`, `--no-verify`, `push`, `rebase`, `reset`, `revert`.
 7. `git rev-parse HEAD` → recorded at the top of the next increment's log entry ("I<k> commit: <id>").
 
@@ -1034,24 +1736,39 @@ Expected lines: `sdk_int`, `providers`, `tls_provider`, `default_protocols`, `su
 
 ### 4.R Resume protocol (start of every developer session after the first)
 
-One call, into `$WORK/logs/resume-<timestamp>.log` (not evidence), before any other step:
+A new session has a new scratch folder. First `mkdir -p "$WORK/logs" "$WORK/pristine"` (plan-review O-2). What is
+lost with the old folder: raw logs, copies and commit messages of earlier sessions only; no later step reads them (CMP,
+the I5 `w:` comparison, the I12 inventory, the DEP comparisons and the I14 end proof read `$E/` files or `git show`).
+`$WORK/gradlew-start` and `$WORK/gradlew-block.txt` are needed only inside I1 and are recreated with
+`git show $START:gradlew > $WORK/gradlew-start; git show $START:gradlew | sed -n 117,127p > $WORK/gradlew-block.txt`.
+`LAST` is the last commit id the log names; when no `U-071 S2-` commit exists yet (a session that ended at I0),
+`LAST` is `START`, and the second command below then prints nothing, as expected (plan-review O-17). Then one call, into `$WORK/logs/resume-<timestamp>.log` (not evidence):
 ```bash
-git rev-parse HEAD; git log --oneline -3; git log --format='%h %s' --grep='^U-071 S2-' $START..HEAD
+git rev-parse HEAD; git log --format='%h %s' --grep='^U-071 S2-' $START..HEAD | head -1
+git log --format='%h %s' $LAST..HEAD; git log --format=%h $LAST..HEAD -- app k9mail-vendored build.gradle settings.gradle gradle gradle.properties gradlew gradlew.bat .github/workflows sdlc/artifacts/engagement/code-location.md $W/implementation-log.md $W/evidence; echo "foreign-on-paths-end"
 git status --porcelain -- app k9mail-vendored build.gradle settings.gradle gradle gradle.properties gradlew gradlew.bat .github/workflows sdlc/artifacts/engagement/code-location.md; echo "porcelain-end"
 git diff --quiet HEAD -- gradle/verification-metadata.xml; echo "vm-clean-exit=$?"
 grep -c 'LOCAL ADDITION' gradlew
 test -e $PROBE; echo "probe-present-exit=$?"
 grep -c '^### M-.* APPLYING' $E/mutation-log.md 2>/dev/null; grep -c '^- restored:' $E/mutation-log.md 2>/dev/null
-"$JDKBIN/jps.exe" -l | grep -i gradle; echo "jps-gradle-end"
+tail -n 1 $E/../implementation-log.md
+"$JDKBIN/jps.exe" -l | grep -iE 'gradle|KotlinCompileDaemon'; echo "jps-end"
 ```
-Expected at a clean hand-over: HEAD = the last commit the log names; nothing before `porcelain-end`;
-`vm-clean-exit=0`; `2`; `probe-present-exit=1`; the two mutation counts equal (or the file absent); no Gradle JVM. Then
-VER(`resume-version`) shows the wrapper version the log expects and the Daemon JVM line. Any difference: stop and report
-(row D90), except the documented recoveries: a present probe is deleted (4.P); an `APPLYING` mutation without
-`restored` is recovered by 4.M's recovery note; an interrupted writer pass is never continued (VMP step 1 restores the
-file and the pass is run again from the start); an interrupted wrapper step restores `gradle/wrapper`, `gradlew` and
-`gradlew.bat` from HEAD (`git restore --source=HEAD --worktree -- gradle/wrapper gradlew gradlew.bat`) and restarts
-I1 at step 2.
+Expected at a clean hand-over (plan-review O-1): the newest `U-071 S2-` commit equals `LAST`; the commits after `LAST`
+are recorded (orchestrator documents are normal and not a reason to stop) and nothing precedes `foreign-on-paths-end`;
+nothing before `porcelain-end`; `vm-clean-exit=0`; `2`; `probe-present-exit=1`; the two mutation counts equal (or the
+file absent); the log's last line names the next step; no Gradle JVM (a `KotlinCompileDaemon` line is recorded, not a
+stop). Then VER(`resume-version`) shows the wrapper version the log expects and the Daemon JVM line. Any difference:
+stop and report (row D90), except the documented recoveries:
+- a present probe is deleted (4.P);
+- an `APPLYING` mutation without `restored` is recovered by 4.M's recovery note;
+- **a cut-off run**, found through the D93 entry in `implementation-log.md` (the raw log, which had no `exit=` line,
+  went with the old scratch folder; 4.L): a writer pass is never continued — VMP step 1 restores the
+  file and the pass runs once more from the start; a gate or any other step runs once more from its start; a second
+  cut-off of the same step is D93 (stop for the orchestrator);
+- an interrupted wrapper step restores the wrapper files from HEAD — `git restore --source=HEAD --worktree -- gradle/wrapper gradlew.bat`
+  and `git -c core.autocrlf=false restore --source=HEAD --worktree -- gradlew` (LF, as the generator writes it; plan-review
+  O-6) — recreates the two `$WORK` copies above and restarts I1 at step 2.
 
 ### I0 — Baseline at the start commit (no tracked file changes; AC-1 to AC-4; SC-1 to SC-9)
 
@@ -1068,24 +1785,37 @@ I1 at step 2.
    git ls-files -s -- gradlew
    grep -n '^status' sdlc/artifacts/build/sprints/sprint-023/U-067-*.md sdlc/artifacts/build/sprints/sprint-024/U-068-*.md sdlc/artifacts/build/sprints/sprint-024/U-069-*.md sdlc/artifacts/build/sprints/sprint-024/U-070-*.md sdlc/artifacts/build/sprints/sprint-025/U-074-*.md sdlc/artifacts/build/change-records/CR-015-*.md sdlc/artifacts/build/change-records/CR-016-*.md
    git merge-base --is-ancestor c12a2788 HEAD; echo "u067-fix-ancestor-exit=$?"
-   git log --format='%h %s' --grep='^U-068 S1-' --grep='^U-069' --grep='^U-070' --grep='^U-074' $U068_START..HEAD
+   git log --format='%h %s' --grep='^U-068 S1-' --grep='^U-069' --grep='^U-070' --grep='^U-074' --grep="^$B29_ID" $U068_START..HEAD
+   grep -n '^status' "$B29_STORY" sdlc/artifacts/stories/BUG-029-*.md
+   git diff --stat $PLAN_HEAD HEAD -- app/src/main; echo "main-drift-end"
    git diff --stat $U068_START HEAD -- gradle/verification-metadata.xml; echo "vm-since-u068-start-end"
    git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
    git grep -nE '^\s*@Ignore(\s|\(|$)' HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt'
    grep -v '^#' gradle/gradle-daemon-jvm.properties
-   "$JDKBIN/jps.exe" -l | grep -i gradle; echo "jps-gradle-end"
+   "$JDKBIN/jps.exe" -l | grep -iE 'gradle|KotlinCompileDaemon'; echo "jps-end"
    test -s $SUPP; echo "supplement-exit=$?"
+   for f in gradle.properties "$HOME/.gradle/gradle.properties"; do c=0; [ -f "$f" ] && c=$(grep -cE '^[[:space:]]*org\.gradle\.(caching|configuration-cache)[[:space:]]*=[[:space:]]*true' "$f"); echo "caches-on=$c"; done
+   echo "gradle-opts-caches=$(printf '%s' "$GRADLE_OPTS $JAVA_OPTS" | grep -cE 'org\.gradle\.(caching|configuration-cache)=true')"
    ```
-   Expected: `plan-head-ancestor-exit=0`; the commits after PLAN_HEAD are U-068 I7, U-069's, U-070's, U-074's and
-   orchestrator documents; before `build-drift-end` exactly `2	2	app/build.gradle`; app hunks `@@ -579 +579 @@` and
+   `B29_ID=U-075` and `B29_STORY=sdlc/artifacts/build/sprints/sprint-024/U-075-automatic-backup-runs-when-the-app-is-off-screen.md`
+   (the BUG-029 fix story; plan-review O-23). In the status lines `U-075`'s story file must read `status: done`;
+   the bug file `BUG-029-*.md` may still read `ready` (a bug closes after its fix story) and is recorded, not a
+   condition (contract-verification note on this line).
+   Expected: `plan-head-ancestor-exit=0`; the commits after PLAN_HEAD are U-068 I7, U-069's, U-070's, U-074's, the
+   U-075's (the BUG-029 fix) and orchestrator documents; before `main-drift-end` the files those stories changed (expected:
+   U-069's `worker/BackupTriggerWorker.kt` only (its commit `d7a69974`, plan-review O-24), U-070's `service`/`preferences`/`mail` files, U-074's
+   worker files and U-075's `BackupWorker.kt`, `RestoreWorker.kt` and new `service/WorkerForeground.kt`), recorded with each file's story (contract-verification O-12; a file no listed story
+   names is D5); before `build-drift-end` exactly `2	2	app/build.gradle`; app hunks `@@ -579 +579 @@` and
    `@@ -586 +586 @@`; code-location hunk `@@ -28 +28 @@` (U-068 E7.3); nothing before `porcelain-end`; each line's two
    hashes equal; `100755` for `gradlew`; every story `status: done`, both CRs `status: implemented`;
    `u067-fix-ancestor-exit=0`; nothing before `vm-since-u068-start-end` (SC-2); the count `C0` as printed; the `@Ignore`
-   lines (2 expected: `AppTest.java:13`, `AuthPreferencesTest.java:1079`); `toolchainVersion=25`; no Gradle JVM;
-   `supplement-exit=0`. Record `START=$(git rev-parse HEAD)`, `C0`, the skipped baseline (from step 6) and the
+   lines (2 expected: `AppTest.java:13`, `AuthPreferencesTest.java:1079`); `toolchainVersion=25`; no Gradle JVM (a
+   `KotlinCompileDaemon` line is recorded by class name only, not a stop); `supplement-exit=0`; `caches-on=0` twice and
+   `gradle-opts-caches=0` (the file names are not printed; a missing user-wide file prints `0`; row D94).
+   Record `START=$(git rev-parse HEAD)`, `C0`, the skipped baseline (from step 6) and the
    commit ids of U-067 (`c12a2788`), U-068, U-069, U-070 and U-074 with the tests each added (from their logs) at the
    top of the log (SC-1, SC-9). **Rows:** D1 to D8.
-2. `mkdir -p "$WORK/logs" "$WORK/pristine" "$M" "$TL"`; write the eight tools of 4.0 with the Write tool into `$TL/`;
+2. `mkdir -p "$WORK/logs" "$WORK/pristine" "$M" "$TL"`; write the nine tools of 4.0 with the Write tool into `$TL/`;
    copy `<start>`'s block: `git show HEAD:gradlew | sed -n 117,127p > $WORK/gradlew-block.txt; sha256sum < $WORK/gradlew-block.txt`
    → `45364f3d…ea760` (L4); `git show HEAD:gradlew > $WORK/gradlew-start`.
 3. `python -I -X utf8 $TL/oldtext_check.py > $WORK/logs/I0-oldtext.log; echo "exit=$?" >> $WORK/logs/I0-oldtext.log`,
@@ -1113,14 +1843,19 @@ I1 at step 2.
    `git show` output. Expected `803`, `1460`, `3` (L8; re-counted). **Row:** D11.
 6. VER(`I0-gradle-version`) → `$E/I0-gradle-version.txt` (Gradle 9.5.1; "Daemon JVM: … (from
    gradle/gradle-daemon-jvm.properties)"). Then **G(0)**, EV-T(0), EV-B(0). Expected `exit=0`; `failures=0 errors=0`;
-   the skipped count recorded as "the start" (2 expected); `cov-floors-exit=0`; the I0 coverage table of 2.6 filled
-   from `I0-coverage.txt`. **Row:** D9.
+   the skipped count recorded as "the start" (2 expected); `cov-floors-exit=0` (with `worker` at `floor=0.90`, L17);
+   the I0 coverage table of 2.6 filled from `I0-coverage.txt`; in `I0-r8.txt` `rules-exit=0` and `closure-exit=0`, and
+   the folder listing (row D98); in `I0-backup-descriptor.txt` the L27 counts. Then, before any other Gradle run (the
+   next `rm -rf $R` deletes the XML), the **D7 baseline** (plan-review O-7) into `$E/I0-d7.txt` with I7 step 2's loop
+   run on `$WORK/logs/I0-gates.log` and `$R` (expected all `0`; a non-zero count is the "before" that I7 compares with),
+   and the **SC-2 merged-manifest check** (plan-review O-8): `grep -c 'android:minSdkVersion="24"' $E/I0-merged-debug.xml`
+   → `1`, appended to `$E/I0-greps.txt`. **Rows:** D9, D3.
 7. **L(0)**; sanitise with **LF** into `$E/I0-lint.txt`; `python -I -X utf8 $T68/lint_ids.py app/build/reports/lint-results-debug.xml > $WORK/logs/I0-lint-ids.log`,
    sanitised to `$E/I0-lint-ids.txt`; `grep -c '^ *<issue *$' app/lint-baseline.xml` and the "listed in the baseline
    file but not found" count into `$E/I0-lint-baseline-count.txt`. Expected `exit=1`, the rule-ID table (U-068 I6's
    33 errors expected, re-measured: AC-1 (h)'s "before" figure). **Row:** D10.
-8. **DEP(0)**; then `python -I -X utf8 $TL/deps_resolved.py $WORK/logs/I0-deps.log releaseRuntimeClasspath $WORK/I0-rel.txt $WORK/I0-rel-tree.txt`
-   and `… debugUnitTestRuntimeClasspath $WORK/I0-test.txt $WORK/I0-test-tree.txt`; sanitise `$WORK/I0-rel.txt` →
+8. **DEP(0)** (two runs); then `python -I -X utf8 $TL/deps_resolved.py $WORK/logs/I0-deps-release.log releaseRuntimeClasspath $WORK/I0-rel.txt $WORK/I0-rel-tree.txt`
+   and `python -I -X utf8 $TL/deps_resolved.py $WORK/logs/I0-deps-test.log debugUnitTestRuntimeClasspath $WORK/I0-test.txt $WORK/I0-test-tree.txt`; sanitise `$WORK/I0-rel.txt` →
    `$E/I0-deps-releaseRuntime.txt`, `$WORK/I0-rel-tree.txt` → `$E/I0-deps-releaseRuntime-tree.txt`, `$WORK/I0-test.txt`
    → `$E/I0-deps-debugUnitTestRuntime.txt`. Expected `MULTI 0` for both (AC-1 (k)).
 9. `ls "$HOME/.m2/repository/org/robolectric/android-all-instrumented" > $WORK/logs/I0-android-all.log 2>&1`, sanitised
@@ -1129,15 +1864,30 @@ I1 at step 2.
 11. **Records.** Create `$W/implementation-log.md`: header; SC-1 to SC-9 each with check and result; `<start>`, `C0`,
     the `@Ignore` lines, the skipped baseline; the **D1a table** (2.1, rows checked against `I0-oldtext.txt` and
     `$SUPP`: the "at `<start>`" column must equal the build files); the I0 results by reference to the evidence
-    files. Create `$E/compatibility-record.md` from 2.2 with the supplement's quotations. **Rows:** D13, D14.
+    files. Create `$E/compatibility-record.md` from 2.1 (the D1a resolution of (a) and (b)) and 2.2, with the
+    supplement's items in their labelled form. **Rows:** D13, D14.
 12. `git status --porcelain` lists only `?? $W/implementation-log.md` and `?? $E/` (AC-1, last sentence) besides the
     checkout's other untracked orchestrator files, which are left alone. I0 makes no commit; its evidence goes into the
     I1 commit.
+13. **Later cases of the NEW3 classes** (plan-review O-5): from `I0-cases.txt` list every case of
+    `BackupWorkerLoopCancellationTest`, `RestoreWorkerIntegrationTest` and `RestoreWorkerCheckpointTest` that is not one
+    of U-067's 31 (names in U-067's mutation log and plan test table); for each, record in the log the loop it drives —
+    `backupCursors` (site 1), `runImapRestoreLoop` via `doWork` (site 2) or `executeRestoreWithValues` (site 3), or none
+    — read from U-070's, U-074's and the BUG-029 fix story's implementation logs and from the fixture it calls (`cancellableImapRun` → site 2,
+    `CancellingInterceptor` on `executeRestoreWithValues` → site 3, the backup-loop fixture → site 1), never from its
+    name alone. I5 copies this table into `mutation-log.md` before M-1a; D64 applies to it.
 
 ### I1 — Gradle wrapper 9.9.2 (AC-6; AC-17 by Scope Concern 3)
 
 1. Pre-check: `git status --porcelain -- gradle gradlew gradlew.bat build.gradle app/build.gradle` empty; no Gradle JVM.
-2. **W1** (on 9.5.1): `./gradlew --console=plain wrapper --gradle-version 9.9.2 --distribution-type bin --gradle-distribution-sha256-sum <Q-1> > $WORK/logs/I1-wrapper-run1.log 2>&1; echo "exit=$?" >> $WORK/logs/I1-wrapper-run1.log`
+   Set `Q1=971fcd7150ca4ba04852c0b2ca0d2d0ab9468e14b03473eab19528809914c76b` and
+   `Q2=621008afc4f5d59357fcf06ffa644dd5aade5e091bdc363742710445f73cdaf8` (supplement Q-1, Q-2; fetched 2026-11-21 from
+   `https://downloads.gradle.org/distributions/gradle-9.9.2-bin.zip.sha256` and `…/gradle-9.9.2-wrapper.jar.sha256`,
+   the address `services.gradle.org/distributions/…` redirecting there; both equal to `https://gradle.org/release-checksums/`).
+   The log cites these URLs and the redirect note (plan-review O-10). Shell state does not persist, so every later call
+   of I1 that uses `$Q1` or `$Q2` sets them first (same two assignments). The download line of step 4 may name either
+   host.
+2. **W1** (on 9.5.1): `./gradlew --console=plain wrapper --gradle-version 9.9.2 --distribution-type bin --gradle-distribution-sha256-sum $Q1 > $WORK/logs/I1-wrapper-run1.log 2>&1; echo "exit=$?" >> $WORK/logs/I1-wrapper-run1.log`
    → `exit=0`; sanitised to `$E/I1-wrapper-run1.txt`. **Row:** D15.
 3. At once, before any other Gradle call: `grep -c 'LOCAL ADDITION' gradlew` → `0` (the block is lost, Risk 8);
    `cp gradlew $WORK/gradlew-gen1`; apply **E1** (3.1); `python -I -X utf8 $TL/gradlew_block.py $WORK/gradlew-start $WORK/gradlew-gen1 gradlew`
@@ -1146,21 +1896,27 @@ I1 at step 2.
 4. **VER(`I1-gradle-version-run1`)**: the first run on the new distribution downloads `gradle-9.9.2-bin.zip` through
    the wrapper's own path and verifies it against `distributionSha256Sum`. Expected `exit=0`, "Gradle 9.9.2", the
    Daemon JVM line, no "Unable to establish loopback connection", a `Downloading https://services.gradle.org/distributions/gradle-9.9.2-bin.zip`
-   line. Then `Z=$(ls "$HOME"/.gradle/wrapper/dists/gradle-9.9.2-bin/*/gradle-9.9.2-bin.zip | head -1); echo "dist-sha-match=$([ "$(sha256sum "$Z" | cut -d' ' -f1)" = "<Q-1>" ] && echo yes || echo no)"`
+   line (4.L applies: the download can take minutes). Then `Z=$(ls "$HOME"/.gradle/wrapper/dists/gradle-9.9.2-bin/*/gradle-9.9.2-bin.zip | head -1); echo "dist-sha-match=$([ "$(sha256sum "$Z" | cut -d' ' -f1)" = "$Q1" ] && echo yes || echo no)"`
    → `yes` (the log records that the downloaded file equals the pinned checksum; the path is not printed). Sanitised to
    `$E/I1-gradle-version-run1.txt`. **Rows:** D18 to D20.
 5. **W2** (on 9.9.2): the same command into `$WORK/logs/I1-wrapper-run2.log` → `exit=0`; `$E/I1-wrapper-run2.txt`. **Row:** D21.
 6. At once: `grep -c 'LOCAL ADDITION' gradlew` → `0`; `cp gradlew $WORK/gradlew-gen2`; apply **E1** again;
    `gradlew_block.py $WORK/gradlew-start $WORK/gradlew-gen2 gradlew` → all `OK`;
-   `git -c core.autocrlf=false diff --no-index --numstat -- $WORK/gradlew-gen2 gradlew | cut -f1,2` → `12	0`.
-   Record `sha256sum gradlew.bat` now (the generator's output; never opened afterwards). **Row:** D17.
+   `git -c core.autocrlf=false diff --no-index --numstat -- $WORK/gradlew-gen2 gradlew | cut -f1,2` → `12	0`;
+   `git diff --quiet HEAD -- gradlew; echo "gradlew-unchanged-exit=$?"` → `0` expected (plan-review B-2: the Unix
+   start-script template `unixStartScript.txt` is byte-identical in the cached 9.5.1 and 9.9.1 distributions, so after
+   E1 the file equals `<start>`'s; the log then says "the 9.9.2 generator writes the same `gradlew` as 9.5.1; block
+   present, file equal to `<start>`", and the block proof is AC-6 (b)'s evidence); `1` is also acceptable (template
+   changed; the block proof decides). Record `sha256sum gradlew.bat` now (the generator's output; never opened
+   afterwards; it is expected to change, the Windows template differs). **Rows:** D17, D99.
 7. **VER(`I1-gradle-version`)** at once, before any other step (AC-6 (f)): "Gradle 9.9.2", the Daemon JVM line citing
-   `gradle/gradle-daemon-jvm.properties`, no loopback error. **Row:** D19.
+   `gradle/gradle-daemon-jvm.properties`, no loopback error. Sanitised (whole file) to `$E/I1-gradle-version.txt`
+   (plan-review B-1). **Row:** D19.
 8. **Wrapper checks** (one call into `$E/I1-wrapper.txt`):
    ```bash
-   sha256sum gradle/wrapper/gradle-wrapper.jar | cut -d' ' -f1; echo "official=<Q-2>"
+   sha256sum gradle/wrapper/gradle-wrapper.jar | cut -d' ' -f1; echo "official=$Q2"
    git diff -U0 HEAD -- gradle/wrapper/gradle-wrapper.properties | grep -E '^(@@|[-+][^-+])'
-   grep -c '^distributionSha256Sum=<Q-1>$' gradle/wrapper/gradle-wrapper.properties; grep -c '^validateDistributionUrl=true$' gradle/wrapper/gradle-wrapper.properties
+   grep -c "^distributionSha256Sum=$Q1\$" gradle/wrapper/gradle-wrapper.properties; grep -c '^validateDistributionUrl=true$' gradle/wrapper/gradle-wrapper.properties
    git diff --numstat HEAD -- gradlew gradlew.bat gradle/wrapper/gradle-wrapper.jar
    sha256sum gradlew.bat
    python -I -X utf8 $TL/gradlew_block.py $WORK/gradlew-start $WORK/gradlew-gen2 gradlew
@@ -1170,7 +1926,7 @@ I1 at step 2.
    Expected: the jar SHA equals Q-2; the properties hunk `@@ -3,2 +3,2 @@` with the old and new `:3` and `:4` lines
    (`gradle-9.9.2-bin.zip`) and nothing else if the 9.9.2 generator keeps L6's keys and order (not derivable here
    without running it), otherwise each further generated line listed (row D23); `1` and `1`; the `gradlew` numstat
-   recorded (template changes plus `12` block lines relative to the template; the block proof is the arbiter); the
+   empty if the 9.9.2 template is unchanged (step 6), otherwise template changes only (the block proof is the arbiter); the
    `gradlew.bat` SHA equal to step 6's; all `OK`; nothing before `daemon-criteria-end`; `java-home-set-exit=1`.
    **Rows:** D22 to D24.
 9. **G(1)**, EV-T(1), EV-B(1), CMP(1), CK(1). AGP is still 9.0.1 (C2: Gradle 9.9 tests AGP 9.0). Expected `exit=0` and
@@ -1181,8 +1937,9 @@ I1 at step 2.
 
 ### I2 — KSP 2.3.14 on Kotlin 2.3.21 (AC-7; G3)
 
-1. CK pre-check: the build files equal HEAD. Apply **E2**. VMP(2), G(2), EV-T(2), EV-B(2), CMP(2), CK(2).
-2. Expected: `build.gradle` numstat `1	1`; Kotlin lines unchanged; `ksp-files.txt vs I0 exit=0` (G3); every other CMP cell `=`.
+1. CK pre-check: the build files equal HEAD. Apply **E2**. VMP(2), G(2), EV-T(2), EV-B(2), UTD(2), CMP(2), CK(2).
+2. Expected: `build.gradle` numstat `1	1`; Kotlin lines unchanged; `ksp-files.txt vs I0 exit=0` (G3); every other CMP cell
+   `=`; `I2-uptodate.txt` with the four tasks `UP-TO-DATE` (a re-run task is debt, recorded).
    **Rows:** D54 (the pre-specified reorder), D27 to D53. **Must hold:** KSP tasks pass and the KSP list equals I0.
 3. Log entry; CM(2). **Reorder case** (row D54): no commit; `git restore --source=HEAD --worktree -- build.gradle gradle/verification-metadata.xml`;
    the failing error verbatim into `$E/I2-moved.txt` (sanitised) and the log ("I2 moved to I5"); E2 is applied in I5.
@@ -1197,9 +1954,13 @@ I1 at step 2.
 3. **L(3)**; `$E/I3-lint.txt`, `$E/I3-lint-ids.txt`; compare with I0: `git -c core.autocrlf=false diff --no-index -- $E/I0-lint-ids.txt $E/I3-lint-ids.txt`
    lines into the log, each new rule ID named (AC-8 (g), AC-18 (e)).
 4. Every AGP-originated line of `I3-warnings.txt` is listed in the log as debt (AC-8 (f)).
-   **Rows:** D51, D55 to D57, D27 to D53 (F1 by D35). **Must hold:** gates green; class roots non-empty after `clean`;
-   manifests and the R8 set equal I0; `receiver` above 0.50; every package at or above its floor.
-5. Log entry; CM(3).
+5. Every I3 difference in CMP (APK entries, `t` per package, the `agp-default` R8 section, lint rule IDs) is classified
+   in the log against Q-13 to Q-17's behaviour-change and default-value entries, entry by entry; a difference no entry
+   explains stops (D44). The defaults the build sets explicitly cannot move (2.8).
+   **Rows:** D51, D55 to D57, D27 to D53 (F1 by D35), D42, D43. **Must hold:** gates green; class roots non-empty after
+   `clean`; manifests equal `<p>`; R8-1 to R8-4 hold and only the `agp-default` section changed (2.10, ruling SC-P1);
+   `receiver` above 0.50; every package at or above its floor.
+6. Log entry; CM(3).
 
 ### I4 — Hilt 2.60.1, all five coordinates (AC-9; G4)
 
@@ -1215,22 +1976,27 @@ I1 at step 2.
    `1` and `4`); `androidx.hilt` lines unchanged; the KSP list difference against I0, each line explained (Hilt
    2.60.1's generated names) or none; `hiltJavaCompileDebug` and `transformDebugClassesWithAsm` present in
    `I4-gates.txt` without `FAILED`; the `worker` line of `I4-coverage.txt`.
-   **Rows:** D59, D60, D31, D27 to D53. **Must hold:** G4 (Hilt tasks, ASM transform, Hilt tests, R8 C-2) green; five
-   identical versions; KSP differences explained.
+   **Rows:** D59, D60, D31, D27 to D53, D42, D43. **Must hold:** G4 (Hilt tasks, ASM transform, Hilt tests) green; R8-1
+   to R8-4 hold and only `lib:hilt-android/proguard.txt` changed, if anything (2.10, ruling SC-P1); five identical
+   versions; KSP differences explained.
 5. Log entry; CM(4).
 
 ### I5 — Kotlin 2.4.21 (AC-10; F-1 stop rule; Risk 9; U-067's six mutations)
 
-1. Apply **E5.1**, **E5.2** (and **E2** if I2 moved). VMP(5), G(5), EV-T(5), EV-B(5), CMP(5), CK(5).
+1. Apply **E5.1**, **E5.2** (and **E2** if I2 moved). VMP(5), G(5), EV-T(5), EV-B(5), UTD(5), CMP(5), CK(5).
+   `I5-uptodate.txt` as at I2 (the first check if I2 moved).
 2. **KC(5)** → `$E/I5-kotlinc.txt`, `$E/I5-kotlinc-summary.txt` (as I4). Compare the `w:` lines: `grep '^w: ' $E/I4-kotlinc.txt | sed 's#^w: file:///<repo>/##' | LC_ALL=C sort > $WORK/w4.txt`
    (likewise `w5.txt`), `git -c core.autocrlf=false diff --no-index -- $WORK/w4.txt $WORK/w5.txt` → every `+` line is
    a new warning, recorded as debt in the log (AC-10 (b)).
 3. **F-1 stop rule** (AC-10 (c)) into CK: `git diff --stat HEAD -- app/src/test; echo "test-diff-end"` (nothing);
-   `grep -E '^w: .*(BackupWorker|RestoreWorker)\.kt' $E/I5-kotlinc.txt | grep -c 'coroutineContext'` → `0`; and in
+   `grep -E '^w: .*(BackupWorker|RestoreWorker)\.kt' $E/I5-kotlinc.txt | grep -c 'coroutineContext'` → `0` (the story's
+   form), and the same with `(BackupWorker|RestoreWorker|WorkerForeground)\.kt` → `0` (U-075's helper file,
+   contract-verification O-14); and in
    `I5-cases.txt` every case of the NEW3 classes `PASS`. **Row:** D61.
 4. **DEP(5)** → `$E/I5-deps-releaseRuntime.txt`, `…-tree.txt`; compared with I4: expected changes only
    `org.jetbrains.kotlin:kotlin-stdlib*` (2.4.21) and Kotlin artifacts; S4-owned lines equal (row D31).
-5. **Mutations** by 4.M (M-1a to M-3b) on this uncommitted tree. **Rows:** D62 to D64.
+5. **Mutations** by 4.M (M-1a to M-3b) on this uncommitted tree, after copying I0 step 13's later-case table into the
+   header of `mutation-log.md`. **Rows:** D62 to D64.
 6. Risk 9 and fallbacks: rows D58, D65 (F2, F4). KSP list equals I4's (AC-10 (g), SC-P3). **Must hold:** gates green;
    F-1 rule; six mutations detected by the same named tests; KSP list as I4.
 7. Log entry; CM(5).
@@ -1254,26 +2020,28 @@ I1 at step 2.
    for p in 'InaccessibleObjectException' 'does not "opens"' 'IllegalAccessError' 'module java.base' 'A1-G1' 'A1-G3'; do
      echo "$p log=$(grep -c -F "$p" $WORK/logs/I7-gates.log) xml=$(grep -o -F "$p" $R/TEST-*.xml | wc -l)"; done
    ```
-   Expected all `0`. Zero hits → apply **E7.2** (main path; numstat then `4 4` with E7.1). Any hit → row D69 (E7.3,
+   Expected all `0`, and in any case each count compared with `I0-d7.txt` (plan-review O-7): only a count above I0's
+   is a D7 hit. Zero new hits → apply **E7.2** (main path; numstat then `4 4` with E7.1). Any new hit → row D69 (E7.3,
    the exact flags the error names, then G(7) again with EV-T/EV-B/CMP re-run).
 3. **A14** (AC-12 (b)): `grep -n "@ConscryptMode(OFF)\|@LooperMode(LEGACY)" $TS/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java`
    (two lines) and every case of that class `PASS` (its `@Before` guards ran). **Row:** D68.
 4. **TLS classes** (AC-12 (c), (d)): in `I7-cases.txt` every case of `DefaultTrustedSocketFactoryHandshakeTest`,
    `…HardeningTest`, `…JdkProviderTest`, `…SniTest` and `PinnedCertificateSocketFactory*Test` `PASS`, and
    `git diff --stat HEAD -- app/src/test` empty. **Row:** D72.
-5. **A21** (AC-12 (e)) into `$E/I7-monitor.txt`: from DEP(7)'s test classpath the resolved `androidx.test:monitor`
+5. **DEP(7)** (two runs) → `$E/I7-deps-releaseRuntime.txt` (equal to I6: a test-only bump) and
+   `$E/I7-deps-debugUnitTestRuntime.txt` (changes recorded: Robolectric, `androidx.test`, Conscrypt, BouncyCastle, ASM;
+   any `androidx.*` S4 library version moved on the test classpath is recorded and handed over, 2.8).
+6. **A21** (AC-12 (e)) into `$E/I7-monitor.txt`: from step 5's test classpath the resolved `androidx.test:monitor`
    version; the AAR Gradle resolved, located by coordinate in the Gradle cache (`ls "$HOME"/.gradle/caches/modules-2/files-2.1/androidx.test/monitor/<v>/*/monitor-<v>.aar`),
    its SHA-256 compared with the `<sha256>` of `monitor-<v>.aar` in `gradle/verification-metadata.xml` (`match` expected),
    `unzip -p <aar> META-INF/com/android/build/gradle/aar-metadata.properties` (absent at 1.8.0, L13, or its
    `minCompileSdk`), and the manifest `minSdkVersion`. Nothing downloaded by hand; the path is not printed. **Row:** D74.
-6. **DEP(7)** → `$E/I7-deps-releaseRuntime.txt` (equal to I6: a test-only bump) and `$E/I7-deps-debugUnitTestRuntime.txt`
-   (changes recorded: Robolectric, `androidx.test`, Conscrypt, BouncyCastle, ASM; any `androidx.*` S4 library version
-   moved on the test classpath is recorded and handed over, 2.8).
 7. **android-all** (AC-12 (f)) into `$E/I7-android-all.txt`: the folder listing as I0 step 9, the new folders named,
    and for each new jar and POM its size and SHA-512 compared with its `.sha512` file (U-068 ruling P-1 method). A
    failed download was retried once (row D73).
 8. **Probe (after)** by 4.P with k = 7 → `$E/I7-probe.txt`; `git -c core.autocrlf=false diff --no-index -- $E/I0-probe.txt $E/I7-probe.txt`
-   lines into the log (provider version, default-enabled suites before and after; AC-12 (d)'s "both lists").
+   lines into the log (provider version, default-enabled suites before and after; AC-12 (d)'s "both lists"); a
+   difference with every test passing is classified and reported (row D96).
 9. CK(7) with: `git diff --stat HEAD -- app/src/test/resources/robolectric.properties` empty (AC-12 (g)).
    **Rows:** D68 to D74, D27 to D53 (F5 by D69). **Must hold:** gates green with no flags (or exactly the named flags);
    both modes offered; guards pass; TLS classes and U-066's exact-list tests unchanged and passing.
@@ -1283,7 +2051,9 @@ I1 at step 2.
 
 For k = 8, 9, 10, 11 in that order: apply E<k>; VMP(k), G(k), EV-T(k), EV-B(k), CMP(k), CK(k); log entry; CM(k).
 - **I8:** `I8-checks.txt` adds the resolved `net.bytebuddy:byte-buddy` version from `I8-vm-added.txt` (1.17.7 expected,
-  L13), Q-9's statement quoted in the log, and `grep -c "Mockito is currently self-attaching\|A Java agent has been loaded dynamically" $WORK/logs/I8-gates.log`
+  L13), the supplement's Q-9 item in the log as a stated fact (Byte Buddy's release notes, version 1.17.5 of 30 March
+  2025: ASM updated to 9.8 to support Java 25, `https://github.com/raphw/byte-buddy/blob/master/release-notes.md`,
+  fetched 2026-11-21; the Mockito 5.24.0 entry is silent on Java 25), and `grep -c "Mockito is currently self-attaching\|A Java agent has been loaded dynamically" $WORK/logs/I8-gates.log`
   recorded as JEP 451 debt with nothing changed (D7). **Row:** D76.
 - **I9:** the line keeps its double quotes. **I10:** `BackupImapStoreDelegateIntegrationTest` cases `PASS` (row D77).
   **I11:** `testAnnotationProcessor` compiles (row D78).
@@ -1296,7 +2066,10 @@ For k = 8, 9, 10, 11 in that order: apply E<k>; VMP(k), G(k), EV-T(k), EV-B(k), 
    → `class-counts-equal True` (the inventory is the per-package class count; covered lines are compared separately,
    because `activity`'s alternate, 2.6); `cut -d' ' -f1 $E/I11-jacoco-classes.txt > $WORK/c11.txt; cut -d' ' -f1 $E/I12-jacoco-classes.txt > $WORK/c12.txt; git -c core.autocrlf=false diff --no-index --quiet -- $WORK/c11.txt $WORK/c12.txt; echo "class-names-equal-exit=$?"`
    → `0`; `I12-coverage.txt` against `I11-coverage.txt` per package (ratio and spare, stated in the log, `worker` and
-   `compat` named); `grep -c "Unsupported class file major version" $WORK/logs/I12-gates.log` → `0`.
+   `compat` named); `grep -c "Unsupported class file major version" $WORK/logs/I12-gates.log` → `0`. A package whose
+   `t` changed while the inventory is equal (a JaCoCo Kotlin filter, R19) is recorded with the per-class lines of
+   `I11-`/`I12-jacoco-classes.txt` and Q-11's change history (which lists no filter change for 0.8.16); it stops only
+   if a package goes `BELOW` (D38) or the inventory differs (D79).
 3. **L(12)** → `$E/I12-lint.txt`, `$E/I12-lint-ids.txt`; new rule IDs against I0 named (AC-18 (e)).
    **Rows:** D79 to D81. **Must hold:** inventory equal to I11; every package at or above its floor.
 4. Log entry; CM(12).
@@ -1372,8 +2145,8 @@ For k = 8, 9, 10, 11 in that order: apply E<k>; VMP(k), G(k), EV-T(k), EV-B(k), 
 8. **Records**: complete `$E/compatibility-record.md` (gap symptoms column; "fallback: not triggered" with
    `I<k>-warnings.txt` as evidence, or each fallback with its flag); the log's Contract Adherence, Capabilities
    Inventory (the `gradlew` block, the daemon criteria, `-Werror`, R8 posture, JaCoCo floors and guard, verification
-   configuration: each kept) and "Runtime claims" (none: no device run by the developer); IC-5 and IC-6 recorded "not
-   run: needs the product owner's decision" with 10.2's text; then the hygiene scan of every evidence file of the story:
+   configuration: each kept) and "Runtime claims" (none: no device run by the developer); IC-5 named as the
+   orchestrator's (10.2) and IC-6 recorded "not reached: needs the product owner's decision" with 10.3's text; then the hygiene scan of every evidence file of the story:
    `python -I -X utf8 $TL/scan.py $W/implementation-log.md $E/*.txt $E/*.json $E/*.xml $E/*.md $M/*.txt > $WORK/logs/I14-scan.log`
    sanitised to `$E/I14-scan.txt` (all `OK`).
 9. CM(14). The hand-off message (not the log) carries `git log --reverse --format='%h %s' --grep='^U-071 S2-' $START..HEAD`
@@ -1425,19 +2198,19 @@ tests as in U-067's `mutation-log.md`" (AC-10 (d)) means: exactly the named orig
 ### 4.9 Commits (exact file lists and subjects)
 
 Shorthands (bash brace expansion gives explicit paths; `$W` = `sdlc/artifacts/build/sprints/sprint-025/U-071`):
-- **STD(k)** = `$W/evidence/I<k>-{gates.txt,warnings.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-classes.txt,coverage.txt,ksp-files.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,configuration.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,compare.txt,checks.txt}` (21 files)
+- **STD(k)** = `$W/evidence/I<k>-{gates.txt,warnings.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-classes.txt,coverage.txt,ksp-files.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,kept-names-all.txt,configuration.txt,configuration-norm.txt,seeds-core.txt,usage-core.txt,r8.txt,services.txt,backup-descriptor.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,compare.txt,checks.txt}` (28 files; `services.txt` added by Amendment A1)
 - **VM(k)** = `$W/evidence/I<k>-{writer.txt,vm-proof.txt,vm-added.txt,enforced.txt}` (4 files)
-- **I0SET** = `$W/evidence/I0-{start.txt,oldtext.txt,greps.txt,vm-counts.txt,gradle-version.txt,gates.txt,warnings.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-classes.txt,coverage.txt,ksp-files.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,configuration.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,lint.txt,lint-ids.txt,lint-baseline-count.txt,deps-releaseRuntime.txt,deps-releaseRuntime-tree.txt,deps-debugUnitTestRuntime.txt,android-all.txt,probe.txt}` (32 files)
-- **TOOLS** = `$W/evidence/tools/{oldtext_check.py,gradlew_block.py,vm_proof.py,deps_resolved.py,cov_floors.py,jacoco_class_lines.py,scan.py,U071ProviderProbeTest.java.txt}` (8 files)
+- **I0SET** = `$W/evidence/I0-{start.txt,oldtext.txt,greps.txt,vm-counts.txt,gradle-version.txt,gates.txt,warnings.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-classes.txt,coverage.txt,ksp-files.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,kept-names-all.txt,configuration.txt,configuration-norm.txt,seeds-core.txt,usage-core.txt,r8.txt,services.txt,backup-descriptor.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,d7.txt,lint.txt,lint-ids.txt,lint-baseline-count.txt,deps-releaseRuntime.txt,deps-releaseRuntime-tree.txt,deps-debugUnitTestRuntime.txt,android-all.txt,probe.txt}` (40 files; `services.txt` added by Amendment A1)
+- **TOOLS** = `$W/evidence/tools/{oldtext_check.py,gradlew_block.py,vm_proof.py,deps_resolved.py,cov_floors.py,jacoco_class_lines.py,scan.py,r8_check.py,U071ProviderProbeTest.java.txt}` (9 files)
 - **LOG** = `$W/implementation-log.md`
 
 | Commit | Subject | Files |
 |--------|---------|-------|
-| I1 | `U-071 S2-I1: Gradle wrapper 9.9.2 (Windows launcher block re-applied)` | `gradle/wrapper/gradle-wrapper.properties`; `gradle/wrapper/gradle-wrapper.jar`; `gradlew`; `gradlew.bat`; LOG; `$W/evidence/compatibility-record.md`; TOOLS; I0SET; STD(1); `$W/evidence/I1-{wrapper-run1.txt,gradle-version-run1.txt,wrapper-run2.txt,gradle-version.txt,wrapper.txt}`; plus `gradle/verification-metadata.xml` and VM(1) only if row D25 fired |
-| I2 | `U-071 S2-I2: KSP 2.3.14` | `build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(2); VM(2) — **no commit** under row D54 |
+| I1 | `U-071 S2-I1: Gradle wrapper 9.9.2 (Windows launcher block re-applied)` | `gradle/wrapper/gradle-wrapper.properties`; `gradle/wrapper/gradle-wrapper.jar`; `gradlew` (staged only if changed: expected unchanged, CM step 4 records it, row D99); `gradlew.bat`; LOG; `$W/evidence/compatibility-record.md`; TOOLS; I0SET; STD(1); `$W/evidence/I1-{wrapper-run1.txt,gradle-version-run1.txt,wrapper-run2.txt,gradle-version.txt,wrapper.txt}`; plus `gradle/verification-metadata.xml` and VM(1) only if row D25 fired |
+| I2 | `U-071 S2-I2: KSP 2.3.14` | `build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(2); VM(2); `$W/evidence/I2-uptodate.txt` — **no commit** under row D54 |
 | I3 | `U-071 S2-I3: Android Gradle Plugin 9.5.2` | `build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(3); VM(3); `$W/evidence/I3-{lint.txt,lint-ids.txt}`; plus `$W/evidence/I2-moved.txt` under D54; plus `app/build.gradle` under D55 or D56 |
 | I4 | `U-071 S2-I4: Hilt 2.60.1 (plugin, runtime, compiler, testing)` | `build.gradle`; `app/build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(4); VM(4); `$W/evidence/I4-{kotlinc.txt,kotlinc-summary.txt,deps-releaseRuntime.txt,deps-releaseRuntime-tree.txt}` |
-| I5 | `U-071 S2-I5: Kotlin 2.4.21 (plugin and stdlib)` (under D54: `U-071 S2-I5: Kotlin 2.4.21 and KSP 2.3.14 (KSP moved from I2)`) | `build.gradle`; `app/build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(5); VM(5); `$W/evidence/I5-{kotlinc.txt,kotlinc-summary.txt,deps-releaseRuntime.txt,deps-releaseRuntime-tree.txt}`; `$W/evidence/mutation-log.md`; `$W/evidence/mutations/{M-1a,M-1b,M-2a,M-2b,M-3a,M-3b}-{run,cases,message}.txt` (18 files); plus the four Risk 9 files under D58 |
+| I5 | `U-071 S2-I5: Kotlin 2.4.21 (plugin and stdlib)` (under D54: `U-071 S2-I5: Kotlin 2.4.21 and KSP 2.3.14 (KSP moved from I2)`) | `build.gradle`; `app/build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(5); VM(5); `$W/evidence/I5-{kotlinc.txt,kotlinc-summary.txt,deps-releaseRuntime.txt,deps-releaseRuntime-tree.txt,uptodate.txt}`; `$W/evidence/mutation-log.md`; `$W/evidence/mutations/{M-1a,M-1b,M-2a,M-2b,M-3a,M-3b}-{run,cases,message}.txt` (18 files); plus the four Risk 9 files under D58 |
 | I6 | `U-071 S2-I6: androidx.hilt 1.4.0` | `app/build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(6); VM(6); `$W/evidence/I6-{deps-releaseRuntime.txt,deps-releaseRuntime-tree.txt}` |
 | I7 | `U-071 S2-I7: Robolectric 4.18.1` | `app/build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(7); VM(7); `$W/evidence/I7-{d7.txt,monitor.txt,deps-releaseRuntime.txt,deps-debugUnitTestRuntime.txt,android-all.txt,probe.txt}` |
 | I8 | `U-071 S2-I8: Mockito 5.24.0` | `app/build.gradle`; `gradle/verification-metadata.xml`; LOG; STD(8); VM(8) |
@@ -1449,7 +2222,24 @@ Shorthands (bash brace expansion gives explicit paths; `$W` = `sdlc/artifacts/bu
 | I14 | `U-071 S2-I14: version comments and code-location for the new toolchain` | `build.gradle`; `app/build.gradle`; `sdlc/artifacts/engagement/code-location.md`; LOG; `$W/evidence/compatibility-record.md`; STD(14); `$W/evidence/I14-{gradle-version.txt,deps-releaseRuntime.txt,deps-releaseRuntime-tree.txt,deps-debugUnitTestRuntime.txt,vm-proof.txt,vm-added.txt,sweep.txt,final-checks.txt,scan.txt}` |
 | fix | `U-071 S2-I<k> fix: <what>` | only the files the fix touches, plus LOG and its evidence (row D91) |
 
-Every name in a list is written by a step above (STD by EV-T, EV-B, CMP, CK; VM by VMP; the rest named in the steps).
+**Writers** (plan-review B-1: every listed file has a step that writes it; checked entry by entry in iteration 2):
+- STD: `gates`, `warnings`, `junit-totals`, `cases`, `jacoco-packages`, `jacoco-inventory`, `jacoco-classes`, `coverage`
+  by EV-T; `ksp-files`, `merged-*`, `manifest-*`, `kept-names`, `kept-names-all`, `configuration`, `configuration-norm`,
+  `seeds-core`, `usage-core`, `r8`, `services` (Amendment A1: `r8_check.py services`, the line after the `I<k>-r8.txt`
+  block), `backup-descriptor`, `apk-entries-*`, `apk`, `javap` by EV-B; `compare` by CMP;
+  `checks` by CK (plus the increment's appended lines). VM: `writer` (VMP 2), `vm-proof`, `vm-added` (VMP 3),
+  `enforced` (VMP 5).
+- I0SET: `start` (I0 1), `oldtext` (I0 3), `greps` (I0 4, plus the merged-manifest line of I0 6), `vm-counts` (I0 5),
+  `gradle-version`, EV-T/EV-B files and `d7` (I0 6), `lint`, `lint-ids`, `lint-baseline-count` (I0 7), the three
+  `deps-*` (I0 8), `android-all` (I0 9), `probe` (I0 10). TOOLS: I0 2. `compatibility-record.md`, LOG: I0 11 (and every
+  increment's log entry).
+- I1: `wrapper-run1` (step 2), `gradle-version-run1` (4), `wrapper-run2` (5), `gradle-version` (7), `wrapper` (8).
+  I2/I5 `uptodate`: UTD. I2 `moved`: I2 step 3 (D54 only). I3, I12 `lint`, `lint-ids`: their L step. I4, I5 `kotlinc`,
+  `kotlinc-summary`: KC step; `deps-*`: DEP step. I5 `mutation-log.md` and `mutations/*`: 4.M. I6 `deps-*`: step 2.
+  I7: `d7` (2), `deps-*` (5), `monitor` (6), `android-all` (7), `probe` (8). I13: `checks` (2), `ci-parity`,
+  `warnings`, `lint-ids` (3), `ci-coverage` (4), `yaml` (5). I14: STD by steps 1-2, `gradle-version` (2), `deps-*` (3),
+  `vm-proof`, `vm-added` (4), `sweep` (5), `final-checks` (7), `scan` (8); `compatibility-record.md` (8).
+A listed file that is unchanged against HEAD drops out of the staged comparison and is recorded (CM step 4).
 The story file, the sprint plan, `plan.md`, the plan-gate reports, `compiled-pipeline.json`, `$SUPP` and the
 checkout's other orchestrator files are never staged by the developer. `.claude/CLAUDE.md` is never edited by the
 developer (8, item H-3).
@@ -1473,24 +2263,24 @@ developer (8, item H-3).
 
 | Row | Situation | Decision |
 |-----|-----------|----------|
-| D1 | `$SUPP` missing or lacking any of Q-1 to Q-9 at I0 step 1 | Stop before I0 step 3 (no Gradle run); report the missing items |
-| D2 | A story of SC-1/SC-9 (U-067, U-068, U-069, U-070) or U-074 is not `done`, or `c12a2788` is not an ancestor | Stop (SC-1, SC-9; U-074 edits the files I5 mutates) |
+| D1 | `$SUPP` missing, or lacking an item for any of Q-1 to Q-9 at I0 step 1 (an item in the supplement's ruled form — exact table values and checksums, stated facts for prose — counts; a missing full quotation is not a reason to stop) | Stop before I0 step 3 (no Gradle run); report the missing items. Q-13 to Q-17 missing at I3: not a stop by itself; an I3 difference only they could explain then stops (D44) |
+| D2 | A story of SC-1/SC-9 (U-067, U-068, U-069, U-070), U-074 or the BUG-029 fix story is not `done`, or `c12a2788` is not an ancestor | Stop (SC-1, SC-9; U-074 and the BUG-029 fix edit the files I5 mutates) |
 | D3 | An SC-2 check fails (minSdk, merged manifest, `junitXml`, the receiver test, the grep, the metadata diff since `$U068_START`) | Stop (SC-2) |
 | D4 | CR-015 or CR-016 not `implemented` | Stop (SC-3) |
-| D5 | Build-file drift since PLAN_HEAD other than `2 2 app/build.gradle` at `:579`/`:586`, or a code-location hunk other than `:28` | Stop and report: an edit text of section 3 may have moved; the SA re-derives |
-| D6 | `oldtext_check.py` reports `MISMATCH` ("old text not found exactly once") | Stop and report with the failing ids; no edit is attempted |
-| D7 | Porcelain on the story's paths not empty at I0, or a Gradle JVM is live | Stop; wait or ask the orchestrator (SC-5) |
+| D5 | Build-file drift since PLAN_HEAD other than `2 2 app/build.gradle` at `:579`/`:586`, a code-location hunk other than `:28`, or an `app/src/main` file changed since PLAN_HEAD that none of U-069, U-070, U-074 and the BUG-029 fix story names | Stop and report: an edit text or anchor of section 3 or 4.M may have moved; the SA re-derives |
+| D6 | `oldtext_check.py` reports `MISMATCH` ("old text not found exactly once"; for example the BUG-029 fix moved or reworded mutation anchor M-1 in `BackupWorker.kt`) | Stop and report with the failing ids; no edit is attempted, and the developer never adapts an anchor: the SA writes a re-anchoring amendment from the start-state text |
+| D7 | Porcelain on the story's paths not empty at I0, or a Gradle JVM is live (a `KotlinCompileDaemon` alone is recorded, not a stop) | Stop; wait or ask the orchestrator (SC-5) |
 | D8 | `C0` cannot be computed, or `@Ignore` lines differ from the two known | Record; stop if a new `@Ignore` appeared (not this story's) |
 | D9 | G(0) fails | Stop: the start is not green (not this story's to fix) |
 | D10 | Lint at I0 exits 0, or its rule IDs differ from U-068 I6's | Record (lint is recorded, not gated, D17) |
 | D11 | Verification counts differ from 803/1460/3 | Record; if `git diff $U068_START HEAD -- gradle/verification-metadata.xml` is not empty, stop (SC-2) |
 | D12 | The probe does not compile or run at I0 | Record "probe unavailable", delete it (4.P step 5), continue; at I7 AC-12 (d) rests on the exact-list tests and their failure messages |
-| D13 | A supplied quotation no longer says what the research says | Record verbatim; if a constraint row no longer holds (for example AGP 9.5's minimum Gradle above 9.9.2), stop before I1 (D1a rule 3 / D3) |
+| D13 | A supplied item no longer says what the research says | Record it in the supplement's form (table value, checksum or stated fact, with address and date); if a constraint row no longer holds (for example AGP 9.5's minimum Gradle above 9.9.2), stop before I1 (D1a rule 3 / D3) |
 | D14 | The supplement reports a newer non-pre-release for a row | Patch: substitute the version token (2.1), re-check that component's constraint rows, record; minor or major: stop before I1 for an SA amendment |
-| D15 | W1 exits non-zero | Stop; `git restore --source=HEAD --worktree -- gradle/wrapper gradlew gradlew.bat`; report verbatim |
+| D15 | W1 exits non-zero | Stop; `git restore --source=HEAD --worktree -- gradle/wrapper gradlew.bat` and `git -c core.autocrlf=false restore --source=HEAD --worktree -- gradlew` (LF, plan-review O-6); report verbatim |
 | D16 | The generated file after a wrapper run still contains the block (`grep -c 'LOCAL ADDITION' gradlew` is not `0`) | Unexpected generator behaviour: E1 is not applied; restore the wrapper files from HEAD (as D15); stop and report |
-| D17 | `gradlew_block.py` reports `FAIL` | Stop; restore the wrapper files from HEAD (as D15); report which check failed (N2) |
-| D18 | The first 9.9.2 run reports a distribution checksum failure, or `dist-sha-match=no` | Stop (INT-002): never edit the checksum; restore the wrapper files; report |
+| D17 | `gradlew_block.py` reports `FAIL` | Stop; restore the wrapper files from HEAD (as D15, `gradlew` with `core.autocrlf=false`); report which check failed (N2) |
+| D18 | The first 9.9.2 run reports a distribution checksum failure, or `dist-sha-match=no` | Stop (INT-002): never edit the checksum; restore the wrapper files as D15 (`gradlew` with `core.autocrlf=false`; plan-review O-13); report |
 | D19 | "Unable to establish loopback connection" after a block re-application | Stop: the block is not effective; report (Risk 8) |
 | D20 | The distribution download fails (network) | Retry the VER once; a second failure stops |
 | D21 | W2 or any 9.9.2 run fails configuring the build (for example `updateDaemonJvm`) | Stop: a Gradle error outside F1 to F5; SA amendment |
@@ -1509,14 +2299,14 @@ developer (8, item H-3).
 | D34 | A compile error or a javac `-Werror` warning in `:app` main code | Record verbatim; apply only the pre-specified forced edits (D55 to D58); any other call-site fix stops for an SA-supplied exact edit (SC-P4) |
 | D35 | An error from KGP, KSP, the Hilt plugin or AGP | Identify the fallback (2.4); stop and report (ruling); resume only on the orchestrator's authorisation |
 | D36 | An error outside D34, D35 and every other row | Stop; SA amendment |
-| D37 | A test fails at a gate | Record the case and message verbatim; stop; never edit or skip a test (Scope Concern 4); TLS cases go to D72 |
+| D37 | A test fails at a gate | Record the case and message verbatim; stop; never edit or skip a test (Scope Concern 4); TLS cases go to D72. At I7 the report names Robolectric 4.18.1's "content providers are now installed for lazily created applications" (supplement Q-8) as a candidate cause when an application-context test changes (plan-review O-11) |
 | D38 | `jacocoTestCoverageVerification` fails or a package is `BELOW` | Stop; never edit a floor; report with `I<k>-coverage.txt` and the `jacoco-classes` diff; a coverage-restoring test is an SA amendment (AC-20 (c)) |
 | D39 | Coverage changed but every package above its floor | Record the per-class difference; `activity` alternation (2.6) is noise; any other change is explained from per-class/per-line evidence or reported |
-| D40 | Class inventory or a package's `t` changed outside what 2.9 allows | Stop and report (I12: AC-14) |
-| D41 | A merged or packaged manifest differs from I0, or an invariant count is wrong | Stop and investigate; report (AC-21 (a)) |
-| D42 | The kept-name set differs | Stop and report (AC-21 (b)) |
-| D43 | `configuration.txt` differs | Stop and report with each differing rule and the section (source file) it comes from (strict reading; SC-P1 may give a standing ruling) |
-| D44 | APK entry lists differ | Record; each entry explained by the increment's component (2.9); an unexplained entry stops |
+| D40 | Class inventory or a package's `t` changed outside what 2.9 allows | Stop and report. At I12 (AC-14): an inventory change stops (D79); a `t` change with an equal inventory is recorded with the per-class lines and Q-11, and stops only through D38 (R19) |
+| D41 | A merged or packaged manifest differs from `<p>`, or an invariant count is wrong | Stop and investigate; report (AC-21 (a)). If the invariant line is already not the expected one at I0 (for example the BUG-029 fix changed the `SystemForegroundService` entry before `<start>`), stop at I0: the SA re-derives the expected values from I0 before I1 |
+| D42 | R8-1's four-prefix `kept-names.txt` differs from `<p>`; R8-2 `not-identity` above 0; R8-3 `seeds-core.txt` differs from `<p>`; an R8-4 rule `FAIL`; or a `kept-names-all.txt` difference outside the four prefixes not traced to the raised component's allowed section | Stop and report (AC-21 (b); contract-verification B-1); also when `manifest-classes-in-mapping` falls below `<p>`'s. **Ruling 58 (SC-P6):** a `seeds-core.txt vs <p>` difference at I4, I5 or I6 is accepted and recorded when (a) `r8_check.py seeds-diff` prints `MATCH` for every added or removed line — at I4 and I6 the Dagger/Hilt patterns of 2.10 R8-3 (on the simple class name; a class of `com.zegoggles.smssync.` also with its source under a generated root), at I5 only the Kotlin compiler-generated members; (b) each changed line is written into the log with the pattern it matched; (c) R8-1 (four prefixes and the traced rule for the others), R8-2 and R8-4 hold; (d) no line is `FORBIDDEN` (nothing under `com.google.crypto.tink.`, no worker-constructor line, Kotlin's synthetic constructor with `DefaultConstructorMarker` included). A removed (`-`) line of a generated class the raised component no longer generates shows its source through `<p>`'s KSP file list (`--prev-ksp`, plan-review O-21); a class of the Hilt component sources, which that list does not hold, stays `NOT-GENERATED` and stops (stricter than the ruling, accepted). Lines under `androidx.work.`, `androidx.core.app.`, `androidx.profileinstaller.` and `androidx.room.` are never accepted, nor non-`com.zegoggles.smssync.` lines at I5 (contract-verification O-16). Anything else stops. **At I3** a `seeds-core` difference is outside ruling 58: stop and report with the changed lines; the orchestrator decides (plan-review O-16) |
+| D43 | The normalised `configuration.txt` (R8-6) differs from `<p>` | **Ruling SC-P1 (Record 19 ruling 48):** accept and record when `kept-names.txt vs <p>` is `exit=0`, R8-2 to R8-4 hold, and every added or removed rule lies in the section 2.10 (R8-5) allows for this increment — `agp-default:proguard-android-optimize.txt` at I3, `lib:hilt-android/proguard.txt` or Dagger's `jar-rules:lib/META-INF/com.android.tools/r8/r8.pro` (changed or added, shown in the resolved `dagger-2.60.1.jar`) at I4, a `jar-rules:` section changed **or added** and shown inside the resolved `kotlin-stdlib-2.4.21.jar` at I5, `lib:hilt-work/proguard.txt` or a section changed or added from a resolved androidx.hilt 1.4.0 artifact at I6 (ruling 48 as restated for plan-review O-14: a section new or changed that comes from the raised component's jar is inside the ruling) — each rule and its source section and jar written into the log. Any other difference (another section, an `aapt` change, a section added or removed that the raised component's jar does not carry, a difference at I1, I2, I7 to I12 or I14) stops. The comparison against I0 then carries the accepted difference forward and is not a new stop |
+| D44 | APK entry lists differ (or, at I3, any other CMP difference 2.9 allows only "explained by AGP") | Record; each entry explained by the increment's component (2.9) — at I3 by an entry of Q-13 to Q-17 named in the log, as 2.11 lays out (repackaging renames `META-INF/services/<obfuscated>` entries; D101); an unexplained entry stops |
 | D45 | `so` ≠ 0 | Stop |
 | D46 | A class-file major other than 61, 61, 52 | Stop (AC-15); record the forcing error if any |
 | D47 | The KSP list differs where 2.9 says "=" | Stop and report; at I4 each difference is explained or the story stops |
@@ -1525,18 +2315,18 @@ developer (8, item H-3).
 | D50 | An error-class item in the warnings | Stop; warnings are debt only |
 | D51 | `lintVitalRelease` fails `assembleRelease` on the new AGP | Stop: the fix would edit `lint.xml`, the baseline or source; SA amendment |
 | D52 | "bash.exe not found", a vanished tool, or a process killed without a visible reason | Stop and report (endpoint security); no workaround, nothing restored from quarantine, no exclusion |
-| D53 | The harness moves a Gradle run to the background | Wait for its completion notice; never poll; start nothing else |
+| D53 | The harness moves a Gradle run to the background | 4.L: wait for its completion notice; never poll; start nothing else; read `exit=` from the log |
 | D54 | At I2, a KSP-originated error that names the Kotlin version, KGP or Kotlin metadata | The pre-specified reorder (AC-7): no I2 commit; E2 moves into I5; recorded, not a fallback. Any other KSP error at I2 is F3 (D35) |
 | D55 | At I3, a JaCoCo class root missing or empty after `clean` | `find app/build/intermediates -type d -path '*debug*' -name classes` and the like; update that one `jacocoClassRootPaths` line (3.2); guard unchanged; recorded as a forced change |
 | D56 | At I3, AGP rejects the `*SdkVersion` DSL names | Apply the A13 edits for `:app` (3.2), values unchanged; if `:k9mail-vendored` is rejected too, stop (AC-23 forbids its edit) |
 | D57 | `receiver` at or below 0.50 at I3 | Stop (AC-8 (d)); report |
 | D58 | At I5, a Hilt or KSP error naming `@ApplicationContext` or a qualifier at one of the four Risk 9 sites | Apply the four `@param:` edits (3.2), record the error verbatim as a forced change, re-run from VMP step 1 |
 | D59 | At I4, `hiltJavaCompileDebug`, the ASM transform or a Hilt test fails | Hilt-plugin origin → D35; otherwise D36 |
-| D60 | `worker` below 0.95 (a generated class reports lines, or a counting change) | Stop; never lower the floor; report with the per-class lines (L17: zero spare lines) |
+| D60 | `worker` below its configured floor (0.90 after U-069, ruling 47) | D38: stop, never lower the floor, report with the per-class lines. A drop of one covered line that stays within the floor (10/10 to 9/10, or 16/16 to 15/16) is recorded and explained from the per-class lines (a generated class now reporting lines, or a counting change); it is not a stop (L17: one spare line) |
 | D61 | F-1 stop rule fails (a NEW3 case fails, `app/src/test` differs, or a `coroutineContext` warning in either worker) | Stop and report before the mutations |
 | D62 | A mutation's must-fail test passes | Finding "AC-10 unmet for <id>"; finish the remaining entries; stop before CM(5) and report (I5 stays uncommitted, every mutation restored) |
 | D63 | A mutant does not compile | Record "invalid"; restore; stop and report |
-| D64 | An original that must pass fails, or a later case fails under a mutation of another loop | Restore; stop and report |
+| D64 | An original that must pass fails, or a later case fails under a mutation of a loop other than the one I0 step 13's table assigns it (or a case the table marks "none" fails) | Restore; stop and report |
 | D65 | At I5, a KGP/KSP error naming a Gradle or AGP API (F2), or Hilt/KSP rejecting Kotlin 2.4 metadata (F4) | D35 |
 | D66 | At I6, `ic1_…` fails (androidx.hilt renamed a generated class or method) | Stop; the fix is an SA amendment, never a silent test edit (delegation item 5) |
 | D67 | At I6, `WorkManagerSchedulerTest` or a worker test fails | Stop and report (a `HiltWorkerFactory` regression points here) |
@@ -1547,7 +2337,7 @@ developer (8, item H-3).
 | D72 | A TLS case fails, or U-066's exact-list tests fail | Record both lists (the probe's before/after and Truth's message); never loosen; stop and report so CR-014's applier check is re-confirmed (In-flight work) |
 | D73 | An `android-all` download fails | Retry once (a repeat of the run that needed it), record; a second failure stops; never skip a test, never fetch by hand |
 | D74 | Any failure caused by compileSdk 35 being too low (an AAR `minCompileSdk` above 35, a missing platform API), here or later | N-6: stop at that increment, record verbatim, report; U-072's S3-I0, S3-I1, S3-I2, S3-I4 run, then this increment re-runs in full from VMP step 1 |
-| D75 | A runtime-classpath or test-classpath change at a test-only increment (I8 to I12) | Release: D31; test: record, explain |
+| D75 | A runtime-classpath or test-classpath change at a test-only increment (I8 to I12) | Detector: VMP step 4's added groups (an `androidx.*` group other than the increment's expected closure is the signal) and I14's DEP reports. Release: D31; test: record, explain |
 | D76 | At I8, ByteBuddy resolved at a version other than 1.17.7, or Q-9 says Java 25 is unsupported | Record; adapt E14.10's version; unsupported → stop and report |
 | D77 | At I10, `BackupImapStoreDelegateIntegrationTest` fails | Stop and report |
 | D78 | At I11, a test-compile error from the annotation processor | Stop and report |
@@ -1564,6 +2354,16 @@ developer (8, item H-3).
 | D89 | A final check of I14 step 7 is not as expected | Stop and report (scoped: an orchestrator document commit is recorded, never a reason to stop) |
 | D90 | The resume check (4.R) differs from the log | Stop and report, except the documented recoveries |
 | D91 | A check fails after a commit because of an earlier, committed increment | A further commit `U-071 S2-I<k> fix: …` with only the fix's files; never amend, reset or rebase |
+| D92 | `clean` or `rm -rf $R` fails with "Unable to delete file" or a file in use under `app/build` (a Windows lock, typically a Kotlin compile daemon of the previous KGP) | Record verbatim and the `jps` line; stop and report. Never kill a process, never delete by other means, never retry in a loop |
+| D93 | A Gradle run is cut off (its log has no `exit=` line, or the harness reports it terminated rather than backgrounded) | 4.L: stop and report; not repeated in the same session; a later session re-runs that step once from its start (a writer pass from VMP step 1); a second cut-off of the same step stops for the orchestrator |
+| D94 | I0 step 1 finds a cache turned on (`caches-on` or `gradle-opts-caches` above 0) | Record (no path printed); WP then also carries `--no-build-cache --no-configuration-cache`, recorded as the only change to the design's command; the other runs carry them already |
+| D95 | A check can pass only with an edit to `AndroidManifest.xml`, `proguard-rules.pro` or a keep rule, or CK shows such a file changed | Stop; nothing edited. The SA reads "CNTR-005, Validation Rules" and the compatibility clauses after them (hint: `:158-165` in v1) and "CNTR-004, Breaking change policy" (hint: `:266` in v3; v4 will move it) and decides whether a change record and a contract version step are needed before any edit (AC-23; contract-verification O-2) |
+| D96 | The probe at I7 differs from I0 (`tls_provider`, the provider list or versions, the default-enabled protocols or suites) while every TLS test passes | Classify each difference in the log (provider version change from Robolectric's Conscrypt, suite set change, or protocol change) with both lists; report it in the session hand-off; not a stop (the tests decide, D72); CR-014 Amendment 1's applier check is named for re-confirmation in the hand-off |
+| D97 | A DEP run fails (for example on a configuration verification never covered) | Record verbatim; never write metadata for it; stop and report if it is `releaseRuntimeClasspath` or `debugUnitTestRuntimeClasspath` (both are resolved by the writer pass, so a failure there is D32) |
+| D98 | `seeds.txt` or `usage.txt` is missing from the mapping folder | Record the listing; R8-3 cannot run: stop and report (the SA decides whether `-printseeds`/`-printusage` must be checked in the AGP version) |
+| D99 | A listed file is unchanged against HEAD at CM (for example `gradlew` at I1) | Record "listed, unchanged, not staged" in the log; not a stop (CM step 4) |
+| D100 | The `backup exclude=… sharedpref=… credentials=… pinned=…` line of CMP differs from `4 4 2 2` (contract-verification O-8) | Stop and report (CNTR-003, CNTR-002: the backup exclusions); nothing edited |
+| D101 | At I3 an R8 difference that 2.11 classifies as explained by Q-13 (repackaging) or Q-14 (`-keepattributes` wildcard) | Record it with the item; not a stop. `ENTRY` lines of `I3-services.txt` are paired with `<p>`'s by original name. A difference 2.11 marks "a stop" — including `services-pairs vs <p>` or `vs I0` `exit=1` at any increment (Amendment A1) — or any R8-1 to R8-4 failure, stops (D42, D44); no `-dontrepackage` or keep rule is added |
 
 ## 7. Session Plan
 
@@ -1573,23 +2373,31 @@ log's last line naming the next step ("Next: I<k> step 1"). Each session after t
 
 | Session | Increments | Gradle runs (planned) | Compute estimate | Why the boundary is here |
 |---------|------------|-----------------------|------------------|--------------------------|
-| A | I0, I1, I2 | 13 | about 1 h 45 min | Baseline and the two changes AGP 9.5 needs first; ends on a Gradle 9.9.2 + KSP 2.3.14 tree |
-| B | I3, I4 | 9 | about 1 h 30 min | AGP is the largest dependency change (G1, G5, A13, C-1/C-2, likely SC-P1 stop) |
-| C | I5 | 11 | about 1 h 45 min | Kotlin plus six mutations: the session must not end with an `APPLYING` entry |
-| D | I6, I7 | 9 | about 1 h 30 min | androidx.hilt and Robolectric: the TLS and probe work needs a fresh context |
-| E | I8, I9, I10, I11 | 12 | about 1 h 45 min | Four low-risk bumps of the same shape |
-| F | I12, I13, I14 | 9 | about 1 h 30 min | JaCoCo last among build changes, then CI, documents and the final checks |
+| A | I0, I1, I2 | 15 | about 2 h | Baseline and the two changes AGP 9.5 needs first; ends on a Gradle 9.9.2 + KSP 2.3.14 tree |
+| B | I3, I4 | 10 + 1 resume VER | about 1 h 45 min | AGP is the largest dependency change (G1, G5, A13, C-1/C-2; the `agp-default` section accepted under SC-P1 if it changes) |
+| C | I5 | 13 + 1 | about 2 h | Kotlin plus six mutations: the session must not end with an `APPLYING` entry |
+| D | I6, I7 | 11 + 1 | about 1 h 45 min | androidx.hilt and Robolectric: the TLS and probe work needs a fresh context |
+| E | I8, I9, I10, I11 | 12 + 1 | about 1 h 45 min | Four low-risk bumps of the same shape |
+| F | I12, I13, I14 | 10 + 1 | about 1 h 45 min | JaCoCo last among build changes, then CI, documents and the final checks |
 
-Estimates: G about 9 to 11 min (with `clean`), WP 12 to 16 min, ENF 2 to 3, L 3, KC 2, DEP 1 to 2, TR 2 to 3,
-VER under 1 (the first 9.9.2 one downloads the distribution). A stop (any "stop" row) ends the session at once with the
-working changes either restored (fallbacks) or left as the row says, and the log says which. A session may end earlier
-at any increment boundary.
+**Totals:** 71 Gradle runs in the increments plus one VER at each of the five resumptions = **76**, over six sessions
+(iteration 1: 63 and 6). Estimates: G about 9 to 11 min (with `clean`), WP 12 to 16 min, ENF 2 to 3, UTD 1 to 2, L 3,
+KC 2, DEP 1 to 2 per configuration, TR 2 to 3, VER under 1 (the first 9.9.2 one downloads the distribution). **WP and
+most G runs, and the first G on Gradle 9.9.2 with cold caches, exceed the 600000 ms foreground limit and are expected to
+be moved to the background (4.L, D53); a run cut off instead is D93.** A stop (any "stop" row) ends the session at once
+with the working changes either restored (fallbacks) or left as the row says, and the log says which. A session may
+end earlier at any increment boundary.
 
 ## 8. Items for the Orchestrator (hand-over)
 
-1. **H-1, before the build:** the supplement `$SUPP` with Q-1 to Q-9 (Q-10 before I13; Q-11, Q-12 optional), 2.3.
-2. **H-2, rulings requested on the plan's Scope Concerns SC-P1 to SC-P5** (9.2). Each has a default the plan follows
-   without a ruling, so none blocks the start; SC-P1 in particular would turn up to four likely stops into one decision.
+1. **H-1:** Q-1 to Q-12 are supplied (`$SUPP`, commit `c9b3954d`). **New, before I3:** Q-13 to Q-17, the
+   "Behavior changes" and changed-default entries of the AGP 9.1 to 9.5 release notes (2.3); Q-18 (Gradle 9.6 to 9.9
+   upgrade-guide entries) is optional.
+2. **H-2, rulings:** SC-P1 to SC-P5 are ruled (Record 19, rulings 48 to 51) and carried (D43, 2.10, 9.2); SC-P6 is ruled by ruling 58 and
+   carried (D42, 2.9, 2.10 R8-3, `r8_check.py seeds-diff`). **Decisions the orchestrator may still be asked for:** a
+   `seeds-core` difference at I3 (the new R8 with AGP 9.5.2; outside ruling 58, plan-review O-16); a `seeds-core` line
+   at I4 to I6 that `seeds-diff` does not accept; an R8 difference at I3 that 2.11 does not explain. No new scope
+   concern is raised: no `-dontrepackage` or keep rule is needed in advance (2.11).
 3. **H-3, `.claude/CLAUDE.md`** (Engine Librarian; the developer does not edit it). No gate text changes, so AC-16 (d)
    needs no edit. Optional, if I1 confirms the two-run behaviour (L5): in the "Local Build & Device Notes" bullet
    "Build JDK", replace "`gradlew` carries a hand-maintained Windows `JAVA_TOOL_OPTIONS` block; re-apply it after any
@@ -1598,22 +2406,22 @@ at any increment boundary.
    new Gradle, and each run drops the block)."
 4. **H-4, fallbacks:** if one fires, the developer stops; the orchestrator records the product-owner flag (F2, F4 with
    their Part B consequence, verbatim from 2.4) and authorises resumption with the inputs 2.3 names.
-5. **H-5, devices:** IC-4 is the orchestrator's (10.1); IC-5 and IC-6 are recorded "not run: needs the product owner's
-   decision" (10.2), and the questions PO-A, PO-B, PO-G, PO-H are put when the orchestrator chooses, no later than S2-I15.
+5. **H-5, devices:** IC-4 and IC-5 are the orchestrator's (10.1, 10.2; Record 20, ruling 57); IC-6 is recorded "not
+   reached: needs the product owner's decision (PO-B)"; `Pixel_4_2` stays unstarted (PO-H).
 6. **H-6, for U-072 (S3):** the AGP 9.5.2 lint rule-ID table of I12 and I13 is S3-I0's "before"; `robolectric.properties`'
    comment (S3-I3); `ci.yml` lines move by one from `:21` on after I13 (the comment gains a line); Build Tools stays
    36.0.0; the N-6 move if D74 fires.
-7. **H-7, for U-073 (S4):** `I14-deps-releaseRuntime.txt` is S4's baseline; the `worker` floor has zero spare lines
-   (L17); the Mockito JEP 451 warning (I8) is debt; the test-classpath versions Robolectric 4.18.1 pulls (I7); U-069's
+7. **H-7, for U-073 (S4):** `I14-deps-releaseRuntime.txt` is S4's baseline; the `worker` floor (0.90) leaves one spare
+   line (L17); the Mockito JEP 451 warning (I8) is debt; the test-classpath versions Robolectric 4.18.1 pulls (I7); U-069's
    recommendation to re-run its mutations at S4-W; the F-1 rule at S4-C and S4-W.
 8. **H-8, follow-ups outside this story:** `DEVELOPMENT.md:25-30` and `:49` still describe `org.gradle.java.home` and
    "pins JDK 17" (stale since U-060); `DefaultTrustedSocketFactoryJdkProviderTest.java:60` names Robolectric 4.15.1
    (left, Scope Concern 4); `code-location.md` "Key Dependencies" lists libraries removed long ago (otto,
    firebase-jobdispatcher, the JitPack k-9 coordinate); pinning the GitHub actions by commit SHA (design security
-   section, a recommendation).
-9. **H-9, a correction for U-069's record:** its rationale that a 0.95 floor under a measured 1.00 lets "a JaCoCo
-   line-counting change … not fail the gate" holds only from 20 lines up; `worker` has 16 (L17). Not this story's to
-   change (no floor is touched); I12's stop rule covers it.
+   section, a recommendation); for the next contract amendment, CNTR-003 `:260` ("minSdk 21 platform") and CNTR-005
+   `:65` (a stale manifest line citation), neither edited here (contract-verification O-5); a later story that turns
+   signature verification on or moves the versions into a catalog (2.5).
+9. **H-9:** deleted in iteration 2 (ruling 47 settled the `worker` floor at 0.90).
 10. **H-10, IC-1/IC-2 reading recorded:** AC-6 (f)/IC-2 "no `org.gradle.java.home` anywhere in the repository" is read
     as "not set in any properties, Gradle, wrapper or CI file" because the phrase appears in prose (L22) (SC-P5).
 
@@ -1622,31 +2430,42 @@ at any increment boundary.
 ### 9.1 Contracts (approved; read, not edited)
 
 - **CNTR-MODERNIZATION-001** (TLS socket factories): touched by I7 in the test provider only; production TLS code is
-  not edited; U-066's exact-list tests must pass unchanged (row D72); no revision needed.
+  not edited; U-066's exact-list tests must pass unchanged (row D72); no revision needed. The contract itself says
+  nothing about providers or Robolectric; the binding statement is CR-014 Amendment 1 (the allow-list filtered from the
+  platform's default-enabled suites), whose applier check D96 names for re-confirmation.
 - **CNTR-MODERNIZATION-004** (scheduler, v3) and **-005** (the `BACKUP` broadcast, frozen): the `HiltWorkerFactory`
-  path is guarded at I6 (D66, D67), the `BackupBroadcastReceiver` manifest entry by the invariants at every increment
-  (2.9); no revision.
-- **CNTR-MODERNIZATION-003** and **-006**: their runtime libraries are S4's and stay at today's resolved versions
-  (D31); no revision.
+  path is guarded at every gate from I4 on by `ic1_…` and the KSP list, and at I6 by D66 and D67; the persisted worker
+  names by R8-1, R8-2 and R8-4 (a), (b), (c) (2.10); the `BackupBroadcastReceiver` manifest entry by the invariants at
+  every increment (2.9); a forced manifest or keep-rule edit is D95, which cites "CNTR-004, Breaking change policy"
+  and "CNTR-005, Validation Rules" by heading (line numbers only as hints; v4 of CNTR-004 will move them); no revision.
+- **CNTR-MODERNIZATION-002** (pinned-certificate enrolment): the `pinned_certs.xml` backup exclusion is checked in the
+  packaged backup descriptor at every increment (D100); no revision.
+- **CNTR-MODERNIZATION-003** (secret store): Tink's protobuf field rule and the Tink seeds are guarded by R8-4 (d) and
+  R8-3; the backup exclusions of `credentials.xml` (and `pinned_certs.xml`, CNTR-002) by the packaged backup descriptor
+  at every increment; its runtime libraries are S4's and stay at today's resolved versions (D31); no revision.
+- **CNTR-MODERNIZATION-006**: considered, no obligation a toolchain raise reaches (it names the event and state-flow
+  surface only); its runtime libraries are S4's and stay at today's resolved versions (D31); not listed in
+  `contracts_verified` (contract-verification O-9).
 - No new boundary is introduced, so no new contract is needed (contract gate satisfied).
 
-### 9.2 Scope Concerns of this plan (each with the default the plan follows)
+### 9.2 Scope Concerns of this plan
 
-| Id | Concern | Default without a ruling | Ruling asked |
-|----|---------|--------------------------|--------------|
-| SC-P1 | AC-8 (c) and AC-21 (b) require `configuration.txt` equal; AGP 9.5's default ProGuard file and the bumped libraries' consumer rules will probably change it at I3 to I6 (P2) | Stop and report at each such increment (D43) | A standing ruling: a difference is accepted as "investigated" when the kept-name set is equal and every added or removed rule lies in a section whose source is the increment's own component (AGP's default file at I3; that library's consumer rules at I4 to I6), each rule listed in the log |
-| SC-P2 | D7 item 5 and AC-12 (c) ask for "environment probes (U-063 IC-11)", which U-063 ran as a throwaway, uncommitted test | The 4.P probe at I0 and I7, copied in and deleted under a write-ahead protocol | Confirm, or rule "no probe" (AC-12 (d) then rests on the tests' own messages) |
-| SC-P3 | AC-21 (d) says the KSP list equals AC-1 (g) at I4, I5, I6 and the end, while AC-9 allows explained differences at I4 | From I5 on the list must equal I4's; I4's explained differences carry forward | Confirm |
-| SC-P4 | D3 lets the developer fix a javac `-Werror` warning at its call site; the delegation asks for exact text for every edit | Only the pre-specified forced edits are applied; any other forced production fix stops for an SA-supplied exact edit (D34) | Confirm, or allow the developer one-line call-site fixes recorded verbatim |
-| SC-P5 | AC-6 (f) and IC-2: "no `org.gradle.java.home` appears anywhere in the repository"; the phrase appears in `CLAUDE.md` and `DEVELOPMENT.md` prose (L22) | Read as "not set in any properties, Gradle, wrapper or CI file" (`java-home-set-exit=1`) | Confirm |
+| Id | Concern | Status and what the plan does |
+|----|---------|-------------------------------|
+| SC-P1 | AC-8 (c) and AC-21 (b) require `configuration.txt` equal; AGP 9.5's default file and the raised libraries' consumer rules will probably change it at I3 to I6 (P2) | **Ruled (Record 19 ruling 48):** accepted and recorded when the kept-name set equals the previous increment's and every changed rule comes from the raised component's own shipped rules, each source named; any other difference stops. Carried by D43 and 2.10 (R8-5's allowed-section table), with R8-2 to R8-4 as conditions |
+| SC-P2 | The throwaway provider probe (D7 item 5, AC-12 (c)) | **Ruled:** allowed as planned (4.P) |
+| SC-P3 | The KSP list from I5 on equals I4's | **Ruled:** as stated (2.9) |
+| SC-P4 | Only the pre-specified forced edits; any other forced production fix stops for an SA-supplied exact edit | **Ruled:** as stated (D34) |
+| SC-P5 | "No `org.gradle.java.home` anywhere" = not set in any properties, Gradle, wrapper or CI file | **Ruled:** as stated (I0 step 4, I1 step 8, I14 step 5) |
+| SC-P6 | R8-3 made any `seeds-core` difference a hard stop; Hilt 2.60.1 (I4), Kotlin 2.4 (I5) and androidx.hilt 1.4.0 (I6) regenerate code | **Ruled (ruling 58):** accepted and recorded at I4 and I6 for the Dagger/Hilt patterns and at I5 for the Kotlin compiler-generated members only, each changed line listed with its pattern, R8-1, R8-2, R8-4 holding, no Tink and no worker-constructor line changing (synthetic constructor included); anything else and any difference at I3 stops. Carried by D42, 2.9, 2.10 R8-3 and `r8_check.py seeds-diff` |
 
 ### 9.3 Risks (likelihood / impact)
 
 | # | Risk | L / I | Mitigation | Detection |
 |---|------|-------|------------|-----------|
 | R1 | The set fails outside the vendors' ranges (G1 to G6) | Medium / High (effort) | One component per increment; F1 to F5; stop-and-report | Gates, warnings, KSP list (D35) |
-| R2 | `configuration.txt` differs at I3 to I6 and each difference stops the story | High / Medium (delay) | SC-P1 asks for one standing ruling | CMP (D43) |
-| R3 | `worker` fails with zero spare lines | Medium / Medium | Per-class lines at every increment; stop, never lower | `cov_floors.py` (D60) |
+| R2 | A `configuration.txt` section outside R8-5's allowed table changes (for example a `jar-rules:` section at I3 because AGP extracts library rules differently) | Medium / Medium (delay) | Ruling SC-P1 applied per normalised section (2.10); a change outside the table stops for a decision | CMP (D43) |
+| R3 | `worker` loses two lines against a floor with one spare line | Low / Medium | Per-class lines at every increment; one line is absorbed and recorded; stop, never lower | `cov_floors.py` (D60, D38) |
 | R4 | Robolectric 4.18.1's Conscrypt changes the TLS results | Medium / Medium | Probe before/after; tests never loosened | D72 |
 | R5 | The writer hides an unexpected artifact | Low / High (supply chain) | Pristine restore, one pass, semantic proof, group review | VMP (D28 to D30) |
 | R6 | The Windows block is lost | Certain if forgotten / High | E1 after each wrapper run; the check tool; VER at once | D17, D19 |
@@ -1662,6 +2481,10 @@ at any increment boundary.
 | R16 | The supplement is late or incomplete | Medium / Low (delay) | Required before I0 step 3 | D1 |
 | R17 | AGP 9.5's unit-test manifest shifts `receiver` coverage | Low / Medium | 10 spare lines after U-068 | D57 |
 | R18 | Mockito's dynamic agent is refused | Low (JDK 25 warns only) / Medium | Recorded as debt | I8 |
+| R19 | JaCoCo 0.8.16's Kotlin filters change a package's `t` at I12 with the inventory equal | Medium / Low (delay) | Per-class lines against I11; Q-11's change history (no filter change listed); a stop only through `BELOW` | D40, D38 |
+| R20 | A `seeds-core` difference stops the story: at I3 from the new R8 (outside ruling 58), or at I4 to I6 in a line `seeds-diff` does not accept | Low to Medium / Medium (delay) | Ruling 58 accepts generated-code lines at I4 to I6; Tink and the worker constructors stay hard stops; at I3 the orchestrator decides with the changed lines | D42 |
+| R22 | An I3 difference from repackaging (Q-13) is misread as a lost keep, or a real lost keep is waved as repackaging | Low / High | 2.11 separates the two by check: identity lines, seeds and the closure are unaffected by repackaging, so any change there is a stop; only obfuscated names, mapping lines and `META-INF/services/<obfuscated>` entries are explained | D42, D101 |
+| R21 | A Gradle run is cut off at the tool limit instead of being backgrounded | Low / Medium | 4.L: the log's `exit=` line decides; one re-run in a later session | D93 |
 
 ### 9.4 Out of scope
 
@@ -1697,12 +2520,47 @@ G(14); if the orchestrator is unsure, it runs `./gradlew :app:assembleDebug` its
 What it proves: the new toolchain's build installs over the configured app, starts and initialises Hilt on Android 16.
 What it does not prove (not claimed): that a backup or restore completes, scheduling, any level near the floor.
 
-### 10.2 IC-5 and IC-6 — recorded without the product owner's decision
+### 10.2 IC-5 — backup and restore on `Pixel_9_Pro`, and the API 24 device (orchestrator; Record 20, ruling 57)
 
-- **IC-5:** "not run: needs the product owner's decision (PO-A, PO-G; design PO-2 (a), (e), PO-3)". Stands instead: the
-  unit suite at SDK 24 and 29 on Robolectric 4.18.1 (I7), the manifests reporting minSdk 24 (every CMP), IC-4 at API
-  36. Not proven: a backup and restore on the new toolchain's build on any device; anything about API 24 on a real
-  system. REQ-015 AC-17 is **not met** until run. `Pixel_4_2` is not started (PO-H).
+The product owner allowed on 2026-11-21 (Record 20): on `Pixel_9_Pro` a restore with the default-SMS-role hand-over,
+toggling an app setting and restoring it, and backups that write the other mail folders; an Android 7.0 (API 24) image
+and one new virtual device created by the orchestrator with the SDK's own tool. Still the owner's: the account password
+(Record 14 row 3), the emulators' system settings (row 4), `Pixel_10_Pro` (row 2), `Pixel_4_2` (PO-H). If a rollback
+would need the app's data cleared, the orchestrator stops and tells the owner first. Text evidence only, sanitised, into
+`$E/IC5-devices.txt` (no account name, no host name, no message body; counts and status lines).
+
+**On `Pixel_9_Pro`** (after IC-4, same build, same identity checks 10.1 steps 1-2, `MSYS_NO_PATHCONV=1` only for adb):
+1. Record the app's current settings that the run will touch (read-only: `run-as … cat shared_prefs/com.zegoggles.smssync_preferences.xml`,
+   the keys only, values of `third_party_integration` and the backup-type keys); device time `T`.
+   **Throughout steps 2 to 4** (plan-review O-18): the app stays in the foreground on `MainActivity` until each
+   worker's result line (no Home, no app switch, no screen-off); `third_party_integration` stays off and no setting
+   that schedules a backup (the regular schedule, the incoming-SMS backup) is toggled, so no backup starts in the
+   background, the case BUG-029 describes (`setForeground` refused for a background start on Android 12 and later).
+2. **Manual backup:** start it from the screen of `MainActivity` (the orchestrator's usual UI method); wait for the end of the run in
+   `adb logcat` (the `BackupWorker` result line); record the worker result (success, items backed up as a count), and
+   `FATAL EXCEPTION`, Hilt/`dagger` initialisation errors, `IllegalArgumentException`, `SecurityException`,
+   `ForegroundServiceStartNotAllowedException` on the app's process id → `0`.
+3. **Manual restore:** start it from the screen of `MainActivity`; accept the default-SMS-role request when the system shows it;
+   record the `RestoreWorker` result line and the same error counts → `0`; after the restore, hand the default-SMS role
+   back to the app that held it before (the system dialog the app opens), and record which app holds it at the end
+   (equal to before).
+4. Any setting toggled for the run (only a backup data-type setting, never one that schedules a backup) is set back to
+   the value of step 1 and re-read (equal). Nothing is uninstalled,
+   nothing cleared; `adb -s <serial> emu kill`.
+
+**On the API 24 device** (only if the orchestrator has created it by then, DV-3): identity check by `emu avd name` and
+`getprop ro.build.version.sdk` → `24`; `adb -s <serial> install` of the same debug APK; first-run permission prompts
+recorded before anything else; `am start -W`, `pidof`, the logcat counts as 10.1 step 7. A backup and a restore there
+need a configured account, which only the owner can enter: without it the API 24 check is **launch only**, and the log
+says so. If the device does not exist yet, IC-5's API 24 part is recorded "not run: device not yet created" with the
+same statement of what stands instead (the SDK 24 unit tests on Robolectric 4.18.1, the manifests' minSdk 24).
+
+What IC-5 proves: a backup and a restore complete on the new toolchain's build on Android 16, and (if run) the app
+installs and starts at the floor. What it does not prove unless the owner configures the API 24 device: a backup and
+restore at API 24. REQ-015 AC-17 is met in full only with both.
+
+### 10.3 IC-6 — recorded without the product owner's decision
+
 - **IC-6:** "not reached: needs the product owner's decision (PO-B; design PO-4)". Stands instead: the YAML parses (I13
   step 5) and the local parity run reached every step (I13 steps 3, 4). Not proven: that the Linux runner builds, that
   the new action majors run, that `sdkmanager` works there. REQ-015 AC-18 is **not met** until run. Nothing claims CI
@@ -1712,7 +2570,9 @@ What it does not prove (not claimed): that a backup or restore completes, schedu
 
 1. Run Gradle in the foreground with the tool timeout at 600000 ms on every call, never with `MSYS_NO_PATHCONV=1`, never
    while another Gradle run is live.
-2. If the tool moves a run to the background by itself, wait for its completion notice; never poll; start nothing else.
+2. If the tool moves a run to the background by itself, wait for its completion notice; never poll; start nothing else;
+   read the result from the log's `exit=` line (4.L). A run cut off without `exit=` is D93: stop. Process checks match
+   `gradle|KotlinCompileDaemon`; never kill a process (D92).
 3. No background or detached shells, no `&`, no `sleep` or polling loops, no helper agents for shell work, no heredocs
    for editing (Write and Edit tools only); keep shell activity modest (no loop that starts hundreds of processes).
 4. Never call `diff` or `cmp`; compare with `git -c core.autocrlf=false diff --no-index` (`--quiet`, `--numstat`, `--stat`)
@@ -1749,7 +2609,7 @@ What it does not prove (not claimed): that a backup or restore completes, schedu
 | Attribute | How this story serves it |
 |-----------|--------------------------|
 | Functional suitability | No production behaviour changes (no `app/src/main` edit expected); correctness is guarded by the unchanged suite, the case list equal at every increment, the F-1 rule and six mutations (I5), U-066's exact-list tests (I7) and the manifest invariants of CNTR-005 and BUG-016 (2.9) |
-| Performance efficiency | Runtime: none expected (R8 input and kept names compared at every increment). Build: about 63 Gradle runs over six sessions; Robolectric 4.18.1 may fetch new `android-all` jars; the verification file grows by an expected several hundred entries; test sandboxes stay at SDK 29 (D6), so no new per-fork memory for a higher level |
+| Performance efficiency | Runtime: none expected (R8 input and kept names compared at every increment). Build: 71 Gradle runs in the increments plus five resume checks (76) over six sessions, the long ones backgrounded by the harness (4.L); Robolectric 4.18.1 may fetch new `android-all` jars; the verification file grows by an expected several hundred entries; test sandboxes stay at SDK 29 (D6), so no new per-fork memory for a higher level |
 | Compatibility | Co-existence with the toolchain the later stories and the Thunderbird libraries need (AGP 9.5 for compileSdk 37, Kotlin 2.4 for Part B); interoperability of Gradle/AGP/KGP outside the vendors' joint ranges is recorded as G1 to G6 with detectors; the debug build installs over the configured app (IC-4) |
 | Usability | Not applicable to this story's scope (no UI or user-facing text changes) |
 | Reliability | Recoverability: one commit per increment, revert newest-first (D19), the wrapper block restored with a reverted wrapper commit; fault tolerance of the process: write-ahead lines, single-path restores, the resume protocol; maturity: gates and fitness checks at every step |
@@ -1777,6 +2637,11 @@ What it does not prove (not claimed): that a backup or restore completes, schedu
 | Sources | `service/BackupWorker.kt`, `RestoreWorker.kt` (check lines), the four Risk 9 files (the lines), `DefaultTrustedSocketFactoryJdkProviderTest.java` (`:140-200`), TLS test names (searched) | Mutation anchors, Risk 9, TLS guards |
 | Documents | `sdlc/artifacts/engagement/code-location.md` (full), `.claude/CLAUDE.md:31` | I14 edits; H-3 |
 | Local caches | the Gradle module cache and wrapper distributions (listings); cached `monitor-1.8.0.aar`, `mockito-core-5.24.0.pom`, `hilt-android-2.60.1.pom`, `hilt-work-1.2.0.module` | L12, L13 (no path recorded) |
+| Iteration 2: gate reports | `sdlc/artifacts/build/sprints/sprint-025/U-071/{plan-review.md,contract-verification.md,expert-depth-check.md}` | Read in full (the depth check's criteria 3 and 8 in full, the rest by section) |
+| Iteration 2: supplement | `sdlc/artifacts/build/research/2026-11-21-u071-quote-supplement.md` | Read in full: Q-1 to Q-12 and the ruling on AC-3's form |
+| Iteration 2: rulings | story Implementation Notes (Record 17, Record 19 rulings 48 to 51, ruling 47); decision appendix Record 20 and ruling 57 (`sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md:2459-2495`) | SC-P1 to SC-P5, the `worker` floor, the devices |
+| Iteration 2: U-069 plan iteration 3 | `sdlc/artifacts/build/sprints/sprint-024/U-069/plan.md` (`:124`, `:1038-1056`, `:1572`) | Rule 15 texts after Amendment A4 (floor 0.90, 10/10) |
+| Iteration 2: R8 and resource evidence | U-068 `evidence/I0-configuration.txt`, `I5-configuration.txt` (headers, the hilt-work, hilt-android, work-runtime, protobuf, aapt and AGP-default sections), `I5-manifest-*.txt`; the current `app/build/outputs/mapping/release/` listing, `seeds.txt`, `usage.txt` (formats), the two APKs via `aapt2 dump resources` and `dump xmltree`; `app/src/main/res/xml/backup_descriptor.xml` and `app/proguard-rules.pro` at HEAD | L26, L27, `r8_check.py` |
 | Knowledge | plugin cache `knowledge/standards/expert-exceeding-depth.md`, `truth-and-accuracy.md` (preloaded), `templates/build-artifacts/build-plan.md` | Quality bar, template |
 
 ## 14. Criterion-to-Step Map
@@ -1810,17 +2675,27 @@ What it does not prove (not claimed): that a backup or restore completes, schedu
 | IC-1 | I14 step 3 | `I14-deps-*` |
 | IC-2 | I1 steps 7-8; I14 steps 2, 5 | `I1-wrapper.txt`, `I1/I14-gradle-version.txt`, `I14-sweep.txt` |
 | IC-4 | 10.1 (orchestrator) | `IC4-launch.txt` |
-| IC-5, IC-6 | 10.2 | log |
+| IC-5 | 10.2 (orchestrator; Record 20) | `IC5-devices.txt` |
+| IC-6 | 10.3 | log ("not reached") |
+| Contract-bearing R8 clauses (CNTR-003, -004, -005; DES-008) | EV-B, CMP, 2.10 at every increment | `I<k>-r8.txt`, `-configuration-norm.txt`, `-seeds-core.txt`, `-kept-names-all.txt`, `-backup-descriptor.txt`, `-compare.txt` |
 
 ## Verdict
 
-**PASS.** The story can be built as written, after U-068, U-069, U-070 and U-074, once the orchestrator has supplied
-Q-1 to Q-9 (Q-10 by I13). Every fact the plan relies on was read in this session from committed blobs, the research,
-the design, the earlier stories' plans, logs and evidence, or the local caches (L1 to L25); every fact that needs
-Gradle, AGP, Kotlin, KSP, Hilt, Robolectric, JaCoCo, R8, lint or a vendor page is a `needs_check` with its step and
-decision rows (N1 to N22; D1 to D91), and the plausible-only claims (P1 to P6) carry no step. The plan:
-- re-resolves the nineteen rows on the planning date (no row moved) and lists the quotations and checksums the record
-  still needs instead of inventing them (2.1, 2.3);
+**PASS (iteration 3).** The story can be built as written, after U-068, U-069, U-070, U-074 and the BUG-029 fix
+story. The supplement supplies Q-1 to Q-17 in the ruled form (Q-18 optional, not fetched); 2.11 states what Q-13 and
+Q-14 change at I3 and which differences are recorded or stop. Ruling 58 is carried with a checker mode that lists every
+changed seeds line with its pattern (D42, 2.10). Every fact the plan relies on was read in this
+session from committed blobs, the research and its supplement, the design, the earlier stories' plans, logs and
+evidence, the current build outputs (read-only), or the local caches (L1 to L27); every fact that needs Gradle, AGP,
+Kotlin, KSP, Hilt, Robolectric, JaCoCo, R8, lint or a device is a `needs_check` with its step and decision rows (N1 to
+N22; D1 to D101), and the plausible-only claims (P2 to P6) carry no step. Every finding of the three gates is taken up
+(Iteration 2 and Iteration 3 tables; one depth-check could-item, dropping ENF, declined with the design's reason).
+Iteration 3 read no build output under `app/build` (another agent's Gradle run was live); the release-dex worker-name
+count is therefore not verified and is record-only. The plan:
+- re-resolves the nineteen rows on the planning date (no row moved) and resolves the supplement's two facts under D1a:
+  AGP stays 9.5.2 with F1 9.5.1; Kotlin 2.4.21's documented maxima are gap G2, F2's reason (2.1);
+- compares the release build at six levels (R8-1 to R8-6) so that ruling SC-P1 can be applied section by section while
+  the contract-bearing rules, members and manifest classes stay hard stops (2.10);
 - keeps the design's order, the two pre-specified moves, F1 to F5 under the stricter stop-and-report ruling, and one
   local commit per increment with explicit, derivable file lists checked to exist and to equal the staged set;
 - gives every edit as exact text, simulated on the start-state blobs with every expected line and hunk count derived
@@ -1828,10 +2703,11 @@ decision rows (N1 to N22; D1 to D91), and the plausible-only claims (P1 to P6) c
 - regenerates the wrapper twice so the jar is 9.9.2's own, and proves the Windows block byte for byte with a tool;
 - applies D5 at every dependency increment with the U-060 proof as arbiter, never `diff`;
 - re-runs U-067's six mutations at I5 under a write-ahead protocol that tolerates U-070's and U-074's later tests;
-- states coverage margins from measured values, including the `worker` package's zero spare lines;
-- plans six sessions with clean boundaries and a resume check.
-Five Scope Concerns (SC-P1 to SC-P5) ask for rulings but none blocks the start: each has a stricter default the plan
-follows.
+- states coverage margins from measured values, including the `worker` package's one spare line at floor 0.90;
+- plans six sessions with clean boundaries, a resume check against this story's newest commit, and a procedure for
+  runs longer than the tool limit.
+SC-P1 to SC-P6 are ruled and carried. No scope concern is open; the orchestrator may be asked for a decision only on a
+`seeds-core` difference at I3 or an R8 difference at I3 that 2.11 does not explain.
 
 ## Phase Completion Report
 ---
@@ -1842,5 +2718,5 @@ artifact_path: "sdlc/artifacts/build/sprints/sprint-025/U-071/plan.md"
 story_status: "in-progress"
 current_build_phase: "planning"
 errors: []
-notes: "Iteration 1. Needs before the build: the orchestrator's quote supplement (Q-1 to Q-9 before I0 step 3, Q-10 before I13; section 2.3). Scope Concerns SC-P1 to SC-P5 ask for rulings, each with a default the plan follows (section 9.2). No Gradle, build, test, device or network step was run in planning."
+notes: "Amendment A2 (ruling 65): B-8 fixed (r8_check.py section writes LF; the jar side keeps tr -d '\\r'); B-8 reproduced with the A1 tool (exit=1) and fixed with the A2 tool (exit=0) on U-068's committed configuration against the cached dagger-2.59.2.jar; every A1/A2 command self-tested end to end in Git Bash (13 cases) and every other Python-vs-shell comparison listed with its line endings (no further false stop found; one fresh-checkout note recorded). Amendment A1 (ruling 64): plan-review B-7 fixed with contract-verification O-13 (r8_check.py services; I<k>-services.txt at every increment; PAIR lines in original names equal at I0, <p> and I3, a difference stops); plan-review O-21 to O-24 and contract-verification O-14 to O-16 and the :1638 note taken up, none declined; tools re-tested in scratch on synthetic APKs, mappings and seeds inputs and on U-068's committed configuration; no build output read. Iteration 3: plan-review B-6 (ruling 58) and O-12 to O-18, contract-verification O-6 to O-12, the depth check's should-items and four of its five could-items taken up (Iteration 3 table); dropping ENF declined (design D5 step 6 binds it). r8_check.py gains seeds-diff and closure counts, re-tested on U-068's committed configuration evidence and synthetic seeds inputs in scratch. Q-13 to Q-17 carried (2.11: repackaging and the -keepattributes wildcard at I3; no -dontrepackage or keep rule). BUG-029 fix story placed before this story at I0. No new quote item needed (Q-18 optional). 71 Gradle runs in the increments plus 5 resume checks (76), six sessions, unchanged. No Gradle, build, test, device or network step was run in planning; no build output was read in iteration 3."
 ---
