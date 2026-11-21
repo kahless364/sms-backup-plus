@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: in-progress
 sprint: '025'
 artifact_type: user-story
 priority: high
@@ -57,7 +57,7 @@ pipeline: ''
 domain: modernization
 requirement_source: authored
 alignment_audit: passed
-updated_at: '2026-11-21T10:53:46.550Z'
+updated_at: '2026-11-21T13:12:35.323Z'
 ---
 
 # U-071: Move the Build Toolchain, the Test Tooling and the CI Action Versions to the Latest Stable Release of Each

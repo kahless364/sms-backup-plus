@@ -1,9 +1,10 @@
 ---
-status: draft
+status: active
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-025
 sprint: '025'
+updated_at: '2026-11-21T13:12:34.179Z'
 ---
 
 # Sprint Plan: Sprint 025
@@ -24,7 +25,7 @@ Sprint 025 does not make any code change and does not run Gradle until sprint 02
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
 | U-074 | Make a cancelled backup or restore end as cancelled, not as an error line and a failure result, and stop the cancel collector warning on every normal finish (fix for BUG-024) | - | developer | sonnet | (unassigned) | U-067 (done), U-070 (sprint 024) | planned | medium |
-| U-071 | Move the build toolchain, the test tooling and the CI action versions to the latest stable release of each, one component per verified increment | - | developer | sonnet | (unassigned) | U-067 (done), U-068, U-069, U-070 (sprint 024) | planned | high |
+| U-071 | Move the build toolchain, the test tooling and the CI action versions to the latest stable release of each, one component per verified increment | - | developer | sonnet | (unassigned) | U-067 (done), U-068, U-069, U-070 (sprint 024) | in-progress | high |
 | U-072 | Raise compileSdkVersion from 35 to 37 (build only, targetSdk stays 35), lint baseline refreshed, Robolectric default kept at 29, CI installs the platform | - | developer | sonnet | (unassigned) | U-071, U-068 | planned | high |
 | U-073 | Raise the runtime libraries to latest stable one family at a time; confirm security-crypto, JUnit and jutf7 unchanged | - | developer | sonnet | (unassigned) | U-067 to U-072 | planned | medium |
 
