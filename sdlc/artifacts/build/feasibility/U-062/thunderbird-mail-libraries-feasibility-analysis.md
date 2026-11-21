@@ -2251,3 +2251,14 @@ This record completes the decision that BUG-020 acceptance criterion AC-1 asks f
 On the Security Reviewer's judgement that BUG-019 AC-5 and BUG-020 AC-1 name: no new judgement was asked for before this decision. The judgement on record is the U-063 security review (`sdlc/artifacts/build/sprints/sprint-020/U-063/review-security.md`), which raised both findings. The fix story's own security review examines the result.
 
 Recorder: Orchestrator.
+
+### Record 10 — 2026-11-20 (after sprint 021: BUG-019 and BUG-020 closed)
+
+Sprint 021 closed on 2026-11-20 with stories U-064 and U-065 done (fix commit `12b584ab`). QA of U-065 found all five criteria of BUG-019 satisfied, and BUG-020 satisfied except its AC-5 (the contract states the pinned producer's protocol, cipher-suite and server-name behaviour, or a record says why not). The orchestrator asked the product owner how to mark the two bugs and offered: close both, with a note in BUG-020 that AC-5 is carried by CR-013 and the combined contract revision; close BUG-019 only; or leave both open.
+
+| Item | Verbatim | Decision | Not decided by this record |
+|------|----------|----------|----------------------------|
+| Status of BUG-019 and BUG-020 | "Close both (Recommended)" | Both bugs are marked done. The code fix is complete for both (U-065). BUG-020 AC-5 is not met by U-065 and is carried forward: the server-name statement by CR-013 (its alternative (b), to be applied in the combined revision of CNTR-MODERNIZATION-001 at the migration) | Whether a change record is raised for stating the TLS 1.2 floor and the cipher-suite handling of both producers in the contract. No change record carries those two statements today (U-065 Scope Concern 1; U-065 contract verification, item 5). Until one is raised or a dated note says why not, that part of BUG-020 AC-5 has no carrier |
+| Close-out commit for sprint 021 | "Commit and push (Recommended)" | The close-out documents are committed and pushed | - |
+
+Recorder: Orchestrator.

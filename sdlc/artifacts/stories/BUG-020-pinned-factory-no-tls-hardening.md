@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: done
 artifact_type: bug
 severity: low
 priority: medium
@@ -21,7 +21,8 @@ id: BUG-020
 title: Pinned-certificate socket factory applies no protocol, cipher or server-name handling of its own
 domain: build
 origin: code-review
-updated_at: '2026-11-21T00:41:53.995Z'
+updated_at: '2026-11-21T05:49:14.885Z'
+resolution: done
 ---
 
 # BUG-020: Pinned-certificate socket factory applies no protocol, cipher or server-name handling of its own
@@ -118,6 +119,8 @@ All paths are workspace-relative. Evidence files are under `sdlc/artifacts/build
 Added by the orchestrator. The platform's protocol lists and bare handshakes to Gmail's IMAP endpoint were measured on an Android 16 and an Android 11 emulator on 2026-11-20; the table and its limits are in `sdlc/artifacts/stories/BUG-019-factory-enables-tls10-and-tls11.md`, section "Measurements on two emulators (2026-11-20)". For this bug the relevant rows are "Enabled by default": a pinned socket gets exactly that list, TLS 1.2 and 1.3 on Android 16, and TLS 1.0 to 1.3 on Android 11. The product owner said on 2026-11-20, when asked whether any host is enrolled for a pinned certificate today: "I don't think so".
 
 ## Acceptance Criteria
+**Closed, 2026-11-20 (added by the orchestrator).** Fixed by story U-065, commit `12b584ab`: the pinned factory applies the default factory's protocol floor, cipher-suite handling and server-name step on both socket shapes. QA of U-065 (`sdlc/artifacts/build/sprints/sprint-021/U-065/qa-results.md`) found AC-1, AC-2, AC-3, AC-6 and AC-7 satisfied; AC-4 does not apply. AC-5 (the contract statement) is NOT met by U-065. The product owner decided to close this bug with AC-5 carried forward ("Close both (Recommended)"; Record 10 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`): the server-name statement is carried by CR-013, alternative (b); the protocol-floor and cipher-suite statements have no change record yet, which Record 10 lists as not decided. The status was moved to done through the bug state machine by the orchestrator; the acceptance criteria below are left as written.
+
 **Decision recorded (AC-1, cipher suites and server name), 2026-11-20:** the product owner decided that the pinned factory is handled the same as the default factory for cipher suites and for the server name ("Same as default"). With the protocol part above, AC-1 is now decided in full: the decision is "same handling", so AC-2 and AC-3 apply and AC-4 does not. The record is Record 9 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. Added by the orchestrator.
 
 **Decision recorded (AC-1, protocol part), 2026-11-20:** the product owner decided that neither factory enables a protocol version older than TLS 1.2 ("Yes drop anything older than tls 1.2"). The record is Record 8 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. Still to be decided for this bug: cipher handling and server-name handling on the pinned factory. Added by the orchestrator.

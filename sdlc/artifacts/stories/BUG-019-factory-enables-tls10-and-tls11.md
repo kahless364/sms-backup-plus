@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: done
 artifact_type: bug
 severity: medium
 priority: medium
@@ -20,7 +20,8 @@ id: BUG-019
 title: Default TLS socket factory enables TLS 1.0 and TLS 1.1 wherever the provider supports them
 domain: build
 origin: qa
-updated_at: '2026-11-17T22:19:07.053Z'
+updated_at: '2026-11-21T05:49:12.168Z'
+resolution: done
 ---
 
 # BUG-019: Default TLS socket factory enables TLS 1.0 and TLS 1.1 wherever the provider supports them
@@ -127,6 +128,8 @@ What this shows:
 Limits: the program runs as a standalone process in the adb shell, not inside the app's own process, so it cannot show whether an app's target level changes the lists (it gave the same lists at several target levels on both emulators); emulator system images, not the owner's physical devices; Android versions between 11 and 16 were not measured (an Android 13 image is installed and was not used); only Gmail's endpoint was tried; nothing here measures whether a downgrade can be forced by a third party.
 
 ## Acceptance Criteria
+**Closed, 2026-11-20 (added by the orchestrator).** Fixed by story U-065, commit `12b584ab`: the default factory enables only TLS 1.2 and TLS 1.3, where the platform supports them. QA of U-065 (`sdlc/artifacts/build/sprints/sprint-021/U-065/qa-results.md`) found AC-1 to AC-5 satisfied. The product owner decided to close this bug ("Close both (Recommended)"; Record 10 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`). The status was moved to done through the bug state machine by the orchestrator; the acceptance criteria below are left as written.
+
 **Decision recorded (AC-5), 2026-11-20:** the product owner decided to drop every protocol version older than TLS 1.2 ("Yes drop anything older than tls 1.2"). The record is Record 8 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. Added by the orchestrator; the acceptance criteria AC-1 to AC-4 now apply.
 
 

@@ -1,6 +1,6 @@
 ---
 type: story
-status: review
+status: done
 sprint: '021'
 artifact_type: user-story
 priority: medium
@@ -21,8 +21,9 @@ title: Drop TLS versions older than 1.2 from both TLS socket factories, and give
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-019
-updated_at: '2026-11-21T05:25:25.981Z'
-current_build_phase: validation
+updated_at: '2026-11-21T05:45:09.666Z'
+resolution: done
+updated_date: 2026-11-21
 ---
 
 # U-065: Drop TLS Versions Older Than 1.2 From Both TLS Socket Factories, and Give the Pinned-Certificate Factory the Default Factory's Cipher-Suite and Server-Name Handling
@@ -350,6 +351,16 @@ Developer, implementation phase (plan `U-065/plan.md`, iteration 2; the full rec
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
+
+Summarised by the orchestrator from the workspace `sdlc/artifacts/build/sprints/sprint-021/U-065/` on 2026-11-20. The fix commit is `12b584ab`. Counts are in AC-10.
+
+- **Plan checks.** Iteration 1: plan review FAIL on one blocker (a mutation row expected a test to fail that could not fail), contract verification PASS, depth check PASS. Iteration 2: all three PASS.
+- **Code review: PASS.** 0 blockers; the production code equals the plan's text. Deferred with reasons: W1, no test runs a handshake from a socket with an empty enabled-protocol list, so "fails closed" there is by reading (it cannot occur on a supported Android version); W2, the `SSLv2Hello` clause of guard A1-G2 can no longer fire and its method comment is slightly stale (the guard code had to stay unchanged); seven notes (N1 to N7).
+- **Security review: PASS.** No Critical, High or Medium finding, and no path in either factory that enables SSLv2Hello, SSLv3, TLS 1.0 or TLS 1.1. Its judgement, which Record 9 left to this review: from a security point of view both bugs can be considered fixed. Deferred with reasons: F-1 (Low), the cipher lists still hold CBC and SHA-1 suites, suites without forward secrecy, 3DES and DSS suites (this story was not asked to change the lists; Gmail negotiates TLS 1.3); F-2 and F-3 (Low, test-depth points); F-4 (Low), mutable static arrays, to fix when the class moves into app ownership; F-5 to F-7 (Info).
+- **Emulator check IC-1: passed** on the Android 16 emulator (`evidence/IC1-emulator.txt`). The first run had nothing to back up; the orchestrator then sent one test SMS through the emulator console under the product owner's standing statement that adding SMS messages on the emulator is safe, and the second run completed. QA judged this met with a deviation from the story's sentence that the owner decides how to give the run something to back up.
+- **QA: PASS.** 13 of 13 criteria met; AC-7 and IC-1 with a deviation each, both judged acceptable (restore by saved copy and hash while the change was uncommitted; the test SMS). QA re-applied two mutations by the literal protocol (M-P2 on the pinned factory, M-P1 on the default factory) and saw the same tests fail as the developer's log records.
+- **Bugs.** BUG-019: all five criteria satisfied. BUG-020: satisfied except AC-5 (the contract statement), which waits for the combined contract revision; whether it closes with AC-5 carried elsewhere is the product owner's decision.
+- **Open for the product owner.** A change record for stating the protocol floor and the cipher handling in the contract, or a dated note saying why not; whether a separate story should prune the cipher lists (F-1); the note CR-013 needs when its alternative (b) is applied; the lines CR-009 needs (the pinned factory now calls the default factory's two steps, so the move must retarget them; a parity row; two stale rows); a future TLS version needs one entry in `ALLOWED_PROTOCOLS`.
 
 ## Notes
 

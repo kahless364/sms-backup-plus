@@ -1,10 +1,10 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-021
 sprint: '021'
-updated_at: '2026-11-21T02:29:43.597Z'
+updated_at: '2026-11-21T05:45:10.173Z'
 ---
 
 # Sprint Plan: Sprint 021
@@ -19,7 +19,7 @@ updated_at: '2026-11-21T02:29:43.597Z'
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
 | U-064 | Close two gaps in the TLS baseline tests - pinned expiry check and the SNI safety net on its own | - | developer | sonnet | (unassigned) | - | done | medium |
-| U-065 | Drop TLS versions older than 1.2 from both TLS socket factories, and give the pinned-certificate factory the default factory's cipher-suite and server-name handling | - | developer | sonnet | (unassigned) | U-064 | review | medium |
+| U-065 | Drop TLS versions older than 1.2 from both TLS socket factories, and give the pinned-certificate factory the default factory's cipher-suite and server-name handling | - | developer | sonnet | (unassigned) | U-064 | done | medium |
 
 ## Execution Waves
 

@@ -96,3 +96,4 @@
 {"timestamp":"2026-11-21T01:51:35.341Z","event_type":"teardown","child_skill":"create-cr","child_instance_id":"create-cr-20261121-013631","context_file_sha256":"eda5d79225122eb2bb2a3879696f3d0ed830401b21600c1a1bb9df5e8f842a72"}
 {"timestamp":"2026-11-21T02:29:43.581Z","event_type":"refresh","child_skill":"create-sprint","child_instance_id":"create-sprint-20261121-022808","context_file_sha256":"7f92aae6163cbdb277fc5a97d6993af4a75580f8a9def82e4005634f46469e86","expires_at":"2026-11-21T06:29:43Z"}
 {"timestamp":"2026-11-21T02:29:43.603Z","event_type":"teardown","child_skill":"create-sprint","child_instance_id":"create-sprint-20261121-022808","context_file_sha256":"7f92aae6163cbdb277fc5a97d6993af4a75580f8a9def82e4005634f46469e86"}
+{"timestamp":"2026-11-21T05:47:17.642Z","event_type":"teardown","child_skill":"write-retro","child_instance_id":"write-retro-20261121-054631","context_file_sha256":"28bc7a0d153a17b18745bddef06f4b7c7b5d3054492fe071824e6073797498d6"}
