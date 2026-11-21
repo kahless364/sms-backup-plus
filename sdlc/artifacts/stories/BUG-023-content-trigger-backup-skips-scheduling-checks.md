@@ -161,6 +161,9 @@ What would confirm it: a debug build on a device or emulator, auto backup on, lo
 
 ## Acceptance Criteria
 
+**Product owner's decision on the SMS receiver, 2026-11-21 (added by the orchestrator; decision appendix, Record 20, and ruling 56).** Item PO-3 of this bug's Suggested Approach was put to the product owner, who answered: "Remove it (Recommended)". The receiver is removed through a change record and its own small story, placed after story U-072. This bug's fix story (U-069) does not touch the receiver.
+
+
 The criteria state behaviour, not mechanism. The contract already fixes what the trigger does: it does not back up on the raw change and it enqueues the delayed incoming backup (CNTR-MODERNIZATION-004 Rule 5, INV-4). "Same as `scheduleIncoming()`" below is a requirement on the resulting work, as read from the work manager, not on which function is called. Every test named is a unit test under Robolectric with `WorkManagerTestInitHelper`, in the style of `WorkManagerSchedulerTest.kt`, with the trigger worker run through `TestListenableWorkerBuilder` or an equivalent; the Solution Architect fixes the harness. In every case the preferences and secret-store state are set after `scheduleContentTrigger()` has registered the trigger and before the trigger worker runs, because the rules must hold at run time, not only at registration.
 
 - [ ] AC-1: With Wi-Fi only on, after the trigger worker runs, unique work `INCOMING` exists and its required network type is `UNMETERED`. Checked by a unit test that reads the constraints of the work info (same reading as `WorkManagerSchedulerTest.kt:172`). The test fails on HEAD with `NOT_REQUIRED`.

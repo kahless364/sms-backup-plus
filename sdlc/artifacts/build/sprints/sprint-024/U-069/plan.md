@@ -100,6 +100,46 @@ those steps now equals a printed output.
 
 Totals unchanged: **15 tests**, **12 mutation runs** (11 counted), **18 Gradle runs**.
 
+## Amendment A4 (during implementation, 2026-11-21)
+
+The developer stopped at I2 step 1 under row D13 (start commit `29f30ec5`; C0 = 756; G0 green; the five start greps as
+planned; the red-form blob `306dee99…` on disk; `worker` 0/16 at the start; no production edit, no mutation in place).
+`:app:compileDebugUnitTestKotlin` failed once: `BackupTriggerWorkerTest.kt:421:70 Cannot access
+'androidx.room.RoomDatabase' which is a supertype of 'WorkDatabase'` (`evidence/I2-red-build.txt`). Cause: ledger rows
+L10 and L11 verified that the `WorkSpec` accessors exist, not that the unit-test **compile** classpath carries their
+supertypes; Room is a runtime-only dependency of work-runtime (L28). Binding conditions: no dependency, build-file or
+verification-metadata change; AC-3 not weakened (backoff policy, backoff delay and input data are still read from the
+`WorkSpec` and compared); only the test helper changes. `iteration: 3` stays.
+
+| Finding | Change, and where |
+|---------|-------------------|
+| D13: the test does not compile (the `WorkDatabase` hop) | The helper `captureActiveIncomingRequest()` reaches the database, its DAO and the spec **by reflection through the public declaring types** (`androidx.work.impl.WorkManagerImpl.getWorkDatabase()`, `androidx.work.impl.WorkDatabase.workSpecDao()`, `androidx.work.impl.model.WorkSpecDao.getWorkSpec(String)`, the public fields of `androidx.work.impl.model.WorkSpec`); a new private `workSpecOf(UUID)` holds the hop. The source names no `androidx.work.impl` type any more; the imports `android.annotation.SuppressLint` and `androidx.work.impl.WorkManagerImpl` go (nothing restricted is named, so the suppression has nothing to suppress). Values read and assertions unchanged. 3.2 (test text), its notes, L28 |
+| Why all the way to reflection | `WorkDatabase` extends `RoomDatabase` (not compilable); `WorkSpecDao` and `WorkSpec` have no Room supertype but carry Room annotations (`@Dao`, `@Query`, …; `@Entity`, `@Embedded`, …). Annotations are probably harmless to the compiler, but going one step further costs nothing and leaves only `Data` and `BackoffPolicy`, public `androidx.work` types with no Room reference, named statically. Per-type findings for 2.9.1 and 2.12.0, and the rest of the test file: L28 |
+| Compile risk | Kotlin cannot be compiled here with Gradle. The cached `kotlin-compiler-embeddable` 2.3.21 was run on scratch copies, without Gradle and without network, against a reconstructed unit-test compile classpath with no Room: the iteration-3 red form reproduces exactly the developer's error and nothing else; both A4 forms compile (exit 0). That classpath is mine, not Gradle's, so **the developer's next run is the proof; row D13 stays** (a compile error stops again). L28 |
+| New blobs | Red form `4bf587816a29340afec5bb913fedd6b016054252`; green form `d816cfa55eca3ff139debf91cd1bfb5e5b30cd97` (466 lines, 15 `@Test` lines; the plan's 3.2 block hashes to `d816cfa5…`). I1 step 2, I3 step 2, D12b, D15 |
+| Line numbers in the final checks | Re-run (below): IC-2 (a) test-file lines are now `:61`, `:304`, `:321`, `:342`, `:343`, `:365`, `:461`, `:463` (15 lines in all, unchanged count); the AC-12 (e) label line in the new test file is `:400` (was `:402`). I6 step 4 |
+| Mutation rows | Unchanged, re-derived: M-T1, M-T2, M-T3, M-T4, M-T5, M-T6, M-T7, M-T8, M-T9, M-T10, M-T11, M-T12. The helper reads the same three `WorkSpec` values; no mutant touches WorkManager's internals, and no assertion or label changed. The red run stays **11 fail, 4 pass** (5.2); tests 3 and 4 still fail at the equality on the unchanged worker (the capture reaches the same values) |
+| D14 (b) | Also covers an exception from the reflective hop (`ClassNotFoundException`, `NoSuchMethodException`, `NoSuchFieldException`, `IllegalAccessException`, `InvocationTargetException`, `ClassCastException`): stop and report |
+| N1, N3 | Reworded for the compile classpath and the reflective hop; still `needs_check` at I2 |
+| Coverage floor (Record 19 ruling 47; story Implementation Notes, "Correction of the coverage floor") | The floor is the highest 0.05 step that leaves at least one spare line at the measured size. The fixed worker's class has 10 line entries (L29), so the expected measurement is 10/10 and the floor **0.90** (also 0.90 for 16/16, the ruling's example). `jacoco_classes.py` prints `ruled_floor` by that rule; E-G2 has one form, "floor is the highest 0.05 step that leaves one spare line at this size"; I4 step 3, D19, 2.0, 2.3, 8.2, R7, section 7 items 4, 5, 8 carry 0.90 / ruling 47 |
+| 2.12.0 (U-073) | `WorkDatabase` is still a `RoomDatabase` and Room is still runtime-only in work-runtime 2.12.0's module metadata; the reflective names are public there (L11, L28). The runtime-library story needs no change to this helper |
+| Final checks | Re-run in a scratch git repository built from `git archive 29f30ec5` with the A4 files: every expected value matches (L28 list in the reply; the same commands as L27) |
+
+**How the developer resumes.** The file on disk is the red form, blob `306dee99…`. Apply these three Edits with the
+Edit tool, then check `git hash-object $TST` → `4bf587816a29340afec5bb913fedd6b016054252` (row D12b), and continue at
+**I2 step 1** (the red run). Nothing else is redone: I0 and I1's other checks stand.
+- **R-1.** `old_string`: the two lines `import android.annotation.SuppressLint` and `import android.content.Context` →
+  `new_string`: `import android.content.Context`.
+- **R-2.** `old_string`: the three lines `import androidx.work.WorkerParameters`, `import androidx.work.impl.WorkManagerImpl`,
+  `import androidx.work.testing.TestListenableWorkerBuilder` → `new_string`: the first and the third line only.
+- **R-3.** `old_string`: from the comment line `    // WorkInfo exposes neither backoff nor input data (WorkManager 2.9.1 and 2.12.0); the WorkSpec does,`
+  through the closing `    }` of `captureActiveIncomingRequest()` (18 lines, ending with `            input = spec.input`,
+  `        )`, `    }`) → `new_string`: the helper as printed in 3.2 from `    // WorkInfo exposes neither backoff nor input data
+  (WorkManager 2.9.1 and 2.12.0); the internal WorkSpec does,` through the closing `    }` of `workSpecOf(id: UUID)`
+  (30 lines). The text is the same in the red and the green forms; only the factory line (T-F) differs between them.
+  These three Edits were applied in the scratch folder to a copy of the on-disk file (`306dee99…`) and give
+  `4bf58781…` exactly.
+
 ## 0. Binding Inputs
 
 | Source | What binds this plan |
@@ -146,12 +186,14 @@ for each outcome. `plausible, not verified` = not read; named so that a later st
 | L25 | (Iteration 2.) WorkManager 2.9.1 `SystemJobInfoConverter.convert`: a periodic `WorkSpec` becomes a one-shot `JobInfo` (no `setPeriodic` call) with `setMinimumLatency(max(calculateNextRunTime() − now, 0))` and, when the constraints have content-URI triggers, `addTriggerContentUri` per URI plus `setTriggerContentUpdateDelay` and `setTriggerContentMaxDelay`. So after a run the next `CONTENT_TRIGGER` job waits at least until its next period (15 minutes after the last run) and for a content change | verified | `javap -c -p` on `work-runtime-2.9.1.aar`'s class |
 | L26 | (Iteration 2.) Record 18: ruling 45 accepts two build-file lines and fifteen tests; ruling 46 sets the floor to the measured ratio rounded down to 0.05, and to 0.95 when the measurement is 1.00; the product owner's decision continues the builds with Git's built-in comparison (no external `diff` or `cmp`). No later story in sprint 024 or U-071 to U-073 edits `app/src/main/java/com/zegoggles/smssync/worker/` (U-070's story lists `BackupTriggerWorker.kt` under "Not touched", `:169`; its Affected Code is in `service`, `preferences`, `mail`) | verified | `thunderbird-mail-libraries-feasibility-analysis.md` Record 18; `git grep` of the stories at `b097d602` |
 | L27 | (Iteration 3.) Outputs of the final checks, run in a scratch git repository built from `git archive 0d490997` (committed as `<start>`) with this plan's edits applied: `oldtext_check.py start` mismatches=0 before the edits, `fixed` mismatches=0 after; blobs `c47a0452…` (worker) and `85401cb1…` (test); worker `--numstat` `25 28`, one hunk `@@ -17,58 +17,55 @@ package com.zegoggles.smssync.worker`, header-line count 2; AC-10 (a) no line, exit 1; AC-10 (b) one line `WorkManagerScheduler.kt:153`; AC-10 (c) 6 lines `:146`, `:149`, `:153`, `:156`, `:157`, `:421`; the import grep no line, exit 1 (13 lines on the old worker); porcelain ` M app/build.gradle`, ` M …/BackupTriggerWorker.kt`, `?? …/BackupTriggerWorkerTest.kt`; IC-2 (a) 15 lines (scheduler `:29`, `:60`, `:62`, `:211`, `:233`; worker `:52`, `:63`; test `:63`, `:306`, `:323`, `:344`, `:345`, `:367`, `:451`, `:453`); AC-12 (e) restricted 4 lines (worker `:41`, scheduler test `:548`, CNTR-004 `:384`, DES-005 `:135`), on the new test file 1 line (`:402`), and 5 lines in the iteration-2 `--untracked` form (B-4 confirmed); AC-13 (a) only the worker; (b)(c) exit 0; (d) ` app/build.gradle | 4 ++--`, ` 1 file changed, 2 insertions(+), 2 deletions(-)`; (e)(f) exit 0; `@Ignore`/`Assume` no line, exit 1; AC-12 design and change-record checks empty; no code commit after `<start>`; count 756 at `<start>`, 771 in the working tree (= +15), `app/src/test` porcelain only the new file, 15 `@Test` in it; `app/build.gradle` `--numstat` `2 2`, four changed lines, 2 `minimum =` lines, stale phrases no line, exit 1. The I0 step 5 greps at `<start>`: (a) 4 lines `:20`, `:35`, `:61`, `:67`; (b) 1 line `:153`; (c) 8 lines; (d) 7 lines; (e) restricted 4 lines with the worker at `:39` | verified (run) | the scratch repository; one read-only script |
-| N1 | The test file compiles against WorkManager 2.9.1, Truth 1.4.4, Robolectric 4.15.1 and Mockito 5.18.0 | needs_check | I2; row D13 |
+| L28 | (Amendment A4.) **Per type, against the unit-test compile classpath** (work-runtime 2.9.1's published module: `api` = annotation-experimental, lifecycle-livedata, startup-runtime, listenablefuture, kotlin-stdlib, kotlinx-coroutines-android; runtime-only = core, lifecycle-service, **room-ktx**, **sqlite-framework**; so no Room or SQLite type is on the compile classpath, which the compiler error confirms). `androidx.work.impl.WorkDatabase`: `extends androidx.room.RoomDatabase` — **not compilable as a static type**; reached by reflection. `androidx.work.impl.WorkManagerImpl`: `extends androidx.work.WorkManager` (api); its constant pool names `androidx.sqlite.db.SupportSQLiteQuery`, and `getWorkDatabase()` returns `WorkDatabase` — reached by reflection, so the source no longer names it. `androidx.work.impl.model.WorkSpecDao`: plain public interface, no supertype, `getWorkSpec(String): WorkSpec`, but carries the Room annotations `@Dao`, `@Insert`, `@Query`, `@Transaction`, `@Update`. `androidx.work.impl.model.WorkSpec`: public final class, no supertype, public fields `input: Data`, `backoffPolicy: BackoffPolicy`, `backoffDelayDuration: long`, with the Room annotations `@Entity`, `@ColumnInfo`, `@Embedded`, `@Index`, `@PrimaryKey`. Both would probably compile (annotation classes are not supertypes) but are reached by reflection too, so that no Room-annotated class is named. `androidx.work.Data` (final, no supertype, no Room reference) and `androidx.work.BackoffPolicy` (an `Enum`) are named statically. **WorkManager 2.12.0** (module metadata: `api` = annotation-experimental, core, lifecycle-livedata, startup-runtime, listenablefuture, kotlin-stdlib, kotlinx-coroutines-android, jspecify; runtime-only adds **room-runtime**, concurrent-futures-ktx, lifecycle-service, tracing-ktx): `WorkDatabase.kt:86` `public abstract class WorkDatabase : RoomDatabase()`, `WorkSpecDao.kt:45` `public interface`, `WorkSpec.kt:43` `public data class`, `WorkManagerImpl.java:94` `public class … extends WorkManager`; the same reflective names are public (L11), so the runtime-library story needs **no change** to this helper. **The rest of the test file:** `androidx.hilt.work.WorkerAssistedFactory` (hilt-work 1.2.0 is the app's own `implementation`; its `api` includes hilt-common, work-runtime, hilt-android); `dagger.assisted.*`, `dagger.multibindings.*` (dagger is a compile-scope dependency of hilt-android 2.59.2's POM, and the app's main code already compiles against `dagger.assisted`); the Hilt- and Dagger-generated classes are reached only by `Class.forName` in `ic1_…`; `TestListenableWorkerBuilder` and `WorkManagerTestInitHelper` (work-testing 2.9.1, `api` = work-runtime; already used by existing tests); `ShadowLog` and Guava's `ImmutableList` (L14). **Compile check without Gradle:** the cached `kotlin-compiler-embeddable` 2.3.21 (the build's Kotlin) was run on scratch copies against a reconstructed classpath (the SDK's `android-35/android.jar`; the app's compiled classes from its last debug build, read-only; work-runtime, work-testing and hilt-work 2.9.1/1.2.0 class jars; hilt-common, dagger, javax.inject, Robolectric 4.15.1 with its `junit` module, JUnit 4.13.2, Hamcrest, Truth 1.4.4, Guava 33.0.0, Mockito 5.18.0, kotlin-stdlib; **no Room**): the iteration-3 red form (`306dee99…`) fails with exactly the developer's error, `:421:70 cannot access 'androidx.room.RoomDatabase' which is a supertype of 'WorkDatabase'`, and nothing else; the A4 red form (`4bf58781…`) compiles (exit 0) against the unchanged worker's class; the A4 green form (`d816cfa5…`) compiles (exit 0) together with the fixed worker's source. The reconstructed classpath is not Gradle's, so the developer's next run is the proof (row D13 stays) | verified (javap, module metadata, POM, compile check) | `javap -v` on the 2.9.1 classes; 2.12.0 sources; `work-runtime-2.9.1.module`, `work-runtime-2.12.0.module`, `work-testing-2.9.1.module`, `hilt-work-1.2.0.module`, `hilt-android-2.59.2.pom`; the compiler run in the scratch folder |
+| L29 | (Amendment A4.) The fixed worker's compiled class (Kotlin 2.3.21, the compile check above) has line-table entries for 10 source lines: `:51`, `:52`, `:55`, `:56`, `:57` (constructor), `:61`, `:63`, `:64`, `:68`, `:70` (`doWork`); the old worker's class from the developer's build has 16 (`:48` … `:73`), equal to the measured 0/16 at `<start>`. So the expected measurement after the fix is `covered=10 total=10`, and the ruled floor (Record 19 ruling 47: the highest 0.05 step that leaves at least one spare line at the measured size) is `⌊20·(10−1)/10⌋/20 = 0.90` | verified (javap -c -l) | the two class files |
+| N1 | The test file compiles against WorkManager 2.9.1, Truth 1.4.4, Robolectric 4.15.1 and Mockito 5.18.0 on Gradle's unit-test compile classpath (Amendment A4: the first run failed on the `WorkDatabase` hop; the A4 forms compile in a reconstructed classpath without Room, L28) | needs_check | I2; row D13 |
 | N2 | `ShadowLog` records the worker's `Log.d` with tag `SMSBackup+` in this Robolectric set-up | needs_check | I2 (the degraded AC-9 test must fail only at its scheduler-line assertion); row D14 (a) |
-| N3 | `WorkManagerImpl.getInstance(context).workDatabase.workSpecDao().getWorkSpec(id)` returns the spec in the harness | needs_check | I2 (AC-3 must fail only at its equality assertion); row D14 (b) |
+| N3 | The reflective hop `WorkManagerImpl.getWorkDatabase()` → `WorkDatabase.workSpecDao()` → `WorkSpecDao.getWorkSpec(id)` and the field reads return the spec and its values in the harness (Amendment A4; `Class.forName` from the test class uses the Robolectric sandbox loader that loaded WorkManager) | needs_check | I2 (AC-3 must fail only at its equality assertion); row D14 (b) |
 | N4 | The harness leaves `INCOMING` work `ENQUEUED` (no constraint met, delay not met) | needs_check | I2 (AC-7 passes on the unchanged worker); row D14 (c) |
 | N5 | KSP generates the four worker classes and the aggregated-deps file, and both Hilt components (debug, release) get the map entry `mapBuilder.put("com.zegoggles.smssync.worker.BackupTriggerWorker", …)` with `newMapBuilder(3)` | needs_check | I4 step 2, I6 step 3; rows D17, D18 |
-| N6 | The measured `worker` ratio: expected `covered = total`, ratio 1.0000 (only `BackupTriggerWorker.kt` reports lines, L17, L24; every line runs in the tests), so the ruled floor is 0.95 (L26). Iteration 1's "about 0.35" rested on counting the generated classes and is withdrawn | needs_check | I4 step 3; row D19 |
+| N6 | The measured `worker` ratio: expected `covered = total`, ratio 1.0000 (only `BackupTriggerWorker.kt` reports lines, L17, L24; every line runs in the tests), 10 of 10 lines (L29), so the ruled floor is 0.90 (Record 19 ruling 47; was 0.95 under ruling 46). Iteration 1's "about 0.35" rested on counting the generated classes and is withdrawn | needs_check | I4 step 3; row D19 |
 | N7 | M-T10 (`@HiltWorker` removed) compiles: Dagger accepts an `@AssistedInject` constructor with no `@AssistedFactory` | needs_check | I5; row D22 |
 | N8 | M-T11 (`@AssistedInject` removed, `@HiltWorker` kept) fails the KSP step | needs_check | I5; row D23 |
 | N9 | WorkManager accepts `setInitialDelay(-1, SECONDS)` under M-T4 (if it throws, the negative-delay test errors instead of failing; both count as detection) | needs_check | I5 M-T4; row D22 |
@@ -200,8 +242,9 @@ Book chapters are cited as commonly given; I did not re-read them in this sessio
   shows which rule failed.
 - **Coverage floor as a ratchet** (Ford, Parsons and Kua, *Building Evolutionary Architectures*, ch. 2, fitness
   functions). The `worker` floor is raised on measurement, with no new exclusion: the measured ratio rounded down to
-  0.05, and 0.95 when the measurement is 1.00 (Record 18 ruling 46), so a line-counting difference in a later JaCoCo
-  version cannot fail a gate that no story may lower.
+  0.05 so that at least one spare line remains at the measured size (Record 19 ruling 47, correcting ruling 46; 0.90 for
+  the expected 10 of 10 lines), so a line-counting difference in a later JaCoCo version cannot fail a gate that no story
+  may lower.
 
 ### 2.1 The fix and why this form
 
@@ -276,7 +319,7 @@ Counts: 15 tests, all in the new class. Red run (I2, unchanged worker): 11 fail,
 | Test `ic1_…` added (P-2, ruled: Record 18 ruling 45) | A unit-level failure when `@HiltWorker` is removed; the persisted name and the map key pinned | Couples one test to androidx.hilt's generated names (`_AssistedFactory`, `_HiltModule`, `bind`), stable since hilt-work 1.0 and read in 1.2.0 (L6); U-071 moves to 1.4.0 (P1) | Leave it to IC-3 | IC-3 runs once on one emulator; a unit test runs in every gate. Reflection, not direct references, so a missing class fails the test instead of the compile, which keeps it a valid mutation detector |
 | `WorkManagerSchedulerTest.kt:548` not edited | The scheduler test file shows an empty diff (simplest proof of AC-13 (e); U-073 AC-13 unaffected) | The comment stays in the conditional ("would ultimately call") | Present tense | AC-12 (c): the sentence is true after the fix and the tense is optional |
 | Rule 15: `:586` floor line **and** the `:579` note (P-1, ruled: Record 18 ruling 45) | No false sentence is left in the rule ("BackupTriggerWorker has no unit tests; floor stays at 0%") | `app/build.gradle` shows 2 changed lines, not 1 | One line only | The story allows "this rule's `minimum` value and its comment"; leaving `:579` would put a false statement in the build file |
-| Floor 0.95 under a measured 1.00 (Record 18 ruling 46) | A later JaCoCo version that counts a line differently (U-071 raises JaCoCo) cannot fail a gate that no story may lower | One uncovered line in the worker could go unnoticed by the floor (the 15 tests and the mutants still see it) | 1.00 | Ruled |
+| Floor: the highest 0.05 step leaving one spare line, 0.90 for 10 of 10 (Record 19 ruling 47, correcting ruling 46) | A later JaCoCo version that counts one line differently (U-071 raises JaCoCo) cannot fail a gate that no story may lower | One uncovered line in the worker could go unnoticed by the floor (the 15 tests and the mutants still see it) | 1.00; 0.95 (ruling 46: with 10 or 16 lines it still needs every line) | Ruled |
 
 ### 2.4 Edge cases (behaviour after the fix)
 
@@ -501,15 +544,17 @@ The companion object (`TAG`) and the closing brace stay. Result: 76 lines, blob 
 Written in I1 in its **red form**: identical to the text below except the one factory line
 `                BackupTriggerWorker(appContext, workerParameters, scheduler, preferences)` is written as
 `                BackupTriggerWorker(appContext, workerParameters)` (16 leading spaces in both), so that it compiles
-against the unchanged worker. Red-form blob `306dee99fc19dc1810d72abeed33a683cbb7edd1`.
-**T-F** (I3 step 1, Edit): that one line → the four-argument line. Final blob `85401cb1f2a1133fa285aaf1bbefd41b0c1bbd93`
-(456 lines; iteration 2 adds the four-line delay assertion at the end of `ac9_allowedState_…`).
+against the unchanged worker. Red-form blob `4bf587816a29340afec5bb913fedd6b016054252` (Amendment A4; was
+`306dee99…`). **T-F** (I3 step 1, Edit): that one line → the four-argument line. Final blob
+`d816cfa55eca3ff139debf91cd1bfb5e5b30cd97` (466 lines; Amendment A4: the `WorkSpec` helper is reflective and the
+`SuppressLint` and `WorkManagerImpl` imports are gone; iteration 2 added the four-line delay assertion at the end of
+`ac9_allowedState_…`). Both A4 forms were compiled with the cached Kotlin compiler 2.3.21 against a reconstructed
+unit-test compile classpath without Room (L28).
 The text contains the string `@Test` only on the 15 annotation lines.
 
 ```kotlin
 package com.zegoggles.smssync.worker
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.WorkerAssistedFactory
@@ -523,7 +568,6 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
-import androidx.work.impl.WorkManagerImpl
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.google.common.truth.Truth.assertThat
@@ -920,23 +964,35 @@ class BackupTriggerWorkerTest {
         assertWithMessage("tags").that(viaTrigger.tags).contains(INCOMING)
     }
 
-    // WorkInfo exposes neither backoff nor input data (WorkManager 2.9.1 and 2.12.0); the WorkSpec does,
-    // through the same accessors in both. It is library-internal (@RestrictTo), hence the suppression.
-    @SuppressLint("RestrictedApi")
+    // WorkInfo exposes neither backoff nor input data (WorkManager 2.9.1 and 2.12.0); the internal WorkSpec does,
+    // through the same members in both. WorkSpec, WorkSpecDao and WorkDatabase are library-internal, and WorkDatabase
+    // extends Room's RoomDatabase, which is a runtime-only dependency of work-runtime and so not on the unit-test
+    // compile classpath. The database, its DAO and the spec are therefore reached by reflection, through the public
+    // declaring types; only the public Data and BackoffPolicy types are named in this source.
     private fun captureActiveIncomingRequest(): IncomingRequest {
         val active = activeIncomingWork()
         assertWithMessage("active INCOMING work entries").that(active).hasSize(1)
         val info = active[0]
-        val spec = WorkManagerImpl.getInstance(context).workDatabase.workSpecDao().getWorkSpec(info.id.toString())
+        val spec = workSpecOf(info.id)
         assertWithMessage("WorkSpec of the active INCOMING work").that(spec).isNotNull()
+        val specClass = Class.forName("androidx.work.impl.model.WorkSpec")
         return IncomingRequest(
             tags = info.tags,
             initialDelayMillis = info.initialDelayMillis,
             constraints = info.constraints,
-            backoffPolicy = spec!!.backoffPolicy,
-            backoffDelayDuration = spec.backoffDelayDuration,
-            input = spec.input
+            backoffPolicy = specClass.getField("backoffPolicy").get(spec) as BackoffPolicy,
+            backoffDelayDuration = specClass.getField("backoffDelayDuration").getLong(spec),
+            input = specClass.getField("input").get(spec) as Data
         )
+    }
+
+    /** WorkManagerImpl.getWorkDatabase().workSpecDao().getWorkSpec(id), by reflection (see above). */
+    private fun workSpecOf(id: UUID): Any? {
+        val workManager = WorkManager.getInstance(context)
+        val database = Class.forName("androidx.work.impl.WorkManagerImpl").getMethod("getWorkDatabase").invoke(workManager)
+        val dao = Class.forName("androidx.work.impl.WorkDatabase").getMethod("workSpecDao").invoke(database)
+        return Class.forName("androidx.work.impl.model.WorkSpecDao").getMethod("getWorkSpec", String::class.java)
+            .invoke(dao, id.toString())
     }
 
     /** Asserts the trigger line once, at debug, byte for byte as CR-015, BUG-021 AC-12 and DES-014 Run R read it. */
@@ -965,14 +1021,19 @@ class BackupTriggerWorkerTest {
 }
 ```
 
-Notes. `spec!!` and `val old: WorkInfo?` compile against 2.9.1 (platform types; at most a warning) and 2.12.0
-(`WorkSpec?`, `WorkInfo?`), L11. No Kotlin warning is an error in this build (no `allWarningsAsErrors`; `-Werror` is
-javac-only and not for test tasks, `app/build.gradle:190-205`). Lint does not check test sources here (no
-`checkTestSources`), so `@SuppressLint` is documentation. The test's own classes are not measured by JaCoCo.
+Notes. `val old: WorkInfo?` compiles against 2.9.1 (platform type) and 2.12.0 (`WorkInfo?`), L11. The `WorkSpec` is
+reached only by reflection (Amendment A4): the source names no `androidx.work.impl` type, so neither `RoomDatabase`
+(the supertype of `WorkDatabase`) nor the Room annotations on `WorkSpec` and `WorkSpecDao` are needed at compile time
+in 2.9.1 or 2.12.0 (L28). The reflective names (`WorkManagerImpl.getWorkDatabase()`, `WorkDatabase.workSpecDao()`,
+`WorkSpecDao.getWorkSpec(String)`, the public fields `backoffPolicy`, `backoffDelayDuration`, `input`) are public in
+both versions (L10, L11). No Kotlin warning is an error in this build (no `allWarningsAsErrors`; `-Werror` is
+javac-only and not for test tasks, `app/build.gradle:190-205`). The test's own classes are not measured by JaCoCo.
 
 ### 3.3 `app/build.gradle`, JaCoCo Rule 15 (two edits, I6 step 1; P-1, ruled)
 
-Iteration 2 (plan-review B-1, Record 18 ruling 46). The texts no longer claim that the generated classes count.
+Iteration 2 (plan-review B-1). The texts no longer claim that the generated classes count. **Amendment A4:** the floor
+rule is Record 19 ruling 47 (correcting ruling 46): the highest 0.05 step that leaves at least one spare line at the
+measured size; expected 0.90 (10 of 10 lines, L29).
 
 **E-G1 (`:579`).** `old_string`: `        // BackupTriggerWorker has no unit tests; floor stays at 0%.` → `new_string` (main path):
 `        // BackupTriggerWorker has unit tests since U-069 (BackupTriggerWorkerTest); its Hilt-generated classes report no lines to JaCoCo (@DaggerGenerated filter; the others are interfaces).`
@@ -980,11 +1041,10 @@ Alternative `new_string` when row D19 (b) applies (a generated class reports lin
 `        // BackupTriggerWorker has unit tests since U-069 (BackupTriggerWorkerTest).`
 
 **E-G2 (`:586`).** `old_string`: `                minimum = 0.00 // MEASURED 0% — BackupTriggerWorker untested; TODO raise after dedicated tests`
-→ `new_string`, main path (measured ratio 1.00, I4 step 3):
-`                minimum = 0.95 // MEASURED <P>% (<c>/<t> lines, <YYYY-MM-DD>, U-069); floor one 0.05 step below the measurement, so a JaCoCo line-counting change cannot fail it`
-(expected `<P>` = `100.0`)
-and, if the measured ratio is below 1.00 (row D19 (a)):
-`                minimum = <F> // MEASURED <P>% (<c>/<t> lines, <YYYY-MM-DD>, U-069); floor is the measurement rounded down to 0.05`.
+→ `new_string` (one form for every measurement, Amendment A4):
+`                minimum = <F> // MEASURED <P>% (<c>/<t> lines, <YYYY-MM-DD>, U-069); floor is the highest 0.05 step that leaves one spare line at this size`
+(expected `<F>` = `0.90`, `<P>` = `100.0`, `<c>/<t>` = `10/10`). The note says what is measured and why the floor is
+below it, and does not say the generated classes count.
 `<F>`, `<P>`, `<c>`, `<t>` are the `ruled_floor`, `percent`, `covered` and `total` values of the `PACKAGE` line of
 `I4-worker-classes.txt` (or of `I6-worker-classes.txt` under row D25); `<YYYY-MM-DD>` is today's UTC date from
 `date -u +%F`. The classes whose lines were measured (`CLASS` lines with `covered + missed > 0`; expected:
@@ -1098,13 +1158,15 @@ tot = cov + mis
 if tot == 0:
     raise SystemExit('no lines')
 h = (cov * 20 // tot) * 5   # hundredths, rounded down to a multiple of 5
-r = 95 if h == 100 else h   # Record 18 ruling 46: one step lower when the measurement is 1.00
+r = ((cov - 1) * 20 // tot) * 5 if cov > 0 else 0   # Record 19 ruling 47: leaves at least one spare line
 print(f"PACKAGE {pkg.replace('/', '.')} covered={cov} total={tot} ratio={cov / tot:.4f} "
       f"percent={100.0 * cov / tot:.1f} floor={h // 100}.{h % 100:02d} ruled_floor={r // 100}.{r % 100:02d}")
 ```
 The floor is integer arithmetic (`⌊20c/t⌋ / 20`), so it is never above the measured ratio, and JaCoCo's `COVEREDRATIO`
 check (`ratio < minimum` fails) passes at any rounding of the ratio. `ruled_floor` is the value written into the build
-file (0.95 under a measured 1.00).
+file: the highest 0.05 step `F` with `F·t ≤ c − 1`, so at least one covered line can be lost before the gate fails
+(Record 19 ruling 47; 0.90 for 10/10 and for 16/16). Checked in the scratch folder against today's report: `worker`
+prints `covered=0 total=16 … floor=0.00 ruled_floor=0.00`.
 
 ## 4. Implementation Steps
 
@@ -1234,7 +1296,7 @@ Expected: the four files `BackupTriggerWorker_AssistedFactory.java`, `BackupTrig
 
 1. Write `$TST` with the Write tool: the text of 3.2 with the factory line in its two-argument form.
 2. Checks into `$WORK/logs/I1-checks.log` (kept for `I2-red-checks.txt`): `git hash-object $TST` →
-   `306dee99fc19dc1810d72abeed33a683cbb7edd1`; `grep -c "@Test" $TST` → `15`;
+   `4bf587816a29340afec5bb913fedd6b016054252` (Amendment A4); `grep -c "@Test" $TST` → `15`;
    `git status --porcelain --untracked-files=all -- app` → exactly `?? app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt`;
    `git diff --quiet HEAD -- app/src/main; echo "main-clean-exit=$?"` → 0. **Row:** D12b.
 
@@ -1255,7 +1317,7 @@ Expected: the four files `BackupTriggerWorker_AssistedFactory.java`, `BackupTrig
 1. Edits W1, W2, W3 on `$WRK` (3.1); Edit T-F on `$TST` (3.2).
 2. Checks into `$WORK/logs/I3-checks.log`, sanitised to `$E/I3-checks.txt`:
    - `git hash-object $WRK` → `c47a0452d040f959df134fc8a71fda5be6b6180f`; `git hash-object $TST` →
-     `85401cb1f2a1133fa285aaf1bbefd41b0c1bbd93` (row D15);
+     `d816cfa55eca3ff139debf91cd1bfb5e5b30cd97` (row D15; Amendment A4);
    - `git diff --numstat -- $WRK` → `25	28	app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt`;
      `git diff -- $WRK | grep -E '^@@'` → exactly one line, `@@ -17,58 +17,55 @@ package com.zegoggles.smssync.worker`
      (git's function-context suffix included; re-derived with `git diff --no-index` on the scratch copies); `git diff -- $WRK | grep -cE '^[-+](package |.*class BackupTriggerWorker)'`
@@ -1284,7 +1346,7 @@ Expected: the four files `BackupTriggerWorker_AssistedFactory.java`, `BackupTrig
    `com.zegoggles.smssync.worker.BackupTriggerWorker covered=t missed=0` and `BackupTriggerWorker$Companion`,
    `BackupTriggerWorker_AssistedFactory`, `BackupTriggerWorker_AssistedFactory_Impl`, `BackupTriggerWorker_Factory`,
    `BackupTriggerWorker_HiltModule` each `covered=0 missed=0`; the `PACKAGE` line `covered=t total=t ratio=1.0000
-   percent=100.0 floor=1.00 ruled_floor=0.95` (L17, L24, N6). Every line of `BackupTriggerWorker.kt` in
+   percent=100.0 floor=1.00 ruled_floor=0.90` with `t` = 10 (L17, L24, L29, N6; Amendment A4, ruling 47). Every line of `BackupTriggerWorker.kt` in
    `I4-worker-lines.txt` has `ci>0`. Record `c`, `t`, `P`, `F` (= `ruled_floor`) and the classes with lines in the log.
    **Row:** D19.
 
@@ -1308,8 +1370,8 @@ Before the first scheduler entry: `cp $SCH $WORK/pristine/WorkManagerScheduler.k
 4. **Final checks** into `$WORK/logs/I6-final.log`, sanitised to `$E/I6-final-checks.txt`, each command echoed:
    - AC-10 (a), (b), (c) as I3 step 2;
    - IC-2 (a): `git grep --untracked -n "BackupTriggerWorker" -- app/src` → 15 lines: `WorkManagerScheduler.kt:29`,
-     `:60`, `:62`, `:211`, `:233`; `BackupTriggerWorker.kt:52`, `:63`; `BackupTriggerWorkerTest.kt:63`, `:306`, `:323`,
-     `:344`, `:345`, `:367`, `:451`, `:453` (iteration 2 line numbers). Every hit is accounted for in the log: the
+     `:60`, `:62`, `:211`, `:233`; `BackupTriggerWorker.kt:52`, `:63`; `BackupTriggerWorkerTest.kt:61`, `:304`, `:321`,
+     `:342`, `:343`, `:365`, `:461`, `:463` (Amendment A4 line numbers, run, L28). Every hit is accounted for in the log: the
      scheduler's import, two comments, the KDoc and the class literal; the declaration and the log text; the test's class,
      references and constants;
    - AC-12 (e) grep exactly as I0 5 (e), restricted to `app/src/main`, `$SXT` and `sdlc/artifacts/design` (all tracked;
@@ -1317,7 +1379,8 @@ Before the first scheduler entry: `cp $SCH $WORK/pristine/WorkManagerScheduler.k
      `CNTR-MODERNIZATION-004-backup-scheduler.md:384`, `DES-MODERNIZATION-005-workmanager-scheduler-design.md:135`. Then
      the new test file separately, with plain `grep` because it is untracked:
      ``grep -nE 'via scheduleIncoming\(\)|it calls (scheduler\.)?`?scheduleIncoming\(\)|would ultimately call scheduleIncoming\(\)' $TST``
-     → exactly 1 line, `402:        assertWithMessage("request via the trigger worker, against the request via scheduleIncoming()")`,
+     → exactly 1 line, `400:        assertWithMessage("request via the trigger worker, against the request via scheduleIncoming()")`
+     (`:400` after Amendment A4 removed two import lines; it was `:402`, run, L28),
      the AC-3 assertion label; the log records it as a label, not an AC-12 statement (both outputs run, L27);
    - AC-13 (a): `git diff --name-only $START -- app/src/main` → only `$WRK`; (b), (c):
      `git diff --quiet $START -- $SCH $S/service/BackupWorker.kt $S/scheduler/BackupScheduler.java $S/receiver/SmsBroadcastReceiver.java app/src/main/AndroidManifest.xml; echo "exit=$?"` → `exit=0`;
@@ -1499,14 +1562,14 @@ are read (row D14).
 | D10 | `S0` above 2 | Record and report as pre-existing; AC-14 compares with `S0` |
 | D11 | The I0 `worker` package is not 2 classes and 0/16 lines | Record and explain from `I0-worker-classes.txt`; not a stop (the baseline is measured) |
 | D12 | An I0 grep's set of files or texts differs from I0 step 5 | Record and explain each difference; a hit that shows a second `INCOMING` builder or another reference to the worker: stop and report |
-| D12b | The red-form blob is not `306dee99…`, or the `@Test` count is not 15 | Compare the file with 3.2 and correct it until the blob matches; never run with a variant |
+| D12b | The red-form blob is not `4bf58781…` (Amendment A4), or the `@Test` count is not 15 | Compare the file with 3.2 and correct it until the blob matches; never run with a variant |
 | D13 | The test class does not compile (I2) | Stop and report the compiler message; the test text is the plan's and is not changed by the developer |
-| D14 | The red run differs from 5.2 | (a) Test 14 fails at "count of the trigger line": `ShadowLog.getLogsForTag` does not capture. Fallback F-LOG: in both AC-9 tests replace `ShadowLog.getLogsForTag(TAG)` by `ShadowLog.getLogs().filter { it.tag == TAG }` (two Edits; the blobs of 3.2 then no longer apply and the new ones are recorded); run I2 again once. If it still fails there, stop and report. (b) Test 3 or 4 fails at "WorkSpec of the active INCOMING work": stop and report (no public API reads backoff or input). (c) Test 9 fails: stop and report (the harness runs work or the default delay differs; AC-7 would not be reliable). (d) Test 10, 11 or 12 fails: stop and report (REPLACE semantics differ from L12). (e) A test listed as FAIL passes: stop and report (it does not detect the defect). (f) An error (exception) instead of a failure: record its type; if it comes from the harness (for example WorkManager not initialised), stop and report |
-| D15 | The fixed worker's blob is not `c47a0452…`, or the final test blob is not `85401cb1…` (unless F-LOG applied) | Re-read W1 to W3 and T-F against the file and correct until the blob matches |
+| D14 | The red run differs from 5.2 | (a) Test 14 fails at "count of the trigger line": `ShadowLog.getLogsForTag` does not capture. Fallback F-LOG: in both AC-9 tests replace `ShadowLog.getLogsForTag(TAG)` by `ShadowLog.getLogs().filter { it.tag == TAG }` (two Edits; the blobs of 3.2 then no longer apply and the new ones are recorded); run I2 again once. If it still fails there, stop and report. (b) Test 3 or 4 fails at "WorkSpec of the active INCOMING work", or errors in `workSpecOf` or the field reads (`ClassNotFoundException`, `NoSuchMethodException`, `NoSuchFieldException`, `IllegalAccessException`, `InvocationTargetException`, `ClassCastException`; Amendment A4): stop and report with the exception (no public API reads backoff or input; no other route is improvised). (c) Test 9 fails: stop and report (the harness runs work or the default delay differs; AC-7 would not be reliable). (d) Test 10, 11 or 12 fails: stop and report (REPLACE semantics differ from L12). (e) A test listed as FAIL passes: stop and report (it does not detect the defect). (f) An error (exception) instead of a failure: record its type; if it comes from the harness (for example WorkManager not initialised), stop and report |
+| D15 | The fixed worker's blob is not `c47a0452…`, or the final test blob is not `d816cfa5…` (Amendment A4; unless F-LOG applied) | Re-read W1 to W3 and T-F against the file and correct until the blob matches |
 | D16 | The green run has a failure | Stop and report; never change an assertion to fit |
 | D17 | KSP or `assembleDebug` fails at I4 | Stop and report the message (the production factory would not resolve) |
 | D18 | EV-G: the four generated files, the aggregated-deps file, or `put=1 size3=1` in either component, not as expected | Missing entry or file: stop and report (the worker would not be built by `HiltWorkerFactory`). Only `size3` differs (for example a different map size because the component counts differently): record the lines and explain; not a stop if `put=1` in both |
-| D19 | The measured `worker` ratio (iteration 2, plan-review B-1; ruling 46) | Expected 1.00, `ruled_floor` 0.95: the main-path E-G1 and E-G2 texts. (a) Ratio below 1.00: record each `ci=0` line of `I4-worker-lines.txt` and continue with `<F>` = `ruled_floor` and E-G2's second form; below 0.05: stop and report (the worker is not covered). (b) A generated class with `covered + missed > 0`: record it and use E-G1's alternative text |
+| D19 | The measured `worker` ratio (iteration 2, plan-review B-1; Amendment A4, Record 19 ruling 47) | Expected `covered=10 total=10`, ratio 1.00, `ruled_floor` 0.90: the main-path E-G1 text and E-G2. `t` other than 10 with ratio 1.00: record it (a different Kotlin line table) and use the printed `ruled_floor`. (a) Ratio below 1.00: record each `ci=0` line of `I4-worker-lines.txt` and continue with `<F>` = `ruled_floor` (the same E-G2 form); below 0.05: stop and report (the worker is not covered). (b) A generated class with `covered + missed > 0`: record it and use E-G1's alternative text |
 | D20 | A floor other than `worker` fails at I4 | Stop and report |
 | D21 | A mutation precondition (4.8 (1)) fails | Stop; apply the recovery note; never run a mutation on a dirty tree |
 | D22 | A mutation result | (a) An expected-failing case passes: undetected; record it, stop and report (AC-11 unmet). For M-T10 only, first list `app/build/generated/ksp/debug/java/com/zegoggles/smssync/worker/` and record whether `BackupTriggerWorker_AssistedFactory.java` is still there (a stale generated class, not a real escape; plan-review O-7), then stop and report either way. (b) Extra failing cases: record and explain each from the mutant; not a stop if explained. (c) A counted mutant (M-T1 to M-T10) does not compile: log it invalid with the compiler message; M-T10: record "detected by the build" (a valid detector, not counted as a unit detection); M-T1 to M-T9 and M-T12: stop and report (no replacement is improvised) |
@@ -1546,18 +1609,18 @@ are read (row D14).
    generated names `<Name>_AssistedFactory`, `<Name>_HiltModule` and the method `bind` (read in 1.2.0, L6); the AC-9
    tests use `ShadowLog.getLogsForTag` and `LogItem.msg`/`type` (read in 4.15.1, L14). If either changes, U-071's gate
    shows it in that test; the fix is one name. Coverage: JaCoCo filters the generated classes today (`@DaggerGenerated`,
-   L24), so the `worker` floor measures `BackupTriggerWorker.kt` only; U-071 also raises JaCoCo, and the 0.95 floor under
-   a measured 1.00 (ruling 46) is there so that a line-counting change does not fail the gate.
+   L24), so the `worker` floor measures `BackupTriggerWorker.kt` only; U-071 also raises JaCoCo, and the 0.90 floor
+   (one spare line at 10 lines, Record 19 ruling 47) is there so that a line-counting change does not fail the gate.
 5. **For U-070 (BUG-021) and DES-014 D14 Run R:** after this story the trigger path also logs
    `WorkManagerScheduler.scheduleIncoming: enqueued INCOMING`, so that line no longer identifies the receiver; Run R and
    BUG-021's AC-12 should read the trigger line `BackupTriggerWorker.doWork: content-URI trigger fired; …`. With Wi-Fi
    only on, the incoming backup now waits for an unmetered network, which may change the timing those checks observe.
    **The `worker` floor** (iteration 2, plan-review B-1 and O-6, ruling 46): Rule 15 covers only
    `com.zegoggles.smssync.worker*`, which after this story holds `BackupTriggerWorker` and its generated classes; its
-   floor becomes 0.95 under a measured 1.00. The reviewer's remark that it "binds U-070, which edits this worker" does not
+   floor becomes 0.90 under a measured 10 of 10 lines (Record 19 ruling 47). The reviewer's remark that it "binds U-070, which edits this worker" does not
    hold: U-070 edits `BackupWorker.kt` and `RestoreWorker.kt` in `service` (and files in `preferences` and `mail`) and
    lists `BackupTriggerWorker.kt` as not touched (L26). No later story in sprint 024 or U-071 to U-073 adds code to the
-   `worker` package. Any future story that does must cover its own new lines to keep 0.95.
+   `worker` package. Any future story that does must cover its own new lines to keep 0.90.
 6. **The SMS-received receiver** is left as it is (Record 15 row 16; PO-3 open): `SmsBroadcastReceiver.java` and its
    manifest entry show empty diffs; `SmsBroadcastReceiverTest` passes unchanged.
 7. **Design text for the orchestrator** (no edit here; contract-verification O-3): the two-worker statements are
@@ -1574,7 +1637,7 @@ are read (row D14).
    "not verified" items 2 (harness and `ShadowLog`), 4 (2.9.1 default backoff: 30 000 ms, L10) and 5 (keep rule, L9)
    are closed by this plan or by I2. **AC-11's sentence "the measured ratio will be below 100%"** (story `:101`) is false:
    the generated classes report no lines (L24) and the ratio is expected to be 1.00; the orchestrator corrects it at
-   close-out, with the floor rule of ruling 46 (plan-review O-6).
+   close-out, with the floor rule of Record 19 ruling 47 (plan-review O-6; ruling 46 is corrected by 47).
 9. **Product-owner items** PO-1, PO-2, PO-3 stay open (bug ruling 3, 4; Record 15 row 16).
 10. **IC-3** is the orchestrator's (section 9), after the developer's hand-off and before or after the reviews, never
     with a mutation present.
@@ -1617,7 +1680,8 @@ checked CNTR-MODERNIZATION-004 regardless (iteration 1, PASS; hand-over item 11)
   which is false after this story). E-G1 always applies.
 - **P-2, ruled (Record 18 ruling 45): test `ic1_…` is added**, the unit-level detector for a removed `@HiltWorker`; the
   story adds fifteen tests.
-- **Floor, ruled (Record 18 ruling 46):** measured ratio rounded down to 0.05, and 0.95 when the measurement is 1.00.
+- **Floor, ruled (Record 19 ruling 47, correcting Record 18 ruling 46):** the highest 0.05 step that leaves at least one
+  spare line at the measured size; 0.90 for the expected 10 of 10 lines.
 - **P-3, P-4, P-5 (information): stricter than the story's wording.** AC-8 (b) and (c) also assert the new id (without
   it M-T6 is not detected by them); AC-3 also asserts the contract values; AC-9 has a second test (degraded) and uses
   75 s in the first, where it also asserts the 75 000 ms delay (M-T12). None changes a criterion's meaning.
@@ -1635,7 +1699,7 @@ The story's own Scope Concerns are ruled (section 0) and applied.
 | R4 | The internal `WorkSpec` accessor fails in the harness | Low (L10) | Medium (AC-3) | Red-run probe (tests 3, 4), stop (D14 (b)) |
 | R5 | The harness runs `INCOMING` work, so AC-7's state check is not reliable | Low (L13) | Medium | Red-run probe (test 9), stop (D14 (c)) |
 | R6 | A mutation left in the tree reaches a gate, review or commit | Low | High | 4.8: write-ahead, preconditions, `restored` line, blob and raw-byte checks; the developer commits nothing |
-| R7 | The measured `worker` ratio differs from the expected 1.00 (a worker line not run, or a generator or JaCoCo change that makes a generated class report lines) | Low (L17, L24) | Low | The floor is measured, not assumed; no exclusion; 0.95 under 1.00 (ruling 46); D19 (a) and (b) |
+| R7 | The measured `worker` ratio differs from the expected 1.00 (a worker line not run, or a generator or JaCoCo change that makes a generated class report lines) | Low (L17, L24) | Low | The floor is measured, not assumed; no exclusion; one spare line (ruling 47, 0.90 for 10/10); D19 (a) and (b) |
 | R8 | U-071's androidx.hilt 1.4.0 renames generated types, breaking `ic1_…` | Low | Low | One-name fix; hand-over item 4 |
 | R9 | U-073's work-testing 2.12.0 changes the builder API | Low | Low | Hand-over item 3; the rest of the API is verified in 2.12.0 sources |
 | R10 | The owner notices incoming backups waiting on mobile data (Wi-Fi only on) | Medium | Low (intended) | The story's purpose; `CHANGES` is not edited by this story; hand-over item 5 |
@@ -1823,8 +1887,8 @@ the tests that must fail and those that must pass. The two Hilt-annotation failu
 `ic1_…` for `@HiltWorker`, the KSP step for `@AssistedInject`. IC-4 is explicitly the detector for neither.
 
 **Iteration 2** takes up every gate finding (the Iteration 2 table). The JaCoCo premise is corrected from today's
-coverage data: the generated classes report no lines, the `worker` ratio is expected to be 1.00, and the floor is 0.95
-under ruling 46. IC-3 no longer calls an unobserved run a pass. The vacuous `git grep` check is replaced, and every
+coverage data: the generated classes report no lines, the `worker` ratio is expected to be 1.00, and the floor was set at
+0.95 under ruling 46 (now 0.90 under ruling 47, Amendment A4). IC-3 no longer calls an unobserved run a pass. The vacuous `git grep` check is replaced, and every
 other final check was re-read for the same mistake. A hard-coded default delay is now caught (M-T12). No external `diff`
 or `cmp` is called anywhere. P-1 and P-2 are ruled (Record 18 ruling 45); nothing is open for the orchestrator before the
 build.
@@ -1833,6 +1897,11 @@ build.
 on its own. It labels the last two IC-3 cases and states the periodic trigger's user effect. Every expected value of
 the final checks (I0 step 5, I3 step 2, I6 step 4) was confirmed by running the command in a scratch repository built
 from `0d490997` with this plan's edits applied (L27).
+
+**Amendment A4** replaces the test helper's static `WorkDatabase` hop with reflection, so the test compiles without Room
+on the compile classpath, with AC-3 unchanged and no build change. The old form reproduces the developer's compile error
+under the cached Kotlin compiler and both new forms compile there (L28); the developer's next run is the proof (D13). The
+floor is 0.90 under Record 19 ruling 47 (L29). The final checks were re-run from `29f30ec5`.
 
 ## Phase Completion Report
 ---
@@ -1843,5 +1912,5 @@ artifact_path: "sdlc/artifacts/build/sprints/sprint-024/U-069/plan.md"
 story_status: "in-progress"
 current_build_phase: "planning"
 errors: []
-notes: "Iteration 3: B-4 fixed (AC-12 (e) restricted to the AC-12 files: 4 lines; the new test file checked separately: 1 line, :402, an assertion label); IC-3 last two cases labelled; edge case 13 in plain words plus hand-over item 13; every final check run in a scratch repository built from 0d490997 (L27). Iteration 2: B-1 to B-3, plan-review O-1 to O-7, contract-verification O-1 to O-4 and both depth recommendations taken up, none declined. 15 tests, 12 mutation runs (11 counted, M-T11 compile-only), 18 Gradle runs; the developer commits nothing; no external diff or cmp. Worker floor 0.95 under an expected measured 1.00 (ruling 46). P-1 and P-2 ruled (ruling 45); nothing open."
+notes: "Amendment A4 (during implementation): the test's WorkSpec helper reaches WorkDatabase, WorkSpecDao and WorkSpec by reflection (Room is runtime-only in work-runtime 2.9.1 and 2.12.0); AC-3 unchanged; no build or dependency change; both test forms compiled with the cached Kotlin 2.3.21 against a reconstructed classpath without Room (old form reproduces the developer's error); new blobs red 4bf58781, green d816cfa5; final checks re-run from 29f30ec5; floor 0.90 per ruling 47 (10/10 lines expected); resume with Edits R-1 to R-3, then I2 step 1. Iteration 3: B-4 fixed (AC-12 (e) restricted to the AC-12 files: 4 lines; the new test file checked separately: 1 line, :402, an assertion label); IC-3 last two cases labelled; edge case 13 in plain words plus hand-over item 13; every final check run in a scratch repository built from 0d490997 (L27). Iteration 2: B-1 to B-3, plan-review O-1 to O-7, contract-verification O-1 to O-4 and both depth recommendations taken up, none declined. 15 tests, 12 mutation runs (11 counted, M-T11 compile-only), 18 Gradle runs; the developer commits nothing; no external diff or cmp. Worker floor 0.95 under an expected measured 1.00 (ruling 46). P-1 and P-2 ruled (ruling 45); nothing open."
 ---
