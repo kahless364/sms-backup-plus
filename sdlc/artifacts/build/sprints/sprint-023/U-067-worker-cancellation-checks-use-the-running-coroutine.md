@@ -1,6 +1,7 @@
 ---
 type: story
-status: ready
+status: in-progress
+sprint: '023'
 artifact_type: user-story
 priority: medium
 complexity: low
@@ -35,7 +36,7 @@ title: Make the backup and restore workers' three cancellation checks observe th
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-022
-updated_at: '2026-11-21T09:42:37.864Z'
+updated_at: '2026-11-21T09:46:03.993Z'
 ---
 
 # U-067: Make the Backup and Restore Workers' Three Cancellation Checks Observe the Running Job, and Prove Each One With a Test That Cancels the Work Mid-Loop
