@@ -6,6 +6,7 @@ related_stories: []
 change_records:
   - CR-011
   - CR-010
+  - CR-016
 id: EPIC-MODERNIZATION-006
 title: 'Dependency Currency: Latest Stable Toolchain, Libraries, Platform Level, and Mail Stack'
 domain: modernization
@@ -27,7 +28,8 @@ everything it uses", with the Thunderbird for Android migration in scope, the do
 removed rather than upgraded, and a minSdk raise to 24 accepted. This epic brings every
 dependency to the latest stable release available when its story is planned, and retires the
 vendored mail stack, without changing user-visible backup or restore behavior (other than the
-removed donation flow and the dropped Android 5.0 to 6.0 support).
+removed donation flow, the dropped Android 5.0 to 6.0 support, and the Skip and restore
+outcomes that REQ-MODERNIZATION-020 AC-14 and AC-16 change on purpose).
 
 "Latest stable" is defined per story as the newest non-pre-release version published on
 Maven Central, Google Maven, or the Gradle plugin portal on the date that story is planned.
@@ -117,10 +119,16 @@ Each is verifiable without a live IMAP account unless stated.
 6. **Feasibility gate honored**: an accepted feasibility analysis exists before the first
    mail-migration design story, and it states whether RCS and Google OAuth are separable.
 7. **Tests green**: `./gradlew :app:testDebugUnitTest` completes with zero failures and no
-   more skipped tests than the sprint-017 baseline (697 run, 2 skipped), allowing for tests
-   deleted with the donation flow, which are listed in the story that deletes them.
+   more skipped tests than the sprint-017 baseline (2 skipped). The run count is accounted
+   for story by story: each story records the count at its start, with the authoritative
+   count command (`.claude/CLAUDE.md`) and the commit it was taken at, and lists by name
+   every test it adds or deletes, as its requirement states (for example
+   REQ-MODERNIZATION-015 AC-13 and REQ-MODERNIZATION-017 AC-15). The epic states no fixed
+   run count.
 8. **Gates hold**: `./gradlew :app:jacocoTestCoverageVerification` passes with no per-package
-   floor lowered (receiver stays at or above its 50% floor, others at or above 70%);
+   floor lowered (every package meets the floor configured for it in `app/build.gradle`,
+   `receiver` stays at or above its 50% floor, and no `minimum` is lowered by the work of
+   this epic);
    dependency verification remains enforced and `gradle/verification-metadata.xml` covers
    every new artifact; `./gradlew :app:assembleDebug` succeeds on JDK 25.
 9. **Behavior preserved**: IMAP backup and restore round-trip results against a test server
@@ -136,6 +144,10 @@ Populated as REQ-* artifacts are authored. Planned requirements:
 3. Platform level (compileSdk/targetSdk 37), with on-device validation.
 4. Remove the donation flow and the Play Billing dependency.
 5. Replace the vendored K-9 mail library with Thunderbird for Android mail libraries.
+6. Back up every SMS that is visible to the app exactly once, including a message that
+   becomes visible after newer messages were backed up (REQ-MODERNIZATION-020). A
+   correctness requirement raised under this epic, not a dependency-currency requirement;
+   the targetSdk half of requirement 3 depends on it (see Sequencing).
 
 ## Notes
 
@@ -150,6 +162,13 @@ Populated as REQ-* artifacts are authored. Planned requirements:
   1, 2 and 3 (toolchain and minSdk 24, runtime libraries, platform level 37) are complete
   before any Part B row that compiles Thunderbird code (analysis condition 1, decision
   Record 4).
+- REQ-MODERNIZATION-020 (every SMS that is visible to the app is backed up exactly once,
+  including a message that becomes visible late) is a correctness requirement raised under
+  this epic; it is not one of requirements 1 to 5. The targetSdk half of requirement 3
+  (`targetSdkVersion` 37) comes after its fix, unless the platform measurement owned by
+  design DES-MODERNIZATION-014 (decision D14) records the outcome "measured not affected".
+  Any other outcome, and a measurement that was not run, means the targetSdk step waits for
+  the fix. `compileSdkVersion` 37 does not wait (decision Record 13, row 4).
 - Each version bump should land as its own verified increment so a regression is
   attributable to one change.
 
@@ -190,3 +209,4 @@ Populated as REQ-* artifacts are authored. Planned requirements:
 
 - Amended 2026-11-21 by CR-011 (approved 2026-11-17): minSdk 24 (was 23) and compileSdk/targetSdk 37 in the Description, In Scope, success criteria 2 and 3, Related Requirements, Sequencing, the Constraints and Risks line on dropped Android versions (now 5.0 to 6.0), and Open Questions. Reason: the product owner chose to consume the Thunderbird mail libraries as Android variants, which need minSdk 24 and compileSdk 37, and chose targetSdk 37 as well (decision Record 4: "Accept both", "Raise to 37 (Recommended)"). Record 5, row 8 ("all my devices are 11 or newer") confirms that no device in use is dropped.
 - Amended 2026-11-21 by CR-010 (approved 2026-11-17): the Mail library replacement bullet and success criterion 5 name the four retained libraries (five coordinates) instead of requiring them to be absent. Product owner answers (Record 5): row 6, "Does 'latest stable' apply to the four retained libraries": "yes", so they are subject to success criterion 1 and their versions are not fixed here (the analysis-pin versions are information only); row 3, "Should the epic's boundary check also cover the new package root ...": "yes", so the criterion 5 grep adds `net.thunderbird` (it returns zero results on the code as of 2026-11-21).
+- Amended 2026-11-21 by CR-016: success criteria 7 and 8 (no fixed test count; floors as configured), Related Requirements item 6 and a Sequencing bullet for REQ-MODERNIZATION-020, and the Description's list of deliberate behaviour changes. Reason: design DES-MODERNIZATION-014 findings FD-VAL-002 and FD-VAL-003; Record 14 rows 9 and 10.

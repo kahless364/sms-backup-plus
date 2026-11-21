@@ -13,6 +13,7 @@ traces_to:
   - EPIC-MODERNIZATION-006
 change_records:
   - CR-011
+  - CR-016
 id: REQ-MODERNIZATION-015
 title: Build toolchain and test tooling on latest stable, with minSdk raised to 24
 domain: modernization
@@ -28,6 +29,7 @@ notes: |
   owner chose to consume the Thunderbird mail libraries as Android variants, which need minSdk 24
   (feasibility analysis Section 4, decision Record 4). The file name keeps 'minsdk-23' for
   history; the title and acceptance criteria govern.
+  Amended 2026-11-21 by CR-016: AC-9 is met by CR-016, which adds a dated note and `change_records` to REQ-MODERNIZATION-001 and REQ-MODERNIZATION-006; AC-13 no longer states a fixed baseline.
 updated_at: '2026-11-12T16:48:33.401Z'
 ---
 
@@ -161,8 +163,21 @@ and source URL for each.
   all succeed: `./gradlew :app:assembleDebug`, `./gradlew :app:testDebugUnitTest`, and
   `./gradlew :app:jacocoTestCoverageVerification`.
 - [ ] AC-13: `testDebugUnitTest` reports zero failures and no more than 2 skipped tests.
-  The run count equals the sprint-017 baseline of 697 plus any tests added, minus only
-  the tests deleted under AC-7, each listed by name.
+  At its start the story records the unit-test count given by the authoritative count
+  command of the project instructions (`.claude/CLAUDE.md`, "Authoritative test count"),
+  with the id of the commit it was taken at (`HEAD` when the story starts, before its
+  first change). At the end of the story the same command, run with the story's last
+  commit in place of `HEAD`, gives a count equal to that start count, plus the tests
+  added, minus only the tests deleted under AC-7; each added and each deleted test is
+  listed by name. If the end count is taken before the story's changes are committed, it
+  is taken over the working tree with the same pattern (`git grep --untracked -h "@Test"
+  -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"`), and the story
+  says so. Tests added or deleted by changes that are not the story's, between the start
+  commit and the end count, are listed with their commit id (or, if uncommitted, named as
+  such) and are not counted as the story's. The total that the Gradle test run reports
+  (skipped tests included) equals the end count, or the story records and explains the
+  difference. No fixed baseline is stated, because the count changes with every story
+  that adds or removes tests.
 - [ ] AC-14: No per-package JaCoCo floor in `app/build.gradle` is lowered. Every
   package is at or above its configured minimum, with `receiver` at or above 50%. If
   the toolchain move changes receiver coverage, the story restores it with tests (for
@@ -234,3 +249,6 @@ tell whether a warning is expected.
   `minsdk-23` for history. The owner's earlier words in Context ("raising the minsdk version"), AC-9, the JDK 25 constraint and the
   out-of-scope line are deliberately unchanged. The wording of AC-10 for a private app is not
   settled by CR-011.
+- Amended 2026-11-21 by CR-016: AC-13 states the count rule, not a fixed baseline; AC-9 is met by
+  CR-016, which adds a dated note and `change_records` to REQ-MODERNIZATION-001 and
+  REQ-MODERNIZATION-006. No other criterion is changed.

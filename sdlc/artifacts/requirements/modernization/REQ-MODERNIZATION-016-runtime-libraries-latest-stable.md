@@ -10,6 +10,7 @@ traces_to:
   - EPIC-MODERNIZATION-006
 change_records:
   - CR-011
+  - CR-016
 id: REQ-MODERNIZATION-016
 title: Runtime libraries on latest stable (WorkManager, Lifecycle, coroutines, preference, annotation, core-role)
 domain: modernization
@@ -39,7 +40,9 @@ in the table are a 2026-11-12 snapshot, not frozen targets.
 
 ## Context
 
-The build runs on JDK 25 (Gradle 9.5.1 / AGP 9.0.1) with 697 unit tests (2 skipped). The runtime
+The build runs on JDK 25 (Gradle 9.5.1 / AGP 9.0.1). On 2026-11-21, at commit `9e983665`, the
+authoritative count command of the project instructions gave 732 unit tests, 2 of them `@Ignore`d.
+The figure moves as stories add tests, and no criterion below depends on it. The runtime
 libraries are several minor versions behind (`app/build.gradle` lines 118-157;
 `k9mail-vendored/build.gradle` line 114). These libraries carry load-bearing behavior:
 
@@ -89,8 +92,12 @@ does not assert that the library is deprecated.
   skipped tests. Any test removed or rewritten for coroutine-test API changes (for example
   `runTest` or `TestDispatcher` behavior) is listed in the story with the replacement that covers
   the same behavior.
-- [ ] AC-6: `./gradlew :app:jacocoTestCoverageVerification` passes with no per-package floor
-  lowered (receiver at or above 50%, other packages at or above 70%).
+- [ ] AC-6: `./gradlew :app:jacocoTestCoverageVerification` passes, and no per-package floor
+  is lowered. Every package meets the floor configured for it in the `violationRules` block of
+  `app/build.gradle` (`receiver` at or above its 50% floor). No `minimum` in that block is lowered
+  by this work, as `git diff` of `app/build.gradle` from the commit recorded at the story's
+  start (as REQ-MODERNIZATION-015 AC-13 defines it) shows. The
+  configured floors differ by package; they are not a uniform 70%.
 - [ ] AC-7: Merged-manifest equivalence. Before the upgrade and after it, the merged manifest
   (`app/build/intermediates/merged_manifests/debug/`) is captured. The
   `androidx.work.impl.foreground.SystemForegroundService` entry still has
@@ -151,3 +158,5 @@ device, not only from unit tests.
   24, not 23 (notes and Constraints). Reason: the product owner chose to consume the Thunderbird
   mail libraries as Android variants, which need minSdk 24 (feasibility analysis Section 4,
   decision Record 4).
+- Amended 2026-11-21 by CR-016: Context count restated; AC-6 states the configured floors. No other
+  criterion is changed.

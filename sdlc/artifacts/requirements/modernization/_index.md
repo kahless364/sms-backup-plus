@@ -10,3 +10,4 @@
 | REQ-MODERNIZATION-017 | Raise compileSdk and targetSdk to the current stable Android API level, with on-device validation | approved | 2026-11-12 |
 | REQ-MODERNIZATION-018 | Remove the Donation Flow and the Play Billing Dependency | approved | 2026-11-12 |
 | REQ-MODERNIZATION-019 | Replace the Vendored K-9 Mail Library with Thunderbird for Android Mail Libraries (Gated Feasibility Analysis, Then Migration) | approved | 2026-11-12 |
+| REQ-MODERNIZATION-020 | Back up every SMS that is visible to the app exactly once, including a message that becomes visible after newer messages were backed up | approved | 2026-11-21 |

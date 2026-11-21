@@ -5,12 +5,15 @@ artifact_type: requirement
 related_requirements:
   - REQ-MODERNIZATION-001
   - REQ-MODERNIZATION-003
+  - REQ-MODERNIZATION-015
+  - REQ-MODERNIZATION-020
 related_stories: []
 related_design_docs: []
 traces_to:
   - REQ-MODERNIZATION-001
 change_records:
   - CR-011
+  - CR-016
 id: REQ-MODERNIZATION-017
 title: Raise compileSdk and targetSdk to the current stable Android API level, with on-device validation
 domain: modernization
@@ -20,9 +23,10 @@ notes: |
   Platform-level requirement 3 of 5 in EPIC-MODERNIZATION-006. The level is 37 for both
   compileSdk and targetSdk (product owner decision 2026-11-17, Record 4, applied by CR-011).
   AC-1 requires the planning-time record to confirm that 37 is the current stable level.
-  Sequencing (epic Notes): after the donation-flow removal requirement, and after the
-  toolchain and minSdk 24 requirement (referenced in the brief as REQ-MODERNIZATION-015).
-  Neither REQ-MODERNIZATION-015 nor -016 exists on disk yet; those references are unverified.
+  Sequencing (epic Notes): after the donation-flow removal requirement (REQ-MODERNIZATION-018),
+  after the toolchain and minSdk 24 requirement (REQ-MODERNIZATION-015), and, for the targetSdk
+  step, after the fix required by REQ-MODERNIZATION-020 (see Notes). REQ-MODERNIZATION-015, -016,
+  -018 and -020 exist and are approved (checked 2026-11-21).
 updated_at: '2026-11-12T16:48:41.721Z'
 ---
 
@@ -152,10 +156,15 @@ testing, is restored to its original state afterwards (sprint-016 and sprint-017
   lint explicitly left out of scope, with the reason, and the pre-existing failure reproduced
   unchanged at the new level. A silent change of baseline content is not acceptable.
 - [ ] AC-15: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification`
-  passes on JDK 25 with the unit-test count not below the sprint-017 baseline (697 run,
-  2 skipped, adjusted only for tests deleted by other epic requirements and listed in
-  their stories), no per-package JaCoCo floor lowered, and `gradle/verification-metadata.xml`
-  updated for any new artifact with dependency verification still enforced.
+  passes on JDK 25 with no more than 2 skipped tests and with the unit-test count, taken by
+  the authoritative count command of the project instructions (`.claude/CLAUDE.md`), not
+  below the count recorded, with its commit id, at the start of the story (start and end
+  counts taken at the points that REQ-MODERNIZATION-015 AC-13 states). The only tests
+  that may be subtracted are tests the story deletes because an acceptance criterion of
+  another epic requirement requires it, each listed by name with that criterion. The Gradle
+  run total (skipped included) equals the end count, or the story explains the difference.
+  No per-package JaCoCo floor is lowered, and `gradle/verification-metadata.xml` is updated
+  for any new artifact with dependency verification still enforced.
 - [ ] AC-16: The manifest produced for the release build is diffed against the pre-raise
   manifest, and every difference is explained in the story (sprint-017 established a
   byte-identical-manifest baseline for toolchain moves).
@@ -192,7 +201,8 @@ Traceability: `sdlc/artifacts/requirements/modernization/EPIC-MODERNIZATION-006-
 (Platform level, Success Criterion 3); `sdlc/artifacts/build/sprints/sprint-016/retro.md`
 (BUG-016); `sdlc/artifacts/build/sprints/sprint-017/retro.md` (lint, receiver coverage,
 unverified broadcast branch). Supersedes the literal "35" in REQ-MODERNIZATION-001 AC-1 and
-AC-29 only for future state; REQ-MODERNIZATION-001 should carry a change record.
+AC-29 only for future state; REQ-MODERNIZATION-001 carries the change record (CR-016,
+2026-11-21), as a dated note that leaves its criteria unchanged.
 
 Amended 2026-11-21 by CR-011 (approved 2026-11-17): the level is now named, 37 for both
 `compileSdkVersion` and `targetSdkVersion` (notes, Description, AC-1, AC-2); AC-3 covers levels 36
@@ -201,3 +211,17 @@ the product owner chose to consume the Thunderbird mail libraries as Android var
 need compileSdk 37 and minSdk 24, and chose targetSdk 37 as well (feasibility analysis decision
 Record 4: "Accept both" and "Raise to 37 (Recommended)"). The title and the Google Play policy line
 in Constraints are unchanged by CR-011.
+
+Amended 2026-11-21 by CR-016: Sequencing for REQ-MODERNIZATION-020 (back up every SMS visible to
+the app exactly once). The targetSdk change of this requirement (`targetSdkVersion` 37) comes after
+the fix that REQ-MODERNIZATION-020 requires, unless the platform measurement owned by design
+DES-MODERNIZATION-014 (decision D14) records "measured not affected"; every other outcome, and a
+measurement not run, means it waits. `compileSdkVersion` 37 does not wait (decision Record 13,
+row 4). The one-time-code SMS change at level 37 is dispositioned under AC-3 as usual: where it is
+"applicable and fixed", the fix lands before the raise (decision Record 13 row 4; AC-5 itself
+allows no later than the same PR); where the measurement records "measured not affected", it is
+"not applicable" with the run as evidence. The sequencing changes no acceptance criterion or
+constraint of this requirement; "Behavior preserved" stands as written. AC-15 is reworded by
+CR-016 (A-2) to state the count rule. Also:
+the frontmatter note that REQ-MODERNIZATION-015 and -016 do not exist on disk is corrected; the
+Notes sentence on REQ-MODERNIZATION-001 is updated (see Part B).

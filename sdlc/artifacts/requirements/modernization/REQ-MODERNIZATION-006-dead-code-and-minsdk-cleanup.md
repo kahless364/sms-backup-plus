@@ -13,12 +13,15 @@ related_requirements:
 related_stories: []
 related_design_docs: []
 traces_to: []
-change_records: []
+change_records:
+  - CR-016
 notes: |
   Traceability: ARCH-005/STRUCT-005 (gaps), dead-code-candidates.md; migration unit MU-011; source assessment 20260529-modernization.
 ---
 
 # Dead-Code Removal and minSdk Cleanup
+
+> Amended 2026-11-21 by CR-016. Note only; no criterion, level or status is changed. The minSdk value in this requirement (21: Description, Context, AC-3, AC-5 "API 21+", Constraints) is the value it required when it was implemented. These literal minSdk 21 statements are superseded by REQ-MODERNIZATION-015, which sets minSdk 24 (AC-5, as amended by CR-011). The criteria on the dead calendar shim and on `StatusPreference` are not affected. This note is the change record that REQ-MODERNIZATION-015 AC-9 calls for.
 
 ## Description
 

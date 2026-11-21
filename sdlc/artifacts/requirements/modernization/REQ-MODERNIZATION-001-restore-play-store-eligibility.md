@@ -9,10 +9,13 @@ priority: critical
 epic: "EPIC-MODERNIZATION-001"
 source_analysis: "sdlc/analysis/20260529-modernization/promoted/phase0-shippable-secure-context.md"
 related_stories: []
-change_records: []
+change_records:
+  - CR-016
 ---
 
 # REQ-MODERNIZATION-001: Restore Google Play Eligibility via SDK and Build Uplift
+
+> Amended 2026-11-21 by CR-016. Note only; no criterion, level or status is changed. The levels this requirement names, wherever they appear in this file (`compileSdkVersion` and `targetSdkVersion` 35, `minSdkVersion` 21), are the levels it required for the 29-to-35 uplift. They are not the current requirement. Its literal minSdk 21 statements are superseded by REQ-MODERNIZATION-015, which sets `minSdkVersion` 24 (AC-5, as amended by CR-011). Its literal 35 is superseded, for future state, by REQ-MODERNIZATION-017, which sets `compileSdkVersion` and `targetSdkVersion` 37 (AC-2). This note is the change record that REQ-MODERNIZATION-015 AC-9 and the Notes of REQ-MODERNIZATION-017 call for. It does not say whether criteria 28 to 30 were met.
 
 ## Overview
 
