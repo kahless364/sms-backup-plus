@@ -63,7 +63,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.ensureActive
 import java.util.ArrayList
 import java.util.HashSet
-import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.currentCoroutineContext
 
 /**
  * Real CoroutineWorker restore implementation (U-015 + U-016).
@@ -308,7 +308,7 @@ class RestoreWorker @AssistedInject constructor(
         try {
             if (itemsToRestoreCount > 0) {
                 while (currentRestoredItem < itemsToRestoreCount) {
-                    coroutineContext.ensureActive()
+                    currentCoroutineContext().ensureActive()
 
                     val item = msgs[currentRestoredItem]
                     if (item != null) {
@@ -396,7 +396,7 @@ class RestoreWorker @AssistedInject constructor(
         try {
             if (itemsToRestoreCount > 0) {
                 while (currentRestoredItem < itemsToRestoreCount) {
-                    coroutineContext.ensureActive()
+                    currentCoroutineContext().ensureActive()
 
                     val values = items[currentRestoredItem]
                     insertSmsValues(values, preferences, ctx, currentRestoredItem, uniqueWorkName)

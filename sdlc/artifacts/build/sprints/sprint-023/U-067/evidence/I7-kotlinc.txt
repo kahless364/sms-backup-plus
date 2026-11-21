@@ -1,0 +1,10 @@
+U063-DAEMON-JVM: java.version=25.0.5.1
+> Task :app:compileDebugKotlin
+w: file:///<repo>/app/src/main/java/com/zegoggles/smssync/activity/MainViewModel.kt:55:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: file:///<repo>/app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt:116:26 'fun startActivityForResult(p0: Intent!, p1: Int): Unit' is deprecated. Deprecated in Java.
+w: file:///<repo>/app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt:121:22 'fun startActivityForResult(p0: Intent!, p1: Int): Unit' is deprecated. Deprecated in Java.
+w: file:///<repo>/app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:81:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: file:///<repo>/app/src/main/java/com/zegoggles/smssync/service/SharedPreferencesCheckpointStore.kt:49:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+w: file:///<repo>/app/src/main/java/com/zegoggles/smssync/service/WorkerEngineFactory.kt:61:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+BUILD SUCCESSFUL in 1m 19s
+exit=0

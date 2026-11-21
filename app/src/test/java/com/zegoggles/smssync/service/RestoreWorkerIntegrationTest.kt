@@ -27,6 +27,9 @@ import com.zegoggles.smssync.preferences.Preferences
 import com.zegoggles.smssync.contacts.ContactAccessor
 import com.zegoggles.smssync.service.exception.RequiresLoginException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -361,6 +364,94 @@ class RestoreWorkerIntegrationTest {
 
         // Restore loop runs with 1 calllog message — exercised importCallLogValues + callLogExists
         assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+    }
+
+    // =========================================================================
+    // U-067 (BUG-022): the IMAP restore loop's cancellation check (site 2)
+    // =========================================================================
+
+    /**
+     * U-067 AC-2: four SMS handles; the job of the coroutine running doWork() is cancelled
+     * during the second importMessageBody. The pass in flight completes (insert, checkpoint),
+     * and the check at the top of the next pass stops the loop: two imports, two rows,
+     * checkpoint 1 (not cleared), closeFolders once. The Result is not asserted (BUG-022 SC-1).
+     */
+    @Test
+    fun doWork_imapRestore_cancelledDuringSecondImport_stopsAtNextPass() = runBlocking<Unit> {
+        lateinit var workJob: Job
+        val run = cancellableImapRun(itemCount = 4, cancelOnImportCall = 2) { workJob.cancel() }
+        val worker = buildWorkerWithTransport(run.transport)
+
+        workJob = launch(start = CoroutineStart.LAZY) { run.result = worker.doWork() }
+        workJob.join()
+
+        assertThat(workJob.isCancelled).isTrue()
+        assertThat(run.importCalls).isEqualTo(2)
+        assertThat(fakeProvider.rowCount()).isEqualTo(2)
+        assertThat(checkpointStore.read(RestoreWorker.RESTORE_WORK_NAME)).isEqualTo(1)
+        assertThat(run.closeCalls).isEqualTo(1)
+    }
+
+    /**
+     * U-067 AC-5 control: the same fixture and harness with no cancellation restores every
+     * item, clears the checkpoint and succeeds.
+     */
+    @Test
+    fun doWork_imapRestore_notCancelled_restoresEveryItem() = runBlocking<Unit> {
+        lateinit var workJob: Job
+        val run = cancellableImapRun(itemCount = 4, cancelOnImportCall = 0) { workJob.cancel() }
+        val worker = buildWorkerWithTransport(run.transport)
+
+        workJob = launch(start = CoroutineStart.LAZY) { run.result = worker.doWork() }
+        workJob.join()
+
+        assertThat(workJob.isCancelled).isFalse()
+        assertThat(run.importCalls).isEqualTo(4)
+        assertThat(fakeProvider.rowCount()).isEqualTo(4)
+        assertThat(checkpointStore.read(RestoreWorker.RESTORE_WORK_NAME)).isEqualTo(RestoreCheckpointStore.NO_CHECKPOINT)
+        assertThat(run.closeCalls).isEqualTo(1)
+        assertThat(run.result).isInstanceOf(ListenableWorker.Result.Success::class.java)
+    }
+
+    /** Counters and the transport of one U-067 IMAP restore run. */
+    private class CancellableImapRun {
+        var getMessagesCalls = 0
+        var importCalls = 0
+        var closeCalls = 0
+        var result: ListenableWorker.Result? = null
+        lateinit var transport: MailTransport
+    }
+
+    /**
+     * U-067: [itemCount] SMS handles from the SMS folder (the call-log folder returns none);
+     * import call i returns the SMS item i of [createSmsItems]; on import call number
+     * [cancelOnImportCall] (1-based; 0 = never) [onCancel] runs before the result is returned.
+     * closeFolders is counted by delegation, so [ImapRestoringTransport] is unchanged.
+     */
+    private fun cancellableImapRun(itemCount: Int, cancelOnImportCall: Int, onCancel: () -> Unit): CancellableImapRun {
+        val run = CancellableImapRun()
+        val items = createSmsItems(itemCount)
+        val handles = (0 until itemCount).map { MailTransportTestFactories.createHandle("u067-$it") }
+        val imap = ImapRestoringTransport(
+            folderHandleForAll = MailTransportTestFactories.createFolderHandle(),
+            getMessagesImpl = { _, _, _, _ ->
+                run.getMessagesCalls++
+                if (run.getMessagesCalls == 1) handles.toMutableList() else mutableListOf()
+            },
+            importMessageBodyImpl = { _, h, _ ->
+                val index = run.importCalls
+                run.importCalls++
+                if (run.importCalls == cancelOnImportCall) onCancel()
+                MessageImportResult(h?.uid ?: "unknown", DataType.SMS, items[index])
+            }
+        )
+        run.transport = object : MailTransport by imap {
+            override fun closeFolders() {
+                run.closeCalls++
+                imap.closeFolders()
+            }
+        }
+        return run
     }
 
     // =========================================================================

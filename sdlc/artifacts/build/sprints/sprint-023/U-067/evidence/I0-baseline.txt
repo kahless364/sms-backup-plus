@@ -1,0 +1,12 @@
+2026-11-21T10:22:32Z
+c9770c303690a95b6200e82c73316ba8ce2bb4e8
+sdlc/modernization-plan
+porcelain-end
+5c554ec3bf737383f5a8717fdfc518e5eac33993
+871ec7c764be5f9557fdc25ec0683cb835cfeac7
+5c554ec3bf737383f5a8717fdfc518e5eac33993
+871ec7c764be5f9557fdc25ec0683cb835cfeac7
+746
+6
+toolchainVersion=25
+new-file-exists-exit=1

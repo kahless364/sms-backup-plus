@@ -1,0 +1,10 @@
+U063-DAEMON-JVM: java.version=25.0.5.1
+BackupWorkerLoopCancellationTest > backupCursors_cancelledAfterSecondAppend_stopsAtNextPass FAILED
+RestoreWorkerIntegrationTest > doWork_imapRestore_cancelledDuringSecondImport_stopsAtNextPass FAILED
+RestoreWorkerCheckpointTest > executeRestoreWithValues_cancelledBeforeFirstPass_insertsNothing FAILED
+RestoreWorkerCheckpointTest > executeRestoreWithValues_cancelledAfterThirdInsert_stopsAtNextPass FAILED
+67 tests completed, 4 failed
+> Task :app:testDebugUnitTest FAILED
+FAILURE: Build failed with an exception.
+BUILD FAILED in 3m 6s
+exit=1

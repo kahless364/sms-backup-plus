@@ -24,10 +24,10 @@ import java.util.concurrent.Executors
  * those are integration/instrumented tests. These unit tests verify the worker's
  * structural contract: construction, invocation, and INV-3 cap enforcement.
  *
- * AC-5 (structured cancellation via ensureActive) is verified at the WorkManager
- * level: the coroutine scope is cancelled by WorkManager's cooperative cancellation
- * when cancelUniqueWork() is called. The ensureActive() calls inside the loop unwind
- * the coroutine at the next suspension point.
+ * AC-5 (cancellation): ic2_workManager_cancelsBackupWorkerRequest asserts WorkManager's
+ * state only (CANCELLED after cancelUniqueWork()); it does not run the backup loop. That
+ * the loop stops at its next pass when its job is cancelled is shown by U-067's
+ * BackupWorkerLoopCancellationTest.backupCursors_cancelledAfterSecondAppend_stopsAtNextPass.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])

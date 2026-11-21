@@ -1,0 +1,3 @@
+pattern-scan exit=1 files=0
+user-name-scan exit=1 files=0
+host-name-scan exit=1 files=0

@@ -1,0 +1,5 @@
+testcase name="executeRestoreWithValues_cancelledBeforeFirstPass_insertsNothing"
+message="com.google.common.truth.ComparisonFailureWithFacts: expected: 0&#10;but was : 5"
+--
+testcase name="executeRestoreWithValues_cancelledAfterThirdInsert_stopsAtNextPass"
+message="com.google.common.truth.ComparisonFailureWithFacts: expected: 3&#10;but was : 5"

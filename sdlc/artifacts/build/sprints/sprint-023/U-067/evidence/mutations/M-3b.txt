@@ -1,0 +1,8 @@
+U063-DAEMON-JVM: java.version=25.0.5.1
+RestoreWorkerCheckpointTest > executeRestoreWithValues_cancelledBeforeFirstPass_insertsNothing FAILED
+RestoreWorkerCheckpointTest > executeRestoreWithValues_cancelledAfterThirdInsert_stopsAtNextPass FAILED
+31 tests completed, 2 failed
+> Task :app:testDebugUnitTest FAILED
+FAILURE: Build failed with an exception.
+BUILD FAILED in 2m 8s
+exit=1

@@ -1,0 +1,2 @@
+testcase name="backupCursors_cancelledAfterSecondAppend_stopsAtNextPass"
+message="com.google.common.truth.ComparisonFailureWithFacts: expected: 2&#10;but was : 4"

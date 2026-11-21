@@ -1,0 +1,25 @@
+app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt
+app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt
+@@ -57 +57 @@ import java.util.Locale
+@@ -305 +305,2 @@ class BackupWorker @AssistedInject constructor(
+@@ -331 +332 @@ class BackupWorker @AssistedInject constructor(
+@@ -66 +66 @@ import java.util.HashSet
+@@ -311 +311 @@ class RestoreWorker @AssistedInject constructor(
+@@ -399 +399 @@ class RestoreWorker @AssistedInject constructor(
+4	3	app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt
+3	3	app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt
+old-name-exit=1
+app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt:72: *   - Cooperative cancellation via ensureActive() (AC-5, replaces isCancelled() polling)
+app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt:286:     * Uses ensureActive() for cooperative cancellation (AC-5, replaces isCancelled() polling).
+app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt:330:            // Cooperative cancellation: ensureActive() replaces isCancelled() polling (AC-5)
+app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt:332:                currentCoroutineContext().ensureActive()
+app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt:84: *   - Cooperative cancellation via ensureActive() (AC-5)
+app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt:311:                    currentCoroutineContext().ensureActive()
+app/src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt:399:                    currentCoroutineContext().ensureActive()
+app/src/main/java/com/zegoggles/smssync/service/WorkManagerCancelCollector.kt:23: * The worker's cooperative ensureActive() handles the interrupt at the next suspension point.
+eb535f5c9c384e639f5077ce8ed3bd0ad7af350d
+ffa9c57e90761dc56a5967e06b303e2d9080f81b
+97045c8341925a9d34cc0f4f4560269b3d237bd1
+crlf BW=634/634 RW=787/787
+eb535f5c9c384e639f5077ce8ed3bd0ad7af350d
+ffa9c57e90761dc56a5967e06b303e2d9080f81b

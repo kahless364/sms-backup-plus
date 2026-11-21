@@ -1,0 +1,7 @@
+U063-DAEMON-JVM: java.version=25.0.5.1
+RestoreWorkerIntegrationTest > doWork_imapRestore_cancelledDuringSecondImport_stopsAtNextPass FAILED
+31 tests completed, 1 failed
+> Task :app:testDebugUnitTest FAILED
+FAILURE: Build failed with an exception.
+BUILD FAILED in 2m 35s
+exit=1

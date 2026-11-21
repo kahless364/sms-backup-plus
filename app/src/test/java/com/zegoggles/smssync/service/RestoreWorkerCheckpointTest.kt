@@ -14,6 +14,10 @@ import com.google.common.truth.Truth.assertThat
 import com.zegoggles.smssync.Consts
 import com.zegoggles.smssync.preferences.Preferences
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.launch
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -403,6 +407,95 @@ class RestoreWorkerCheckpointTest {
 
         assertThat(countSmsRows()).isEqualTo(5)
         assertThat(findDuplicateRows()).isEmpty()
+    }
+
+    // -----------------------------------------------------------------------
+    // U-067 (BUG-022): the test-facing restore loop's cancellation check (site 3)
+    // -----------------------------------------------------------------------
+
+    /** U-067: records each afterInsert index; at [cancelAtIndex] (-1 = never) runs [onCancel]. */
+    private class CancellingInterceptor(
+        private val cancelAtIndex: Int,
+        private val onCancel: () -> Unit
+    ) : RestoreInsertInterceptor {
+        val seen = mutableListOf<Int>()
+        override suspend fun afterInsert(insertIndex: Int) {
+            seen.add(insertIndex)
+            if (insertIndex == cancelAtIndex) onCancel()
+        }
+    }
+
+    /**
+     * U-067 AC-3: five items; the job is cancelled in afterInsert(2). The pass in flight
+     * completes, and the check at the top of the next pass stops the loop: three rows
+     * (indexes 0 to 2), checkpoint 2, not cleared. Stricter than a pre-cancel test: a single
+     * check placed before the loop would pass AC-4 but not this test.
+     */
+    @Test
+    fun executeRestoreWithValues_cancelledAfterThirdInsert_stopsAtNextPass() = runBlocking<Unit> {
+        val items = createSmsItems(5)
+        val workName = "test_restore_u067_cancel_mid_loop"
+        lateinit var workJob: Job
+        val interceptor = CancellingInterceptor(cancelAtIndex = 2) { workJob.cancel() }
+        val worker = buildWorker(interceptor = interceptor)
+
+        workJob = launch(start = CoroutineStart.LAZY) {
+            worker.executeRestoreWithValues(items, 0, preferences, context, workName)
+        }
+        workJob.join()
+
+        assertThat(workJob.isCancelled).isTrue()
+        assertThat(countSmsRows()).isEqualTo(3)
+        assertThat(interceptor.seen).containsExactly(0, 1, 2).inOrder()
+        assertThat(checkpointStore.read(workName)).isEqualTo(2)
+    }
+
+    /**
+     * U-067 AC-4: the child cancels its own job in its first statement and then calls the
+     * function, with no suspension in between (UNDISPATCHED: the body runs at once). Nothing
+     * is inserted and no checkpoint is written. Rows and checkpoint are asserted, not a thrown
+     * CancellationException: the loop's IllegalStateException catch turns it into a Result.
+     */
+    @Test
+    fun executeRestoreWithValues_cancelledBeforeFirstPass_insertsNothing() = runBlocking<Unit> {
+        val items = createSmsItems(5)
+        val workName = "test_restore_u067_cancel_before_loop"
+        val worker = buildWorker()
+
+        val child = launch(start = CoroutineStart.UNDISPATCHED) {
+            currentCoroutineContext()[Job]!!.cancel()
+            worker.executeRestoreWithValues(items, 0, preferences, context, workName)
+        }
+        child.join()
+
+        assertThat(child.isCancelled).isTrue()
+        assertThat(countSmsRows()).isEqualTo(0)
+        assertThat(checkpointStore.read(workName)).isEqualTo(RestoreCheckpointStore.NO_CHECKPOINT)
+    }
+
+    /**
+     * U-067 AC-5 control: the AC-3 fixture and harness with no cancellation inserts every
+     * item, clears the checkpoint and succeeds.
+     */
+    @Test
+    fun executeRestoreWithValues_notCancelled_insertsEveryItem() = runBlocking<Unit> {
+        val items = createSmsItems(5)
+        val workName = "test_restore_u067_not_cancelled"
+        lateinit var workJob: Job
+        val interceptor = CancellingInterceptor(cancelAtIndex = -1) { workJob.cancel() }
+        val worker = buildWorker(interceptor = interceptor)
+        var result: ListenableWorker.Result? = null
+
+        workJob = launch(start = CoroutineStart.LAZY) {
+            result = worker.executeRestoreWithValues(items, 0, preferences, context, workName)
+        }
+        workJob.join()
+
+        assertThat(workJob.isCancelled).isFalse()
+        assertThat(countSmsRows()).isEqualTo(5)
+        assertThat(interceptor.seen).containsExactly(0, 1, 2, 3, 4).inOrder()
+        assertThat(checkpointStore.read(workName)).isEqualTo(RestoreCheckpointStore.NO_CHECKPOINT)
+        assertThat(result).isInstanceOf(ListenableWorker.Result.Success::class.java)
     }
 
     // -----------------------------------------------------------------------

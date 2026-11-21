@@ -36,8 +36,8 @@ title: Make the backup and restore workers' three cancellation checks observe th
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-022
-updated_at: '2026-11-21T10:03:13.328Z'
-current_build_phase: implementation
+updated_at: '2026-11-21T11:03:26.232Z'
+current_build_phase: review
 ---
 
 # U-067: Make the Backup and Restore Workers' Three Cancellation Checks Observe the Running Job, and Prove Each One With a Test That Cancels the Work Mid-Loop
@@ -206,6 +206,13 @@ Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew --versio
 - **Start condition met:** U-066 is done (commit `1f8ebe3b`, sprint 022 completed 2026-11-21).
 
 **Ruling on the plan's scope concern P-1 (2026-11-21).** AC-1 (c) asks that the cursors were closed. That close happens in `fetchAndBackupItems`, outside the seam Route S opens, so a test through `backupCursors` cannot see it. Accepted: the plan asserts `closeFolders` once and declares the cursor-close half of AC-1 (c) not observable through the seam; QA judges that half by reading the code path (the `finally` that closes the cursors is not edited by this story). Two corrections from the plan are also accepted: `backupCursors` has two callers inside the class, and the Javadoc AC-9 corrects is `BackupWorkerTest.kt:27-30`.
+
+**Developer entry (implementation, 2026-11-21).** Built from the plan (iteration 1, Amendment A1); full record in `sdlc/artifacts/build/sprints/sprint-023/U-067/implementation-log.md`, evidence under `sdlc/artifacts/build/sprints/sprint-023/U-067/evidence/`. Nothing committed.
+- Start: HEAD `c9770c30` (documents only since the plan's base `4095db28`); the count at the start of this story is 746 (authoritative command at `c9770c30`); start gate `exit=0`, 746 tests, skipped 2. The forced Kotlin compile showed the three `coroutineContext` warnings (`BackupWorker.kt:331:17`, `RestoreWorker.kt:311:21`, `:399:21`).
+- Change: the three checks read `currentCoroutineContext().ensureActive()`; both imports replaced in place; `backupCursors` is `internal` with `@VisibleForTesting(otherwise = PRIVATE)` (Route S); the `BackupWorkerTest.kt` Javadoc is corrected (comment only, AC-9). Seven tests added: `backupCursors_cancelledAfterSecondAppend_stopsAtNextPass`, `backupCursors_notCancelled_appendsEveryRow`, `doWork_imapRestore_cancelledDuringSecondImport_stopsAtNextPass`, `doWork_imapRestore_notCancelled_restoresEveryItem`, `executeRestoreWithValues_cancelledAfterThirdInsert_stopsAtNextPass`, `executeRestoreWithValues_cancelledBeforeFirstPass_insertsNothing`, `executeRestoreWithValues_notCancelled_insertsEveryItem`.
+- Red run (fix absent): exactly the four cancellation tests failed (2 expected, 4 was; 2 expected, 4 was; 3 expected, 5 was; 0 expected, 5 was); the three controls and the 60 existing cases passed. Green run: 67 of 67. Six mutations (M-1a to M-3b): all detected, failing sets as planned, each restored with hash, diff hash and porcelain checks.
+- AC-7: forced compile after the fix has 0 worker warnings (6 warnings in other files; baseline 9).
+- End: final gate `exit=0`, `tests=753 failures=0 errors=0 skipped=2`, JaCoCo passes; working-tree `--untracked` count 753 = 746 + 7. AC-1 (c) cursor-close half: declared not observable through the seam, per ruling P-1 (QA reads the code path).
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->

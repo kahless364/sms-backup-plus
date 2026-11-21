@@ -54,7 +54,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.ensureActive
 import java.util.EnumSet
 import java.util.Locale
-import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.currentCoroutineContext
 
 /**
  * Real CoroutineWorker backup implementation — replaces the BackupWorkerStub from U-014.
@@ -302,7 +302,8 @@ class BackupWorker @AssistedInject constructor(
      * U-053 (TE-003): the confirmed-append/watermark gating is now in [appendBatchAndUpdateWatermark],
      * a named `internal` seam exercised directly by [BackupWorkerWatermarkTest].
      */
-    private suspend fun backupCursors(
+    @androidx.annotation.VisibleForTesting(otherwise = androidx.annotation.VisibleForTesting.PRIVATE)
+    internal suspend fun backupCursors(
         cursors: BackupCursors,
         config: BackupConfig,
         preferences: Preferences,
@@ -328,7 +329,7 @@ class BackupWorker @AssistedInject constructor(
             // Loop mirrors: while (!isCancelled() && cursors.hasNext()) at BackupTask.java:267
             // Cooperative cancellation: ensureActive() replaces isCancelled() polling (AC-5)
             while (cursors.hasNext()) {
-                coroutineContext.ensureActive()
+                currentCoroutineContext().ensureActive()
 
                 val cursor = cursors.next()
                 Log.v(TAG, "BackupWorker: backing up: $cursor")
