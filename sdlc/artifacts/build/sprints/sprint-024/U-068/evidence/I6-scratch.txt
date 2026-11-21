@@ -1,0 +1,6 @@
+archived commit: 9aa842665d6fb82622e1a508217327abac5365fa
+gradlew CRLF count in the copy (0 expected): 0
+files in the copy: 1801; tracked files at HEAD + local.properties: 1801
+build folders in the copy (0 expected): 0
+git status --porcelain -- app in the real tree (empty expected): 0 lines
+the scratch copy is written as 'the scratch copy' (outside the repository)

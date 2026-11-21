@@ -1,0 +1,3 @@
+BUILD SUCCESSFUL in 35s
+exit=0
+regenerated entries: 51; header: lint 9.0.1 / AGP (9.0.1)

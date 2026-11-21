@@ -1,0 +1,10 @@
+Wrote HTML report to file:///<the scratch copy>/app/build/reports/lint-results-debug.html
+Lint found 33 errors (and 18 errors filtered by baseline lint-baseline.xml)
+19 errors/warnings were listed in the baseline file (<the scratch copy>\app\lint-baseline.xml) but not found in the project; perhaps they have been fixed?
+Lint found 33 errors. First failure:
+Lint found 33 errors (and 18 errors filtered by baseline lint-baseline.xml). First failure:
+FAILURE: Build failed with an exception.
+> Lint found errors in the project; aborting build.
+  Lint found 33 errors (and 18 errors filtered by baseline lint-baseline.xml). First failure:
+BUILD FAILED in 3m 41s
+exit=1

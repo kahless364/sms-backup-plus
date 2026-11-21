@@ -1,0 +1,14 @@
+   18 UnusedResources Error
+    4 LogTagMismatch Error
+    2 CheckResult Error
+    2 CustomX509TrustManager Error
+    2 TrustAllX509TrustManager Error
+    2 UseKtx Error
+    1 AndroidGradlePluginVersion Error
+    1 LintBaseline Hint
+    1 LintBaselineFixed Hint
+    1 StaticFieldLeak Error
+    1 UseRequiresApi Error
+NOTE LintBaseline: 18 errors were filtered out because they are listed in the baseline file, lint-baseline.xml
+NOTE LintBaselineFixed: 8 errors/warnings were listed in the baseline file (lint-baseline.xml) but not found in the project; perhaps they have been fixed? Another possible explanation is that lint recently stopped analyzing (and including results from) dependent projects by default. You can turn this back on with `android.lintOptions.checkDependencies=true`. Unmatched issue types: GradleDependency (5), NonConstantResourceId (3)
+TOTAL issues=35 ids=11

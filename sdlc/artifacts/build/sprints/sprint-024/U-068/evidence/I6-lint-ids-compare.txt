@@ -1,0 +1,22 @@
+== rule-ID tables, I0 vs I6 (unified; '-' = I0, '+' = I6)
+@@ -1,16 +1,14 @@
+    18 UnusedResources Error
+     4 LogTagMismatch Error
+-    4 UseRequiresApi Error
+     2 CheckResult Error
+     2 CustomX509TrustManager Error
+-    2 ObsoleteSdkInt Error
+     2 TrustAllX509TrustManager Error
+     2 UseKtx Error
+     1 AndroidGradlePluginVersion Error
+     1 LintBaseline Hint
+     1 LintBaselineFixed Hint
+     1 StaticFieldLeak Error
+-    1 UnusedAttribute Error
+-NOTE LintBaseline: 22 errors were filtered out because they are listed in the baseline file, lint-baseline.xml
+-NOTE LintBaselineFixed: 15 errors/warnings were listed in the baseline file (lint-baseline.xml) but not found in the project; perhaps they 
+-TOTAL issues=41 ids=13
++    1 UseRequiresApi Error
++NOTE LintBaseline: 18 errors were filtered out because they are listed in the baseline file, lint-baseline.xml
++NOTE LintBaselineFixed: 8 errors/warnings were listed in the baseline file (lint-baseline.xml) but not found in the project; perhaps they h
++TOTAL issues=35 ids=11

@@ -1,0 +1,67 @@
+KEEP Range src/main/java/com/zegoggles/smssync/mail/MmsSupport.java:102  | Value must be ≥ 0 but `getColumnIndex` can be -1
+KEEP Range src/main/java/com/zegoggles/smssync/mail/MmsSupport.java:111  | Value must be ≥ 0 but `getColumnIndex` can be -1
+KEEP Range src/main/java/com/zegoggles/smssync/mail/MmsSupport.java:161  | Value must be ≥ 0 but `getColumnIndex` can be -1
+KEEP Range src/main/java/com/zegoggles/smssync/mail/MmsSupport.java:162  | Value must be ≥ 0 but `getColumnIndex` can be -1
+KEEP Range src/main/java/com/zegoggles/smssync/mail/MmsSupport.java:163  | Value must be ≥ 0 but `getColumnIndex` can be -1
+KEEP Range src/main/java/com/zegoggles/smssync/mail/MmsSupport.java:164  | Value must be ≥ 0 but `getColumnIndex` can be -1
+STALE-OTHER NonConstantResourceId src/main/java/com/zegoggles/smssync/activity/MainActivity.java:181  | Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in switch case statements
+STALE-OTHER NonConstantResourceId src/main/java/com/zegoggles/smssync/activity/MainActivity.java:184  | Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in switch case statements
+STALE-OTHER NonConstantResourceId src/main/java/com/zegoggles/smssync/activity/MainActivity.java:187  | Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in switch case statements
+KEEP RedundantLabel src/main/AndroidManifest.xml:99  | Redundant label can be removed
+STALE-OTHER GradleDependency build.gradle:94  | A newer version of androidx.annotation:annotation than 1.1.0 is available: 1.10.0
+STALE-OTHER GradleDependency build.gradle:95  | A newer version of androidx.preference:preference than 1.1.0 is available: 1.2.1
+STALE-OTHER GradleDependency build.gradle:96  | A newer version of androidx.core:core-role than 1.0.0-beta01 is available: 1.1.0
+STALE-OTHER GradleDependency build.gradle:103  | A newer version of org.mockito:mockito-core than 5.14.2 is available: 5.23.0
+STALE-OTHER GradleDependency build.gradle:106  | A newer version of com.google.auto.service:auto-service than 1.0 is available: 1.1.1
+REMOVE Deprecated src/main/java/com/zegoggles/smssync/service/BackupJobs.java:68 file-gone | Job scheduling with `FirebaseJobDispatcher` is deprecated: Use AndroidX `WorkManager` instead
+KEEP ExportedReceiver src/main/AndroidManifest.xml:167  | Exported receiver does not require permission
+KEEP SystemPermissionTypo src/main/AndroidManifest.xml:10  | Did you mean `android.permission.WRITE_OBB`?
+KEEP DataExtractionRules src/main/AndroidManifest.xml:96  | The attribute `android:fullBackupContent` is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures cloud backups and device transfers on Android 12 and higher.
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/calendar/CalendarAccessorPost40.java:23 site-gone | Unnecessary; SDK_INT is always >= 14
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/activity/Dialogs.java:169 site-gone | Unnecessary; SDK_INT is always >= 21
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/activity/MainActivity.java:364 site-gone | Unnecessary; SDK_INT is always >= 19
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/activity/MainActivity.java:368 site-gone | Unnecessary; SDK_INT is always >= 21
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/service/ServiceBase.java:209 file-gone | Unnecessary; SDK_INT is always >= 21
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/service/ServiceBase.java:225 file-gone | Unnecessary; SDK_INT is always >= 21
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java:31 site-gone | Unnecessary; SDK_INT is always >= 19
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java:50 site-gone | Unnecessary; SDK_INT is always >= 21
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/service/SmsRestoreService.java:67 file-gone | Unnecessary; SDK_INT is never < 21
+REMOVE ObsoleteSdkInt src/main/java/com/zegoggles/smssync/service/SmsRestoreService.java:165 file-gone | Unnecessary; SDK_INT is always >= 21
+KEEP MonochromeLauncherIcon src/main/res/drawable-anydpi-v26/ic_sms_backup.xml:2  | The application adaptive icon is missing a monochrome tag
+KEEP RtlHardcoded src/main/res/layout/status.xml:20  | Redundant attribute `layout_alignParentLeft`; already defining `layout_alignParentStart` with `targetSdkVersion` 35
+KEEP RtlHardcoded src/main/res/layout/status.xml:30  | Redundant attribute `layout_marginLeft`; already defining `layout_marginStart` with `targetSdkVersion` 35
+KEEP RtlHardcoded src/main/res/layout/status.xml:32  | Redundant attribute `layout_toRightOf`; already defining `layout_toEndOf` with `targetSdkVersion` 35
+KEEP RtlHardcoded src/main/res/layout/status.xml:41  | Redundant attribute `layout_alignLeft`; already defining `layout_alignStart` with `targetSdkVersion` 35
+KEEP RtlHardcoded src/main/res/layout/status.xml:52  | Redundant attribute `paddingLeft`; already defining `paddingStart` with `targetSdkVersion` 35
+KEEP RtlHardcoded src/main/res/layout/status.xml:54  | Redundant attribute `paddingRight`; already defining `paddingEnd` with `targetSdkVersion` 35
+KEEP IgnoreWithoutReason src/test/java/com/zegoggles/smssync/AppTest.java:13  | Test is ignored without giving any explanation
+NOT-ADDED x1 AndroidGradlePluginVersion ../gradle/wrapper/gradle-wrapper.properties | A newer version of Gradle than 9.5.1 is available: 9.9.2
+NOT-ADDED x2 CheckResult src/test/java/com/zegoggles/smssync/contacts/ContactAccessorTest.java | The result of `assertThat` is not used
+NOT-ADDED x1 CustomX509TrustManager src/main/java/com/zegoggles/smssync/activity/fragments/PinCertificateEnrollmentFlow.java | Implementing a custom `X509TrustManager` is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android's default implementation.
+NOT-ADDED x1 CustomX509TrustManager src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java | Implementing a custom `X509TrustManager` is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android's default implementation.
+NOT-ADDED x4 LogTagMismatch src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt | Mismatched logging levels: when checking `isLoggable` level `VERBOSE`, the corresponding log call should be `Log.v`, not `Log.d`
+NOT-ADDED x1 StaticFieldLeak src/main/java/com/zegoggles/smssync/activity/fragments/PinCertificateEnrollmentFlow.java | This `AsyncTask` class should be static or leaks might occur (com.zegoggles.smssync.activity.fragments.PinCertificateEnrollmentFlow.FetchCertTask)
+NOT-ADDED x1 TrustAllX509TrustManager src/main/java/com/zegoggles/smssync/activity/fragments/PinCertificateEnrollmentFlow.java | `checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers
+NOT-ADDED x1 TrustAllX509TrustManager src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java | `checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_canceled` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_failed_authentication` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_failed_connectivity` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_failed_general_error` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_finished` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_messages_with_config` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_messages` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_backup_requested` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_missing_credentials` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_no_next_sync` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_scheduled_next_sync` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_skip_backup_already_running` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_skip_backup_no_items` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_skip_backup_skip_messages` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.app_log_start_backup` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.notification_auth_failure` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.notification_general_error` appears to be unused
+NOT-ADDED x1 UnusedResources src/main/res/values/strings.xml | The resource `R.string.notification_missing_permission` appears to be unused
+NOT-ADDED x1 UseKtx src/main/java/com/zegoggles/smssync/di/MailModule.kt | Use the KTX extension function `String.toUri` instead?
+NOT-ADDED x1 UseKtx src/main/java/com/zegoggles/smssync/service/RestoreWorker.kt | Use the KTX extension function `String.toUri` instead?
+NOT-ADDED x1 UseRequiresApi src/main/java/com/zegoggles/smssync/activity/ThemeActivity.java | Use `@RequiresApi(26) instead of `@TargetApi` to propagate the requirement to callers of `setNavBarColor`
+SUMMARY real=37 regenerated=51 KEEP=18 REMOVE=11 STALE-OTHER=8 NOT-ADDED=33
