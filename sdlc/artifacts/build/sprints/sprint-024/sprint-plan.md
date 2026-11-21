@@ -25,9 +25,9 @@ Sprint 024 does not start until sprint 023 is completed (U-067, the fix for BUG-
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
 | U-068 | Raise minSdk to 24 and remove what the floor makes dead (code branches, two manifest permissions, retargeted tests, stale lint baseline entries, stale text) | - | developer | sonnet | (unassigned) | U-066 (done) | done | high |
-| U-069 | Make the content-trigger worker start the incoming backup through the scheduler's scheduleIncoming(), and give the worker its first tests | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-068 | review | high |
+| U-069 | Make the content-trigger worker start the incoming backup through the scheduler's scheduleIncoming(), and give the worker its first tests | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-068 | done | high |
 | U-070 | Back up an SMS that becomes visible after later messages were backed up, exactly once, with a 6-hour look-back and a local upload record | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-069 | in-progress | high |
-| U-075 | Run automatic backups as ordinary background work so that they succeed when the app is off screen, keep the foreground notification only for backups and restores started from the screen, and let a refused foreground start continue instead of failing the run | - | developer | sonnet | (unassigned) | U-070 | planned | high |
+| U-075 | Run automatic backups as ordinary background work so that they succeed when the app is off screen, keep the foreground notification only for backups and restores started from the screen, and let a refused foreground start continue instead of failing the run | - | developer | sonnet | (unassigned) | U-070 | in-progress | high |
 
 ## Execution Waves
 

@@ -1,6 +1,6 @@
 ---
 type: bug
-status: ready
+status: done
 artifact_type: bug
 severity: medium
 priority: high
@@ -37,7 +37,8 @@ id: BUG-023
 title: The incoming-SMS backup started by the content trigger is enqueued without the network, encryption-degraded and auto-backup rules that scheduleIncoming() applies, and the worker that does it has no test
 domain: build
 origin: code-review
-updated_at: '2026-11-21T09:40:09.113Z'
+updated_at: '2026-11-21T16:28:55.127Z'
+resolution: done
 ---
 
 # BUG-023: The incoming-SMS backup started by the content trigger is enqueued without the network, encryption-degraded and auto-backup rules that scheduleIncoming() applies, and the worker that does it has no test
@@ -499,6 +500,9 @@ Intake note (not the planning-phase analysis). Root layer: application code. The
 <!-- Added by agents during build -->
 
 ## Review Findings
+
+**Fixed by story U-069, closed 2026-11-21 (orchestrator).** Implementation commit `d7a69974`: the content-trigger worker calls `scheduleIncoming()` and no longer builds the request itself. Code review, security review and QA passed (`sdlc/artifacts/build/sprints/sprint-024/U-069/`); the emulator check on Android 16 passed (`evidence/IC3-emulator.txt`). The SMS receiver is removed by its own later story (Record 20, ruling 56). The contract example is corrected by the scheduler contract change record that also carries BUG-026 and BUG-027.
+
 <!-- Summarized from workspace artifacts -->
 
 ## Notes

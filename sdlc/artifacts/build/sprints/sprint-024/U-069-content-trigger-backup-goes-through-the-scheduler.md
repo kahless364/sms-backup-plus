@@ -1,6 +1,6 @@
 ---
 type: story
-status: in-progress
+status: done
 sprint: '024'
 artifact_type: user-story
 priority: high
@@ -46,8 +46,9 @@ title: Make the content-trigger worker start the incoming backup through the sch
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-023
-updated_at: '2026-11-21T15:35:11.092Z'
-current_build_phase: review
+updated_at: '2026-11-21T16:27:54.163Z'
+resolution: done
+updated_date: 2026-11-21
 ---
 
 # U-069: Make the Content-Trigger Worker Start the Incoming Backup Through the Scheduler's scheduleIncoming(), So It Obeys the Network, Encryption-Degraded, Auto-Backup and Delay Rules, and Give the Worker Its First Tests
@@ -261,6 +262,24 @@ For QA. Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew 
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
+
+**Closed 2026-11-21.** Implementation commit `d7a69974` (start commit `29f30ec5`). Tests 756 at the start commit, 771 at the implementation commit (+15, all in `BackupTriggerWorkerTest.kt`); the gate run of record by QA: 771 tests, 0 failures, 0 errors, 2 skipped; `worker` package coverage 10 of 10 lines, floor 0.90 (ruling 47).
+
+| Gate | Verdict | Report | Findings |
+|------|---------|--------|----------|
+| Code review | PASS | `sdlc/artifacts/build/sprints/sprint-024/U-069/review-code.md` | No Critical, High or Medium. L-1 (low): the test helper reaches WorkManager internals by reflection and its comment names the versions 2.9.1 and 2.12.0; a library raise can turn two request-equality cases red for a reason unrelated to behaviour. L-2 (low): the log line says "enqueueing" even when the scheduler then declines; the text is fixed by the story, no change. Four information items |
+| Security review | PASS | `sdlc/artifacts/build/sprints/sprint-024/U-069/review-security.md` | No Critical or High. Every enqueue under `app/src/main` is in the scheduler and passes the encryption-degraded gate; the worker is not a manifest component and reads no input; the log lines carry no personal data. The runtime-claims probe audit was not run and is marked so in the report |
+| QA | PASS | `sdlc/artifacts/build/sprints/sprint-024/U-069/qa-results.md` | 14 of 14 acceptance criteria and 4 of 4 integration criteria pass. F-1 (low): wording errors in this story (below). F-2 (information): QA did not re-apply a mutation, because the orchestrator's brief forbade mutation runs; the developer's 12 mutation runs were judged from the evidence against the test code. F-3 (information): a later plan could add the coverage report task to the gate command |
+| IC-3, emulator (orchestrator) | PASS | `sdlc/artifacts/build/sprints/sprint-024/U-069/evidence/IC3-emulator.txt` | On the Android 16 emulator the production factory built the changed worker after an install over the existing app; the trigger line and `enqueued INCOMING with delay=60s, network=CONNECTED` followed the test SMS by 11 s; the backup of 1 message completed. The app was kept on screen through the delay (ruling 61), because a backup that starts off screen fails for BUG-029 |
+
+**Corrections and hand-overs recorded at close (orchestrator):**
+
+- **Wording errors in this story, left as written:** AC-11's sentence "the measured ratio will be below 100%" is false (measured 100.0%); the note on ruling 47 says "16 counted lines", and the rewritten worker has 10. The floor is 0.90 in both cases.
+- **The change record for the contract example** (`CNTR-MODERNIZATION-004`, the content-trigger example that shows a network constraint and a backoff on the trigger registration): not yet raised. It is raised together with the scheduler contract change for BUG-026 and BUG-027, as one record against that contract.
+- **L-1 is handed to the library stories** (U-071, U-073): if the two request-equality cases of `BackupTriggerWorkerTest` fail after a WorkManager raise, the cause to check first is the reflective helper, not the worker.
+- **Not proved by this story:** a second SMS inside the trigger's fifteen-minute period (BUG-025), a backup that starts with the app off screen (BUG-029; story U-075), a release build on a device.
+- BUG-023 is closed with this story.
+
 
 ## Notes
 

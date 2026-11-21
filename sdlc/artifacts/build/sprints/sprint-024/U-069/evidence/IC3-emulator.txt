@@ -1,0 +1,48 @@
+IC-3 emulator check for story U-069, run by the orchestrator (plan section 9; ruling 61 of Record 21 applied).
+
+Clock time (UTC):   boot completed 2026-11-21T16:20:21Z; check ended about 16:24Z (device clock 10:20 to 10:24, UTC-6)
+Device:             emulator, AVD Pixel_9_Pro (first line of 'emu avd name'), SDK level 36. Exactly one device listed. Pixel_10_Pro not started.
+Build:              debug, app/build/outputs/apk/debug/app-debug.apk of the developer's final gate, built from the tree committed as d7a69974
+APK SHA-256:        dacde98585d5d6b747b2923a029b023aac8454b96918fc4fbf7a1f2ababf5c09 (equal to the hand-off; installed from a copy with the same hash)
+Install:            'install -r' -> Success. No uninstall, no -d, no data cleared.
+Package before:     versionCode=1602 minSdk=24 targetSdk=35, lastUpdateTime=2026-11-21 07:42:47
+Package after:      versionCode=1602 minSdk=24 targetSdk=35, lastUpdateTime=2026-11-21 10:21:39
+Settings:           none changed (no system setting, no app setting). Auto backup and Wi-Fi-only as the log shows them:
+                    'enqueued INCOMING ... network=CONNECTED' -> auto backup on, Wi-Fi only off. Read, not changed.
+App on screen:      the app was opened after the install and kept on screen (MainActivity was the top resumed activity at
+                    10:21:45 and again after the run) until the backup had ended; a wake key was sent every 15 s so the
+                    screen stayed on. Reason: BUG-029 (a backup that starts with the app off screen fails at the foreground
+                    start; not this story's subject). Ruling 61: device steps that need a backup to run keep the app on screen.
+Test SMS:           one, through the emulator console ('emu sms send 5551234 "U-069 IC-3 test message"'), at device time 10:22:36.
+
+Matching lines from the app's process (pid 3905):
+11-21 10:22:47.048  3905  4112 D SMSBackup+: BackupTriggerWorker.doWork: content-URI trigger fired; enqueueing delayed incoming backup with initialDelay=60s
+11-21 10:22:47.051  3905  4112 D SMSBackup+: WorkManagerScheduler.scheduleIncoming: enqueued INCOMING with delay=60s, network=CONNECTED
+11-21 10:22:47.068  3905  3968 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=65f725f3-a1b6-4727-90b0-a5832c0dcba8, tags={ com.zegoggles.smssync.worker.BackupTriggerWorker, CONTENT_TRIGGER } ]
+11-21 10:23:47.134  3905  3960 I WM-Processor: Moving WorkSpec (939eb74d-383a-402d-8428-b52996021976) to the foreground
+11-21 10:23:47.145  3905  4171 D SMSBackup+: BackupWorker.doWork: starting backup, type=INCOMING, attempt=0
+11-21 10:23:47.204  3905  4171 I SMSBackup+: BackupWorker: starting backup (1 messages)
+11-21 10:23:48.343  3905  4171 V SMSBackup+: BackupWorker: backing up: CursorAndType{type=SMS, cursor=android.content.ContentResolver$CursorWrapperInner@caf96ef}
+11-21 10:23:48.364  3905  4171 V SMSBackup+: BackupWorker: sending 1 SMS message(s) to server.
+11-21 10:23:53.865  3905  4171 D SMSBackup+: BackupWorker: watermark advanced for SMS to 1795278156751
+11-21 10:23:53.869  3905  4171 I SMSBackup+: BackupWorker: backup complete, backedUp=1
+11-21 10:23:53.874  3905  3967 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=939eb74d-383a-402d-8428-b52996021976, tags={ com.zegoggles.smssync.service.BackupWorker, INCOMING } ]
+
+Counts in the log taken from the SMS to the end of the run:
+  factory errors naming a worker ('Could not instantiate', 'Could not create Worker', 'NoSuchMethodException'): 0
+  'FATAL EXCEPTION':                                                                                          0
+  'BackupWorker: unrecoverable error':                                                                        0
+  'ForegroundServiceStartNotAllowedException':                                                                0
+
+Timing: trigger line 11 s after the SMS; scheduler line 3 ms later; backup started 60 s after the scheduler line
+(delay=60s); completed 6.7 s later with backedUp=1.
+
+Outcome: PASS (plan section 9, step 9, first case): trigger line, then the scheduler line 'enqueued INCOMING', no factory
+error; the start line with N = 1 and the completion line; zero fatal exceptions and zero unrecoverable errors.
+
+What it proves: on Android 16 the production HiltWorkerFactory builds the changed BackupTriggerWorker for the persisted
+CONTENT_TRIGGER work after 'install -r' with the app's data kept, the trigger reaches scheduleIncoming(), and the delayed
+incoming backup runs and completes against the mail account.
+What it does not prove: a backup that starts with the app off screen (BUG-029), a second SMS inside the trigger's
+fifteen-minute period (BUG-025), a release build on a device, Android 11 to 15, the owner's phones.
+Raw device log: kept outside the repository.
