@@ -14,6 +14,7 @@ dependencies: []
 related_items:
   - U-063
   - BUG-019
+  - U-065
 platforms: []
 tags: []
 id: BUG-020
@@ -117,6 +118,8 @@ All paths are workspace-relative. Evidence files are under `sdlc/artifacts/build
 Added by the orchestrator. The platform's protocol lists and bare handshakes to Gmail's IMAP endpoint were measured on an Android 16 and an Android 11 emulator on 2026-11-20; the table and its limits are in `sdlc/artifacts/stories/BUG-019-factory-enables-tls10-and-tls11.md`, section "Measurements on two emulators (2026-11-20)". For this bug the relevant rows are "Enabled by default": a pinned socket gets exactly that list, TLS 1.2 and 1.3 on Android 16, and TLS 1.0 to 1.3 on Android 11. The product owner said on 2026-11-20, when asked whether any host is enrolled for a pinned certificate today: "I don't think so".
 
 ## Acceptance Criteria
+**Decision recorded (AC-1, cipher suites and server name), 2026-11-20:** the product owner decided that the pinned factory is handled the same as the default factory for cipher suites and for the server name ("Same as default"). With the protocol part above, AC-1 is now decided in full: the decision is "same handling", so AC-2 and AC-3 apply and AC-4 does not. The record is Record 9 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. Added by the orchestrator.
+
 **Decision recorded (AC-1, protocol part), 2026-11-20:** the product owner decided that neither factory enables a protocol version older than TLS 1.2 ("Yes drop anything older than tls 1.2"). The record is Record 8 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. Still to be decided for this bug: cipher handling and server-name handling on the pinned factory. Added by the orchestrator.
 
 

@@ -13,6 +13,7 @@ integration_contracts: []
 dependencies: []
 related_items:
   - U-063
+  - U-065
 platforms: []
 tags: []
 id: BUG-019

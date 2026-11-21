@@ -382,6 +382,8 @@ Mutation evidence for the two real-socket tests exists in U-063: with the factor
 
 ### The pinned-certificate factory clause — PENDING, two prepared alternatives, NOT YET CHOSEN
 
+**Decision recorded after this record was approved, 2026-11-20 (added by the orchestrator):** the product owner decided BUG-020's server-name question: the pinned factory follows the same rule as the default factory ("Same as default"; Record 9 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`). The alternative to apply is therefore alternative (b) below, and only once the BUG-020 fix and its tests exist. The heading and the text below are kept as approved.
+
 The product owner instructed (Record 8) that the clause for the pinned-certificate factory waits for the BUG-020 server-name decision (BUG-020 AC-1: does the pinned factory set the server name itself, or leave it to the platform?). **This record must not be applied with either alternative below before that decision is recorded.** Whoever applies the revision picks one, once.
 
 **Alternative (a) — the pinned factory sets no server name itself (today's behaviour).** Text to replace the pending subsection:

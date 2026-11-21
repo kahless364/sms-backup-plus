@@ -2235,3 +2235,19 @@ This is the dated decision record that BUG-019 acceptance criterion AC-5 and BUG
 | Question 6: commit and push the follow-ups and the records | "And commit and push" | Committed and pushed | - |
 
 Recorder: Orchestrator.
+
+### Record 9 — 2026-11-20 (decision for BUG-020: the pinned factory is handled the same as the default factory)
+
+This record completes the decision that BUG-020 acceptance criterion AC-1 asks for; the protocol part is in Record 8. Decider: the product owner. After change record CR-013 was raised, the product owner asked what comes next. The orchestrator listed the next steps and put the two questions Record 8 had left open for BUG-020: "Does the pinned factory get the default factory's cipher handling?" and "Does it set the server name itself, or leave it to the platform?" It recommended "same as the default factory" for both (one set of rules to test and to state in the contract; the product owner had said the pinned path is probably not in use), said that this answer also settles the pending clause in CR-013, and said: "If you say 'same as default' for the two BUG-020 questions, I'll create the fix story and run sprint 021 with U-064 first and the fix second."
+
+| Item | Verbatim | Decision | Not decided by this record |
+|------|----------|----------|----------------------------|
+| BUG-020, cipher suites on the pinned-certificate factory | "Same as default" | The pinned factory applies the same cipher-suite handling as the default factory (the same order and the same blocked list) | How the two factories share the handling in code (one shared step, a call into the default factory's step, or a copy); that is for the fix story's plan |
+| BUG-020, server name on the pinned-certificate factory | "Same as default" | The pinned factory sets the server name by the same rule as the default factory: the host for a DNS name; none for an IP address or a blank or missing host; a name the platform rejects causes no failure | What a device's TLS provider puts in the client hello (not measured; see CR-013) |
+| BUG-020, protocols (restated from Record 8) | "Yes drop anything older than tls 1.2" (Record 8) | Same as the default factory: nothing older than TLS 1.2 | - |
+| CR-013, the pending clause for the pinned-certificate factory | "Same as default" | The second prepared alternative in CR-013 is the one to apply: the pinned producer follows the same server-name statements as the default producer. It may be applied only once the BUG-020 fix and its tests exist, as CR-013 says | - |
+| Timing of the TLS fix for BUG-019 and BUG-020 | "Same as default" (given in reply to the orchestrator's statement quoted above) | Orchestrator's reading: the fix is its own story in sprint 021, after U-064, before and separate from the migration's code move. The product owner did not object to that plan; the words answer the two questions | - |
+
+On the Security Reviewer's judgement that BUG-019 AC-5 and BUG-020 AC-1 name: no new judgement was asked for before this decision. The judgement on record is the U-063 security review (`sdlc/artifacts/build/sprints/sprint-020/U-063/review-security.md`), which raised both findings. The fix story's own security review examines the result.
+
+Recorder: Orchestrator.
