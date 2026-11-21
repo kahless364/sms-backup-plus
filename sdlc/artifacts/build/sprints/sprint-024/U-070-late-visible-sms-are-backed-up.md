@@ -310,6 +310,8 @@ To record at build (not before): the start commit and the authoritative test cou
 - **Line numbers** in files that story U-068 changed (for example the backup attributes in `AndroidManifest.xml`) are re-read at this story's start commit, as the plan's baseline step says.
 - **Start commit:** the commit that closes story U-069.
 
+**Comparison tool (binding; the product owner's decision of 2026-11-21, decision appendix Record 18).** After the machine's endpoint security quarantined Git's `diff.exe`, no step of this story calls the external `diff` or `cmp`. Comparisons are made with `git diff --no-index` (`--quiet` for equal or different; `--stat` or `--numstat` for counts) or by comparing `sha256sum` values. Where the plan's text still shows `diff` or `cmp`, the developer substitutes these, re-derives any expected value that depended on the output form, and records each substitution in the log. Nothing is restored from quarantine, no exclusion is added, shell activity is kept modest, and if another tool disappears or a process is killed without a visible reason the developer stops and reports.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 

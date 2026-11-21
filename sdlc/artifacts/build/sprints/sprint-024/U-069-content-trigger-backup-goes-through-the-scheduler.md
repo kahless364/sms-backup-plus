@@ -234,6 +234,14 @@ For QA. Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew 
 - **P-3 to P-6:** accepted as information: the stricter assertions stand, and the scheduler test file is not edited by this story.
 - **Hand-over items accepted:** the change record for the contract example is the next free number and is raised by the orchestrator after this story; the list of Hilt workers in DES-MODERNIZATION-008 gains this worker through that same record or the next design amendment; the runtime-library story re-runs this story's mutation table at its WorkManager increment.
 
+**Rulings after the plan gates of iteration 1 (2026-11-21; decision appendix, Record 18).** Plan review FAIL on three blockers (the coverage premise, two device-check outcomes wrongly labelled a pass, one final check that could find nothing); contract verification PASS; depth check PASS. The plan goes to iteration 2 with these rulings:
+
+- **The coverage floor of the `worker` package (AC-11):** the generated injection classes are filtered out of the coverage measurement, so the package will measure 100 percent. The floor is the measured ratio rounded down to 0.05, and one step lower (0.95) where the measurement is 1.00. The note beside the floor says what is measured. The sentence in AC-11 that the measured ratio will be below 100 percent is wrong and is read as corrected by this ruling.
+- **The emulator check (IC-3):** "nothing to back up" or "the backup never started" after the scheduler's enqueue line is "not conclusive", not a pass.
+- **`integration_contracts` stays empty:** the Artifact Librarian has no method to add a contract after scaffolding. The contract-verification gate checked CNTR-MODERNIZATION-004 regardless.
+
+**Comparison tool (binding; the product owner's decision of 2026-11-21, decision appendix Record 18).** After the machine's endpoint security quarantined Git's `diff.exe`, no step of this story calls the external `diff` or `cmp`. Comparisons are made with `git diff --no-index` (`--quiet` for equal or different; `--stat` or `--numstat` for counts) or by comparing `sha256sum` values. Where the plan's text still shows `diff` or `cmp`, the developer substitutes these, re-derives any expected value that depended on the output form, and records each substitution in the log. Nothing is restored from quarantine, no exclusion is added, shell activity is kept modest, and if another tool disappears or a process is killed without a visible reason the developer stops and reports.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 

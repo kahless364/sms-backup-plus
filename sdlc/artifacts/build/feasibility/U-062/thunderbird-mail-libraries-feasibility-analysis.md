@@ -2405,3 +2405,28 @@ The three stories are stories S2 (toolchain and test tooling), S3 (compileSdk 37
 | PO-H | Starting the Android 11 emulator (`Pixel_4_2`) for an optional run of the toolchain story | Allow it | Nothing; the run is optional |
 
 Recorder: Orchestrator.
+
+### Record 18 — 2026-11-21 (an endpoint-security event during story U-068, the product owner's decision, and further rulings)
+
+**The event.** At 06:36 local time on 2026-11-21 the machine's endpoint security (SentinelOne) reported the file-comparison tool `diff.exe` of Git for Windows as malware, stopped it and quarantined it. Story U-068's developer was in its fifth increment and was comparing build outputs. The developer stopped and reported, as its standing constraints require. Four increments were committed locally; the fifth was complete and its gates green, but not committed. The orchestrator confirmed the event in the security log, checked that the working tree was intact, saved a copy of the uncommitted work outside the repository, and asked the product owner. Nothing was restored from quarantine and no exclusion was added.
+
+| Item | Verbatim | Decision | Not decided by this record |
+|------|----------|----------|----------------------------|
+| How the builds continue after `diff.exe` was quarantined. The orchestrator offered: use Git's built-in comparison in place of `diff.exe`, with the risk stated that the security tool may be reacting to the activity and could flag another Git tool; wait until `diff.exe` is back; or pause all agent work | "Use Git's built-in compare (Recommended)" | The builds continue. Every comparison the plans did with the external `diff` (or `cmp`) is done with `git diff --no-index` or by comparing hashes. Nothing is restored from quarantine and no exclusion is added by any agent. Agents keep shell activity modest and stop and report again if another tool disappears or a process is killed without a visible reason | Whether `diff.exe` is restored, and any exclusion in the security tool: these stay with the product owner and the security team |
+
+**Further rulings by the orchestrator under Record 12** (continuing Records 13 to 17):
+
+| # | Story | Question | Ruling | On whose recommendation | To reverse it |
+|---|-------|----------|--------|-------------------------|---------------|
+| 37 | U-068 | The plan's scope concerns: the test runtime for Android 7.0 is fetched by the test framework itself, outside the build's dependency verification; differences in the merged manifest and the package that the new floor itself causes; one package's coverage ending with no line to spare | The download is acknowledged (the design accepts it; coordinates and checksums are recorded; nothing is fetched by hand). Declared, explained differences are accepted; an unexplained one stops the story. A third test is added so the package keeps a margin | Solution Architect (the plan) | Overrule before the story's reviews |
+| 38 | U-070 | Rows the app examines and never uploads that lie above the watermark are recorded too | Confirmed, inside ruling 25; named in the story's evidence as a stated difference | Solution Architect (the plan) | A change record against REQ-MODERNIZATION-020 |
+| 39 | U-070 | An existing verbose log line writes an address in debug builds | Not this story's; the story's privacy criterion covers the lines it adds or changes. A separate low-severity bug is raised | Solution Architect (the plan) | Fix the line in this story |
+| 40 | U-070 | The mutation table, where the code shows a named test cannot fail under a named mutation | Met when every new test fails under at least one logged mutation and every mutation is detected by at least one test | Solution Architect (plan review) | Require the story's literal table |
+| 41 | U-070 | Rows the contact-group filter excludes are never recorded, so widening the group later uploads matching messages of the last six hours | Accepted (neither a duplicate nor a loss; bounded by the window), named as a stated difference, and handed to the next requirements pass | Solution Architect (plan review) | A change record against REQ-MODERNIZATION-020 |
+| 42 | U-070 | The input of the record's digest | The raw characters of the fields, kept apart unambiguously, so two different messages never get the same key through the encoding | Solution Architect (plan review) | Not applicable: a correctness point |
+| 43 | U-070 | A restore running at the same time as a backup could have its row uploaded | The record is read after the provider queries return; a test and a mutation show it | Solution Architect (contract verification) | Not applicable: closes a duplicate the requirement forbids |
+| 44 | U-070 | The length of the developer's run | Planned as two sessions with a clean hand-over state | Solution Architect (plan review) | One session |
+| 45 | U-069 | Two lines of the build file change, not one (the coverage floor of the worker package and the note beside it); an extra test that detects a removed injection annotation | Both accepted; the story adds fifteen tests | Solution Architect (the plan) | Overrule before the build |
+| 46 | U-069 | The coverage floor of the worker package, which will measure 100 percent because generated classes are filtered out of the measurement | The floor is the measured ratio rounded down to 0.05, and one step lower (0.95) where the measurement is 1.00, so that a counting difference in a later coverage-tool version does not fail the gate when no story may lower a floor | Orchestrator, on the plan review's finding | Set the floor to 1.00 |
+
+Recorder: Orchestrator.
