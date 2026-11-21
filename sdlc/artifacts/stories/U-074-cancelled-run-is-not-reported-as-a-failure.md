@@ -1,6 +1,6 @@
 ---
 type: story
-status: draft
+status: ready
 artifact_type: user-story
 priority: medium
 complexity: medium
@@ -47,6 +47,8 @@ id: U-074
 title: Make a cancelled backup or restore end as cancelled, not as an error line and a failure result, by deciding on the state of the running coroutine's job, and stop the cancel collector warning on every normal finish
 domain: modernization
 requirement_source: bug:BUG-024
+pipeline: ''
+updated_at: '2026-11-21T13:09:45.150Z'
 ---
 
 # U-074: Make a Cancelled Backup or Restore End as Cancelled, Not as an Error Line and a Failure Result, by Deciding on the State of the Running Coroutine's Job, and Stop the Cancel Collector Warning on Every Normal Finish
