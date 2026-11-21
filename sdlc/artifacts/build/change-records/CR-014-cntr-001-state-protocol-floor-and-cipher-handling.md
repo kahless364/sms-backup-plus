@@ -22,7 +22,7 @@ tags:
   - cipher-suites
   - thunderbird-migration
 id: CR-014
-title: 'CNTR-MODERNIZATION-001: state the TLS protocol-version floor and the cipher-suite handling of both socket-factory producers (rule only, no suite list)'
+title: 'CNTR-MODERNIZATION-001: state the TLS protocol-version floor and the cipher-suite handling of both socket-factory producers (rule and categories, no suite names; allow-list per Amendment 1, 2026-11-21)'
 type: DCR
 domain: change-records
 summary: 'CNTR-MODERNIZATION-001 does not state which TLS protocol versions and cipher suites its two producers enable. Since story U-065 (commit 12b584ab) both TLS socket factories enable only TLS 1.2 and TLS 1.3 where the platform supports them and apply one cipher-suite order and blocked list; no contract line protects that. Product-owner decision 2026-11-21 (analysis Record 11, "1 raise now"): raise the change record now; it is applied in the combined contract revision at the migration and carries the open part of BUG-020 AC-5.'
@@ -316,6 +316,166 @@ Layers affected: 3 (design and contracts; requirements; stories, sprints and cha
 
 Exact contract text to add to `CNTR-MODERNIZATION-001`, and where it goes. **Nothing is applied by this record.** The class names of the app-owned default factory are a Part B design decision (CR-009); the text below names no class and no constant, so it needs no change when that is decided.
 
+### Amendment 1 — 2026-11-21: cipher suites by allow-list (ruled for story U-066)
+
+Added 2026-11-21 by the Requirements Analyst for the orchestrator, after the orchestrator ruled the four decision points of story U-066 (`sdlc/artifacts/stories/U-066-prune-weak-tls-cipher-suites.md`, status ready; Implementation Notes, "Rulings (S0-1)"). This section is insert-only: no approved text below it is deleted or altered. **Where this amendment and the text below it differ, the amendment governs for every text its parts A to I replace or add (the cipher-suite statements, B1, B2, rule 7, the Versioning lines, the changelog line, the "Not stated" list, Edit 6, the Traceability rows and the applier's checks). Everything else in the record stands**: V1 to V5, B2 and B3 in substance, the protocol clauses, the section placement, Edits 1 and 5, the error-table decision, Timing and the scope concerns.
+
+**The code is not yet changed.** At HEAD `fba733e5` the vendored factory still holds the blocked list (`DefaultTrustedSocketFactory.java:64-81`), the preferred-order list (`:37-62`), `reorder` that appends suites named on neither list (`:153-155`), and a null cipher list that leaves the platform's suites (`:237`); no `ALLOWED_CIPHERS` or `ciphersToEnable` exists (searched: 0 matches). This amendment states the behaviour the contract will state **once U-066 is done**. It is void if U-066 does not land (see "What the applier checks").
+
+The rulings it rests on (orchestrator, 2026-11-21, on this record's recommendation; Record 12 allocates routine choices): **DP-1 option A**: only the three TLS 1.3 suites, the six TLS 1.2 ECDHE suites with AES-GCM or ChaCha20-Poly1305, and `TLS_EMPTY_RENEGOTIATION_INFO_SCSV` stay enabled (ten names). **DP-2 allow-list**, filtered from the platform's default-enabled suites; suites on neither list are no longer appended. **DP-3**: the failed-initialisation branch computes the cipher list from the socket's own default-enabled suites, so the prepared C4 applies. **DP-4**: as written (TLS 1.3 suites first, then today's four TLS 1.2 suites in today's order, then the two ChaCha20 suites, then the signalling value).
+
+#### A. The reworded cipher statements (final text, replacing C1 to C3 and the prepared C4)
+
+Replace the sentence that opens the cipher subsection of Edit 3 with:
+
+```
+A producer enables only suites that are on its allowed list and that the platform enables by default, in the
+allowed list's order. The allowed list is kept in the producers' code and recorded by tests. This section
+states what it holds by name form (C2), not by name, and changing the exact suites within those forms is
+not a contract revision of C1 to C4.
+```
+
+Replace the table of C1 to C3 (and add C4) with:
+
+```
+| # | Statement |
+|---|-----------|
+| C1 | The suites a producer enables are taken only from the suites the platform enables by default. A producer never enables a suite the platform does not enable by default. |
+| C2 | A producer enables only suites on its allowed list; any other suite, known or unknown, is never enabled by the producer, other than suites the platform enables itself whatever is asked (see "Not stated"). If the platform enables none of the allowed suites by default, the producer enables none and never falls back to another suite. Every name on the allowed list is of one of these forms: a TLS 1.3 suite starting `TLS_AES_` and containing `_GCM_`, or starting `TLS_CHACHA20_POLY1305_`; a TLS 1.2 suite starting `TLS_ECDHE_RSA_WITH_` or `TLS_ECDHE_ECDSA_WITH_` followed by `AES_128_GCM_`, `AES_256_GCM_` or `CHACHA20_POLY1305_`; or the signalling value `TLS_EMPTY_RENEGOTIATION_INFO_SCSV`. |
+| C3 | The enabled suites are in the allowed list's order, other than suites the platform places itself (see "Not stated"). |
+| C4 | C1 to C3 hold on every socket a producer returns, also when the producer could not work out its suite list in advance: it then works the allowed suites out from the socket's own default-enabled suites and applies them together with the protocol floor, or `createSocket(...)` returns no socket. No path leaves the platform's own suites on a returned socket. |
+```
+
+**C4 is unconditional in form but applies only if U-066 lands with DP-3.** What makes it applicable: the story's AC-4 (the branch `hardenSocket(socket, null, null)` applies exactly the allowed suites, captured from one `setEnabledCipherSuites` call, and exactly `TLSv1.2, TLSv1.3`) and the changed test of the null-list branch (`hardenSocket_withNullLists_stillAppliesTheProtocolFloorFromTheSocket`, Hardening `:513` today, whose `never()` check on the suites at `:522` the story removes), with mutation M-X7 (fallback removed) detected. If U-066 does not land with DP-3 (the story's option 2, which keeps `:522`), C4 is not added and the original "Not stated" bullet about a failed initialisation stays.
+
+#### B. Decision: the contract states the rule and the allowed name forms, not the suite names
+
+Decision: **state the allowed name forms (C2); do not name the ten suites in the contract; point to the allowed list in the code and its tests.** The record's original choice ("rule only") is kept in its main part and strengthened by the forms. (The first draft of C2 excluded weak categories by name checks; the Solution Architect's check showed a deny-list cannot be complete, so C2 states the allowed forms positively. The story's W1 to W12 checks stay a second test.) Reasons:
+
+1. **The forms are the policy; the names are the instance.** DP-1 is a claim about what kind of suite may be enabled. The forms are checkable over names (the story's AC-3 (b) checks the constant against them), so a reviewer or the CR-009 move can verify C2 mechanically without a list. Naming ten suites would state the instance and leave the policy implied.
+2. **A change within the policy should cost a changelog line, not a contract edit.** If a later platform adds a TLS 1.3 suite, or a deliberate addition within the forms is wanted, naming the suites would make each one a text edit and a re-review of eleven statements. Under the forms it is a recorded backward-compatible revision (Versioning below) with its tests.
+3. **Names in the contract would be a third copy with no check.** The code constant is the authority and the story's exact-list tests assert the ten names as literals on both providers and both shapes (AC-1, AC-2). A contract copy would be unchecked. The check of the constant against the name forms (AC-3 (b), to be written against C2's forms, not against literals) is the one that does not depend on a snapshot, and C2 is worded as exactly that check.
+4. **Naming the list would bind the order.** C3 follows the allowed list's order. The order is tuning: every suite left is authenticated encryption with forward secrecy (the story's reasoning, not a measurement). Putting the ten names in the contract would make the order, or a statement that it is free, part of it.
+5. **The contract should not name code constants.** Unchanged from the original reason 4 (`ALLOWED_CIPHERS` is the story's working name; the arrays may become private at the move).
+
+What the original reasons 1 and 5 said no longer holds, and that is why C2 is stronger than the original: reason 1 (the lists are about to change) is settled by the ruling, and reason 5 (a category promise would be false at HEAD) is true only until U-066 is done, after which the name forms are the stated policy. Weighed against naming the ten suites: naming gives a reader the complete picture in one place and a short list is stable today, but it makes every in-policy change an edit to a security contract, and the three-copies problem is real. The cost of the chosen course is that a reader needs the code or the tests to see the ten names. For the applier's check only, and **not contract text**, the list as ruled (DP-1 A, DP-4) is, in order: `TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384`, `TLS_CHACHA20_POLY1305_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256`, `TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256`, `TLS_EMPTY_RENEGOTIATION_INFO_SCSV`.
+
+#### C. Statements that mention the lists: reworded or unchanged
+
+- **B1: reworded.** Replace its last sentence ("They use the same blocked list and the same preferred-order list, so neither can change without the other.") with "They use the same allowed suite list, so neither can change without the other." The rest of B1 is unchanged. The single-source binding stays deliberate.
+- **B2: one reference changed.** "C1 to C3" becomes "C1 to C4". Otherwise unchanged (it is written as behaviour).
+- **B3: unchanged.** It mentions no list.
+- **V1 to V5: unchanged.** They concern protocols and mention no suite list.
+- **The note after the tables** ("B1's single source for the two lists is deliberate...") reads "the two lists" for the protocol list and the suite list; it stays true.
+
+#### D. The "Not stated" list, as it reads after the amendment
+
+Replace the approved list with this one (changes marked):
+
+```
+- Which protocol and suite are negotiated with a server. The server picks, the platform's TLS provider
+  takes part, and a server that offers no protocol at or above TLS 1.2 (V1), or at TLS 1.2 no allowed suite
+  (C2), is refused, so the connection fails. Nothing about the negotiated result has been measured on a
+  device by the tests.
+- That the allowed suites are secure beyond the name forms C2 states. C2 says what the list holds, not that
+  nothing else can be wrong with a suite.                                          [reworded]
+- Which exact suites the allowed list holds within the forms of C2, and their order.      [new]
+- Which suites the platform enables or places itself (for example TLS 1.3 suites and signalling suites),
+  whatever is asked and whatever order is asked for.                                [extended]
+- Which protocols and suites a particular platform supports or enables by default, and, on a platform whose
+  default-enabled suites include none of the allowed ones, whether the platform accepts the empty list, which
+  exception results and whether any handshake can complete.     [extended; not measured; the two emulators
+  checked for U-066 list all ten allowed names. What the producer itself does there is stated in C2: it
+  enables none and never falls back]
+- Which exception, if any, `createSocket(...)` raises when the platform refuses the protocol or suite list
+  the producer sets (an empty protocol list included), and which exception the consumer sees when a
+  server refuses a handshake because of its protocol or suites.
+- What the mail library does to the socket after `createSocket(...)` returns.
+- Trust and host-name verification (unchanged: the producer table and Invariant 2).
+- The server name (see "Server-name (SNI) behaviour of the producers").
+```
+
+Deleted: "Whether a suite named on neither list is enabled" (under the allow-list it is never enabled, C2) and, **only if C4 applies**, "The suites of a socket when the producer could not read the platform's suite list when it was first used" (C4 covers it). If C4 does not apply, that second bullet stays as approved.
+
+#### E. Validation Rule 7, Versioning and the changelog line, as they read after the amendment
+
+Rule 7 (replaces Edit 2's text; "C1 to C3" becomes "C1 to C4", and falls back to "C1 to C3" if C4 does not apply):
+
+```
+7. Both producers honour statements V1 to V5, C1 to C4 and B1 to B3 of "Protocol and cipher-suite
+   behaviour of the producers", and apply the same protocol and cipher-suite handling as each other.
+   Moving, rewriting or re-owning either producer changes none of them. A change to any statement is a
+   contract revision and changes its test in the same step.
+```
+
+Versioning (replace both Edit 4 lines):
+
+Breaking changes, add:
+
+```
+  - Enabling, in either producer, SSLv2Hello, SSLv3, TLS 1.0 or TLS 1.1 (V1); enabling any cipher suite
+    that is not on the allowed list, adding to the allowed list a suite outside the forms stated in C2, or
+    removing from it every TLS 1.3 suite or every suite usable with TLS 1.2 (C2, V2); or letting the two
+    producers apply different protocol or cipher-suite handling (B1).
+```
+
+Backward-compatible changes, add:
+
+```
+  - Adding to the allowed list a suite that meets the forms stated in C2, or reordering the allowed
+    list, while C1 to C4 and B1 still hold (a recorded revision: the exact-list tests change in the same
+    step and the changelog says so); removing a suite from the allowed list, other than the last TLS 1.3
+    suite or the last suite usable with TLS 1.2 (backward-compatible for the contract, but it may cost
+    compatibility with a server, so it needs the product owner's decision, as the TLS 1.2 floor and the
+    pruning did); adding a later TLS version to the protocols the producers
+    enable, or dropping one (each changes V2 and V3 and their tests in the same step; dropping a version
+    needs the product owner's decision).
+```
+
+Why these directions: adding an in-category suite enables nothing the policy forbids and leaves every statement true; adding an out-of-category suite, or enabling anything off the list, breaks C2; removing a suite narrows what is enabled, which no statement forbids but which can cut off a server; removing the last TLS 1.3 suite, or the last suite usable with TLS 1.2, disables in practice a protocol version that V2 says is enabled, so it is breaking. If U-066 keeps a blocked list beside the allow-list, it is an implementation detail the contract does not state; the original "removing a name from the blocked list" breaking line then has nothing to refer to and is not applied.
+
+Changelog line (replaces Edit 4's): "v2: states the protocol-version and cipher-suite behaviour of both producers, statements V1 to V5, C1 to C4 and B1 to B3, the cipher suites by allowed list and name form (CR-014, amended 2026-11-21)." Use "C1 to C3" if C4 does not apply.
+
+#### F. Edit 6 (REQ-MODERNIZATION-019 AC-B8), reworded
+
+The proposed text of Edit 6 keeps every clause except the blocked-suite clause (story Scope Concern 12). Replace "a test shows that a cipher suite on the blocked list is not enabled (fed in at the step's input where the test provider offers none)" with:
+
+```
+a test shows that a cipher suite that is not on the allowed list is not enabled (fed in at the step's input where the test provider offers none)
+```
+
+Nothing else in Edit 6 changes; it is still applied with the Part B design, in the same pass as CR-005's Change 4 and the CR-010 and CR-011 edits, located by its text.
+
+#### G. Traceability for the reworded statements
+
+The story's criteria are cited; the tests are named by the plan (the story's names are working names), so the applier refreshes names and lines at application time. Today's lines are at HEAD `fba733e5`. V1 to V5, B2 and B3 keep the rows already in the Traceability table.
+
+| # | Code today | Code after U-066 (per the story) | Pinned today by | Pinned after U-066 by |
+|---|------------|----------------------------------|-----------------|-----------------------|
+| C1 | `DefaultTrustedSocketFactory.java:104-110`, `:124-125` | the new step (working name `ciphersToEnable(SSLSocket)`) reads `getEnabledCipherSuites()` and never `getSupportedCipherSuites()` | Hardening `:297` (i) | AC-3 (c) (the step fed the platform defaults); AC-10 point 9 (a search that returns nothing) |
+| C2 | `:139-143` (blocked names removed; names on neither list stay) | the allow filter; the allowed constant (working name `ALLOWED_CIPHERS`) | `reorder_removesEveryBlockedItem` (`:205`), `cipherConstants_matchRecordedBaseline` (`:271`) | AC-1 and AC-2 (exact ten names on both providers, both shapes, literals in the test); AC-3 (a) (no enabled suite in W1 to W12, a second test), (b) (the constant, by reflection, **checked against the name forms of C2**, not against a literal; the story's AC-3 (b) is to be written that way), (c) (the step fed the union of the providers' defaults, today's lists and one null, anonymous and export name each gives exactly the ten); **a case to be added to the story: the step fed defaults that contain no allowed name returns an empty list** (the model is case (iv) of `protocolsToEnable_givenSupportedList_keepsOnlySupportedTls12AndNewer`, Hardening `:497-501`); mutations M-X1, M-X2, M-X4 |
+| C3 | `:146-151` (known first), `:153-155` | the allowed list is the order | `:297` (ii), (iii); `reorder_ordersKnownItemsFirst_thenUnknownInOriginalOrder` (`:235`) | AC-1 and AC-2 (order asserted); M-X8 (two entries swapped). The TLS 1.3 suites are provider-fixed under Conscrypt and come first in the provider's own order, the same as the allowed list's |
+| C4 | `:236-241`, `:237` (null list leaves the platform's suites) | the null branch computes the suites from the socket | `hardenSocket_withNullLists_stillAppliesTheProtocolFloorFromTheSocket` (`:513`), which asserts the opposite for suites (`:522`) | AC-4 (changed test); M-X7. The real initialiser failure is not forced |
+| B1 | pinned `:101-102`; default `:213` | unchanged: one shared step; `PinnedCertificateSocketFactory.java` is not edited | Pinned `:152`, `:176`; Jdk `:495` | AC-2 (a), (b), (c): the same ten names in the same order on all four combinations; the three parity tests pass unchanged; M-X5 |
+| (limits) | | | | AC-5 (the four TLS 1.2 handshakes negotiate an allowed AEAD suite; one unrestricted handshake per factory negotiates TLS 1.3 with a TLS 1.3 suite); AC-6 (a server limited to a pruned suite is refused; conditional on the Conscrypt server serving it, refusal not asserted under the JDK provider). Neither test provider is a device's; the two emulators measured for S0-3 list the same 18 default names as the desktop Conscrypt provider |
+
+#### H. What the applier checks at the combined revision
+
+1. **U-066 is done and its tests exist.** The story's status is done, its fix commit is in the history, and the tests of AC-1 to AC-4 are present and green (exact-list tests on both providers and both shapes; the check of the constant against C2's name forms; the W1 to W12 checks at the step's input; the case where the defaults contain no allowed name and the step returns an empty list; the null-branch test). **If U-066 is not done, the original C1 to C3 (and the "rule only" text) apply and this amendment is void.**
+2. **The shipped allowed list matches DP-1 A and C2's name forms.** Read the allowed constant and check every name against the forms in C2. This record checked the forms against the evidence: they match exactly the ten ruled names (`TLS_AES_128_GCM_SHA256`, `TLS_AES_256_GCM_SHA384`, `TLS_CHACHA20_POLY1305_SHA256`, the six `TLS_ECDHE_{RSA,ECDSA}_WITH_{AES_128_GCM_,AES_256_GCM_,CHACHA20_POLY1305_}` names, and the signalling value) and none of the other 8 of the 18 Conscrypt default names (`sdlc/artifacts/build/sprints/sprint-020/U-063/evidence/I0-probe.txt:30`: four ECDHE CBC-SHA, four `TLS_RSA_*`) or the other 21 of the 31 JDK default names (`I0c-diag.txt:14`: five DHE GCM or ChaCha20, four ECDHE CBC-SHA256/384, four DHE CBC-SHA256, four ECDHE CBC-SHA, four DHE CBC-SHA); none of the integrity-only TLS 1.3, CCM, PSK, static-DH or fallback-signalling names the forms could have admitted is among those defaults. If the orchestrator or product owner ruled another option before the story was built (B adds ECDHE CBC with SHA-1; C removes only broken categories), the forms in C2 are reworded to that option before it is applied; this amendment does not cover it.
+3. **C4 is decided** by the paragraph "C4 is unconditional in form" in part A (and the approved section "Prepared statement C4" below, which it supersedes in wording): add it only if AC-4's test and M-X7 are in place; otherwise keep the "Not stated" bullet and write "C1 to C3" in rule 7, the changelog line and B2.
+4. **The allowed list holds TLS 1.3 suites**, so that V2 means something (no TLS 1.3 enabled with no TLS 1.3 suite).
+5. **Versioning**: the shipped contract's lists use the directions in E (not the story's hand-over wording; see below).
+
+#### I. Corrections to the story's hand-over wording (AC-10 and Implementation Notes)
+
+The hand-over was verified against CR-014 as approved and against the code. Two differences, both made in this amendment:
+
+1. **Versioning direction.** The hand-over puts "adding a name to the allowed list" in the breaking list and "removing a name" in the backward-compatible list. This amendment follows the coordinator's direction instead: adding a suite that meets the stated name forms is a recorded backward-compatible revision (it enables nothing the policy forbids); adding one outside them, or enabling anything not on the list, is breaking; removing a suite is backward-compatible for the contract but needs the product owner because it can cost a server.
+2. **The "Not stated" list.** The hand-over deletes two bullets. A third bullet, "That every enabled suite is strong", also needed rewording once C2 states name forms, and the list gains two items (the exact suites and their order; a platform whose defaults hold none of the allowed suites). The failed-initialisation bullet is deleted only if C4 applies. The hand-over's opening sentence for the cipher subsection ("... it is not stated here") also changed: the contract now states the list by name form, not by name.
+
+The remaining hand-over points are carried as written: C1 unchanged, C2's core sentence, C3, C4 as prepared, B1's second sentence, rule 7 and the changelog "C1 to C4", the Traceability retarget and Edit 6's wording.
+
 ### Where each statement goes, and why
 
 | Candidate place | Decision | Reason |
@@ -363,6 +523,8 @@ behaviour of the producers".
 
 ### Edit 2 — new Validation Rule 7 (after CR-013's rule 6)
 
+*Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs.*
+
 ```
 7. Both producers honour statements V1 to V5, C1 to C3 and B1 to B3 of "Protocol and cipher-suite
    behaviour of the producers", and apply the same protocol and cipher-suite handling as each other.
@@ -371,6 +533,8 @@ behaviour of the producers".
 ```
 
 ### Edit 3 — new section, inserted after CR-013's section and immediately before `## Example: resolution + handoff (concrete)`
+
+*Superseded in part by Amendment 1 (2026-11-21), at the subsection "Cipher suites (both producers)", B1 and the "Not stated" list; apply the amendment's text where it differs.*
 
 ```
 ## Protocol and cipher-suite behaviour of the producers
@@ -449,6 +613,8 @@ that works the lists out for each socket or sets the server name another way.
 
 ### Edit 4 — Versioning: two lines and a changelog line
 
+*Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs.*
+
 Add to the **Breaking changes** list (Versioning, `:282-287` in v1):
 
 ```
@@ -487,6 +653,8 @@ When this record is applied, replace it with:
 
 ### Prepared statement C4 — NOT part of Edit 3 unless the cipher-pruning story closes the gap (Scope Concern A)
 
+*Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs (its C4 is the one to use if C4 applies).*
+
 Prepared in the way CR-013 prepared its alternatives (a) and (b). Today the cipher side of a failed
 initialisation leaves the platform's suites in place (`DefaultTrustedSocketFactory.java:124-125`, `:237`),
 so C1 to C3 are scoped by a "Not stated" bullet. If the pruning story (or another change) closes that gap
@@ -504,6 +672,8 @@ What the applier checks to decide:
 Approval of this record does not wait for the decision.
 
 ### Edit 6 — REQ-MODERNIZATION-019 AC-B8 (a requirements change, not part of the contract revision)
+
+*Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs.*
 
 Form as CR-005's Change 4. AC-B8 is located by its text, not by a line number: REQ-MODERNIZATION-019 is being amended today by CR-010 and CR-011 (its working tree already differs from HEAD, and AC-B8 has moved).
 
@@ -546,6 +716,8 @@ The facts behind it: the refusal is shown under the desktop Conscrypt provider b
 
 ### Traceability: each statement to a code line and to the test that pins it
 
+*Superseded in part by Amendment 1 (2026-11-21), for rows C1 to C3 and B1; apply the amendment's text where it differs.*
+
 Short names: **Hardening** = `.../mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java`; **Jdk** = `.../mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java`; **Handshake** = `.../mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java`; **Pinned** = `.../mail/PinnedCertificateSocketFactoryCreateSocketTest.java` (all under `app/src/test/java/com/zegoggles/smssync/`). Lines are the `public void` lines at HEAD; the `@Test` is the line above. Test names will be retargeted when the class moves (Interactions). "Conscrypt" and "JDK provider" are the two test providers; neither is a device's.
 
 | # | Code | Pinned by | Not pinned |
@@ -578,12 +750,14 @@ Sequence the applier follows (the same convention as CR-013's table):
 1. CR-007, CR-008, CR-012 (combined row for `:196`), CR-009: any order among them, by quoted text.
 2. CR-013: its Edit 1 (pointer paragraph), Edit 2 (rule 6), Edit 3 (section), Edit 4 (changelog). Since U-065 the code and tests CR-013 alternative (b) waits for exist, so (b) can be applied in this one pass (Interactions); that is the orchestrator's note to CR-013, not an edit here.
 3. CR-014 (this record): Edit 1 (replace the one-line pointer paragraph with the combined paragraph), Edit 2 (rule 7, after rule 6), Edit 3 (the section, after CR-013's section and before `## Example`), Edit 4 (the two Versioning lines and the changelog line), Edit 5 (CR-013's "Not stated" bullet).
+   *Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs.*
 4. Check: `grep -n -i "TLS 1\.2\|cipher"` on the contract returns the pointer paragraph, the section, rule 7, the Versioning lines and the changelog line; the version is v2.
 
 Edit 6 (REQ-MODERNIZATION-019 AC-B8) is not part of this sequence. It is applied with the Part B design, in the same pass as CR-005's Change 4 and the CR-010 and CR-011 edits to the same file, by one owner, and not now (REQ-MODERNIZATION-019 is being amended today). It is true of today's code, so applying it early would make nothing false, but the in-flight edits make a second editor a conflict.
 
 Checks before applying (the applier confirms each; the record's text assumes them):
 - **The cipher-pruning story has landed or is known.** The text states a rule, so it is true whatever the lists hold. The applier still checks that C1 to C3 hold for the pruned lists (Interactions, "The cipher-pruning story") and that the story did not change the shape of the lists.
+  *Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs (the ruling changed the shape to an allow-list).*
 - **The class that now holds this behaviour still does what V1 to V5, C1 to C3 and B1 to B3 say.** If the move changed any of it, the move is the defect, not the statement. A failed assertion in the retargeted tests is a regression, per the U-065 test comments.
 - **The library does not change the socket after `createSocket` returns** (Scope Concern E): search the library's IMAP and SSL code at the pin for `setEnabledProtocols`, `setEnabledCipherSuites` and `setSSLParameters`. Not measured yet.
 - **The pinned factory's two calls were retargeted** to the app-owned default factory in the same change as the move (CR-009 checklist, Interactions).
@@ -635,6 +809,8 @@ The record is written so that **no text in it waits for the story**: it states a
 9. **An allow-list, if the story chooses one, filters the platform's default-enabled suites, not its supported ones.** Filtering the supported set would break C1, and C1 would then need rewording too.
 10. **Keep the TLS 1.3 suite names enabled** (assumed, not measured): an allow-list that leaves them out may, on some providers, leave TLS 1.3 enabled with no TLS 1.3 suite, so V2 holds while the connection fails or falls back to TLS 1.2. The story checks this under both test providers.
 11. **Read point 6 with Scope Concern A's prepared C4.** If the story closes the failed-initialisation branch, the applier adds C4 (above); if not, the "Not stated" bullet stays.
+
+*Ruled 2026-11-21: allow-list; see Amendment 1 (under "Proposed Change"). Points 1 and 3 are answered by the allow-list, point 8 by its filter, point 9 by C1, point 10 by DP-4, point 11 by DP-3 (C4 applies if U-066 lands with it).*
 
 What waits for the story: nothing in the proposed text. At application time the applier refreshes the Traceability lines and names for C2 and C3 and confirms points 1 to 6 held. The counts in Evidence (24 known, 16 blocked) describe HEAD only. Scope Concern B is an input to the story, for the product owner's decision.
 
@@ -737,6 +913,41 @@ Advisory only. Refined during story planning.
 
 **One point of disagreement with the Requirements Analyst's text.** The backward-compatible Versioning line (Edit 4) should not allow names to be removed from the blocked list. It is otherwise sound. I have no disagreement with the standing decisions.
 
+**Check of Amendment 1 (2026-11-21).** Read: Amendment 1 (parts A to I); U-066 (DP-1 to DP-4, AC-1 to AC-4, AC-10, Scope Concerns, the Rulings and the emulator measurement); `DefaultTrustedSocketFactory.java` at HEAD `fba733e5`, which has no cipher change since `4a888b16` (`git diff --stat` is empty for `app/src/main` and `k9mail-vendored`).
+1. *C1, C3, C4, B1 and B2: correct.* Each describes the behaviour the code will have once U-066 is built as ruled, and each has a test the story names (AC-1 to AC-4). **C2 needs a correction.** Its name checks rule out categories (a deny-list over names). Like any blocklist, that cannot be complete. They let through suites that RFC 9325 discourages, or that the ruling excludes:
+   - static DH, for example `TLS_DH_RSA_WITH_AES_128_GCM_SHA256` (W5 catches only `TLS_DHE_`);
+   - PSK suites (`TLS_PSK_*`, `TLS_ECDHE_PSK_*`, where "ECDHE with AEAD" is true but there is no certificate authentication);
+   - CCM and CCM_8, ARIA-GCM and Camellia-GCM;
+   - the integrity-only TLS 1.3 suites `TLS_SHA256_SHA256` and `TLS_SHA384_SHA384`, which have no encryption, and which "the TLS 1.3 suites" also admits;
+   - `TLS_FALLBACK_SCSV`.
+
+   C2 should state the allowed forms positively. Those forms are complete by construction, and AC-3 (b) ("holds only TLS13, AEAD12 and SCSV") already tests them. The W1 to W12 checks can stay in the story as a second test. Exempting the signalling value is right: it is in both platforms' defaults, and keeping it changes nothing. It matches none of W1 to W12, so the exemption matters only once C2 is written as positive forms, where it is named. C2 also needs the carve-out that C3 already has for suites the platform enables itself.
+2. *Categories rather than the ten names: confirmed, provided C2 is written as name forms.* An applier, or the CR-009 move, can then check a re-implementation's constant mechanically against the contract, with no list copied into it. Note: to my knowledge (not checked against the registry), the corrected forms match exactly the ten names of the ruling. The "add an in-category suite" path is therefore almost empty in practice. That is harmless.
+3. *Versioning: confirmed, with one addition.* Removing a suite is backward-compatible with the product owner's agreement, except for removing the last TLS 1.3 suite or the last suite usable with TLS 1.2. Either of those disables in practice a protocol version that V2 says is enabled, so it must be breaking.
+4. *C4 and its condition: sound.* On an empty intersection, C2 already settles what the producer itself does: it enables nothing off the list and has no fallback. The contract should say so, as V4 does for protocols. That needs no device measurement, only one case in the story: the cipher step, fed defaults that contain no allowed name, returns an empty list. This mirrors the protocol test's case (iv). What stays "Not stated" is what the platform then does: whether it accepts the empty list, which exception is raised, and whether a handshake can still complete.
+5. *Contradictions below the amendment.* The amendment says it governs "for the cipher-suite statements". That scope does not literally cover rule 7, Versioning, the changelog line, Edit 6 or the applier's steps. The steps the applier follows still name only the unamended edits:
+   - Timing step 3 lists Edits 1 to 5;
+   - a Timing check reads "the story did not change the shape of the lists", which the ruling has now made false;
+   - the Fix Checklist and its verification line say "C1 to C3";
+   - the record holds two C4 texts ("Prepared statement C4" and part A).
+
+   The "governs" rule alone is not enough. Visible pointers are needed (corrections (d) and (e)).
+6. *What the story must be told before planning.*
+   - AC-3 (b) checks the constant against the positive forms of the corrected C2, not against literals (otherwise it is a snapshot).
+   - Add the empty-intersection case from point 4.
+   - Under Conscrypt the TLS 1.3 suites are reported as enabled whatever is set (carve-out in C2 and C3).
+   - Amendment 1 part E, not AC-10's own wording, governs the Versioning wording.
+   - The server-name step's read-and-write-back of the socket's settings must keep the ten names. The JDK test that asserts the cipher order after that step (Jdk `:330`) gets the new literal.
+
+**Corrections needed** (by the Artifact Librarian, insert or replace in Amendment 1 only; the approved text stays):
+- (a) Part A, C2. Replace the whole cell with: "A producer enables only suites on its allowed list; any other suite, known or unknown, is never enabled by the producer, other than suites the platform enables itself whatever is asked (see "Not stated"). If the platform enables none of the allowed suites by default, the producer enables none and never falls back to another suite. Every name on the allowed list is of one of these forms: a TLS 1.3 suite starting `TLS_AES_` and containing `_GCM_`, or starting `TLS_CHACHA20_POLY1305_`; a TLS 1.2 suite starting `TLS_ECDHE_RSA_WITH_` or `TLS_ECDHE_ECDSA_WITH_` followed by `AES_128_GCM_`, `AES_256_GCM_` or `CHACHA20_POLY1305_`; or the signalling value `TLS_EMPTY_RENEGOTIATION_INFO_SCSV`."
+- (b) Part E, breaking line. Replace "or adding to the allowed list a suite outside the categories stated in C2 (C2)" with: "adding to the allowed list a suite outside the forms stated in C2, or removing from it every TLS 1.3 suite or every suite usable with TLS 1.2 (C2, V2)". In the backward-compatible line, replace "removing a suite from the allowed list" with: "removing a suite from the allowed list, other than the last TLS 1.3 suite or the last suite usable with TLS 1.2". In both lines and in the part A opening sentence, read "forms" for "categories".
+- (c) Part D. Replace the extended bullet's second half with: "and, on a platform whose default-enabled suites include none of the allowed ones, whether the platform accepts the empty list, which exception results and whether any handshake can complete". Change "Where the platform places suites it fixes itself" to "Which suites the platform enables or places itself, whatever is asked".
+- (d) The governs sentence (amendment, opening paragraph). Replace "the amendment governs for the cipher-suite statements" with: "the amendment governs for every text its parts A to I replace or add (the cipher-suite statements, B1, B2, rule 7, the Versioning lines, the changelog line, the "Not stated" list, Edit 6, the Traceability rows and the applier's checks)".
+- (e) Insert-only pointers, one line each, under the headings Edit 2, Edit 3 (at "Cipher suites (both producers)"), Edit 4, "Prepared statement C4", Edit 6 and Traceability, and after Timing step 3, the Timing check on the pruning story, and the Fix Checklist: "*Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs.*"
+
+With (a) to (e) made, Amendment 1 is sound.
+
 ---
 
 ## Plan
@@ -747,6 +958,8 @@ Advisory only. Refined during story planning.
 - **Sprint:** None
 
 ### Fix Checklist
+
+*Superseded in part by Amendment 1 (2026-11-21); apply the amendment's text where it differs (C1 to C4, the allow-list wording, the applier's checks in part H).*
 
 - [ ] Design and contracts: apply CR-007, CR-008, CR-012, CR-009 and CR-013 first, by quoted text
 - [ ] Design and contracts: Edit 1 (combined pointer paragraph), Edit 2 (rule 7), Edit 3 (section, before `## Example`), Edit 4 (two Versioning lines and the changelog line), Edit 5 (CR-013's "Not stated" bullet)
