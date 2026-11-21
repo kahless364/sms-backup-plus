@@ -2553,3 +2553,23 @@ Change record CR-017 was written, approved, applied and checked on 2026-11-21 (c
 A follow-up noted for after story U-070 closes: its required test of 200 backups takes about five and a half minutes by itself and lengthens every later full test run to about ten minutes. The Solution Architect is to say whether it can be made cheaper without changing what it proves.
 
 Recorder: Orchestrator.
+
+### Record 24 — 2026-11-21 (state at the stop the product owner asked for)
+
+The product owner asked to reach a stopping point ("Let's get to a stopping point"). The orchestrator told the running agents to stop at their next safe point. Nothing is half-applied: no mutation is in the tree, no Gradle run is in flight, no emulator is running.
+
+| Item | State | To resume |
+|------|-------|-----------|
+| Story U-070 (late-visible SMS; sprint 024 wave 3) | Built and **not committed**: every production edit and all 50 new tests are in the working tree and green (session 1); all 26 mutation ids, 37 runs, were detected with the expected failing sets and restored (session 2). The plan's steps I9 (final gate, counts, file checks), I10 (the log's closing sections) and I11 (hygiene scan) are not done; code review, security review and QA have not started. The implementation log's last entry is the hand-over block of 19:40Z | A developer session does the plan's resume step S2-0 (steps 1 to 5), then I9 to I11; then the orchestrator commits by explicit path and runs the three quality gates. One oddity to keep in mind at I9: in mutation run M-L23 one test class did not run because the test library could not create its download lock file; it was logged, not re-run |
+| Safety copy of that working tree | The local ref `refs/backup/u070-handover` holds a commit of the working tree as it stood at the stop (story U-070's files and its workspace). It is not a branch, is not pushed, and is not for merge | Delete the ref after story U-070 is committed. If the working tree is ever lost, the files can be read from it |
+| Story U-075 (BUG-029; wave 4) | Plan at iteration 2, through all three gates. Not built | Build after U-070 closes; start commit is the commit that closes U-070. The orchestrator then runs the plan's device section and applies close-out edit X-3 of CR-017 |
+| Story U-074 (BUG-024) | Plan draft saved, marked incomplete: sections 0 to 8 and 10 to 13 written and self-tested; the optional device section and the last self-test pass are open; no gate has run. The draft raises five scope concerns; the first: the contract change record this story's text calls "v4" would now be v5 | Resume the planner or start a new one from the draft's resume notes; rule on the scope concerns; run the three plan gates |
+| Story U-076 (BUG-026, BUG-027) | Plan draft saved, marked incomplete: sections 0 to 13 drafted, including the library readings for the plan obligations; part of the self-test table and the final read-through are open; no gate has run. Six scope concerns, among them: the regular backup's periodic nature can only be read on a device from WorkManager's database (the library's diagnostics and the system's job list do not show it), and an update of a not-yet-run registration moves its first run (a wording point for the contract) | As for U-074 |
+| Stories U-071 (plan through its gates), U-072, U-077, U-078, U-073 | Planned in sprint 025 in the order U-074, U-071, U-072, U-076, U-077, U-078, U-073. U-072, U-077, U-078 and U-073 have no plan yet | In sprint order |
+| Change record CR-017 | Implemented (contract at v4). Close-out edits X-1 (when U-076 closes), X-2 (when U-077 closes) and X-3 (when U-075 closes) are the orchestrator's | At each closing |
+
+Open with the product owner (none blocks the next step): PO-B (a pull request so that the hosted checks run), PO-D, PO-E, PO-F, PO-H, PO-K (progress notification for automatic backups; the fix assumes no), PO-L (battery-optimisation exemption; no), PO-M (the new help-text wording), the two questions of BUG-027 (the contract assumes no to both), and a virtual device for Android 17.
+
+Noted for later and not yet raised as artifacts: a housekeeping change record for statements in the scheduler contract that are false for other reasons (CR-017, concerns 7 and 8); whether story U-070's 200-backup test can be made cheaper (it adds about five and a half minutes to every full test run); a low-severity bug for verbose log lines that write an address; the change record for the cancellation statement after story U-074.
+
+Recorder: Orchestrator.
