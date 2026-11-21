@@ -101,7 +101,33 @@ Developer's draft: `sdlc/artifacts/build/sprints/sprint-020/U-063/implementation
 
 Earlier mention: the sprint-019 security review noted the same behaviour as a pre-existing observation, not a finding against that story (`sdlc/artifacts/build/sprints/sprint-019/U-062/review-security.md:116` and `:268`). It was not filed as a bug then.
 
+### Measurements on two emulators (2026-11-20)
+
+Added by the orchestrator after the product owner allowed a measurement on the installed emulators ("Any already installed android emulator is fine"). Method: a small read-only Java program, compiled to a dex file and run on the emulator with `app_process` from the adb shell. It prints the platform TLS provider's supported and default-enabled protocols, applies the list this factory would build (supported minus SSLv3; TLS 1.2, 1.1, 1.0 first), and makes bare TLS handshakes to `imap.gmail.com:993` (no login, no data, each connection closed after the handshake). The program and its raw output are kept outside the repository; nothing in the app, on either emulator's settings, or in the mailbox was changed.
+
+| | Android 16 emulator (API 36; has the app, target level 35) | Android 11 emulator (API 30) |
+|---|---|---|
+| Platform TLS provider | Conscrypt (`AndroidOpenSSL`) | Conscrypt (`AndroidOpenSSL`) |
+| Supported protocols | TLS 1.2, TLS 1.3 | TLS 1.0, 1.1, 1.2, 1.3 |
+| Enabled by default | TLS 1.2, TLS 1.3 | TLS 1.0, 1.1, 1.2, 1.3 |
+| Enabled after the factory's list is applied | TLS 1.2, TLS 1.3 | TLS 1.2, 1.1, 1.0, 1.3 |
+| Handshake to Gmail IMAP, platform defaults | TLS 1.3 | TLS 1.3 |
+| Handshake with the factory's list | TLS 1.3 | TLS 1.3 |
+| Handshake limited to TLS 1.2 | accepted, TLS 1.2 | accepted, TLS 1.2 |
+| Handshake limited to TLS 1.1 | refused by the device before sending: "SSLv3, TLSv1 and TLSv1.1 are no longer supported and were filtered from the list" | accepted by Gmail, TLS 1.1 |
+| Handshake limited to TLS 1.0 | refused by the device, same message | accepted by Gmail, TLS 1.0 |
+
+What this shows:
+- On Android 16 the platform no longer offers TLS 1.0 or 1.1, so this factory cannot enable them there whatever its code asks for.
+- On Android 11 the platform supports them and enables them by default. The factory's list contains the same four versions as the platform default, so on that version the factory does not add TLS 1.0 or 1.1; it also does not remove them.
+- Gmail's IMAP endpoint accepted a handshake limited to TLS 1.0 and one limited to TLS 1.1 on 2026-11-20. It also accepts TLS 1.2 and negotiates TLS 1.3 when offered. Dropping TLS 1.0 and 1.1 in the app would therefore cost nothing for Gmail.
+- With both ends offering TLS 1.3, every unrestricted handshake negotiated TLS 1.3.
+
+Limits: the program runs as a standalone process in the adb shell, not inside the app's own process, so it cannot show whether an app's target level changes the lists (it gave the same lists at several target levels on both emulators); emulator system images, not the owner's physical devices; Android versions between 11 and 16 were not measured (an Android 13 image is installed and was not used); only Gmail's endpoint was tried; nothing here measures whether a downgrade can be forced by a third party.
+
 ## Acceptance Criteria
+**Decision recorded (AC-5), 2026-11-20:** the product owner decided to drop every protocol version older than TLS 1.2 ("Yes drop anything older than tls 1.2"). The record is Record 8 in the appendix "Product owner decision" of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. Added by the orchestrator; the acceptance criteria AC-1 to AC-4 now apply.
+
 
 These apply if the product owner decides (AC-5) that the factory stops enabling TLS 1.0 and 1.1. If the decision is to keep them, AC-5 records it, the bug is closed with that record, and AC-1 to AC-4 do not apply.
 
