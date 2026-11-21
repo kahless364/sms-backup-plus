@@ -2356,3 +2356,25 @@ Sprint 022 closed on 2026-11-21 with story U-066 done (commit `1f8ebe3b`). CR-01
 | PO-F | Whether to raise a requirement to replace the deprecated `security-crypto` library (design open item PO-5) | Raise it after the runtime-library story | Nothing |
 
 Recorder: Orchestrator.
+
+### Record 16 — 2026-11-21 (rulings on the scope concerns of stories U-068, U-069 and U-070, before their planning)
+
+The three stories were written on 2026-11-21: U-068 (minSdk 24, story S1 of design DES-MODERNIZATION-014), U-069 (the fix for BUG-023) and U-070 (the fix for BUG-021, implementing REQ-MODERNIZATION-020). Each raised scope concerns for the orchestrator. The rulings are also written in each story's Implementation Notes.
+
+**Further rulings by the orchestrator under Record 12** (continuing Records 13 to 15):
+
+| # | Story | Question | Ruling | On whose recommendation | To reverse it |
+|---|-------|----------|--------|-------------------------|---------------|
+| 19 | U-068 | Does the story wait for an Android 7.0 (API 24) emulator image, which only the product owner can allow (item PO-A of Record 15) | No. If PO-A is not decided when the story reaches its device step, that one check is recorded "not run: needs the product owner's decision", with what is and is not claimed without it, and the story closes with that stated. No device below Android 11 is in use; the unit tests run at SDK 24 under Robolectric | Requirements Analyst | The product owner allows the image; the check is then run as its own small step |
+| 20 | U-068 | Text sites that neither the design nor CR-015 names | `DEVELOPMENT.md` line 58 (the minSdk value) is corrected in the story; the others (`README.md` line 38, a package comment, comments that are true as written) are left for a follow-up | Requirements Analyst | Add them to the story before planning |
+| 21 | U-068 | Test strength: two retargeted receiver tests return the same result on both branches; one older branch has no test | Accepted as the design has it; the coverage report shows both branches ran. The untested older branch is a gap that existed before and goes to the backlog | Requirements Analyst (stated both options) | Add one test at SDK 24 |
+| 22 | U-068 | The design asks for one commit per increment | The developer makes those commits locally, each by explicit path, and does not push; the orchestrator pushes after the reviews. An exception to "the developer commits nothing", for this story only | Design DES-MODERNIZATION-014 (D2, D19) | The orchestrator commits each increment instead |
+| 23 | U-069 | The contract example that the fix leaves in disagreement with the code (the trigger registration's network constraint and backoff) | Corrected by a separate change record raised by the orchestrator; not a condition for closing the story | Solution Architect (BUG-023) | Make it a closing condition |
+| 24 | U-069 | Is a release build checked on a device | No: by its mapping and class listing only. The backup worker is built the same way and runs in release builds today | Requirements Analyst (stated both options) | Add a release-build device check |
+| 25 | U-070 | Rows inside the look-back window that the app examines and never uploads (no address, or excluded by the contact-group rule) would be read again on every run for six hours and could crowd out a late message | They are recorded as examined and not selected again. A story criterion that serves REQ-MODERNIZATION-020 AC-1 and contradicts none of its criteria; the sentence is handed to the next requirements pass as a candidate note for the requirement | Requirements Analyst | A change record against REQ-MODERNIZATION-020 that says otherwise |
+| 26 | U-070 | A comment-only correction in `MailTransport.java`, against the requirement's "no port change" | Allowed if proven comment-only (diff of comment lines only; compiled class identical) | Requirements Analyst | Leave the file alone |
+| 27 | U-070 | When BUG-021 closes | Not with this story. It moves to review, with its Android 17 measurement criterion recorded "not reached", and closes with the QA of the targetSdk 37 story, which owns that measurement | Requirements Analyst (stated the options) | Close it with this story and carry the criterion elsewhere |
+
+Order of the next work, as ruled in Records 14 and 15: sprint 023 is story U-067 alone (the fix for BUG-022); sprint 024 is U-068, then U-069, then U-070, one at a time.
+
+Recorder: Orchestrator.
