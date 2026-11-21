@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: in-progress
 sprint: '025'
 artifact_type: user-story
 priority: high
@@ -56,7 +56,7 @@ title: Keep the regular backup registered across a phone restart, re-register it
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-027
-updated_at: '2026-11-21T18:10:56.665Z'
+updated_at: '2026-11-21T18:29:17.274Z'
 ---
 
 # U-076: Keep the Regular Backup Registered Across a Phone Restart, Re-register It Where an Earlier Build Left a One-Time Entry in Its Place, and Make the Regular Schedule "Never" Schedule Nothing
