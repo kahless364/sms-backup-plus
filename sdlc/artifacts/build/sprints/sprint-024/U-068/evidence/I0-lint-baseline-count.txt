@@ -1,0 +1,3 @@
+entries-by-'^ *<issue *$': 37
+entries-by-plain-'<issue': 38
+the 38 of the design counts the root <issues tag; the story's 37 governs (Scope Concern 2, ruled).

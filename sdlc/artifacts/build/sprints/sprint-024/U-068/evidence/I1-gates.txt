@@ -1,0 +1,6 @@
+> Task :app:assembleDebug UP-TO-DATE
+> Task :app:testDebugUnitTest
+> Task :app:jacocoTestReport
+> Task :app:jacocoTestCoverageVerification
+BUILD SUCCESSFUL in 4m 25s
+exit=0

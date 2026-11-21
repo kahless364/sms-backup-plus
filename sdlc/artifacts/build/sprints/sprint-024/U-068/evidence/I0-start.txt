@@ -1,0 +1,39 @@
+2026-11-21T11:27:07Z
+4300ffa98370b77dcc4dd8d12142079aada8313a
+sdlc/modernization-plan
+plan-head-ancestor-exit=0
+4300ffa9 Sprint-023 closed: U-067 done, BUG-022 closed; U-068 plan gates passed
+36e715e7 U-070 plan (iteration 1) and rulings on its two items; U-068 plan iteration 2 with two of its three gate reports
+moved-files-end
+porcelain-end
+241bf3d934b7547bee2d153c74f1eba8b0959845 241bf3d934b7547bee2d153c74f1eba8b0959845 build.gradle
+0ab6ef75326d581f1820ba7e991bc388f2c0fbb2 0ab6ef75326d581f1820ba7e991bc388f2c0fbb2 app/build.gradle
+1077c3c112c81cce93cbf38e5bc7bd339a93de81 1077c3c112c81cce93cbf38e5bc7bd339a93de81 app/src/main/AndroidManifest.xml
+204b10178482bf6381f52338cfcc895537cdb418 204b10178482bf6381f52338cfcc895537cdb418 app/src/main/java/com/zegoggles/smssync/App.java
+a8fa917371d60911a9b5120a3fefbf8f2f70aa24 a8fa917371d60911a9b5120a3fefbf8f2f70aa24 app/src/main/java/com/zegoggles/smssync/activity/Dialogs.java
+087fcfe6c9a8e419028d30cbd0b312f29c528cbb 087fcfe6c9a8e419028d30cbd0b312f29c528cbb app/src/main/java/com/zegoggles/smssync/activity/MainActivity.java
+1249781fcc1c20f86821280e13364b86310a769c 1249781fcc1c20f86821280e13364b86310a769c app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt
+d6f54c79d1b884addb08a6b1db16f5bbbfb53b88 d6f54c79d1b884addb08a6b1db16f5bbbfb53b88 app/src/main/java/com/zegoggles/smssync/calendar/CalendarAccessorPost40.java
+30b78e48aefc73fae08ab8f38cf7189bf859abdd 30b78e48aefc73fae08ab8f38cf7189bf859abdd app/src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java
+58629d6e65e252a89013b77b5eaf4efd22004055 58629d6e65e252a89013b77b5eaf4efd22004055 app/src/main/java/com/zegoggles/smssync/scheduler/BackupScheduler.java
+0ae361ec16c09a3632eef1aff7c6d184344cf4c7 0ae361ec16c09a3632eef1aff7c6d184344cf4c7 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt
+b038d7fdb8b50d5cddd32ef1899736c29efc7274 b038d7fdb8b50d5cddd32ef1899736c29efc7274 app/src/main/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiver.java
+d5488c92ed38e7fab7490eac30e1e3715e0077fc d5488c92ed38e7fab7490eac30e1e3715e0077fc app/src/test/java/com/zegoggles/smssync/compat/SmsReceiverTest.java
+ff26b56faec805abafa1c6345857509391268771 ff26b56faec805abafa1c6345857509391268771 app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt
+95d9aba05f66ec34cd76c1ab8183c4d16d339b87 95d9aba05f66ec34cd76c1ab8183c4d16d339b87 app/lint-baseline.xml
+647f172b4e5ddd7526e4649755d385c324fd44c9 647f172b4e5ddd7526e4649755d385c324fd44c9 CHANGES
+5b38fa7c808a43b322f5e4a0a16fe51e207f4de8 5b38fa7c808a43b322f5e4a0a16fe51e207f4de8 DEVELOPMENT.md
+61b417651d4a011309b830098675c7340206af1c 61b417651d4a011309b830098675c7340206af1c sdlc/artifacts/engagement/code-location.md
+5f1dafebbc1bf6eb1065c999459f2cf775c295d6 5f1dafebbc1bf6eb1065c999459f2cf775c295d6 .github/ISSUE_TEMPLATE/500_bug_report.yml
+sdlc/artifacts/build/change-records/CR-015-cntr-004-content-trigger-pre-api-24-fallback-removed.md:2:status: implemented
+sdlc/artifacts/build/change-records/CR-016-requirements-wording-overtaken-before-des-014-stories.md:2:status: implemented
+sdlc/artifacts/build/sprints/sprint-022/U-066-prune-weak-tls-cipher-suites.md:3:status: done
+sdlc/artifacts/build/sprints/sprint-023/U-067-worker-cancellation-checks-use-the-running-coroutine.md:3:status: done
+3af4ce32 CR-015 applied: scheduler contract v3, pre-API-24 content-trigger fallback retired
+f0d0d17e CR-016 applied: requirement wording brought up to date before the DES-014 stories
+cr-ancestor-exit=0
+753
+HEAD:app/src/test/java/com/zegoggles/smssync/AppTest.java:13:    @Ignore @Test public void shouldGetVersionName() throws Exception {
+HEAD:app/src/test/java/com/zegoggles/smssync/preferences/AuthPreferencesTest.java:1079:    @Ignore("Robolectric 4.12.x does not shadow AndroidKeyStore JCA provider — " +
+toolchainVersion=25
+jps-gradle-end

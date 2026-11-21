@@ -1,0 +1,4 @@
+xml files: 79
+totals-diff-exit=0
+files=79 tests=753 failures=0 errors=0 skipped=2
+files=79 tests=753 failures=0 errors=0 skipped=2

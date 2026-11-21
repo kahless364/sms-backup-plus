@@ -1,0 +1,81 @@
+== AC-7 grep at START (expect 24 lines: 5 imports, 7 at <=24, 12 at >=25)
+smssync/activity/Dialogs.java:172:                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+smssync/activity/MainActivity.java:19:import android.annotation.TargetApi;
+smssync/activity/MainActivity.java:242:                final boolean readyToRestore = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+smssync/activity/MainActivity.java:425:    @TargetApi(Build.VERSION_CODES.KITKAT)
+smssync/activity/MainActivity.java:517:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+smssync/activity/SmsDefaultRoleHelper.kt:74:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+smssync/activity/SmsDefaultRoleHelper.kt:77:            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/activity/SmsDefaultRoleHelper.kt:111:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/activity/SmsDefaultRoleHelper.kt:135:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/activity/ThemeActivity.java:3:import android.annotation.TargetApi;
+smssync/activity/ThemeActivity.java:20:        if (VERSION.SDK_INT >= 26) {
+smssync/activity/ThemeActivity.java:26:    @TargetApi(26)
+smssync/App.java:35:import androidx.annotation.RequiresApi;
+smssync/App.java:246:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+smssync/App.java:350:    @RequiresApi(api = Build.VERSION_CODES.O)
+smssync/calendar/CalendarAccessorPost40.java:3:import android.annotation.TargetApi;
+smssync/calendar/CalendarAccessorPost40.java:23:@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+smssync/compat/SmsReceiver.java:3:import android.annotation.TargetApi;
+smssync/compat/SmsReceiver.java:31:@TargetApi(Build.VERSION_CODES.KITKAT)
+smssync/compat/SmsReceiver.java:47:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/compat/SmsReceiver.java:50:        }  else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+smssync/scheduler/WorkManagerScheduler.kt:224:        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+smssync/service/BackupWorker.kt:534:        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/service/RestoreWorker.kt:707:        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+lines=24 import-lines=5
+== AC-8 grep at START (expect 29)
+smssync/activity/MainActivity.java:425:    @TargetApi(Build.VERSION_CODES.KITKAT)
+smssync/activity/SmsDefaultRoleHelper.kt:74:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+smssync/activity/SmsDefaultRoleHelper.kt:100:            // Pre-KitKat: no SMS default permission required.
+smssync/App.java:380:            // API-level branching internally (content-URI triggers on API 24+).
+smssync/compat/package-info.java:2: * The purpose of this package is compatibility with Kitkat+ versions
+smssync/compat/SmsReceiver.java:31:@TargetApi(Build.VERSION_CODES.KITKAT)
+smssync/compat/SmsReceiver.java:50:        }  else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+smssync/scheduler/BackupScheduler.java:74:     * API-level branching (content-URI triggers are only available on API 24+) lives
+smssync/scheduler/WorkManagerScheduler.kt:58: * - **INV-4 content-URI trigger**: API 24+ uses [Constraints.Builder.addContentUriTrigger]
+smssync/scheduler/WorkManagerScheduler.kt:59: *   with [triggerForDescendants = true]; below API 24 the broadcast path calls
+smssync/scheduler/WorkManagerScheduler.kt:208:     * API 24+: uses [Constraints.Builder.addContentUriTrigger] with triggerForDescendants=true.
+smssync/scheduler/WorkManagerScheduler.kt:209:     * Below API 24: the SMS-received broadcast path calls [scheduleIncoming] instead; this
+smssync/scheduler/WorkManagerScheduler.kt:225:            // Below API 24: content-URI triggers are unavailable.
+smssync/scheduler/WorkManagerScheduler.kt:226:            // The broadcast fallback (SmsBroadcastReceiver → scheduleIncoming()) covers this path.
+smssync/scheduler/WorkManagerScheduler.kt:227:            Log.d(TAG, "WorkManagerScheduler.scheduleContentTrigger: API < 24, " +
+smssync/scheduler/WorkManagerScheduler.kt:228:                    "using broadcast fallback (SmsBroadcastReceiver)")
+smssync/scheduler/WorkManagerScheduler.kt:256:        Log.d(TAG, "WorkManagerScheduler.scheduleContentTrigger: enqueued CONTENT_TRIGGER (API 24+)")
+test/service/WorkManagerSchedulerTest.kt:34: * INV-4 (AC-4): Content-URI trigger on API 24+.
+test/service/WorkManagerSchedulerTest.kt:296:    // INV-4: Content-URI trigger (API 24+) and pre-24 fallback
+test/service/WorkManagerSchedulerTest.kt:372:     * INV-4(d): scheduleContentTrigger() returns null on API < 24 (pre-24 fallback path).
+test/service/WorkManagerSchedulerTest.kt:373:     * Below API 24, content-URI triggers are unavailable; the broadcast fallback
+test/service/WorkManagerSchedulerTest.kt:374:     * (SmsBroadcastReceiver → scheduleIncoming()) covers pre-24 devices.
+test/service/WorkManagerSchedulerTest.kt:379:    fun inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast() {
+test/service/WorkManagerSchedulerTest.kt:382:        // Below API 24: scheduleContentTrigger returns null; caller uses broadcast fallback.
+test/compat/SmsReceiverTest.java:23:    // U-005 / U-001: minSdk raised to 21; SDK 16 (JELLY_BEAN) and SDK 19 (KITKAT) are below
+test/compat/SmsReceiverTest.java:28:    public void testOnReceivePreKitKat() {
+test/compat/SmsReceiverTest.java:33:    public void testOnReceiveKitKat() {
+test/compat/SmsReceiverTest.java:38:    public void testIsSmsBackupDefaultSmsAppPreKitKat() {
+test/compat/SmsReceiverTest.java:43:    public void testIsSmsBackupDefaultSmsAppKitKat() {
+lines=29
+== AC-4 (e) grep at START (expect 6)
+test/compat/SmsReceiverTest.java:24:    // the new minSdk floor and are no longer reachable. Tests updated to use SDK 21 (LOLLIPOP)
+test/compat/SmsReceiverTest.java:27:    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+test/compat/SmsReceiverTest.java:32:    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+test/compat/SmsReceiverTest.java:37:    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+test/compat/SmsReceiverTest.java:42:    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
+test/service/WorkManagerSchedulerTest.kt:378:    @Config(sdk = [23])
+lines=6
+== AC-11 (f) sweep at START (expect 9)
+DEVELOPMENT.md:58:- **minSdkVersion**: 21
+app/build.gradle:24:        minSdkVersion 21
+app/build.gradle:153:    // 2.9.1 is compatible with compileSdk 35 + minSdk 21 (AGP/SDK uplift from U-003).
+app/src/main/java/com/zegoggles/smssync/utils/WindowInsetsUtil.java:48: * <p>On API 21–34 the insets are zero, so no visual change occurs on older devices.
+app/src/main/java/com/zegoggles/smssync/utils/WindowInsetsUtil.java:84:        // the app content. On API 21–34 this is a no-op for the forced-edge-to-edge change
+app/src/test/java/com/zegoggles/smssync/utils/WindowInsetsUtilTest.java:31: *   <li>Dispatching zero insets (as on API 21–34) leaves padding at zero (no regression).</li>
+app/src/test/java/com/zegoggles/smssync/utils/WindowInsetsUtilTest.java:116:        // After the call, dispatch zero insets manually (simulates API 21-34 behaviour).
+k9mail-vendored/build.gradle:54:        minSdkVersion 21
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java:153:     * older version. Every Android version this app supports (API 21 and later) supports TLS 1.2
+== maxSdkVersion in manifest (expect 2)
+41:                     android:maxSdkVersion="22"/>
+50:                     android:maxSdkVersion="18"/>
+== minSdk 21 / SDK 21 in app/build.gradle (expect 2)
+153:    // 2.9.1 is compatible with compileSdk 35 + minSdk 21 (AGP/SDK uplift from U-003).
+160:    testImplementation 'org.robolectric:robolectric:4.15.1' // U-060: ASM 9.8 reads Java 25 class files; 4.16+ drops SDK 21/22

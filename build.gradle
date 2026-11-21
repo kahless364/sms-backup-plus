@@ -27,7 +27,7 @@ allprojects {
         maxParallelForks = 4
         forkEvery = 100
         reports.html.required = false
-        reports.junitXml.required = false
+        reports.junitXml.required = true
     }
 
     repositories {

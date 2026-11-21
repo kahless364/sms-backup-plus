@@ -1,0 +1,11 @@
+U063-DAEMON-JVM: java.version=25.0.5.1
+> Task :app:assembleDebug
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:testDebugUnitTest
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+> Task :app:jacocoTestReport
+> Task :app:jacocoTestCoverageVerification
+BUILD SUCCESSFUL in 10m 51s
+exit=0
