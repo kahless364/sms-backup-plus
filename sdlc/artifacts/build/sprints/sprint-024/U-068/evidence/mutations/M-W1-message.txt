@@ -1,0 +1,2 @@
+message="com.google.common.truth.AssertionErrorWithFacts: expected to be true"
+message="com.google.common.truth.AssertionErrorWithFacts: expected to be true"

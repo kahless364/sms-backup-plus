@@ -31,7 +31,7 @@ import java.util.concurrent.Executors
  * INV-1 (AC-1 / AC-8): REPLACE semantics — single-flight per unique work name.
  * INV-2 (AC-3): Network constraints per type; no charging constraint.
  * INV-3 (AC-2): EXPONENTIAL backoff, 30s initial delay.
- * INV-4 (AC-4): Content-URI trigger on API 24+.
+ * INV-4 (AC-4): Content-URI trigger on every supported level; the version boundary is asserted at API 24, the minSdk floor (CNTR-MODERNIZATION-004 v3).
  *
  * Note on INV-3 300s cap: WorkManager's MAX_BACKOFF_MILLIS is ~5 hours. The 300s ceiling
  * is re-imposed at the worker layer (BackupWorker in U-015), not here. This test verifies
@@ -293,9 +293,9 @@ class WorkManagerSchedulerTest {
     }
 
     // -----------------------------------------------------------------------
-    // INV-4: Content-URI trigger (API 24+) and pre-24 fallback
+    // INV-4: Content-URI trigger, one mechanism on every supported level (CNTR-MODERNIZATION-004 v3, CR-015)
     // AC-4: addContentUriTrigger with triggerForDescendants=true; call-log conditional
-    // Tests run with sdk=29 (API 29 >= 24, so content-URI triggers are available)
+    // Tests run at the class level sdk=29; the version boundary is asserted at API 24, the minSdk floor
     // -----------------------------------------------------------------------
 
     /**
@@ -369,18 +369,29 @@ class WorkManagerSchedulerTest {
     }
 
     /**
-     * INV-4(d): scheduleContentTrigger() returns null on API < 24 (pre-24 fallback path).
-     * Below API 24, content-URI triggers are unavailable; the broadcast fallback
-     * (SmsBroadcastReceiver → scheduleIncoming()) covers pre-24 devices.
-     * Source: DES-MODERNIZATION-005 §Incoming-SMS trigger; AC-4(b).
+     * INV-4(d), version boundary at the lowest supported level, API 24 (CNTR-MODERNIZATION-004 v3, INV-4;
+     * CR-015; DES-MODERNIZATION-005 INV-4 validation row): scheduleContentTrigger() returns a job, unique
+     * work CONTENT_TRIGGER is enqueued, and its constraints carry the SMS provider URI trigger with
+     * isTriggeredForDescendants=true. Retargeted by U-068 from the former SDK 23 test, which asserted only
+     * a null return.
      */
     @Test
-    @Config(sdk = [23])
-    fun inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast() {
+    @Config(sdk = [24])
+    fun inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger() {
         val result = scheduler.scheduleContentTrigger()
 
-        // Below API 24: scheduleContentTrigger returns null; caller uses broadcast fallback.
-        assertThat(result).isNull()
+        assertThat(result).isNotNull()
+        assertThat(result!!.tag).isEqualTo(WorkManagerScheduler.CONTENT_TRIGGER_UNIQUE_NAME)
+
+        val workInfos = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork(WorkManagerScheduler.CONTENT_TRIGGER_UNIQUE_NAME)
+            .get()
+        assertThat(workInfos).isNotEmpty()
+
+        val smsUri = android.net.Uri.parse("content://sms")
+        val smsTrigger = workInfos[0].constraints.contentUriTriggers.find { it.uri == smsUri }
+        assertThat(smsTrigger).isNotNull()
+        assertThat(smsTrigger!!.isTriggeredForDescendants).isTrue()
     }
 
     // -----------------------------------------------------------------------

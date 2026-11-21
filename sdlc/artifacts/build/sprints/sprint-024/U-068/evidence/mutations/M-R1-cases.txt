@@ -1,0 +1,6 @@
+com.zegoggles.smssync.compat.SmsReceiverTest#testIsSmsBackupDefaultSmsApp_belowQ_usesDefaultSmsPackage PASS
+com.zegoggles.smssync.compat.SmsReceiverTest#testIsSmsBackupDefaultSmsApp_q_usesRoleManager FAIL java.lang.IllegalStateException
+com.zegoggles.smssync.compat.SmsReceiverTest#testOnReceive_belowQ PASS
+com.zegoggles.smssync.compat.SmsReceiverTest#testOnReceive_q FAIL java.lang.IllegalStateException
+CLASS com.zegoggles.smssync.compat.SmsReceiverTest cases=4
+files=1 cases=4 pass=2 fail=2 error=0 skip=0

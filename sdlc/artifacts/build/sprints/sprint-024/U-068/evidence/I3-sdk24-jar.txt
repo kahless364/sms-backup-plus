@@ -1,0 +1,19 @@
+== before any SDK 24 run (2026-11-21T11:57:12Z); ruling P-1 (acknowledged), design D5
+ls <m2>/org/robolectric/android-all-instrumented/ | grep '^7\.' -> 0 match(es) (expected: none)
+build-files-uncommitted-exit=0
+build-files-vs-start-exit=0
+== after the first SDK 24 run (2026-11-21T11:59:07Z)
+coordinates: org.robolectric:android-all-instrumented:7.0.0_r1-robolectric-r1-i7/
+android-all-instrumented-7.0.0_r1-robolectric-r1-i7.jar size=88212080
+  sha512 computed: 0776aacfdcc10a0f11485b22016c04162697506b4c5b30678ca224cafc2550c1f4c0ab36a57f1ed899b1df02d5d8ee7d9130608dcf52173becd879a5689ad9a9
+  .sha512 file   : 0776aacfdcc10a0f11485b22016c04162697506b4c5b30678ca224cafc2550c1f4c0ab36a57f1ed899b1df02d5d8ee7d9130608dcf52173becd879a5689ad9a9
+  result: match
+android-all-instrumented-7.0.0_r1-robolectric-r1-i7.pom size=1403
+  sha512 computed: 1e5b3481d1b361b2a8cdc5420c4e523f6ee68adb3266856bb444142448877264ae3ccfe614e37e4c4ff2e34adf36ead6b9a31e94883573d3e97a42dd0a926784
+  .sha512 file   : 1e5b3481d1b361b2a8cdc5420c4e523f6ee68adb3266856bb444142448877264ae3ccfe614e37e4c4ff2e34adf36ead6b9a31e94883573d3e97a42dd0a926784
+  result: match
+checksum file android-all-instrumented-7.0.0_r1-robolectric-r1-i7.jar.sha512 size=128
+checksum file android-all-instrumented-7.0.0_r1-robolectric-r1-i7.pom.sha512 size=128
+all files in folder: android-all-instrumented-7.0.0_r1-robolectric-r1-i7.jar android-all-instrumented-7.0.0_r1-robolectric-r1-i7.jar.sha512 android-all-instrumented-7.0.0_r1-robolectric-r1-i7.pom android-all-instrumented-7.0.0_r1-robolectric-r1-i7.pom.sha512 
+build-files-uncommitted-exit=0
+build-files-vs-start-exit=0

@@ -1,0 +1,19 @@
+== production clean after the mutations
+main-clean-exit=0
+30b78e48aefc73fae08ab8f38cf7189bf859abdd 30b78e48aefc73fae08ab8f38cf7189bf859abdd compat/SmsReceiver.java
+0ae361ec16c09a3632eef1aff7c6d184344cf4c7 0ae361ec16c09a3632eef1aff7c6d184344cf4c7 scheduler/WorkManagerScheduler.kt
+== AC-4 (e): LOLLIPOP / sdk = [2x in app/src/test
+ac4e-exit=1
+== AC-8 grep over the service and compat test folders
+ac8-tests-exit=1
+== @Ignore / Assume in the two edited test files
+ignore-exit=1
+== git diff --stat HEAD -- app/src/test
+ .../zegoggles/smssync/compat/SmsReceiverTest.java  | 22 +++++++--------
+ .../smssync/service/WorkManagerSchedulerTest.kt    | 33 ++++++++++++++--------
+ 2 files changed, 33 insertions(+), 22 deletions(-)
+== working-tree count (--untracked, said so): 755 (C0+2 = 755)
+== BUG-023 comment not in the diff: 0
+== git status --porcelain -- app
+ M app/src/test/java/com/zegoggles/smssync/compat/SmsReceiverTest.java
+ M app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt

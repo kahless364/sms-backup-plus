@@ -66,4 +66,27 @@ I1 commit: `533e9f51b5f880cdad05c81880c401b130352b95` ("U-068 S1-I1: switch on J
 - Working-tree count with `--untracked`: 755 (C0 + 2); `git status --porcelain -- app` lists only the new test file.
 - **Must hold (S1-I2):** "`receiver` coverage above 50 % with headroom; count + 2" - held (67.2 %, 10 spare, 755).
 
+### I3 - The five tests retargeted, minSdk still 21 (AC-4; evidence `I3-*`, `mutation-log.md`, `mutations/M-R1-*`, `M-R2-*`, `M-W1-*`, `M-W2-*`)
+
+I2 commit: `2aad7d709d1f90e510d96369ed64d26b4e9d80d0` ("U-068 S1-I2: unit test for the BACKUP broadcast receiver's opt-in guard").
+
+- **SDK 24 jar (ruling P-1, row D19 (a)):** before any run the cache held no `7.*` folder (`I3-sdk24-jar.txt`); both build-file checks were 0 (`build-files-uncommitted-exit=0`, `build-files-vs-start-exit=0`). The first SDK 24 run (one class, `SmsReceiverTest`) let Robolectric's own resolver fetch it; **no download failure, no retry**. Coordinates `org.robolectric:android-all-instrumented:7.0.0_r1-robolectric-r1-i7`: jar 88,212,080 bytes, SHA-512 `0776aacf...a9ad9a9` equal to its `.jar.sha512` file (match); pom 1,403 bytes, SHA-512 `1e5b3481...a926784` equal to its `.pom.sha512` file (match); both checksum files 128 bytes (full hashes in `I3-sdk24-jar.txt`). The two build-file checks were 0 again after the run (no build file, `robolectric.properties` or verification-metadata change). The SHA-512 check shows the transfer is intact, not who published the file. Nothing was fetched by hand.
+- Edits (plan 3.3, 3.4): `SmsReceiverTest.java` (comment rewritten, four tests renamed and retargeted to `N` and `Q`, bodies and assertions unchanged); `WorkManagerSchedulerTest.kt` T1 (`:34`), T2 (`:296-298`), T3 (`:371-384`). `git diff HEAD` of the Kotlin test shows exactly three hunks (`@@ -31,7 +31,7 @@`, `@@ -293,9 +293,9 @@`, `@@ -369,18 +369,29 @@`). The `:537-538` comment (BUG-023) is not in the diff.
+- First run (`I3-first-run.txt`): `exit=0`, four PASS with the new names, `cases=4`. Targeted run (`I3-targeted.txt`): `exit=0`, 29 cases, 0 fail; `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger PASS`; class case counts unchanged (`SmsReceiverTest` 4, `WorkManagerSchedulerTest` 25). Rows D20, D21, D22: not fired.
+- Gate G3: `exit=0`, `BUILD SUCCESSFUL in 3m 37s`; `files=80 tests=755 failures=0 errors=0 skipped=2` (count unchanged by I3: C0 + 2).
+- Coverage after I3 (`I3-jacoco-packages.txt`): `receiver` 39/58 (unchanged), `compat` 16/73 (unchanged), **`scheduler` 138/188 = 73.4 %** (140 to 138: the two lines only the SDK 23 test ran, as predicted; N9), above 0.60. `activity` 189/1011; the figure alternates between 199 and 189 from run to run (I0 199, I1 189, I2 199, I3 189), so it is test-scheduling dependent and not caused by this story; it is far above its 0.10 floor. Row D23: not fired.
+- Mutations (plan 4.8): all four matched their rows. **M-R1** (role branch throws): the two `_q` cases failed (IllegalStateException "U-068 M-R1", type X), the two `_belowQ` cases passed. **M-R2** (package branch throws): the two `_belowQ` cases failed, the two `_q` cases passed. **M-W1** (SMS trigger not for descendants): `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` and `inv4_contentTrigger_api29_smsUriPresent_withDescendants` failed ("expected to be true"), the other 23 passed. **M-W2** (`< N` moved to `<= N`, the dead branch on the floor): exactly `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` failed ("expected not to be: null"), the other 24 passed. Each restored, hashes equal HEAD blobs, `app/src/main` diff empty (`I3-checks.txt`). Row D17: not fired.
+- Checks (`I3-checks.txt`): `grep "LOLLIPOP\|sdk = [2x"` over `app/src/test` exit 1 (no match); the AC-8 grep over the service and compat test folders exit 1; no `@Ignore` or `Assume` in the two files; `git diff --stat HEAD -- app/src/test` two files; working-tree count 755.
+- **Rename table (AC-4, "listed by name"; none deleted, none added by this increment):**
+
+| Old name | New name | Old `@Config` | New |
+|----------|----------|---------------|-----|
+| `SmsReceiverTest.testOnReceivePreKitKat` | `testOnReceive_belowQ` | `LOLLIPOP` | `N` |
+| `SmsReceiverTest.testOnReceiveKitKat` | `testOnReceive_q` | `LOLLIPOP` | `Q` |
+| `SmsReceiverTest.testIsSmsBackupDefaultSmsAppPreKitKat` | `testIsSmsBackupDefaultSmsApp_belowQ_usesDefaultSmsPackage` | `LOLLIPOP` | `N` |
+| `SmsReceiverTest.testIsSmsBackupDefaultSmsAppKitKat` | `testIsSmsBackupDefaultSmsApp_q_usesRoleManager` | `LOLLIPOP` | `Q` |
+| `WorkManagerSchedulerTest.inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast` | `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` | `[23]` | `[24]` |
+
+- **Must hold (S1-I3):** "green on 4.15.1; count unchanged" - held.
+
 <!-- LOG-ENTRIES-END -->

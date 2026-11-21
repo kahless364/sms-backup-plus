@@ -20,27 +20,27 @@ public class SmsReceiverTest {
         subject = new SmsReceiver();
     }
 
-    // U-005 / U-001: minSdk raised to 21; SDK 16 (JELLY_BEAN) and SDK 19 (KITKAT) are below
-    // the new minSdk floor and are no longer reachable. Tests updated to use SDK 21 (LOLLIPOP)
-    // which is the minimum supported API level after U-001.
+    // U-068: minSdk raised to 24. isSmsBackupDefaultSmsApp keeps two branches: the role check from
+    // Q (API 29) and the default-SMS-package check below Q (API 24 to 28, BUG-009). The tests run
+    // each branch: N (API 24, the floor) for the package check and Q for the role check.
 
-    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
-    public void testOnReceivePreKitKat() {
+    @Test @Config(sdk = Build.VERSION_CODES.N)
+    public void testOnReceive_belowQ() {
         subject.onReceive(RuntimeEnvironment.application, new Intent());
     }
 
-    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
-    public void testOnReceiveKitKat() {
+    @Test @Config(sdk = Build.VERSION_CODES.Q)
+    public void testOnReceive_q() {
         subject.onReceive(RuntimeEnvironment.application, new Intent());
     }
 
-    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
-    public void testIsSmsBackupDefaultSmsAppPreKitKat() {
+    @Test @Config(sdk = Build.VERSION_CODES.N)
+    public void testIsSmsBackupDefaultSmsApp_belowQ_usesDefaultSmsPackage() {
         assertThat(SmsReceiver.isSmsBackupDefaultSmsApp(RuntimeEnvironment.application)).isFalse();
     }
 
-    @Test @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
-    public void testIsSmsBackupDefaultSmsAppKitKat() {
+    @Test @Config(sdk = Build.VERSION_CODES.Q)
+    public void testIsSmsBackupDefaultSmsApp_q_usesRoleManager() {
         assertThat(SmsReceiver.isSmsBackupDefaultSmsApp(RuntimeEnvironment.application)).isFalse();
     }
 }
