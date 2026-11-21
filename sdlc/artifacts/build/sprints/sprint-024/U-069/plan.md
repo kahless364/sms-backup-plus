@@ -5,8 +5,8 @@ gate_id: "planning"
 checkpoint: "planning"
 verdict: "PASS"
 agent: "Solution Architect"
-timestamp: "2026-11-21T13:06:20Z"
-iteration: 2
+timestamp: "2026-11-21T13:38:22Z"
+iteration: 3
 base_commit: "4300ffa98370b77dcc4dd8d12142079aada8313a"   # iteration-1 planning HEAD (PLAN_HEAD); iteration 2 re-read at b097d602; the start commit is read at I0 (after U-068 closes)
 contracts_verified:
   - CNTR-MODERNIZATION-004
@@ -52,15 +52,16 @@ Iteration 1's gates: plan-review **FAIL** (B-1 to B-3, O-1 to O-7), contract-ver
 expert-depth-check PASS with two recommendations (`plan-review.md`, `contract-verification.md`, `expert-depth-check.md`
 in this workspace, read in full). Rulings: Record 18, rulings 45 (two build-file lines and fifteen tests, accepted) and
 46 (the floor), and the product owner's decision on the endpoint-security event (no external `diff` or `cmp`). Every
-change is made in place; the table says where. Re-read in this session at HEAD `b097d602`: U-068 has committed S1-I1 to
-S1-I4 (`533e9f51`, `2aad7d70`, `853483e2`, `c8e98a7f`); the worker is still `c37bbbff…`; the scheduler is still the base
-blob (U-068 I5 is uncommitted), so the simulation of L20 still stands for the post-U-068 scheduler.
+change is made in place; the table says where. State of U-068 (updated in iteration 3): the whole story is committed as
+seven increments, `533e9f51` (S1-I1), `2aad7d70`, `853483e2`, `c8e98a7f`, `9aa84266` (S1-I5), `7c5e6073` and
+`0d490997` (S1-I7). At `0d490997` the worker is still `c37bbbff…`, and the committed scheduler is `0194308c…`, the blob
+of L20's simulation.
 
 | Finding | Change, and where |
 |---------|-------------------|
 | plan-review **B-1** (generated classes report no lines) | **Verified** from the current `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml`: `BackupWorker_Factory`, `_AssistedFactory_Impl`, `_AssistedFactory`, `_HiltModule` and the four `RestoreWorker_*` classes are `<class>` elements with no counter; `BackupWorker_Factory.class` has 4 `LineNumberTable` attributes and carries `dagger.internal.DaggerGenerated` (CLASS retention, dagger 2.59.2); JaCoCo 0.8.14's `AnnotationGeneratedFilter` matches the string `Generated`; `BackupTriggerWorker$Companion` has no counter today. New L24. Changed: L17, N6, 2.3 row A1, 2.6, 3.3 (E-G1 and E-G2 texts), 3.5 (`jacoco_classes.py` prints the ruled floor), I4 step 3 (six classes, ratio 1.0000, floor 0.95), D19 (new band), R7, section 7 items 5 and 8. **Floor per ruling 46:** measured 1.00 → `0.95`; the note says what is measured and why the floor is 0.95, and does not say generated classes count. The floor covers `com.zegoggles.smssync.worker*`, which holds only `BackupTriggerWorker` and its generated classes; no later story in this sprint or in U-071 to U-073 edits that package (U-070 edits `service`, `preferences` and `mail` and lists `BackupTriggerWorker.kt` as not touched), so the reviewer's "binds U-070" is corrected in item 5 |
 | plan-review **B-2** (IC-3 pass rules) | Section 9 step 9: "nothing to backup" and "no run within the wait" after `enqueued INCOMING` are now **"Not conclusive: enqueued, run not observed"**, not a pass; the reviewer's text is used |
-| plan-review **B-3** (`git grep` on an untracked file) | I6 step 4 uses `grep -nE '@Ignore|Assume' $TST`. Every other check re-read for the same mistake: the AC-12 (e) site grep, which also covers the new file, now uses `git grep --untracked` (I6 step 4); IC-2 (a) and AC-14 already used `--untracked`; AC-10 (a) to (c) search `app/src/main`, where every file is tracked; `oldtext_check.py fixed`, `git hash-object $TST` and `grep -c "@Test" $TST` read the file directly; no other check reads an untracked path through `git grep` |
+| plan-review **B-3** (`git grep` on an untracked file) | I6 step 4 uses `grep -nE '@Ignore|Assume' $TST`. Every other check re-read for the same mistake: the AC-12 (e) site grep was widened to `git grep --untracked` (superseded in iteration 3, B-4: it is now restricted to the AC-12 files, and the new test file is checked separately); IC-2 (a) and AC-14 already used `--untracked`; AC-10 (a) to (c) search `app/src/main`, where every file is tracked; `oldtext_check.py fixed`, `git hash-object $TST` and `grep -c "@Test" $TST` read the file directly; no other check reads an untracked path through `git grep` |
 | plan-review O-1 (hunk header suffix) | I3 step 2 expects the full line `@@ -17,58 +17,55 @@ package com.zegoggles.smssync.worker` (re-derived with `git diff --no-index` on the scratch copies) |
 | plan-review O-2 (`WorkManager\.`) | I3 step 2 uses `\bWorkManager\b`; re-run on the scratch copies: 0 lines in the fixed worker, 13 in the old one |
 | plan-review O-3 (`compiled-pipeline.json`) | I7 step 3: listed as the orchestrator's, recorded, not a stop |
@@ -78,6 +79,26 @@ blob (U-068 I5 is uncommitted), so the simulation of L20 still stands for the po
 
 Totals after iteration 2: **15 tests** (unchanged; one assertion block added to `ac9_allowedState_…`), **12 mutation
 runs** (11 counted detections, M-T11 compile-only), **18 Gradle runs**.
+
+## Iteration 3 (after the iteration-2 plan gates, 2026-11-21)
+
+Iteration 2's gates: plan-review **FAIL** on one new blocker (B-4) with three notes; contract-verification PASS;
+expert-depth-check PASS with one recommendation (both reports read). **Every final check was run, not reasoned:** I built
+a scratch git repository outside the checkout from `git archive 0d490997` (U-068's last increment), committed it as
+`<start>`, applied this plan's edits there (W1 to W3, the new test file, E-G1 and E-G2 with a sample floor comment), and
+ran each command of I0 step 5, I3 step 2 and I6 step 4 in it. The outputs are listed in L27; every expected value in
+those steps now equals a printed output.
+
+| Finding | Change, and where |
+|---------|-------------------|
+| plan-review **B-4** (AC-12 (e) prints 5 lines with `--untracked`) | Confirmed by running it: the `--untracked` form prints 5 lines, the fifth `BackupTriggerWorkerTest.kt:402`, the assertion label "request via the trigger worker, against the request via scheduleIncoming()". Fixed by restricting the check to the files AC-12 is about: `git grep -n -E '<pattern>' -- app/src/main app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt sdlc/artifacts/design` (all tracked), which prints exactly the 4 sites; plus a separate `grep -nE '<pattern>' $TST` that prints exactly 1 line, `402:`, recorded as an assertion label, not an AC-12 statement. Same restriction in I0 step 5 (e) (4 lines at `<start>`, run). I6 step 4 and I0 step 5 |
+| plan-review note 1 (IC-3 cases after `enqueued INCOMING`) | Section 9 step 9: a backup that starts but does not complete within the wait is "Not conclusive: enqueued, run not completed"; `BackupWorker: unrecoverable error` from the app's process is a **Fail** |
+| plan-review note 2 (stale preamble) | Iteration 2 preamble: U-068 is committed as seven increments ending `0d490997` |
+| plan-review note 3 (floor slack) | Stands as written (ruling 46); no change |
+| expert-depth recommendation (edge case 13 in plain words) | 2.4 item 13 rewritten: the user effect (the first SMS after a quiet spell is backed up about a minute after it arrives; later SMS in the same fifteen-minute period wait until it ends, up to about sixteen minutes with the defaults, and are backed up together; the SMS receiver is not delivered, so this trigger is the only automatic path); the period anchor "fifteen minutes after the last run" marked assumed, not read; the sentence on changes during the trigger run marked "plausible, not verified". New hand-over item 13: an existing behaviour, not changed by this story; the orchestrator measures it on the emulator and raises it as its own bug |
+| Own re-check (this is the last automatic iteration) | All final checks run in the scratch repository (L27). No other expected value changed. One fact read anew: the authoritative count at `0d490997` is 756, so the end count would be 771 if nothing lands between (not used by any step; `C0` is still taken at I0) |
+
+Totals unchanged: **15 tests**, **12 mutation runs** (11 counted), **18 Gradle runs**.
 
 ## 0. Binding Inputs
 
@@ -124,6 +145,7 @@ for each outcome. `plausible, not verified` = not read; named so that a later st
 | L24 | (Iteration 2.) In today's `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml` the classes `BackupWorker_Factory`, `BackupWorker_AssistedFactory_Impl`, `BackupWorker_AssistedFactory`, `BackupWorker_HiltModule` and the four `RestoreWorker_*` classes have no counter; `BackupTriggerWorker$Companion` has none; `BackupTriggerWorker` has `LINE missed=16 covered=0`. `BackupWorker_Factory.class` and `_AssistedFactory_Impl.class` (javac root) carry `dagger.internal.DaggerGenerated`, whose retention is CLASS (`dagger-2.59.2.jar`); `BackupWorker_Factory.class` has 4 `LineNumberTable` attributes, so the lines exist and are filtered, not absent. JaCoCo 0.8.14's `AnnotationGeneratedFilter` holds the constant `Generated` | verified | the XML read with Python, read-only; `javap -v` on the class files and on `dagger.internal.DaggerGenerated`; `javap -c -constants` on `org.jacoco.core-0.8.14.jar` |
 | L25 | (Iteration 2.) WorkManager 2.9.1 `SystemJobInfoConverter.convert`: a periodic `WorkSpec` becomes a one-shot `JobInfo` (no `setPeriodic` call) with `setMinimumLatency(max(calculateNextRunTime() − now, 0))` and, when the constraints have content-URI triggers, `addTriggerContentUri` per URI plus `setTriggerContentUpdateDelay` and `setTriggerContentMaxDelay`. So after a run the next `CONTENT_TRIGGER` job waits at least until its next period (15 minutes after the last run) and for a content change | verified | `javap -c -p` on `work-runtime-2.9.1.aar`'s class |
 | L26 | (Iteration 2.) Record 18: ruling 45 accepts two build-file lines and fifteen tests; ruling 46 sets the floor to the measured ratio rounded down to 0.05, and to 0.95 when the measurement is 1.00; the product owner's decision continues the builds with Git's built-in comparison (no external `diff` or `cmp`). No later story in sprint 024 or U-071 to U-073 edits `app/src/main/java/com/zegoggles/smssync/worker/` (U-070's story lists `BackupTriggerWorker.kt` under "Not touched", `:169`; its Affected Code is in `service`, `preferences`, `mail`) | verified | `thunderbird-mail-libraries-feasibility-analysis.md` Record 18; `git grep` of the stories at `b097d602` |
+| L27 | (Iteration 3.) Outputs of the final checks, run in a scratch git repository built from `git archive 0d490997` (committed as `<start>`) with this plan's edits applied: `oldtext_check.py start` mismatches=0 before the edits, `fixed` mismatches=0 after; blobs `c47a0452…` (worker) and `85401cb1…` (test); worker `--numstat` `25 28`, one hunk `@@ -17,58 +17,55 @@ package com.zegoggles.smssync.worker`, header-line count 2; AC-10 (a) no line, exit 1; AC-10 (b) one line `WorkManagerScheduler.kt:153`; AC-10 (c) 6 lines `:146`, `:149`, `:153`, `:156`, `:157`, `:421`; the import grep no line, exit 1 (13 lines on the old worker); porcelain ` M app/build.gradle`, ` M …/BackupTriggerWorker.kt`, `?? …/BackupTriggerWorkerTest.kt`; IC-2 (a) 15 lines (scheduler `:29`, `:60`, `:62`, `:211`, `:233`; worker `:52`, `:63`; test `:63`, `:306`, `:323`, `:344`, `:345`, `:367`, `:451`, `:453`); AC-12 (e) restricted 4 lines (worker `:41`, scheduler test `:548`, CNTR-004 `:384`, DES-005 `:135`), on the new test file 1 line (`:402`), and 5 lines in the iteration-2 `--untracked` form (B-4 confirmed); AC-13 (a) only the worker; (b)(c) exit 0; (d) ` app/build.gradle | 4 ++--`, ` 1 file changed, 2 insertions(+), 2 deletions(-)`; (e)(f) exit 0; `@Ignore`/`Assume` no line, exit 1; AC-12 design and change-record checks empty; no code commit after `<start>`; count 756 at `<start>`, 771 in the working tree (= +15), `app/src/test` porcelain only the new file, 15 `@Test` in it; `app/build.gradle` `--numstat` `2 2`, four changed lines, 2 `minimum =` lines, stale phrases no line, exit 1. The I0 step 5 greps at `<start>`: (a) 4 lines `:20`, `:35`, `:61`, `:67`; (b) 1 line `:153`; (c) 8 lines; (d) 7 lines; (e) restricted 4 lines with the worker at `:39` | verified (run) | the scratch repository; one read-only script |
 | N1 | The test file compiles against WorkManager 2.9.1, Truth 1.4.4, Robolectric 4.15.1 and Mockito 5.18.0 | needs_check | I2; row D13 |
 | N2 | `ShadowLog` records the worker's `Log.d` with tag `SMSBackup+` in this Robolectric set-up | needs_check | I2 (the degraded AC-9 test must fail only at its scheduler-line assertion); row D14 (a) |
 | N3 | `WorkManagerImpl.getInstance(context).workDatabase.workSpecDao().getWorkSpec(id)` returns the spec in the harness | needs_check | I2 (AC-3 must fail only at its equality assertion); row D14 (b) |
@@ -289,11 +311,18 @@ Counts: 15 tests, all in the new class. Red run (I2, unchanged worker): 11 fail,
     by the regular backup. Unchanged: the old worker had the same window.
 13. **The periodic content trigger:** `CONTENT_TRIGGER` is a `PeriodicWorkRequest` with content-URI triggers at the
     15-minute minimum interval, registered with `UPDATE`. WorkManager 2.9.1 turns it into a one-shot `JobInfo` with
-    `setMinimumLatency` up to the next period plus the content-URI triggers (L25), so stage 1 can fire at most once per
-    15-minute period. A change that lands inside that window is, by JobScheduler's content-trigger behaviour, expected to
-    run the trigger when the window ends (platform behaviour, plausible, not verified). The effective delay after a burst
-    is therefore up to the rest of the period plus `incomingTimeoutSecs`. Changes that land while the trigger worker runs
-    are seen by the next scheduled job. Unchanged by this story; recorded for DES-005 (section 7 item 7).
+    `setMinimumLatency` up to the next period plus the content-URI triggers (L25, read with `javap`), so stage 1 can fire
+    at most once per period. The period's anchor, "fifteen minutes after the last run", is **assumed, not read**: it is
+    how `WorkSpec.calculateNextRunTime()` is commonly described, and that method's body was not read in this session. A
+    change that lands inside the latency window is expected to run the trigger when the window ends (JobScheduler's
+    content-trigger behaviour; plausible, not verified). Changes that land while the trigger worker itself runs are seen
+    by the next scheduled job (**plausible, not verified**).
+    **What the owner sees, in plain words.** The SMS-received receiver is not delivered on Android 11 and newer (BUG-023,
+    Record 15 row 16), so this trigger is the only automatic path for incoming messages. The first SMS after a quiet
+    spell is backed up about a minute after it arrives (the 60-second default delay). Later SMS that arrive within the
+    same fifteen-minute period wait until the period ends, up to about sixteen minutes with the defaults (the rest of the
+    period plus the 60 seconds), and are then backed up together. This behaviour existed before this story and is not
+    changed by it; it is recorded for DES-005 and handed to the orchestrator (section 7 items 7 and 13).
 
 ### 2.5 Which check detects which failure
 
@@ -1192,8 +1221,8 @@ Expected: the four files `BackupTriggerWorker_AssistedFactory.java`, `BackupTrig
      `:156`, `:157`, `:421` and `BackupTriggerWorker.kt:63`, `:68`;
    - (d) `git grep -n "BackupTriggerWorker" -- app/src` → 7 lines: `WorkManagerScheduler.kt:29`, `:60`, `:62`, `:211`,
      `:233` and `BackupTriggerWorker.kt:48`, `:57`;
-   - (e) ``git grep -n -E 'via scheduleIncoming\(\)|it calls (scheduler\.)?`?scheduleIncoming\(\)|would ultimately call scheduleIncoming\(\)' -- app/src sdlc/artifacts/design``
-     → 4 lines: `BackupTriggerWorker.kt:39`, `WorkManagerSchedulerTest.kt:548`,
+   - (e) ``git grep -n -E 'via scheduleIncoming\(\)|it calls (scheduler\.)?`?scheduleIncoming\(\)|would ultimately call scheduleIncoming\(\)' -- app/src/main app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt sdlc/artifacts/design``
+     (restricted to the files AC-12 is about, iteration 3) → 4 lines: `BackupTriggerWorker.kt:39`, `WorkManagerSchedulerTest.kt:548`,
      `CNTR-MODERNIZATION-004-backup-scheduler.md:384`, `DES-MODERNIZATION-005-workmanager-scheduler-design.md:135`.
    Line numbers are post-U-068 (L20); a different number with the same text is recorded, not a stop; a different set of
    files or texts is row D12.
@@ -1283,8 +1312,13 @@ Before the first scheduler entry: `cp $SCH $WORK/pristine/WorkManagerScheduler.k
      `:344`, `:345`, `:367`, `:451`, `:453` (iteration 2 line numbers). Every hit is accounted for in the log: the
      scheduler's import, two comments, the KDoc and the class literal; the declaration and the log text; the test's class,
      references and constants;
-   - AC-12 (e) grep as I0 5 (e) but with `git grep --untracked` (so the new test file is searched too) → 4 lines; the
-     worker's is now `BackupTriggerWorker.kt:41`; the new test file has none;
+   - AC-12 (e) grep exactly as I0 5 (e), restricted to `app/src/main`, `$SXT` and `sdlc/artifacts/design` (all tracked;
+     iteration 3, B-4) → 4 lines: `BackupTriggerWorker.kt:41`, `WorkManagerSchedulerTest.kt:548`,
+     `CNTR-MODERNIZATION-004-backup-scheduler.md:384`, `DES-MODERNIZATION-005-workmanager-scheduler-design.md:135`. Then
+     the new test file separately, with plain `grep` because it is untracked:
+     ``grep -nE 'via scheduleIncoming\(\)|it calls (scheduler\.)?`?scheduleIncoming\(\)|would ultimately call scheduleIncoming\(\)' $TST``
+     → exactly 1 line, `402:        assertWithMessage("request via the trigger worker, against the request via scheduleIncoming()")`,
+     the AC-3 assertion label; the log records it as a label, not an AC-12 statement (both outputs run, L27);
    - AC-13 (a): `git diff --name-only $START -- app/src/main` → only `$WRK`; (b), (c):
      `git diff --quiet $START -- $SCH $S/service/BackupWorker.kt $S/scheduler/BackupScheduler.java $S/receiver/SmsBroadcastReceiver.java app/src/main/AndroidManifest.xml; echo "exit=$?"` → `exit=0`;
      (d): `git diff --stat $START -- build.gradle app/build.gradle k9mail-vendored/build.gradle settings.gradle gradle` →
@@ -1549,6 +1583,10 @@ are read (row D14).
     CNTR-MODERNIZATION-004 regardless (iteration 1, PASS), and the story cites it in `related_items` and its text.
 12. **BUG-024:** a trigger during a running incoming backup stops that backup through `REPLACE`, and since U-067 the stop
     is real and reported as a failure (2.4 item 11); BUG-024's fix should treat this path as one of its cases.
+13. **The periodic trigger's rate limit** (2.4 item 13; iteration 3, depth-check recommendation): later SMS within one
+    fifteen-minute period wait until it ends (up to about sixteen minutes with the defaults) and are backed up together.
+    This is a behaviour that existed before this story and is not changed by it. The orchestrator is measuring it on the
+    emulator and raises it as its own bug; this story's criteria do not depend on it.
 
 ## 8. Contracts Verified, Scope Concerns, Risks, Out of Scope
 
@@ -1662,10 +1700,15 @@ changed; the app is never uninstalled; if the install would lose data, the check
      `enqueued INCOMING` and, within the wait, either `BackupWorker: nothing to backup` appears or no `starting backup (`
      line appears (say which, with the `network=` value). This is not a pass: IC-3 stays open and the orchestrator
      reports it to the owner. No setting is changed to force a run.
+   - **Not conclusive: enqueued, run not completed** (iteration 3, plan-review note 1): the scheduler line is
+     `enqueued INCOMING`, a `BackupWorker: starting backup (` line appears, and no `backup complete, backedUp=` line
+     appears within the wait (step 7 ends with `exit=124`), with no error line from the app's process. Not a pass; IC-3
+     stays open and the orchestrator reports it with the lines seen.
    - **Not conclusive: the trigger did not fire** (step 5). **Not run:** install refused, a password prompt, a
      second-device ambiguity the owner has not resolved.
-   - **Fail:** a factory error naming `BackupTriggerWorker`, or the trigger line without any scheduler line within the
-     wait, or an app crash.
+   - **Fail:** a factory error naming `BackupTriggerWorker`; or the trigger line without any scheduler line within the
+     wait; or, after `enqueued INCOMING`, a `BackupWorker: unrecoverable error` line from the app's process (iteration 3,
+     plan-review note 1); or an app crash (`FATAL EXCEPTION` with `Process: com.zegoggles.smssync`).
 10. Record `sdlc/artifacts/build/sprints/sprint-024/U-069/evidence/IC3-emulator.txt` through `sanitize.py` (it refuses
     e-mail-like text): clock time (UTC), AVD name, SDK level, build type (debug), the APK SHA-256 against the hand-off,
     install result, versionCode and lastUpdateTime before and after, that one test SMS was sent and when, the matching
@@ -1786,6 +1829,11 @@ other final check was re-read for the same mistake. A hard-coded default delay i
 or `cmp` is called anywhere. P-1 and P-2 are ruled (Record 18 ruling 45); nothing is open for the orchestrator before the
 build.
 
+**Iteration 3** fixes B-4 by restricting the AC-12 (e) grep to the files AC-12 is about and checking the new test file
+on its own. It labels the last two IC-3 cases and states the periodic trigger's user effect. Every expected value of
+the final checks (I0 step 5, I3 step 2, I6 step 4) was confirmed by running the command in a scratch repository built
+from `0d490997` with this plan's edits applied (L27).
+
 ## Phase Completion Report
 ---
 story_id: "U-069"
@@ -1795,5 +1843,5 @@ artifact_path: "sdlc/artifacts/build/sprints/sprint-024/U-069/plan.md"
 story_status: "in-progress"
 current_build_phase: "planning"
 errors: []
-notes: "Iteration 2: B-1 to B-3, plan-review O-1 to O-7, contract-verification O-1 to O-4 and both depth recommendations taken up, none declined. 15 tests, 12 mutation runs (11 counted, M-T11 compile-only), 18 Gradle runs; the developer commits nothing; no external diff or cmp. Worker floor 0.95 under an expected measured 1.00 (ruling 46). P-1 and P-2 ruled (ruling 45); nothing open."
+notes: "Iteration 3: B-4 fixed (AC-12 (e) restricted to the AC-12 files: 4 lines; the new test file checked separately: 1 line, :402, an assertion label); IC-3 last two cases labelled; edge case 13 in plain words plus hand-over item 13; every final check run in a scratch repository built from 0d490997 (L27). Iteration 2: B-1 to B-3, plan-review O-1 to O-7, contract-verification O-1 to O-4 and both depth recommendations taken up, none declined. 15 tests, 12 mutation runs (11 counted, M-T11 compile-only), 18 Gradle runs; the developer commits nothing; no external diff or cmp. Worker floor 0.95 under an expected measured 1.00 (ruling 46). P-1 and P-2 ruled (ruling 45); nothing open."
 ---

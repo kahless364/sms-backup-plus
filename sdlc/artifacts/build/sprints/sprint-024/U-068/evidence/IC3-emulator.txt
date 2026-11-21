@@ -1,0 +1,24 @@
+IC-3 launch smoke, story U-068. Run by the orchestrator.
+clock (host, UTC): 2026-11-21T13:43:48Z
+avd: Pixel_9_Pro (adb emu avd name; the only device attached; started by the orchestrator under the product owner's standing device instructions, decision appendix Record 14)
+sdk: 36
+apk: the developer's app-debug.apk from the I7 tree (copied out of app/build/outputs/apk/debug before QA rebuilt), size=6408559
+apk sha256: 40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e
+apk sha256 in hand-off (developer report; evidence/I7-apk.txt): 40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e
+before: versionCode=1602 minSdk=21 targetSdk=35; lastUpdateTime=2026-11-21 03:18:03; USE_CREDENTIALS/WRITE_EXTERNAL_STORAGE in the requested-permission block: 0
+install: adb install -r -> Success (app data kept; no uninstall, no downgrade flag, no data cleared, no setting changed, no password handled)
+after: versionCode=1602 minSdk=24 targetSdk=35; lastUpdateTime=2026-11-21 07:42:47 (device clock); the two permissions in the requested-permission block: 0
+start: am start -W -n com.zegoggles.smssync/.activity.MainActivity -> Status: ok; Activity: com.zegoggles.smssync/.activity.MainActivity; TotalTime: 901
+pid before the log read: 4402; pid after: 4402 (no crash and restart)
+count FATAL EXCEPTION from the app's process: 0
+count lines of the app's pid at level E or F containing hilt or dagger: 0
+count lines of the app's pid containing IllegalArgumentException or SecurityException: 0
+verdict: PASS (Status ok, same pid, all three counts 0)
+proves: the minSdk 24 build with the two permissions removed installs over the configured app on Android 16, keeps its data, is read by the platform as minSdk=24, and starts without a crash or an injection error.
+does not prove: anything on Android 7.0 to 15 (IC-4, an API 24 device, is not run: it needs the product owner's decision PO-A); the removed branches' behaviour (unit tests and the bytecode comparison carry that).
+beyond IC-3 (observed, not required by it): two test SMS had been sent to the emulator before the install for a separate measurement (the content trigger's period; see BUG-025 when raised). Their incoming backup was pending. Within one second of the app's start the new build ran it against the mail server:
+11-21 07:42:50.156  4402  4443 D SMSBackup+: BackupWorker.doWork: starting backup, type=INCOMING, attempt=0
+11-21 07:42:50.271  4402  4443 I SMSBackup+: BackupWorker: starting backup (2 messages)
+11-21 07:43:22.876  4402  4443 I SMSBackup+: BackupWorker: backup complete, backedUp=2
+No SSL, authentication or unrecoverable-error line from the app's process in that window: 0
+raw logcat is kept outside the repository. The emulator was shut down after the check.
