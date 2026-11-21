@@ -8,7 +8,8 @@ related_stories: []
 related_design_docs: []
 traces_to:
   - EPIC-MODERNIZATION-006
-change_records: []
+change_records:
+  - CR-011
 id: REQ-MODERNIZATION-016
 title: Runtime libraries on latest stable (WorkManager, Lifecycle, coroutines, preference, annotation, core-role)
 domain: modernization
@@ -16,7 +17,7 @@ epic: EPIC-MODERNIZATION-006
 priority: medium
 notes: |
   Version figures are a 2026-11-12 snapshot, not targets. REQ-MODERNIZATION-015 (toolchain and
-  minSdk 23) may need to land first if a library's minimum requires it. The retro file for
+  minSdk 24) may need to land first if a library's minimum requires it. The retro file for
   sprint-017 was not searched successfully for BUG-005/009/016 references (no matches), so
   bug IDs are cited from the dispatch and the manifest comment only.
   Related contracts (from the draft): CNTR-MODERNIZATION-003, CNTR-MODERNIZATION-004.
@@ -124,7 +125,7 @@ device, not only from unit tests.
 ## Constraints
 
 - Build stays on JDK 25. Dependency verification stays enforced. No per-package JaCoCo floor is lowered.
-- minSdk will be 23 once REQ-MODERNIZATION-015 lands. If a target library's minimum SDK or
+- minSdk will be 24 once REQ-MODERNIZATION-015 lands. If a target library's minimum SDK or
   Kotlin version exceeds what the current build provides, this requirement is sequenced after
   REQ-MODERNIZATION-015 and the story records that dependency.
 - Each library family (WorkManager, Lifecycle, coroutines, preference/annotation/core-role) should
@@ -146,3 +147,7 @@ device, not only from unit tests.
   unmaintained, record it as a follow-up and do not widen this requirement.
 - `work-testing` is a `testImplementation` dependency (`app/build.gradle` line 157) and must be
   bumped in lockstep with `work-runtime-ktx`.
+- Amended 2026-11-21 by CR-011 (approved 2026-11-17): the minSdk the toolchain requirement sets is
+  24, not 23 (notes and Constraints). Reason: the product owner chose to consume the Thunderbird
+  mail libraries as Android variants, which need minSdk 24 (feasibility analysis Section 4,
+  decision Record 4).

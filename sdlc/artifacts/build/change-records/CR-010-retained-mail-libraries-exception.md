@@ -1,5 +1,5 @@
 ---
-status: approved
+status: implemented
 severity: medium
 artifact_type: change-request
 requirements:
@@ -16,7 +16,7 @@ title: Retained exception for commons-io, apache-mime4j, jzlib and jutf7 in EPIC
 type: RCR
 domain: change-records
 summary: 'PO-10: EPIC-MODERNIZATION-006 success criterion 5 and REQ-MODERNIZATION-019 AC-B2 require commons-io, apache-mime4j, jzlib and jutf7 to leave the runtime classpath; upstream Thunderbird still uses all four, so the criterion can only be met with a recorded retained exception naming each. Found by the accepted feasibility analysis (U-062).'
-updated_at: '2026-11-17T18:01:48.658Z'
+updated_at: '2026-11-21T06:38:22.494Z'
 ---
 
 # CR-010: Retained exception for commons-io, apache-mime4j, jzlib and jutf7
@@ -361,7 +361,7 @@ now, or AC-B2 fails on its first run.
 ### Fix Order
 
 1. [ ] Requirements: amend EPIC-MODERNIZATION-006 (P1, P2) and REQ-MODERNIZATION-019 (P3, P4); record CR-010 in both `change_records` (P5) — ROOT FIX
-2. [ ] Requirements Reviewer pass on criterion 5 and AC-B2, because they change what verification counts as a pass
+2. [x] Requirements Reviewer pass on criterion 5 and AC-B2, because they change what verification counts as a pass
 3. [ ] Design (Part B): cite the exception; design the app-level declarations of commons-io and mime4j-core — CASCADE
 4. [ ] Stories (Part B): AC-B2 text carries into the story that removes the module — CASCADE
 5. [ ] Verification: after the amendment, `grep -nE "commons-io|mime4j|jzlib|jutf7"` over the epic and REQ-019 shows only the exception wording and current-state facts
@@ -392,10 +392,10 @@ amending requirements here.
 
 ### Fix Checklist
 
-- [ ] Requirements: apply P1 to P4 to the epic and REQ-019; add `CR-010` to `change_records`; add the dated note (P5)
-- [ ] Requirements Reviewer: check criterion 5 and AC-B2
-- [ ] Product owner: settle the currency question in the Scope Concern above
-- [ ] Verification: 0 remaining unqualified "absent" statements about the four libraries in the epic and REQ-019
+- [x] Requirements: apply P1 to P4 to the epic and REQ-019; add `CR-010` to `change_records`; add the dated note (P5) (done 2026-11-21, adapted by Record 5 rows 3 and 6; see Execution)
+- [x] Requirements Reviewer: check criterion 5 and AC-B2 (FAIL on iteration 1, PASS on iteration 2, 2026-11-21; RAR-016 applied by the orchestrator)
+- [x] Product owner: settle the currency question in the Scope Concern above (settled by decision Record 5, row 6: "yes")
+- [x] Verification: 0 remaining unqualified "absent" statements about the four libraries in the epic and REQ-019 (see Execution, Verification Evidence)
 
 ### Next steps (Medium severity)
 
@@ -423,19 +423,125 @@ work**, not a story to schedule on its own: the work is a text amendment, and it
 
 ### Changes Made
 
-| File | Change | Layer |
-|------|--------|-------|
-| (none yet) | Proposed only | |
+Applied 2026-11-21 by the Requirements Analyst, in one requirements pass with CR-011 (product owner
+instruction of 2026-11-21, Record 11 item 3: "3 start there"). The record was read together with
+decision Record 5, as that record says whoever applies a change record must do. Locations were found by
+the quoted text; each quoted "current text" was found exactly once. `status: approved`, `id`,
+`artifact_type` and `updated_at` are unchanged on both files.
+
+| File | Section or criterion | Edit id | What changed | Layer |
+|------|----------------------|---------|--------------|-------|
+| `EPIC-MODERNIZATION-006-dependency-currency-latest-stable.md` | frontmatter | P5 | `CR-010` appended to `change_records` (after `CR-011`) | Requirements |
+| Epic | In Scope, "Mail library replacement" | P1 | Bullet now replaces `:k9mail-vendored` only; the vendored module's declarations of the four libraries go with the module; the four libraries stay as retained exceptions (criterion 5, CR-010) and are subject to success criterion 1. Adapted by Record 5 row 6 (see Departures) | Requirements |
+| Epic | Success criterion 5 | P2 | "no library of the old mail stack remains ... except the retained exceptions below"; the five coordinates and the reason they are kept; subject to criterion 1; vendored versions do not survive; analysis-pin versions as information only; the app declares commons-io and apache-mime4j-core itself; exception covers the five coordinates only. Grep widened with `net.thunderbird` (Record 5 row 3) | Requirements |
+| Epic | new "Amendments" subsection | P5 note | Dated "Amended 2026-11-21 by CR-010 (approved 2026-11-17)" bullet with both Record 5 quotations | Requirements |
+| `REQ-MODERNIZATION-019-...md` | frontmatter | P5 | `CR-010` appended to `change_records` (`CR-011` follows) | Requirements |
+| REQ-019 | Part B, first bullet | P3 | Four libraries named as retained exceptions that stay on the runtime classpath, subject to criterion 1; the app declares commons-io and apache-mime4j-core itself. Adapted by Record 5 row 6 | Requirements |
+| REQ-019 | AC-B2 | P4 | Listing shows no `project :k9mail-vendored` entry and exactly the five coordinates from the old stack; each resolves to latest stable at planning time (criterion 1), with the resolved versions and the date and source of each latest-stable figure recorded in the listing; "old mail stack" defined by pointer to Context; vendored versions do not appear. Adapted by Record 5 row 6 | Requirements |
+| REQ-019 | Traceability (end) | P5 note | Dated "Amended 2026-11-21 by CR-010 (approved 2026-11-17)" paragraph with the Record 5 row 6 quotation | Requirements |
+| `REQ-MODERNIZATION-012-...md` | Notes (body) | (Record 5 row 3, not a CR-010 edit) | One dated "Supersession note (2026-11-21)": the migration will supersede or widen the parts named in CR-005, CR-006 and CR-008; no acceptance criterion changed; all stay in force until those change records are applied (text replaced on review, RAR-005; see Reviewer corrections). `change_records` not touched | Requirements |
+
+### Departures from the proposed text
+
+- **P1, P2 (versions not fixed). Record 5 row 6**, question "Does 'latest stable' apply to the four
+  retained libraries", answer **"yes"**. The proposed sentences "replaced by the versions that the
+  Thunderbird mail modules declare" (P1) and "The versions are those that the pinned Thunderbird code
+  declares" (P2) were not applied. In their place: the retained libraries are subject to success
+  criterion 1 like every other dependency; the vendored module's own versions do not survive; the
+  analysis-pin versions (commons-io 2.22.0, apache-mime4j 0.8.15, jzlib 1.0.7, jutf7 1.0.0) are given
+  only as information, "not a requirement". The five coordinates and the reason each is kept
+  are as proposed.
+- **P3, P4. Record 5 row 6, "yes".** Same reading: the versions are not fixed; both texts point to
+  criterion 1 and say the vendored module's versions do not survive. P4 adds that the resolved versions
+  are recorded in the listing (it was already "saved as evidence").
+- **P2 grep. Record 5 row 3, "yes"** ("Should the epic's boundary check also cover the new package
+  root ..."). The grep in criterion 5 is now
+  `com\.fsck\.k9\|com\.android\.email\|net\.thunderbird`. CR-005 Change 1 uses the alternation
+  `com\.fsck\.k9\|net\.thunderbird` (service/ and the whole tree) and Change 4 the same; the new
+  alternation keeps the epic's existing `com\.android\.email` term and adds the same `\|net\.thunderbird` term in the same form.
+  Checked on today's tree: the grep returns nothing (exit status 1).
+- **The exception route for a forced version (withdrawn on review, RAR-001).** The first pass
+  wrote a clause for a forced version (a reference to the fallback record in REQ-MODERNIZATION-015 AC-4)
+  because the instruction for this pass spoke of "the documented-exception route that criterion already
+  has" and criterion 1 has none. The reviewer found that the clause has no support in a change record or
+  a product-owner answer and contradicts criterion 1; the orchestrator accepted that. The clause is
+  removed from the epic, P3 and P4. The texts now say only that each retained library resolves to its
+  latest stable version at planning time and that the resolved versions are recorded with the AC-B2
+  listing. A version that really is forced is then a failed criterion, and the product owner decides it
+  at that time.
+- **P2 and P4, definition of "the old mail stack" (RAR-006).** Added after the phrase: "(as listed in the
+  Description: `:k9mail-vendored` plus commons-io, apache-mime4j, jzlib and jutf7; `androidx.annotation`,
+  which the app declares itself, is not part of it)". In REQ-019 AC-B2 the pointer is "as listed in Context",
+  because that is the REQ-019 section that lists them (Context, `k9mail-vendored/build.gradle` dependencies).
+- **P5 dates.** Notes say "Amended 2026-11-21 by CR-010 (approved 2026-11-17)", not 2026-11-17.
+- The proposed text "The app declares commons-io and apache-mime4j-core itself" was kept as written in P2 and P3,
+  although the Solution Architect's advice (Suggested Approach, point 2) calls it a design choice for Part B. No product
+  owner answer changes it, so it was applied as proposed.
+
+### Scope Concern (raised by this pass, not decided)
+
+- Success criterion 1 of the epic has no stated exception route, while the product owner's answer
+  (Record 5 row 6) and the instruction for this pass assumed one. The forced-version clause written
+  for that purpose was withdrawn on review (RAR-001). If a retained library's latest stable version is
+  ever forced out of reach (for example by the fork's modules), criterion 1 fails and the product owner
+  decides at that time.
+- CR-010's second Scope Concern (if criterion 5 and AC-B2 move to a new epic, carry the amended wording
+  over) stays open: nothing moved in this pass.
 
 ### Verification Evidence
 
-Not started.
+Run 2026-11-21 on the working tree at HEAD `4a888b16`. No Gradle was run.
+
+1. `grep -nE "commons-io|mime4j|jzlib|jutf7"` over the epic and REQ-019 shows only: the epic Description
+   (line 24, today's state), the Mail library replacement bullet (retained exceptions), criterion 5
+   (the exception wording), REQ-019 line 37 (versions declared today, a current-state fact), line 70
+   (Part A question 2, the question as asked), Part B first bullet and AC-B2 (the exception wording).
+   No unqualified statement that the four libraries are absent or removed remains.
+2. The criterion-5 grep as now written, run on today's tree:
+   `grep -rn "com\.fsck\.k9\|com\.android\.email\|net\.thunderbird" app/src/main/java/com/zegoggles/smssync/service/`
+   gives no output, exit status 1: true today. It is also the alternation form of CR-005 Changes 1 and 4.
+3. `git diff --stat -- sdlc/artifacts/requirements` lists only the requirement files of this pass (epic,
+   REQ-012, REQ-015, REQ-016, REQ-017, REQ-019, `_index.md`). Other files modified on the same day are
+   other work, not this pass: CR-013, CR-009 and CR-014 belong to change record CR-014 (committed as
+   `042054ba`); the decision appendix of the analysis and the audit log are the orchestrator's.
+
+Re-run after the reviewer corrections (2026-11-21):
+
+4. `grep -nE "forced version|a version that is forced|forcing reason|documented-exception"` over the epic
+   and REQ-019: no hit. Absence statements about the four libraries: none unqualified (hits are
+   criterion 4's Play Billing, criterion 5's `:k9mail-vendored` module and the amendment notes).
+5. Criterion-5 grep (`com\.fsck\.k9\|com\.android\.email\|net\.thunderbird` over `service/`): no output,
+   exit status 1. The AC-6 search and the old-values search are recorded in CR-011.
+
+### Reviewer corrections (2026-11-21)
+
+Requirements Reviewer verdict on the first pass: FAIL (iteration 1), two blocking findings; every numbered
+edit otherwise confirmed as applied faithfully. Corrections applied the same day:
+
+| RAR | Applies to this record | What changed |
+|-----|------------------------|--------------|
+| RAR-001 (blocking) | Yes | Forced-version clause removed. Epic criterion 5 now reads: "The retained libraries are subject to success criterion 1 like every other dependency: each resolves to its latest stable version at planning time, and the resolved versions are recorded with the REQ-MODERNIZATION-019 AC-B2 listing." REQ-019 Part B first bullet: "(latest stable at planning time; the resolved versions are recorded with the AC-B2 listing)". REQ-019 AC-B2: "Each of the five resolves to its latest stable version at planning time (EPIC-MODERNIZATION-006 success criterion 1); the resolved versions, with the date and source of each latest-stable figure, are recorded in the listing." Departures and Scope Concern in this record rewritten |
+| RAR-005 | Yes | REQ-012 supersession note replaced with the reviewer's text ("will supersede or widen parts ...; all stay in force until the change records CR-005, CR-006 and CR-008 are applied"). Clauses checked against REQ-012 (AC-1, AC-2, AC-5, Constraints) and CR-005 (Change 1: both roots, zero in `service/`), CR-006 (AC-5 cascade) and CR-008 (constructor constraint left to the Part B design) |
+| RAR-006 | Yes | "the old mail stack" defined in epic criterion 5 ("as listed in the Description") and REQ-019 AC-B2 ("as listed in Context"); the epic Description does list `:k9mail-vendored` plus the four libraries; REQ-019's Description does not, its Context does |
+| RAR-010 | Yes | Verification item 3 limited to `sdlc/artifacts/requirements`; other files named as other work of the same day |
+| RAR-002, RAR-003, RAR-004, RAR-008 | No (CR-011) | Recorded in CR-011's Execution. RAR-004 changed the epic's Open Questions line, which sits in the epic edited by both records |
+
+### Reviewer notes left as they are
+
+By the orchestrator's ruling, not applied; one line each:
+
+- RAR-007: the more robust AC-7 regex is for the REQ-015 story (CR-011 content; AC-7 stays as given).
+- RAR-009: REQ-019's stricter sequencing is aligned when CR-005 and CR-006 are applied.
+- RAR-011: CR-005 and CR-006 are deliberately not in this pass; their own Timing sections apply them with the Part B design.
+- RAR-012, RAR-013: left for the REQ-015 and REQ-016 designs.
+- RAR-014, RAR-015: left.
+- The private-app wording follow-up gets no change record now: none of those lines blocks a story; it is raised only if a story is blocked.
 
 ### Commit Traceability
 
 | Commit | Date | Branch | Scope | Author |
 |--------|------|--------|-------|--------|
-| *(pending)* | | sdlc/modernization-plan | | |
+| The commit with the subject "Requirements pass: CR-010 and CR-011 applied (minSdk 24, levels 37, retained libraries)" (find it with `git log --grep`) | 2026-11-21 | sdlc/modernization-plan | The requirement files amended by this record, `_index.md`, and this record | Orchestrator (text by the Requirements Analyst, checked by the Requirements Reviewer) |
 
 ---
 

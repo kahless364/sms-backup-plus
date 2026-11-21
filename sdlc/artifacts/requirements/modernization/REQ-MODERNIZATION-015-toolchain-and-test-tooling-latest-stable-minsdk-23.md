@@ -11,9 +11,10 @@ related_stories: []
 related_design_docs: []
 traces_to:
   - EPIC-MODERNIZATION-006
-change_records: []
+change_records:
+  - CR-011
 id: REQ-MODERNIZATION-015
-title: Build toolchain and test tooling on latest stable, with minSdk raised to 23
+title: Build toolchain and test tooling on latest stable, with minSdk raised to 24
 domain: modernization
 epic: EPIC-MODERNIZATION-006
 priority: high
@@ -23,21 +24,25 @@ notes: |
   also lists as AC-5). Those artifacts need change records (AC-9 below); the orchestrator
   must create them, because this draft cannot edit files.
   Version figures are a 2026-11-12 snapshot, not targets.
+  Amended 2026-11-21 by CR-011 (approved 2026-11-17): minSdk 24 (was 23), because the product
+  owner chose to consume the Thunderbird mail libraries as Android variants, which need minSdk 24
+  (feasibility analysis Section 4, decision Record 4). The file name keeps 'minsdk-23' for
+  history; the title and acceptance criteria govern.
 updated_at: '2026-11-12T16:48:33.401Z'
 ---
 
-# REQ-MODERNIZATION-015: Build toolchain and test tooling on latest stable, with minSdk raised to 23
+# REQ-MODERNIZATION-015: Build toolchain and test tooling on latest stable, with minSdk raised to 24
 
 ## Description
 
 Move the build toolchain and test tooling to the latest stable release of each component,
-and raise `minSdkVersion` from 21 to 23 in `app/build.gradle` (line 24 at the time of
+and raise `minSdkVersion` from 21 to 24 in `app/build.gradle` (line 24 at the time of
 writing). In scope: Gradle, Android Gradle Plugin (AGP), Kotlin Gradle plugin and stdlib,
 KSP, Hilt, androidx.hilt (`hilt-work`, `hilt-compiler`), Robolectric, Mockito, GreenMail,
 JaCoCo, auto-service, the CI action versions, and the SDK Build Tools version that the
 chosen AGP requires. User-visible backup and restore behavior is unchanged. The one
-user-visible effect is that Android 5.0 and 5.1 devices (API 21 and 22) stop receiving
-updates.
+user-visible effect is that Android 5.0, 5.1 and 6.0 devices (API 21, 22 and 23) stop
+receiving updates.
 
 ## Context
 
@@ -64,9 +69,13 @@ accepted "raising the minsdk version". Snapshot of 2026-11-12, current to latest
 Known couplings the implementing story must plan around:
 
 - Hilt 2.60, androidx.hilt 1.3 or later, and Robolectric 4.16 or later require minSdk 23.
+- The Thunderbird mail libraries, consumed as Android variants from a fork (analysis
+  Section 4, mode M2), require minSdk 24 and compileSdk 37 [C-221, C-222]. That sets the floor.
 - Kotlin 2.4 and Hilt 2.60 must move together, because Hilt 2.59 fails on Kotlin 2.4 metadata.
 - Four tests in `app/src/test/java/com/zegoggles/smssync/compat/SmsReceiverTest.java`
-  run at `Build.VERSION_CODES.LOLLIPOP` (SDK 21) and cannot run once minSdk is 23.
+  run at `Build.VERSION_CODES.LOLLIPOP` (SDK 21), and one test in
+  `app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt` (line 378 at
+  the time of writing) runs at `@Config(sdk = [23])`; they cannot run once minSdk is 24.
 - No Gradle/AGP/Kotlin triple is listed as supported at stable versions by all three
   vendors (U-060 plan.md, SC-5). The chosen set therefore needs its support reading
   recorded, not assumed.
@@ -108,23 +117,28 @@ and source URL for each.
   verbatim and the version it fell back to for that component, and flags the fallback for
   product-owner acknowledgement. It does not silently pin an older set.
 
-### minSdk 23 and its consequences
+### minSdk 24 and its consequences
 
-- [ ] AC-5: `app/build.gradle` declares `minSdkVersion 23` and the resolved merged
-  manifest reports `android:minSdkVersion="23"`. Verified by inspecting the merged
+- [ ] AC-5: `app/build.gradle` declares `minSdkVersion 24` and the resolved merged
+  manifest reports `android:minSdkVersion="24"`. Verified by inspecting the merged
   manifest of the debug build. The stale `minSdk 21` comment near the WorkManager
   dependency in `app/build.gradle` is corrected.
 - [ ] AC-6: No `Build.VERSION.SDK_INT` comparison or `@TargetApi`/`@RequiresApi`
-  annotation for a level below 23 remains in `app/src/main`. Sites found in the repo at
+  annotation for a level of 24 or lower remains in `app/src/main`. Sites found in the repo at
   draft time (the story re-greps and deletes the dead branches): `compat/SmsReceiver.java`
   (`KITKAT`), `activity/SmsDefaultRoleHelper.kt` (`KITKAT`), `activity/MainActivity.java`
-  (`KITKAT` annotation), `activity/Dialogs.java` (`ICE_CREAM_SANDWICH`), and
-  `calendar/CalendarAccessorPost40.java` (`ICE_CREAM_SANDWICH` annotation). Verified by
-  `grep -rn "SDK_INT\|VERSION_CODES\|TargetApi" app/src/main`, with every remaining match
-  at level 23 or above.
-- [ ] AC-7: The four SDK 21 tests in `SmsReceiverTest` are retargeted to a level of 23
-  or above, or deleted together with the dead branch they covered (recorded in the
-  story). `grep -rn "LOLLIPOP\|sdk = \[\?2[0-2]" app/src/test` returns zero matches, and
+  (`KITKAT` annotation), `activity/Dialogs.java` (`ICE_CREAM_SANDWICH`),
+  `calendar/CalendarAccessorPost40.java` (`ICE_CREAM_SANDWICH` annotation), and
+  `scheduler/WorkManagerScheduler.kt` (the `SDK_INT < VERSION_CODES.N` branch of
+  `scheduleContentTrigger`, line 224 at the time of writing). Verified by
+  `grep -rn "SDK_INT\|VERSION_CODES\|TargetApi\|RequiresApi" app/src/main`: every remaining
+  comparison or annotation names a level of 25 or above (a comparison against level 24
+  itself, such as `SDK_INT < VERSION_CODES.N`, is always decided at minSdk 24 and must not
+  remain); `import` lines are not counted.
+- [ ] AC-7: The four SDK 21 tests in `SmsReceiverTest` and the SDK 23 test in
+  `WorkManagerSchedulerTest` are retargeted to a level of 24 or above, or deleted together
+  with the dead branch they covered (recorded in the
+  story). `grep -rn "LOLLIPOP\|sdk = \[\?2[0-3]" app/src/test` returns zero matches, and
   the test count change is listed by name.
 - [ ] AC-8: `app/lint-baseline.xml` is regenerated or pruned so that every entry made
   stale by the minSdk raise (including `ObsoleteSdkInt` entries) is removed. No new
@@ -133,8 +147,8 @@ and source URL for each.
 - [ ] AC-9: Change records are created on REQ-MODERNIZATION-001 and
   REQ-MODERNIZATION-006 recording that their literal minSdk 21 statements are superseded
   by this requirement. Neither artifact is edited silently.
-- [ ] AC-10: A user-facing changelog or release-notes entry states that Android 5.0 and
-  5.1 are no longer supported, in the location the project already uses for release
+- [ ] AC-10: A user-facing changelog or release-notes entry states that Android 5.0, 5.1
+  and 6.0 (API 21 to 23) are no longer supported, in the location the project already uses for release
   notes. The story names that location. Publishing and rollout remain out of scope.
 
 ### Build integrity and gates
@@ -163,7 +177,7 @@ and source URL for each.
 ### On-device launch and first CI run
 
 - [ ] AC-17: A debug APK built from the story branch is installed on a device or
-  emulator at API 23 (the new minimum) and on one at a higher API level. On each, the app
+  emulator at API 24 (the new minimum) and on one at a higher API level. On each, the app
   launches to `MainActivity` and a manual backup and a manual restore run to completion,
   with no `FATAL EXCEPTION` or Hilt initialization error in `adb logcat`. Device, API
   level, and logcat excerpt are recorded.
@@ -176,16 +190,16 @@ and source URL for each.
 
 EPIC-MODERNIZATION-006 requires every dependency to be at the latest stable version
 when its story is planned. The toolchain moves first, because Hilt 2.60, androidx.hilt
-1.3 or later, and Robolectric 4.16 or later are the components that force the minSdk
-raise, and the later runtime-library and platform-level requirements depend on the
-newer plugins. Recording the compatibility reading (AC-2, AC-3) matters because
+1.3 or later, and Robolectric 4.16 or later require at least minSdk 23, and the
+Thunderbird Android variants require minSdk 24, which sets the value; the later
+runtime-library and platform-level requirements depend on the newer plugins. Recording the compatibility reading (AC-2, AC-3) matters because
 vendor support tables disagree. Without a recorded reading, a future upgrade cannot
 tell whether a warning is expected.
 
 ## Constraints
 
 - **Behavior preserved**: backup, restore, scheduling, and notification behavior is
-  identical before and after, apart from the dropped API 21 and 22 support.
+  identical before and after, apart from the dropped API 21, 22 and 23 support.
 - **JDK 25 stays**: the build runs on JDK 25 via `gradle/gradle-daemon-jvm.properties`.
 - **Verification enforced**: dependency verification is not disabled; metadata is
   added only through Gradle's writer.
@@ -210,3 +224,13 @@ tell whether a warning is expected.
 - Sprint-017 retro states the cause of the lost receiver lines (AGP 9 unit-test
   manifest) and lists "a decision on correcting the AGP 9 unit-test manifest" as an open
   follow-up. That decision is not made here; AC-14 only requires the floor to hold.
+- Amended 2026-11-21 by CR-011 (approved 2026-11-17): minSdk is 24 (was 23) throughout: title,
+  Description, Context, AC-5 to AC-7, AC-10, AC-17, Rationale and Constraints. AC-6 and AC-7 also
+  cover the `SDK_INT < N` branch in `WorkManagerScheduler.kt` and the SDK 23 test in
+  `WorkManagerSchedulerTest.kt`, which are dead at 24 and were not found by the old greps. Reason:
+  the product owner chose to consume the Thunderbird mail libraries as Android variants, which need
+  minSdk 24 (feasibility analysis Section 4, decision Record 4: "Accept both"). Record 5, row 8
+  ("all my devices are 11 or newer") confirms that no device in use is dropped. The file name keeps
+  `minsdk-23` for history. The owner's earlier words in Context ("raising the minsdk version"), AC-9, the JDK 25 constraint and the
+  out-of-scope line are deliberately unchanged. The wording of AC-10 for a private app is not
+  settled by CR-011.

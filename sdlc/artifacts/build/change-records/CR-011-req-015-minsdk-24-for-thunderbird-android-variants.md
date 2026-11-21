@@ -1,5 +1,5 @@
 ---
-status: approved
+status: implemented
 severity: high
 artifact_type: change-request
 requirements:
@@ -19,7 +19,7 @@ title: 'Platform floor and levels for the Thunderbird Android variants: minSdk 2
 type: RCR
 domain: change-records
 summary: 'PO-1/PO-2: REQ-MODERNIZATION-015 sets minSdk 23. Product-owner decision 2026-11-17 (Record 4): consume a fork of thunderbird-android as Android variants, which needs minSdk 24 and compileSdk 37; minSdk is raised to 24 and targetSdk goes to 37 with compileSdk (REQ-MODERNIZATION-017 names no level today).'
-updated_at: '2026-11-17T18:01:48.664Z'
+updated_at: '2026-11-21T06:38:22.504Z'
 ---
 
 # CR-011: Platform floor and levels for the Thunderbird Android variants
@@ -490,7 +490,7 @@ platform-level requirement names no level, so compileSdk 37 and targetSdk 37 exi
 
 1. [ ] Requirements: amend REQ-015 (title and the other changes 15-1 to 15-13) — ROOT FIX
 2. [ ] Requirements: amend REQ-016, REQ-017 and the epic to match — CASCADE FIX
-3. [ ] Requirements Reviewer pass on REQ-015 AC-6/AC-7 and REQ-017 AC-1/AC-3, because they change what counts as a pass
+3. [x] Requirements Reviewer pass on REQ-015 AC-6/AC-7 and REQ-017 AC-1/AC-3, because they change what counts as a pass
 4. [ ] Design: design REQ-015 and REQ-017 against the amended text — CASCADE
 5. [ ] Stories: author the REQ-015 and REQ-017 stories from the amended text — CASCADE
 6. [ ] Verification: `grep -nE "minSdk 23|minSdk raised to 23|to 23|API 23|below 23|23 or above" ` over the four files shows only intended history (REQ-015 line 66 and the amendment note)
@@ -521,11 +521,11 @@ lines and REQ-017 lines 171-172, so those lines are edited once. Not applied by 
 
 ### Fix Checklist
 
-- [ ] Requirements: REQ-015 15-1 to 15-13, REQ-016 16-1 and 16-2, REQ-017 17-1 to 17-5, epic E-1 to E-11; add `CR-011` to `change_records` and the dated notes
-- [ ] Requirements Reviewer: check REQ-015 AC-6 and AC-7, REQ-017 AC-1 and AC-3
-- [ ] Librarian: regenerate the `_index.md` row; decide whether to rename the REQ-015 file (recommended: leave)
-- [ ] Product owner: confirm the owner's own devices all run Android 7.0 or later (see Not verified)
-- [ ] Verification: 0 remaining unintended "minSdk 23" / "below 23" statements in the four files
+- [x] Requirements: REQ-015 15-1 to 15-13, REQ-016 16-1 and 16-2, REQ-017 17-1 to 17-5, epic E-1 to E-11; add `CR-011` to `change_records` and the dated notes (done 2026-11-21; also C-8 on REQ-019)
+- [x] Requirements Reviewer: check REQ-015 AC-6 and AC-7, REQ-017 AC-1 and AC-3 (FAIL on iteration 1, PASS on iteration 2, 2026-11-21)
+- [x] Librarian: regenerate the `_index.md` row (row changed by hand, title only, 2026-11-21); decide whether to rename the REQ-015 file (decided by the orchestrator: leave as it is)
+- [x] Product owner: confirm the owner's own devices all run Android 7.0 or later (settled by decision Record 5, row 8: "all my devices are 11 or newer")
+- [x] Verification: 0 remaining unintended "minSdk 23" / "below 23" statements in the four files (clean after RAR-003; see Verification Evidence items 6 to 9)
 
 ### Next steps (High severity)
 
@@ -568,19 +568,158 @@ Neither this record nor the analysis checked the following.
 
 ### Changes Made
 
-| File | Change | Layer |
-|------|--------|-------|
-| (none yet) | Proposed only | |
+Applied 2026-11-21 by the Requirements Analyst, in one requirements pass with CR-010 (product owner
+instruction of 2026-11-21, Record 11 item 3: "3 start there"). Locations were found by the quoted text,
+not by the line numbers of 2026-11-17. Every quoted "current text" was found exactly once where the
+record expected one place. `status: approved`, `id`, `artifact_type` and `updated_at` are unchanged on
+all files; no file was renamed.
+
+| File | Section or criterion | Edit id | What changed | Layer |
+|------|----------------------|---------|--------------|-------|
+| `REQ-MODERNIZATION-015-...-minsdk-23.md` | frontmatter | (frontmatter) | `CR-011` appended to `change_records` | Requirements |
+| REQ-015 | frontmatter `title` and H1 | 15-1 | "raised to 23" became "raised to 24" | Requirements |
+| REQ-015 | frontmatter `notes` | 15-2 | Amendment note added (dated 2026-11-21; says the record was approved 2026-11-17; file name keeps `minsdk-23` for history) | Requirements |
+| REQ-015 | Description | 15-3 | "from 21 to 23" became "from 21 to 24" | Requirements |
+| REQ-015 | Description | 15-4 | "Android 5.0 and 5.1 devices (API 21 and 22)" became "Android 5.0, 5.1 and 6.0 devices (API 21, 22 and 23)" | Requirements |
+| REQ-015 | Context, known couplings | 15-5 | New bullet: the Thunderbird variants (mode M2) need minSdk 24 and compileSdk 37; the Hilt bullet is unchanged | Requirements |
+| REQ-015 | Context, known couplings | 15-6 | SmsReceiverTest sentence extended with the `WorkManagerSchedulerTest.kt` test at `@Config(sdk = [23])`; "once minSdk is 24" | Requirements |
+| REQ-015 | AC-5 | 15-7 | `minSdkVersion 24` and `android:minSdkVersion="24"` | Requirements |
+| REQ-015 | AC-6 | 15-8 | "below 24" as proposed; `scheduler/WorkManagerScheduler.kt` (`SDK_INT < VERSION_CODES.N` branch of `scheduleContentTrigger`, line 224) added to the site list; "level 24 or above" as proposed. Later corrected by RAR-002 to "24 or lower" / "25 or above" (see Departures) | Requirements |
+| REQ-015 | AC-7 | 15-9 | SDK 23 test in `WorkManagerSchedulerTest` added; "level of 24 or above"; regex `sdk = \[\?2[0-3]` | Requirements |
+| REQ-015 | AC-10 | 15-10 | "Android 5.0, 5.1 and 6.0 (API 21 to 23)". Nothing else in AC-10 touched (the release-notes deliverable is the CR-003 sibling follow-up) | Requirements |
+| REQ-015 | AC-17 | 15-11 | "API 24 (the new minimum)" | Requirements |
+| REQ-015 | Rationale | 15-12 | "require at least minSdk 23, and the Thunderbird Android variants require minSdk 24, which sets the value;" | Requirements |
+| REQ-015 | Constraints | 15-13 | "dropped API 21, 22 and 23 support" | Requirements |
+| REQ-015 | Notes (body) | note | Dated "Amended 2026-11-21 by CR-011" bullet added | Requirements |
+| `REQ-MODERNIZATION-016-runtime-libraries-latest-stable.md` | frontmatter | (frontmatter) | `CR-011` appended to `change_records` | Requirements |
+| REQ-016 | frontmatter `notes` | 16-1 | "toolchain and minSdk 24" | Requirements |
+| REQ-016 | Constraints | 16-2 | "minSdk will be 24 once REQ-MODERNIZATION-015 lands." | Requirements |
+| REQ-016 | Notes (body) | note | Dated "Amended 2026-11-21 by CR-011" bullet added | Requirements |
+| `REQ-MODERNIZATION-017-platform-level-current-stable-api.md` | frontmatter | (frontmatter) | `CR-011` appended to `change_records` | Requirements |
+| REQ-017 | frontmatter `notes` | 17-1 | Level 37 stated for compileSdk and targetSdk, with its source; AC-1 confirms 37 is a stable level | Requirements |
+| REQ-017 | Description | 17-2 | "from 35 to API level 37 (decided 2026-11-17; ...)"; last sentence now "AC-1 makes confirming that 37 is a stable level on the planning date an explicit, evidenced step" | Requirements |
+| REQ-017 | AC-1, AC-2 | 17-3 | AC-1: recorded level must be 37, stop-and-ask rule added; AC-2: "both equal 37, the level recorded under AC-1" | Requirements |
+| REQ-017 | AC-3 | 17-4 | Table covers each level above targetSdk 35 up to the new level (36 and 37) | Requirements |
+| REQ-017 | frontmatter `notes` and Constraints | 17-5 | "minSdk 24 requirement" and "minSdk is 24 once the toolchain requirement lands" | Requirements |
+| REQ-017 | Notes (body) | note | Dated "Amended 2026-11-21 by CR-011" paragraph added | Requirements |
+| `EPIC-MODERNIZATION-006-...md` | frontmatter | (frontmatter) | `CR-011` and `CR-010` appended to `change_records` | Requirements |
+| Epic | Description | E-1, E-2 | "minSdk raise to 24"; "dropped Android 5.0 to 6.0 support" | Requirements |
+| Epic | In Scope, toolchain bullet | E-3, E-4 | "minSdk 24" in the bullet title; Thunderbird variants require 24, so 21 to 24 and "Android 5.0 to 6.0 support ends" | Requirements |
+| Epic | In Scope, platform level | E-5 | "from 35 to 37 (the current stable Android API level, confirmed at planning time)" | Requirements |
+| Epic | Success criteria 2 and 3 | E-6, E-7 | minSdk 24 and "below 24"; compileSdk and targetSdk equal 37, with 37 confirmed at planning time | Requirements |
+| Epic | Related Requirements 1 and 3 | E-8 | "with minSdk 24"; "(compileSdk/targetSdk 37)" | Requirements |
+| Epic | Sequencing | E-10 | Sentences added: analysis accepted, migration is a go (Record 3); requirements 1, 2, 3 complete before any Part B row that compiles Thunderbird code | Requirements |
+| Epic | Constraints and Risks | E-9 | "Dropping Android 5.0 to 6.0 (API 21 to 23)" | Requirements |
+| Epic | Open Questions | E-11 | "The level is decided: 37 (Record 4). ... confirmed under REQ-MODERNIZATION-017 AC-1." | Requirements |
+| Epic | new "Amendments" subsection | note | Dated "Amended 2026-11-21 by CR-011" bullet (the CR-010 bullet is in the same subsection) | Requirements |
+| `REQ-MODERNIZATION-019-...md` | frontmatter | (frontmatter) | `CR-011` appended to `change_records` (after `CR-010`) | Requirements |
+| REQ-019 | Dependencies and Sequencing | C-8 | "(REQ-MODERNIZATION-015, -016 and -017; minSdk 24, compileSdk 37; CR-011)" added. Applied, as the record offers it | Requirements |
+| REQ-019 | Traceability (end) | note | Dated "Amended 2026-11-21 by CR-011" paragraph added | Requirements |
+| `sdlc/artifacts/requirements/modernization/_index.md` | REQ-015 row | index | Title changed to "...with minSdk raised to 24" (mechanical consequence of 15-1); nothing else | Requirements |
+
+### Departures from the proposed text
+
+No edit departs from the record in substance. Wording and placement choices, each stated here:
+
+- **Dates.** Every note says "Amended 2026-11-21 by CR-011 (approved 2026-11-17)", not the proposed
+  "2026-11-17": the amendment is made today (instruction of the orchestrator for this pass).
+- **15-2 in two places.** The proposed note was applied in the frontmatter `notes` field, where the
+  record puts it ("notes, after line 25"). A second dated note was added to the body Notes section,
+  as the CR-003 precedent does, and it lists the criteria changed. The record asked for one note.
+- **Reading of "..." in the proposed texts.** Where a record row shows an ellipsis (15-7 to 15-9,
+  17-4, E-6, E-7), only the quoted fragments were changed and the rest of the sentence kept.
+  17-4: the new wording reads "lists for each platform level above the current targetSdk 35 up to the
+  new level (that is, 36 and 37), as listed for apps targeting that level (and for all apps running
+  on it)".
+- **15-12.** The proposed text ended in "; ..."; the sentence continues "the later runtime-library
+  and platform-level requirements depend on the newer plugins" after a semicolon.
+- **15-6.** The path of the second test is written out in full
+  (`app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt`), as the first is.
+- **15-8 and E-6, AC-6 pass rule (reviewer correction RAR-002; added after review).** The record's text,
+  "a level below 24 ... at level 24 or above", would accept the very site it adds
+  (`SDK_INT < VERSION_CODES.N` is a comparison against level 24, always decided at minSdk 24). To carry
+  out the record's stated intent (dead branches go), AC-6 now reads "a level of 24 or lower", its grep
+  adds `RequiresApi`, and its pass rule is "every remaining comparison or annotation names a level of 25
+  or above; `import` lines are not counted". Epic criterion 2 reads "guard against a level of 24 or
+  lower". This is not traceable to a product-owner answer; it is the reviewer's ruling, accepted by the
+  orchestrator.
+- No product-owner answer of Record 5 changes any CR-011 edit. Row 8 ("all my devices are 11 or
+  newer") only settles the checklist line on the owner's devices. The REQ-017 decision (17-1 to
+  17-3 applied) and the REQ-015 file name (left as it is) follow the orchestrator's instruction
+  and the record's own recommendations.
+
+### Not applied, left for a decision
+
+- **REQ-015 heading "### minSdk 23 and its consequences"** was not one of the 31 edits and was first
+  left unchanged. It is now changed to "minSdk 24" (reviewer correction RAR-003).
+- **REQ-017 title and `_index.md` row 10** ("...to the current stable Android API level") and
+  REQ-017's frontmatter note "Neither REQ-MODERNIZATION-015 nor -016 exists on disk yet" are not in
+  the record; unchanged.
+- The CR-003 sibling wording follow-up (store-publishing wording in REQ-015 AC-10, the epic's
+  publishing lines, REQ-017 lines 171-172): no change record exists; nothing edited beyond 15-10
+  and E-9 as written.
 
 ### Verification Evidence
 
-Not started.
+Run 2026-11-21 on the working tree at HEAD `4a888b16`. No Gradle was run.
+
+1. Search of the four requirement files and the epic for the old values
+   (`minSdk 23|minSdkVersion 23|below 23|to 23|API 21 and 22|5\.0 and 5\.1|5\.0/5\.1|current stable Android API level|minSdk raised to 23|minsdk-23|API 23|23 or above|\[23\]|2\[0-2\]`).
+   Remaining hits, each judged:
+   - REQ-015 `notes` (amendment note) and body Notes: name `minsdk-23` and the old value as history. Kept on purpose.
+   - REQ-015 line 71 "Hilt 2.60 ... require minSdk 23" and the Rationale "require at least minSdk 23": true facts about those libraries. Kept (the record says so).
+   - REQ-015 line 78 `@Config(sdk = [23])`: names the test that 15-6 adds. Kept.
+   - REQ-015 line 149 (AC-10) "6.0 (API 21 to 23)": the new text.
+   - REQ-015 line 120 `### minSdk 23 and its consequences`: **unintended, not in the 31 edits.** Left; reported above.
+   - Epic line 47 "require minSdk 23, and the Thunderbird Android variants require minSdk 24": true fact kept by E-4. Epic line 164 "(API 21 to 23)": the new text (E-9).
+   - REQ-017 title (line 15 and H1): "current stable Android API level": not in the record. Left.
+   - REQ-019 line 72 (Part A question 4, "REQ-MODERNIZATION-015 (minSdk 23)"): the record names it "No change" (Part A history).
+   - `_index.md` row 10 (REQ-017 title): same as the REQ-017 title.
+   - REQ-016: no hit. REQ-015 AC-1 to AC-18 contain no other old value.
+2. Criterion-5 grep as now written in the epic
+   (`grep -rn "com\.fsck\.k9\|com\.android\.email\|net\.thunderbird" app/src/main/java/com/zegoggles/smssync/service/`):
+   no output, exit status 1 (no match). True on today's tree.
+3. AC-7 grep with the widened regex (`grep -rn "LOLLIPOP\|sdk = \[\?2[0-3]" app/src/test`): 6 lines: `SmsReceiverTest.java` 24 (a comment), 27, 32, 37, 42 (the four SDK 21 tests) and `WorkManagerSchedulerTest.kt:378` (`@Config(sdk = [23])`). The old regex (`2[0-2]`) found 5; the new one adds line 378. This is expected today: they are what the future story retargets.
+4. AC-6 grep (`grep -rn "SDK_INT\|VERSION_CODES\|TargetApi" app/src/main`) on today's tree: the sites below 24 are the five listed in AC-6 (`SmsReceiver.java` 31 and 50, `SmsDefaultRoleHelper.kt` 74, `MainActivity.java` 425, `Dialogs.java` 172, `CalendarAccessorPost40.java` 23) and `WorkManagerScheduler.kt:224`, which the amended AC-6 now names. Expected today.
+5. `git diff --stat -- sdlc/artifacts/requirements`: the epic, REQ-012 (one note), REQ-015, REQ-016, REQ-017, REQ-019 and `_index.md`, nothing else. Other files modified on the same day are other work, not this pass: CR-013, CR-009 and CR-014 belong to change record CR-014 (committed as `042054ba`); the decision appendix of the analysis and the audit log are the orchestrator's.
+
+Re-run after the reviewer corrections (2026-11-21):
+
+6. Old values (same pattern, plus `a stable level|below 24`): remaining hits are only the intended ones listed in item 1 (amendment notes, true facts about Hilt/androidx.hilt/Robolectric needing 23, the "API 21 to 23" wording, the REQ-017 title and index row, REQ-019 line 72). The REQ-015 heading no longer matches. No `below 24` and no `a stable level` remain.
+7. Absence statements about the four libraries: none unqualified (hits are criterion 4's Play Billing, criterion 5's `:k9mail-vendored` module, and the amendment notes). No wording about a forced version remains in the epic or REQ-019.
+8. Criterion-5 grep (`com\.fsck\.k9\|com\.android\.email\|net\.thunderbird` over `service/`): no output, exit status 1.
+9. AC-6 search on `app/src/main` (`SDK_INT|VERSION_CODES|TargetApi|RequiresApi`, import lines excluded): 19 lines. Sites at level 24 or lower, exactly the ones AC-6 lists: `Dialogs.java:172` (ICE_CREAM_SANDWICH, 14), `CalendarAccessorPost40.java:23` (ICE_CREAM_SANDWICH, 14), `SmsReceiver.java:31` and `:50` (KITKAT, 19), `MainActivity.java:425` (KITKAT, 19), `SmsDefaultRoleHelper.kt:74` (KITKAT, 19), `WorkManagerScheduler.kt:224` (N, 24). Sites at 25 or above (stay): Q (29) at `MainActivity.java:242`, `SmsDefaultRoleHelper.kt:77,111,135`, `SmsReceiver.java:47`, `BackupWorker.kt:533`, `RestoreWorker.kt:707`; TIRAMISU (33) at `MainActivity.java:517`; O (26) at `App.java:246,350`; literal 26 at `ThemeActivity.java:20,26`. 7 + 12 = 19.
+
+### Reviewer corrections (2026-11-21)
+
+Requirements Reviewer verdict on the first pass: FAIL (iteration 1), two blocking findings; every
+numbered edit otherwise confirmed as applied faithfully. Corrections applied the same day:
+
+| RAR | Applies to this record | What changed |
+|-----|------------------------|--------------|
+| RAR-002 (blocking) | Yes | REQ-015 AC-6: "a level of 24 or lower"; grep adds `RequiresApi`; pass rule "every remaining comparison or annotation names a level of 25 or above ... `import` lines are not counted". Epic criterion 2: "guard against a level of 24 or lower". Site list confirmed before writing (Verification Evidence item 9) |
+| RAR-003 | Yes | REQ-015 heading changed to "### minSdk 24 and its consequences" |
+| RAR-004 | Yes | "a stable level" became "the current stable level" in REQ-017 (frontmatter note, Description) and the epic's Open Questions line |
+| RAR-008 | Yes | REQ-015 body note: "The owner's earlier words in Context ("raising the minsdk version")" (the words are in Context) |
+| RAR-010 | Yes | Verification Evidence item 5 limited to `sdlc/artifacts/requirements`; other files named as other work of the same day |
+| RAR-001, RAR-005, RAR-006 | No (CR-010) | Recorded in CR-010's Execution |
+
+### Reviewer notes left as they are
+
+By the orchestrator's ruling, not applied; one line each:
+
+- RAR-007: the more robust AC-7 regex is for the REQ-015 story; AC-7 stays as CR-011 gives it.
+- RAR-009: REQ-019's stricter sequencing is aligned when CR-005 and CR-006 are applied.
+- RAR-011: CR-005 and CR-006 are deliberately not in this pass; their own Timing sections apply them with the Part B design.
+- RAR-012, RAR-013: left for the REQ-015 and REQ-016 designs.
+- RAR-014, RAR-015: left.
+- The private-app wording follow-up (REQ-015 AC-10 and the other publishing lines) gets no change record now: none of those lines blocks a story (AC-10 is met by a `CHANGES` entry in the repository; the others are informational). It is raised only if a story is blocked.
 
 ### Commit Traceability
 
 | Commit | Date | Branch | Scope | Author |
 |--------|------|--------|-------|--------|
-| *(pending)* | | sdlc/modernization-plan | | |
+| The commit with the subject "Requirements pass: CR-010 and CR-011 applied (minSdk 24, levels 37, retained libraries)" (find it with `git log --grep`) | 2026-11-21 | sdlc/modernization-plan | The requirement files amended by this record, `_index.md`, and this record | Orchestrator (text by the Requirements Analyst, checked by the Requirements Reviewer) |
 
 ---
 

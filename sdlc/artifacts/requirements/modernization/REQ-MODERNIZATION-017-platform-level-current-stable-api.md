@@ -9,17 +9,19 @@ related_stories: []
 related_design_docs: []
 traces_to:
   - REQ-MODERNIZATION-001
-change_records: []
+change_records:
+  - CR-011
 id: REQ-MODERNIZATION-017
 title: Raise compileSdk and targetSdk to the current stable Android API level, with on-device validation
 domain: modernization
 epic: EPIC-MODERNIZATION-006
 priority: high
 notes: |
-  Platform-level requirement 3 of 5 in EPIC-MODERNIZATION-006. The target API level is
-  deliberately not named; AC-1 requires it to be determined and recorded at planning time.
+  Platform-level requirement 3 of 5 in EPIC-MODERNIZATION-006. The level is 37 for both
+  compileSdk and targetSdk (product owner decision 2026-11-17, Record 4, applied by CR-011).
+  AC-1 requires the planning-time record to confirm that 37 is the current stable level.
   Sequencing (epic Notes): after the donation-flow removal requirement, and after the
-  toolchain and minSdk 23 requirement (referenced in the brief as REQ-MODERNIZATION-015).
+  toolchain and minSdk 24 requirement (referenced in the brief as REQ-MODERNIZATION-015).
   Neither REQ-MODERNIZATION-015 nor -016 exists on disk yet; those references are unverified.
 updated_at: '2026-11-12T16:48:41.721Z'
 ---
@@ -28,12 +30,13 @@ updated_at: '2026-11-12T16:48:41.721Z'
 
 ## Description
 
-Raise `compileSdkVersion` and `targetSdkVersion` in `app/build.gradle` from 35 to the Android
-API level that is current stable on the date the implementing story is planned. Adopt that
+Raise `compileSdkVersion` and `targetSdkVersion` in `app/build.gradle` from 35 to API level 37
+(decided 2026-11-17; the Thunderbird Android variants need compileSdk 37, and the product owner
+chose targetSdk 37 as well). Adopt that
 level only together with (a) a recorded disposition of every platform behavior change that
 applies to apps targeting it and (b) validation of the app's core flows on an emulator or
-device running that level. This requirement does not name the target level; AC-1 makes
-determining it an explicit, evidenced step.
+device running that level. AC-1 makes confirming that 37 is the
+current stable level on the planning date an explicit, evidenced step.
 
 ## Context
 
@@ -75,17 +78,21 @@ frozen and must keep working.
   level (number and Android version name), the source URL on developer.android.com, and the
   date consulted. Evidence that an SDK platform is installed locally is not accepted as
   evidence of stable status. A level labeled preview, beta, or developer preview on the
-  source page does not qualify.
-- [ ] AC-2: `compileSdkVersion` and `targetSdkVersion` in `app/build.gradle` both equal the
-  level recorded under AC-1. Verified by `grep -n "compileSdkVersion\|targetSdkVersion" app/build.gradle`.
+  source page does not qualify. The recorded level must be 37. If the source page does not
+  show 37 as the current stable level (37 is a preview, or a higher level is stable), the
+  story records that and asks the product owner; it neither substitutes a level nor proceeds
+  on 37 silently.
+- [ ] AC-2: `compileSdkVersion` and `targetSdkVersion` in `app/build.gradle` both equal 37,
+  the level recorded under AC-1. Verified by `grep -n "compileSdkVersion\|targetSdkVersion" app/build.gradle`.
 
 ### Behavior-change review
 
 #### Acceptance Criteria
 
 - [ ] AC-3: The story contains a table of every behavior change that the platform's
-  published documentation lists for apps targeting the new level (and for all apps running on
-  it), citing the documentation URL. Each row is dispositioned as exactly one of: not
+  published documentation lists for each platform level above the current targetSdk 35 up to
+  the new level (that is, 36 and 37), as listed for apps targeting that level (and for all
+  apps running on it), citing the documentation URL. Each row is dispositioned as exactly one of: not
   applicable (with reason), applicable and fixed (with file or commit), or applicable and
   deferred (with a follow-up artifact id). No row is left undispositioned.
 - [ ] AC-4: At minimum the review explicitly covers, with a disposition each: foreground-service
@@ -170,7 +177,7 @@ platforms.
   after, apart from platform-mandated UI changes recorded under AC-3.
 - Informational only, not acceptance criteria: Google Play target-level policy deadlines are
   noted in the story for the product owner; publishing is not decided here (epic Out of Scope).
-- minSdk is 23 once the toolchain requirement lands; if it has not, the story records the
+- minSdk is 24 once the toolchain requirement lands; if it has not, the story records the
   minSdk in effect and validates on one emulator at the minSdk as well.
 
 ## Verification Method
@@ -186,3 +193,11 @@ Traceability: `sdlc/artifacts/requirements/modernization/EPIC-MODERNIZATION-006-
 (BUG-016); `sdlc/artifacts/build/sprints/sprint-017/retro.md` (lint, receiver coverage,
 unverified broadcast branch). Supersedes the literal "35" in REQ-MODERNIZATION-001 AC-1 and
 AC-29 only for future state; REQ-MODERNIZATION-001 should carry a change record.
+
+Amended 2026-11-21 by CR-011 (approved 2026-11-17): the level is now named, 37 for both
+`compileSdkVersion` and `targetSdkVersion` (notes, Description, AC-1, AC-2); AC-3 covers levels 36
+and 37; the minSdk the toolchain requirement sets is 24, not 23 (notes, Constraints). Reason:
+the product owner chose to consume the Thunderbird mail libraries as Android variants, which
+need compileSdk 37 and minSdk 24, and chose targetSdk 37 as well (feasibility analysis decision
+Record 4: "Accept both" and "Raise to 37 (Recommended)"). The title and the Google Play policy line
+in Constraints are unchanged by CR-011.

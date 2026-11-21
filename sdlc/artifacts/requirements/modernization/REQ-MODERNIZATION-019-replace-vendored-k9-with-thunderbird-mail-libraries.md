@@ -13,7 +13,9 @@ related_design_docs:
   - DES-MODERNIZATION-009
 traces_to:
   - EPIC-MODERNIZATION-006
-change_records: []
+change_records:
+  - CR-010
+  - CR-011
 id: REQ-MODERNIZATION-019
 title: Replace the Vendored K-9 Mail Library with Thunderbird for Android Mail Libraries (Gated Feasibility Analysis, Then Migration)
 domain: modernization
@@ -79,7 +81,7 @@ A single written analysis artifact, reviewed and accepted before any design or b
 
 ### Part B: Migration (conditional on Part A acceptance with go / go-with-conditions)
 
-- Remove `:k9mail-vendored` from `settings.gradle` and delete `k9mail-vendored/`; absent from the resolved runtime classpath: commons-io, apache-mime4j, jzlib, jutf7 (unless Part A records a specific retained exception).
+- Remove `:k9mail-vendored` from `settings.gradle` and delete `k9mail-vendored/`. The four libraries commons-io, apache-mime4j (core and dom), jzlib and jutf7 are retained exceptions (CR-010; Part A Q2.d recorded each as retained, because the Thunderbird mail modules use them) and stay on the resolved runtime classpath. Like every other dependency they are subject to EPIC-MODERNIZATION-006 success criterion 1 (latest stable at planning time; the resolved versions are recorded with the AC-B2 listing); the vendored module's own versions do not survive. The app declares commons-io and apache-mime4j-core itself, because it imports `IOUtils` and `EncoderUtil` and the Thunderbird modules do not expose them (`implementation`, not `api`).
 - No `com.fsck.k9` type (or the Thunderbird library's equivalent) appears outside `com.zegoggles.smssync.mail.transport`; message/MIME-model usages are moved behind app-owned types or into the adapter.
 - Behaviour is preserved: backed-up messages are byte-comparable before and after (headers including all `X-smssync-*` headers, MIME structure, transfer encodings, flags, internal date, folder/label naming); restore reads messages written by both the old and the new stack; the TLS, pinning, and SNI protections are preserved with tests; no new ERROR-level log output.
 
@@ -100,7 +102,7 @@ A single written analysis artifact, reviewed and accepted before any design or b
 ### Part B (applies only after AC-A8 and a go / go-with-conditions recommendation)
 
 - **AC-B1**: `grep -n "k9mail-vendored" settings.gradle app/build.gradle` returns zero matches and the `k9mail-vendored/` directory does not exist.
-- **AC-B2**: `./gradlew :app:dependencies --configuration releaseRuntimeClasspath` shows none of `commons-io`, `org.apache.james:apache-mime4j-*`, `com.jcraft:jzlib`, `com.beetstra.jutf7` unless Part A recorded each as a retained exception.
+- **AC-B2**: `./gradlew :app:dependencies --configuration releaseRuntimeClasspath` shows no `project :k9mail-vendored` entry and, from the old mail stack (as listed in Context: `:k9mail-vendored` plus commons-io, apache-mime4j, jzlib and jutf7; `androidx.annotation`, which the app declares itself, is not part of it), exactly these five coordinates and no other: `commons-io:commons-io`, `org.apache.james:apache-mime4j-core`, `org.apache.james:apache-mime4j-dom`, `com.jcraft:jzlib`, `com.beetstra.jutf7:jutf7` (retained exceptions, CR-010). Each of the five resolves to its latest stable version at planning time (EPIC-MODERNIZATION-006 success criterion 1); the resolved versions, with the date and source of each latest-stable figure, are recorded in the listing. The vendored module's own versions (commons-io 2.16.1, apache-mime4j 0.8.11) do not appear. The listing is saved as evidence in the story.
 - **AC-B3**: `grep -rln "com\.fsck\.k9" app/src/main/java` lists only files under `app/src/main/java/com/zegoggles/smssync/mail/transport/` (or, if Part A shows the package name changed, the equivalent new package string appears only there). This also removes the `App.java`, `AuthPreferences.java`, and `MailModule.kt` references.
 - **AC-B4**: A golden-master test builds identical SMS, MMS (with attachments), and call-log inputs through the pre-migration code (fixtures captured from the commit before migration) and the new code, and asserts the serialised RFC 5322 bytes are equal, except for fields explicitly allow-listed in the test with a stated reason. Compared fields include every header in `mail/Headers.java`, boundary-independent MIME structure, `Content-Transfer-Encoding`, flags (`\Seen`), internal date, and folder/label name.
 - **AC-B5**: A GreenMail test appends a message through the new stack and reads it back with unchanged headers, flags, and internal date; the existing GreenMail integration tests pass without assertion changes.
@@ -125,10 +127,14 @@ Part B may exceed a single sprint (14 files plus tests, golden-master tooling, a
 
 ## Dependencies and Sequencing
 
-Part A can run in parallel with REQ-MODERNIZATION-015/016 but its findings on Kotlin/coroutines must be reconciled with them. Part B starts only after AC-A8 and, if Part A so concludes, after the toolchain versions it needs are in place.
+Part A can run in parallel with REQ-MODERNIZATION-015/016 but its findings on Kotlin/coroutines must be reconciled with them. Part B starts only after AC-A8 and, if Part A so concludes, after the toolchain versions it needs are in place (REQ-MODERNIZATION-015, -016 and -017; minSdk 24, compileSdk 37; CR-011).
 
 ## Traceability
 
 EPIC-MODERNIZATION-006; REQ-MODERNIZATION-002 (TLS), -009 and -012 (ACL), DES-MODERNIZATION-009; `sdlc/artifacts/build/sprints/sprint-017/retro.md`.
 
 The Part A feasibility analysis was produced by story U-062 at `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. The product owner accepted it on 2026-11-17 (decision Record 3, "Product owner decision" appendix), and the recorded direction is to proceed with the migration under the analysis's conditions (`go-with-conditions`).
+
+Amended 2026-11-21 by CR-010 (approved 2026-11-17): Part B first bullet and AC-B2 now name the four retained libraries (five coordinates) instead of requiring them to be absent, because the Thunderbird mail modules still use all of them. Product owner answer (Record 5, row 6, "Does 'latest stable' apply to the four retained libraries"): "yes". So the wording does not fix their versions: they are subject to EPIC-MODERNIZATION-006 success criterion 1, and the vendored module's own versions do not survive.
+
+Amended 2026-11-21 by CR-011 (approved 2026-11-17): the Dependencies and Sequencing line now names REQ-MODERNIZATION-015, -016 and -017 (minSdk 24, compileSdk 37) as the toolchain and platform work that precedes Part B (clarification C-8; the product owner's decision of 2026-11-17, Record 4, "Accept both").

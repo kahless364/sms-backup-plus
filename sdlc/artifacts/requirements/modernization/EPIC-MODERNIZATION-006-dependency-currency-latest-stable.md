@@ -3,7 +3,9 @@ status: approved
 artifact_type: epic
 related_requirements: []
 related_stories: []
-change_records: []
+change_records:
+  - CR-011
+  - CR-010
 id: EPIC-MODERNIZATION-006
 title: 'Dependency Currency: Latest Stable Toolchain, Libraries, Platform Level, and Mail Stack'
 domain: modernization
@@ -22,10 +24,10 @@ exists only for the donation flow, and a vendored copy of the K-9 mail library
 (`:k9mail-vendored` plus commons-io, apache-mime4j, jzlib, jutf7) isolated behind the
 `MailTransport` anti-corruption layer. The product owner's goal is "the app on the latest of
 everything it uses", with the Thunderbird for Android migration in scope, the donation flow
-removed rather than upgraded, and a minSdk raise to 23 accepted. This epic brings every
+removed rather than upgraded, and a minSdk raise to 24 accepted. This epic brings every
 dependency to the latest stable release available when its story is planned, and retires the
 vendored mail stack, without changing user-visible backup or restore behavior (other than the
-removed donation flow and the dropped Android 5.0/5.1 support).
+removed donation flow and the dropped Android 5.0 to 6.0 support).
 
 "Latest stable" is defined per story as the newest non-pre-release version published on
 Maven Central, Google Maven, or the Gradle plugin portal on the date that story is planned.
@@ -36,29 +38,32 @@ not targets; each story re-resolves them.
 
 ### In Scope
 
-- **Build toolchain and test tooling on latest stable, minSdk 23** — Gradle, AGP, Kotlin,
+- **Build toolchain and test tooling on latest stable, minSdk 24** — Gradle, AGP, Kotlin,
   KSP, Hilt, androidx.hilt, Robolectric, Mockito, GreenMail, JaCoCo, auto-service.
   Snapshot 2026-11-12: Gradle 9.5.1 to 9.9.1; AGP 9.0.1 to 9.5.1; Kotlin 2.3.21 to 2.4.21;
   KSP 2.3.6 to 2.3.13; Hilt 2.59.2 to 2.60.1; androidx.hilt 1.2.0 to 1.4.0; Robolectric
   4.15.1 to 4.17; Mockito 5.18.0 to 5.24.0; GreenMail 2.1.3 to 2.1.15; JaCoCo 0.8.14 to
   0.8.16; auto-service 1.0 to 1.1.1. Hilt 2.60, androidx.hilt 1.3+, and Robolectric 4.16+
-  require minSdk 23, so `minSdkVersion` is raised from 21 to 23 and Android 5.0/5.1 support
-  ends. This supersedes the literal minSdk 21 statements in REQ-MODERNIZATION-001 (AC-2) and
+  require minSdk 23, and the Thunderbird Android variants require minSdk 24, so
+  `minSdkVersion` is raised from 21 to 24 and Android 5.0 to 6.0 support ends. This supersedes the literal minSdk 21 statements in REQ-MODERNIZATION-001 (AC-2) and
   REQ-MODERNIZATION-006 (AC-3, AC-5); those artifacts must be revised through change
   records, not silently contradicted.
 - **Runtime libraries on latest stable** — WorkManager 2.9.1 to 2.12.0; Lifecycle 2.6.2 to
   2.11.0; kotlinx-coroutines 1.7.3 to 1.11.0; androidx.preference 1.1.0 to 1.2.1;
   androidx.annotation 1.1.0 / 1.7.1 to 1.11.0; androidx.core:core-role 1.0.0-beta01 to 1.1.0
   (snapshot figures as above).
-- **Platform level** — raise `compileSdk` and `targetSdk` from 35 to the current stable
-  Android API level, with on-device validation of the affected behavior changes.
+- **Platform level** — raise `compileSdk` and `targetSdk` from 35 to 37 (the current
+  stable Android API level, confirmed at planning time), with on-device validation of the
+  affected behavior changes.
 - **Donation flow removal** — delete the donation flow entirely (UI, preferences, strings,
   manifest entries, tests) and remove the Play Billing 7.1.1 dependency rather than upgrade
   it. This supersedes REQ-MODERNIZATION-010 (upgrade Play Billing to v7).
-- **Mail library replacement** — replace `:k9mail-vendored` and its commons-io /
-  apache-mime4j / jzlib / jutf7 dependencies with Thunderbird for Android's current mail
-  libraries, behind the existing `MailTransport` ACL. A written feasibility analysis must be
-  accepted before any design or implementation story starts.
+- **Mail library replacement** — replace `:k9mail-vendored` with Thunderbird for Android's
+  current mail libraries, behind the existing `MailTransport` ACL. The vendored module's own
+  declarations of commons-io, apache-mime4j, jzlib and jutf7 go with the module; the four
+  libraries themselves stay on the classpath as retained exceptions (see success criterion 5,
+  CR-010) and, like every other dependency, are subject to success criterion 1. A written
+  feasibility analysis must be accepted before any design or implementation story starts.
 
 ### Out of Scope
 
@@ -79,22 +84,36 @@ Each is verifiable without a live IMAP account unless stated.
    the build files equals the latest stable version re-resolved on the date its story was
    planned, with the resolution date and source recorded in the story. Zero named
    dependencies remain on a pre-release (alpha/beta/rc) version, including core-role.
-2. **minSdk**: `minSdkVersion` is 23 in `app/build.gradle`; no `Build.VERSION.SDK_INT`
-   guard for a level below 23 remains in `app/src/main`; REQ-MODERNIZATION-001 and
+2. **minSdk**: `minSdkVersion` is 24 in `app/build.gradle`; no `Build.VERSION.SDK_INT`
+   guard against a level of 24 or lower remains in `app/src/main`; REQ-MODERNIZATION-001 and
    REQ-MODERNIZATION-006 carry change records recording the supersession.
-3. **Platform level**: `compileSdk` and `targetSdk` equal the current stable API level
-   (verified against the Android developer documentation at planning time), and the
+3. **Platform level**: `compileSdk` and `targetSdk` equal 37, and 37 is confirmed as the
+   current stable API level against the Android developer documentation at planning time, and the
    backup, restore, scheduling, and notification flows are exercised on at least one
    physical or emulated device at that API level with results recorded.
 4. **Donation removal**: `grep -ril "billing\|donat" app/src/main app/build.gradle` returns
    zero results, the Play Billing coordinate is absent from the dependency graph, and no
    billing-related permission, manifest entry, or preference key remains.
 5. **Vendored mail stack retired**: the `:k9mail-vendored` module is absent from
-   `settings.gradle`, and commons-io, apache-mime4j, jzlib, and jutf7 are absent from the
-   resolved runtime classpath unless the accepted feasibility analysis records a specific
-   retained exception; `MailTransport` remains the only mail surface seen by `service.*`
-   (`grep -rn "com\.fsck\.k9\|com\.android\.email" app/src/main/java/com/zegoggles/smssync/service/`
+   `settings.gradle`, and no library of the old mail stack (as listed in the Description:
+   `:k9mail-vendored` plus commons-io, apache-mime4j, jzlib and jutf7; `androidx.annotation`,
+   which the app declares itself, is not part of it) remains on the resolved runtime
+   classpath except the retained exceptions below; `MailTransport` remains the only mail
+   surface seen by `service.*`
+   (`grep -rn "com\.fsck\.k9\|com\.android\.email\|net\.thunderbird" app/src/main/java/com/zegoggles/smssync/service/`
    returns zero results).
+   Retained exceptions (CR-010, approved 2026-11-17; feasibility analysis Section 2 Q2.d and
+   item PO-10): four libraries, five coordinates, each kept because the Thunderbird mail
+   modules still use it: `commons-io:commons-io`; `org.apache.james:apache-mime4j-core` and
+   `org.apache.james:apache-mime4j-dom`; `com.jcraft:jzlib`; `com.beetstra.jutf7:jutf7`.
+   The retained libraries are subject to success criterion 1 like every other dependency:
+   each resolves to its latest stable version at planning time, and the resolved versions are
+   recorded with the REQ-MODERNIZATION-019 AC-B2 listing. The
+   vendored module's own versions (commons-io 2.16.1, apache-mime4j 0.8.11) do not survive.
+   Information only, not a requirement: at the analysis pin the Thunderbird mail modules
+   declare commons-io 2.22.0, apache-mime4j 0.8.15, jzlib 1.0.7 and jutf7 1.0.0. The app
+   declares commons-io and apache-mime4j-core itself, because it imports `IOUtils` and
+   `EncoderUtil`. The exception covers these five coordinates only.
 6. **Feasibility gate honored**: an accepted feasibility analysis exists before the first
    mail-migration design story, and it states whether RCS and Google OAuth are separable.
 7. **Tests green**: `./gradlew :app:testDebugUnitTest` completes with zero failures and no
@@ -112,9 +131,9 @@ Each is verifiable without a live IMAP account unless stated.
 
 Populated as REQ-* artifacts are authored. Planned requirements:
 
-1. Build toolchain and test tooling on latest stable, with minSdk 23.
+1. Build toolchain and test tooling on latest stable, with minSdk 24.
 2. Runtime libraries on latest stable.
-3. Platform level (compileSdk/targetSdk) on current stable, with on-device validation.
+3. Platform level (compileSdk/targetSdk 37), with on-device validation.
 4. Remove the donation flow and the Play Billing dependency.
 5. Replace the vendored K-9 mail library with Thunderbird for Android mail libraries.
 
@@ -126,7 +145,11 @@ Populated as REQ-* artifacts are authored. Planned requirements:
   rest. Requirement 4 should precede requirement 3, because removing Play Billing avoids
   validating and migrating a library that is being deleted. Requirement 2 can follow
   requirement 1. Requirement 5 starts with its feasibility analysis, which can run in
-  parallel with requirements 1 to 4 and whose outcome gates all mail design work.
+  parallel with requirements 1 to 4 and whose outcome gates all mail design work. The
+  feasibility analysis is accepted and the migration (Part B) is a go (Record 3). Requirements
+  1, 2 and 3 (toolchain and minSdk 24, runtime libraries, platform level 37) are complete
+  before any Part B row that compiles Thunderbird code (analysis condition 1, decision
+  Record 4).
 - Each version bump should land as its own verified increment so a regression is
   attributable to one change.
 
@@ -139,12 +162,13 @@ Populated as REQ-* artifacts are authored. Planned requirements:
 - The receiver package sits exactly at its 50% JaCoCo floor, so any change that removes
   covered receiver lines (for example, donation removal) can breach it without lowering the
   floor; stories touching receiver code must check coverage.
-- Dropping Android 5.0/5.1 is a user-facing support reduction; whether to communicate it is
+- Dropping Android 5.0 to 6.0 (API 21 to 23) is a user-facing support reduction; whether to communicate it is
   a publishing matter and is not decided here.
 
 ### Open Questions
 
-- Which Android API level is current stable at planning time is not yet verified.
+- The level is decided: 37 (Record 4). Whether 37 is the current stable level on the planning date is
+  confirmed under REQ-MODERNIZATION-017 AC-1.
 - Whether Thunderbird's mail libraries are consumable as published artifacts, their
   licensing compatibility with this project's license, and whether they impose minSdk,
   Kotlin, or coroutine-version requirements beyond those above are unknown until the
@@ -161,3 +185,8 @@ Populated as REQ-* artifacts are authored. Planned requirements:
 - `sdlc/analysis/20260623-post-migration-assessment/outputs/sms-backup-plus/post-migration-health-report.md`
 - Format reference: `sdlc/artifacts/requirements/modernization/EPIC-MODERNIZATION-005-modernization-debt-closure.md`
 - The Part A feasibility analysis was produced by story U-062 at `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. The product owner accepted it on 2026-11-17 (decision Record 3, "Product owner decision" appendix), and the recorded direction is to proceed with the migration under the analysis's conditions (`go-with-conditions`).
+
+### Amendments
+
+- Amended 2026-11-21 by CR-011 (approved 2026-11-17): minSdk 24 (was 23) and compileSdk/targetSdk 37 in the Description, In Scope, success criteria 2 and 3, Related Requirements, Sequencing, the Constraints and Risks line on dropped Android versions (now 5.0 to 6.0), and Open Questions. Reason: the product owner chose to consume the Thunderbird mail libraries as Android variants, which need minSdk 24 and compileSdk 37, and chose targetSdk 37 as well (decision Record 4: "Accept both", "Raise to 37 (Recommended)"). Record 5, row 8 ("all my devices are 11 or newer") confirms that no device in use is dropped.
+- Amended 2026-11-21 by CR-010 (approved 2026-11-17): the Mail library replacement bullet and success criterion 5 name the four retained libraries (five coordinates) instead of requiring them to be absent. Product owner answers (Record 5): row 6, "Does 'latest stable' apply to the four retained libraries": "yes", so they are subject to success criterion 1 and their versions are not fixed here (the analysis-pin versions are information only); row 3, "Should the epic's boundary check also cover the new package root ...": "yes", so the criterion 5 grep adds `net.thunderbird` (it returns zero results on the code as of 2026-11-21).
