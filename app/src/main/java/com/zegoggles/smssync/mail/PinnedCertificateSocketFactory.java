@@ -17,9 +17,11 @@ package com.zegoggles.smssync.mail;
 
 import android.content.Context;
 import com.fsck.k9.mail.MessagingException;
+import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
 import com.fsck.k9.mail.ssl.TrustedSocketFactory;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -48,6 +50,15 @@ import java.util.Arrays;
  * <p>On any mismatch, {@link CertificateException} is thrown and the connection fails
  * closed. There is no trust-all fallback. This is the intended behavior per
  * DES-MODERNIZATION-002 and CNTR-MODERNIZATION-001.
+ *
+ * <p>Protocols, cipher suites and server name: every socket this factory returns, direct or
+ * layered, gets exactly the default factory's handling, by calling the same two steps of
+ * {@code DefaultTrustedSocketFactory} in the same order: {@code hardenSocket} (only TLS 1.2 and
+ * newer, where the platform supports them; the same cipher-suite order and blocked list), then
+ * {@code setSniHost} (the host as server name for a DNS name; none for an IP address or a blank
+ * host; none, without failure, for a name the platform rejects). Decided by the product owner on
+ * 2026-11-20 (Records 8 and 9; BUG-019, BUG-020). These steps do not touch the trust manager: the
+ * pin is the only trust decision, and no host-name verification is added.
  *
  * <p>Constructor: {@code public PinnedCertificateSocketFactory(Context context, String host,
  * X509Certificate enrolledCert)}. There is no zero-argument or no-cert constructor.
@@ -78,11 +89,18 @@ public class PinnedCertificateSocketFactory implements TrustedSocketFactory {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(null, trustManagers, null);
         SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+        SSLSocket sslSocket;
         if (socket == null) {
-            return socketFactory.createSocket();
+            sslSocket = (SSLSocket) socketFactory.createSocket();
         } else {
-            return socketFactory.createSocket(socket, host, port, true);
+            sslSocket = (SSLSocket) socketFactory.createSocket(socket, host, port, true);
         }
+        // The default factory's protocol, cipher-suite and server-name handling, in its order
+        // (BUG-019, BUG-020; product owner decisions Records 8 and 9 of 2026-11-20). Neither call
+        // reads or changes the trust manager installed above.
+        DefaultTrustedSocketFactory.hardenSocket(sslSocket);
+        DefaultTrustedSocketFactory.setSniHost(socketFactory, sslSocket, host);
+        return sslSocket;
     }
 
     /**

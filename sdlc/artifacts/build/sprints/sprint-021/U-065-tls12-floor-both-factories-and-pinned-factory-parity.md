@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: review
 sprint: '021'
 artifact_type: user-story
 priority: medium
@@ -21,7 +21,8 @@ title: Drop TLS versions older than 1.2 from both TLS socket factories, and give
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-019
-updated_at: '2026-11-21T02:27:24.405Z'
+updated_at: '2026-11-21T05:25:25.981Z'
+current_build_phase: validation
 ---
 
 # U-065: Drop TLS Versions Older Than 1.2 From Both TLS Socket Factories, and Give the Pinned-Certificate Factory the Default Factory's Cipher-Suite and Server-Name Handling
@@ -307,6 +308,45 @@ Risks: (1) a provider that supports TLS 1.2 or 1.3 and leaves it off by default 
 
 ## Implementation Notes
 <!-- Added by agents during build -->
+
+Developer, implementation phase (plan `U-065/plan.md`, iteration 2; the full record is `U-065/implementation-log.md`, evidence in `U-065/evidence/`). IC-1 (emulator check) is pending for the orchestrator.
+
+**What was built.** `DefaultTrustedSocketFactory` has a new allow-list `ALLOWED_PROTOCOLS = {TLSv1.2, TLSv1.3}` and a step `protocolsToEnable(SSLSocket)` that reads the socket's supported protocols, runs them through the unchanged `reorder` (SSLv3 still blocked) and keeps only the allowed names. `hardenSocket(SSLSocket)` is now `public static` (the one visibility change) and calls a new `protected static hardenSocket(SSLSocket, String[], String[])`. `PinnedCertificateSocketFactory.createSocket` calls `hardenSocket` and then `setSniHost` on both shapes. Sharing is by a call into the default factory's step (plan section 2.2), not a copy.
+
+**AC-1 (d), the injected-list test.** The step takes a socket, so `protocolsToEnable_givenSupportedList_keepsOnlySupportedTls12AndNewer` feeds a stand-in socket whose supported and default-enabled lists differ: all six names supported gives `[TLSv1.2, TLSv1.3]`; only TLS 1.2 supported gives `[TLSv1.2]`; TLS 1.2 supported but off by default still gives `[TLSv1.2, TLSv1.3]` (this is "where the platform supports them", read literally); nothing at or above TLS 1.2 and an unknown name gives an empty list. Mutation M-D11r (the list built from the enabled instead of the supported protocols) is detected by that test only; no socket-level test detects it, because both test providers give the same list either way.
+
+**AC-1 (e), the branch where the provider query failed at class initialisation.** The initialiser cannot be made to fail in a test (it runs once per class loader and the lists are final), so the code of the branch is called directly: `hardenSocket(socket, null, null)` on a stand-in socket that supports every old version applies exactly `[TLSv1.2, TLSv1.3]` and leaves the cipher suites alone (test `hardenSocket_withNullLists_stillAppliesTheProtocolFloorFromTheSocket`; mutation M-F1 detected). Before U-065 that branch applied nothing and the platform's defaults stood, which is "Not Failing Securely" (CWE-636, failing open); for protocols it now fails closed. The cipher suites in that branch deliberately stay as the platform enabled them (unchanged behaviour; Record 8 concerns protocols). A new consequence: if in that branch the platform throws from `getSupportedProtocols()`, an unchecked exception now leaves `createSocket` itself instead of the handshake (it fails closed). Probe I2 shows that both providers accept an empty protocol list (`setEnabledProtocols(new String[0])` accepted, zero enabled), so a platform that supports nothing at TLS 1.2 or above gets a socket that cannot handshake; no Android version this app supports (minSdk 21) is such a platform. The class-initialiser failure itself is not forced.
+
+**The `ALLOWED_PROTOCOLS` trade (story Scope Concern 7, for the product owner).** An allow-list never enables a name it does not know, including a future TLS version: enabling one needs one new entry in `ALLOWED_PROTOCOLS`. That reverses the "append unknown items" stance of `reorder` for protocols only; cipher suites keep it.
+
+**AC-4 (b) and (c), the layered probe.** Probe I2 (`evidence/I2-probe.txt`, key `j_layered_0`) shows that under the JDK provider a socket layered over a plain connection already carries the host as its server name before any factory step (`names=imap.right.test`), and normalises `host.example.` to `host.example` (`j_layered_6`). The layered shape therefore cannot tell the factory's step from the provider's; for the layered shape only "no exception and an `SSLSocket` is returned" is asserted for S2 to S5, and the statement for that shape rests on reading the code (both factories call the same `setSniHost` on both shapes; CR-013 Scope Concern D and story Scope Concern 9). A null layered host is accepted by this provider (`j_layered_10`), so it is asserted on the layered shape too (no exception). `j_unconnected_names=none`: an unconnected JDK socket has no name of its own, so J3's name can only be the factory's.
+
+**AC-6, per row of the Test impact table.**
+- Changed, with the reason "pinned the old behaviour" (renamed where the old name became false): Hardening `createSocket_legacyProtocols_remainEnabled_whenProviderSupportsThem` to `createSocket_legacyProtocols_notEnabled_althoughProviderEnablesThemByDefault` (BUG-019 comment kept and reworded to cite Record 8); Hardening `createSocket_enabledProtocols_areProviderSupportedMinusSslv3_inRecordedOrder` to `..._areProviderSupportedTls12AndNewer_inRecordedOrder`; JDK `createSocket_legacyProtocols_enabledByFactory_whereJdkProviderLeavesThemOff` to `createSocket_legacyProtocols_notEnabledByFactory_whereJdkProviderSupportsThem` (A1-P2 kept); JDK `..._areProviderSupportedMinusSslv3_inRecordedOrder_jdkProvider` to `..._areProviderSupportedTls12AndNewer_inRecordedOrder_jdkProvider` (A1-P1 kept); pinned `createSocket_implicit_leavesProviderDefaultsUntouched` and `createSocket_layered_leavesProviderDefaultsUntouched` to `createSocket_implicit_appliesDefaultFactoryProtocolAndCipherHandling` and `createSocket_layered_appliesDefaultFactoryProtocolAndCipherHandling`; JDK `pinnedFactory_createSocket_implicit_setsNoServerNames_jdkProvider` to `pinnedFactory_createSocket_implicit_setsDnsHostAsOnlyServerName_jdkProvider`. The class Javadoc passages that described the old behaviour are updated (comment-only).
+- Unchanged and passing: `protocolConstants_matchRecordedBaseline`, `reorder_removesEveryBlockedItem`, `reorder_ordersKnownItemsFirst_thenUnknownInOriginalOrder` (the constants are unchanged; the floor is a separate step, so AC-6 (c) did not force a change), `createSocket_layeredOverPlainSocket_appliesSameHardening`, `createSocket_enabledCipherSuites_areProviderDefaultsMinusBlockedWithKnownFirst`, `cipherConstants_matchRecordedBaseline`, `reorder_withNullBlocklistAndEmptyInput_behavesAsRecorded`, `createSocket_dnsHost_setsServerNameOnRealSocket`, `createSocket_ipv6EightGroupLiteralHost_leavesServerNamesUnset`, `handshake_enrolledCertificateForDifferentHostName_isAccepted`, `handshake_certificateOtherThanEnrolled_isRejected`, `PinnedCertificateSocketFactoryTest` (8), the eight original `DefaultTrustedSocketFactoryHandshakeTest` tests, `DefaultTrustedSocketFactorySniTest` (14, U-064's two included), `PinnedCertificateSocketFactoryExpiryTest`, `K9MailTransportTest`, `BackupImapStoreTest`, and the three guards of the JDK class.
+- AC-6 (e), the `SSLv2Hello` clause of the two A1-G2 guards: the guard code is unchanged and passes. After this story the factory never enables `SSLv2Hello` under either provider, so that clause can no longer fire; the DHE clause beside it still fires when the lists were computed under the JDK provider (SunJSSE's default suites contain `TLS_DHE_` suites), so the guard still stops a run that reuses a sandbox. This second option of AC-6 (e) is recorded in both class Javadocs.
+
+**AC-8, the conditions.** The loopback server got the smallest additive option, `LoopbackTlsTestServer.start(Mode, SSLContext, String[])`, which limits the server's TLS socket to the given versions; the two-argument `start` is as before. Probe I2 (Conscrypt): the provider-default client completes a handshake with a server limited to TLS 1.1 and with one limited to TLS 1.0 (`completed protocol=TLSv1.1`, `completed protocol=TLSv1`), so the desktop Conscrypt server can serve both; a client limited to TLS 1.2 and 1.3 is refused with `javax.net.ssl.SSLHandshakeException` (an `SSLException` subclass) and the server reports `FAILED`. Decision rows D3 (both versions), no D4, D5, D6 or D7. The control holds: with the floor removed (M-P1/M-P8, M-P2, M-P6 (ii) for the respective factory) the refusal tests fail because the handshake completes. (a) is shown by four tests (both factories, both shapes) that read the byte the server writes and assert the negotiated protocol `TLSv1.2`; (b) by eight tests (both factories, both shapes, TLS 1.1 and TLS 1.0). Under the JDK provider (b) is not asserted (its disabled-algorithms property refuses TLS 1.0 and 1.1 whatever the client enables), as the story allows.
+
+**AC-11, the records.** (a) Decided by the product owner on 2026-11-20: Record 8 (protocols: nothing older than TLS 1.2 for both factories; accepted cost: a server that offers nothing newer than TLS 1.1 can no longer be used) and Record 9 (the pinned factory gets the default factory's cipher-suite handling and server-name rule, "Same as default"), in the feasibility analysis `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`. Record 8 is in commit `6cc49ab4` (2026-11-20T19:36:14-06:00) and Record 9 in commit `bd1d5398` (2026-11-20T21:19:21-06:00); both are ancestors of HEAD, hence of the fix commit (`evidence/I0-baseline.txt`: `git log -S` lines and `record9-ancestor-exit=0`). (b) `SSLv2Hello` does not stay (Record 8). (c) Which criteria this story satisfies:
+
+| Bug criterion | Satisfied by | Status |
+|---------------|--------------|--------|
+| BUG-019 AC-1 | AC-1 (H2, J2: both providers, both shapes, precondition held) | Satisfied here |
+| BUG-019 AC-2 | AC-1 (c), AC-6 (a), (b): the two tests changed, not deleted or ignored, the BUG-019 comment kept and reworded; they fail under M-P1/M-P8 | Satisfied here |
+| BUG-019 AC-3 | AC-1 (a), (b), AC-9 (d), AC-10 | Satisfied here |
+| BUG-019 AC-4 | AC-6 | Satisfied here |
+| BUG-019 AC-5 | Record 8 | Exists; recorded |
+| BUG-020 AC-1 | Records 8 and 9 | Exists; recorded |
+| BUG-020 AC-2 | AC-2, AC-3, AC-4 | Satisfied here |
+| BUG-020 AC-3 | C1, C2, J3 changed; M-P2 (protocols), M-P4 (cipher suites, run on its own), M-P5 (server name) | Satisfied here |
+| BUG-020 AC-4 | none | Does not apply: the decision is "same handling" |
+| BUG-020 AC-5 | none in this story | NOT satisfied here: waits for the combined contract revision, CR-013 alternative (b), and a change record for the protocol and cipher statements (story Scope Concern 1) |
+| BUG-020 AC-6 | the trust tests unchanged; M-E4 and M-E5 re-run and detected | Satisfied here |
+| BUG-020 AC-7 | AC-10 | Satisfied here |
+| BUG-020 IC-1 | AC-9 (b), IC-2 | Satisfied here |
+
+(d) No edit was made to the bugs, the contract or any change record; the bugs' status changes are the pipeline's.
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->

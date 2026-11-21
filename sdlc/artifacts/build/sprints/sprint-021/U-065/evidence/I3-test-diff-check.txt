@@ -1,0 +1,122 @@
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -3,0 +4,2 @@ import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
+@@ -7,0 +10 @@ import org.junit.runner.RunWith;
+@@ -26,0 +30,5 @@ import static org.junit.Assert.fail;
+@@ -30,2 +38,3 @@ import static org.junit.Assert.fail;
+@@ -36,6 +45,11 @@ import static org.junit.Assert.fail;
+@@ -48,5 +62,5 @@ import static org.junit.Assert.fail;
+@@ -57,4 +71,6 @@ import static org.junit.Assert.fail;
+@@ -63 +79 @@ import static org.junit.Assert.fail;
+@@ -74,6 +90,2 @@ import static org.junit.Assert.fail;
+@@ -80,0 +93,5 @@ import static org.junit.Assert.fail;
+@@ -81,0 +99 @@ import static org.junit.Assert.fail;
+@@ -84,3 +102,5 @@ import static org.junit.Assert.fail;
+@@ -148,0 +169,6 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -331,3 +357,4 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -336 +363 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -344,0 +372,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -355,19 +384,5 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -376,2 +391,3 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -379,2 +395,4 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -382,9 +400,3 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -393 +405 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -395,0 +408 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -397,0 +411 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -401,2 +415,7 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -404 +423,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -406 +426 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -408,5 +428,4 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -449,0 +469,70 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -518,0 +608,142 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -3,0 +4 @@ import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
+@@ -15,0 +17,2 @@ import java.lang.reflect.Field;
+@@ -40,4 +43,5 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -63,7 +67,14 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -76,4 +87,11 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -83 +101 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -88,8 +106,13 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -114,0 +138,6 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -206,4 +235,5 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -212 +242 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -226,0 +257,2 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -238,2 +270,3 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -241,19 +274 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -263,6 +278,7 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -271 +287 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -274,0 +291 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -276 +293 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -290,5 +307,2 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -297,0 +312,5 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -301,9 +320,8 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -312,4 +330,2 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -316,0 +333,9 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -319,2 +344,10 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -322,0 +356,172 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -349,0 +555,104 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -72,0 +73,6 @@ import static org.junit.Assert.fail;
+@@ -82,2 +88,2 @@ import static org.junit.Assert.fail;
+@@ -105,0 +112,3 @@ import static org.junit.Assert.fail;
+@@ -116,3 +125,6 @@ import static org.junit.Assert.fail;
+@@ -271,0 +284,78 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
+== app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -2,0 +3 @@ package com.zegoggles.smssync.mail;
+@@ -14,0 +16,4 @@ import java.security.cert.CertificateException;
+@@ -33,2 +38,2 @@ import static org.junit.Assert.fail;
+@@ -40,4 +45,4 @@ import static org.junit.Assert.fail;
+@@ -47,4 +52,9 @@ import static org.junit.Assert.fail;
+@@ -52,4 +62,6 @@ import static org.junit.Assert.fail;
+@@ -63,0 +76,4 @@ import static org.junit.Assert.fail;
+@@ -68,3 +84,5 @@ import static org.junit.Assert.fail;
+@@ -77,3 +95,4 @@ import static org.junit.Assert.fail;
+@@ -82 +101 @@ import static org.junit.Assert.fail;
+@@ -84 +103,3 @@ import static org.junit.Assert.fail;
+@@ -88 +109,4 @@ import static org.junit.Assert.fail;
+@@ -122 +146,5 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -124 +152 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -125,0 +154 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -126,0 +156,2 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -127,0 +159 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -129,2 +161,3 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -132,0 +166 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -137,2 +171,3 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -141 +176 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -142,0 +178,4 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -143,0 +183,2 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -147,0 +189,5 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -149,2 +195,3 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -152,0 +200,4 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -197,0 +249,36 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -214,0 +302,98 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java', LF will be replaced by CRLF the next time Git touches it
+@@ -38,0 +39,5 @@ import javax.net.ssl.SSLSocket;
+@@ -79 +84,2 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -86 +92 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -94 +100,14 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -97 +116 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -109,0 +129,3 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java', LF will be replaced by CRLF the next time Git touches it
+ ...edCertificateSocketFactoryCreateSocketTest.java | 249 +++++++++--
+ .../DefaultTrustedSocketFactoryHandshakeTest.java  | 100 ++++-
+ .../DefaultTrustedSocketFactoryHardeningTest.java  | 377 +++++++++++++----
+ ...DefaultTrustedSocketFactoryJdkProviderTest.java | 465 +++++++++++++++++----
+ .../smssync/mail/ssl/LoopbackTlsTestServer.java    |  30 +-
+ 5 files changed, 1029 insertions(+), 192 deletions(-)
+untouched-exit=0
+732
+ignore-exit=1
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java:46: * kept. The last step is the protocol floor of U-065 (BUG-019; product owner decision Record 8 of
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java:357:     * AC-16 (first test), as changed by U-065 (AC-1 (b), BUG-019 AC-4): SSLv3 is not enabled; the
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java:391:    // DP-2 (decision point: TLS 1.0 and 1.1). Bug id: BUG-019, decided by the product owner on
+app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java:395:     * AC-16 (second test), as changed by U-065 (AC-1 (a), (b), (c); BUG-019 AC-1, AC-2): none of
+prod-clean-exit=0

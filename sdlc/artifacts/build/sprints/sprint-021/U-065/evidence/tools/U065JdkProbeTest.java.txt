@@ -1,0 +1,81 @@
+package com.zegoggles.smssync.mail.ssl;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.ConscryptMode;
+import org.robolectric.annotation.LooperMode;
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+
+import static org.robolectric.annotation.ConscryptMode.Mode.OFF;
+import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+
+/** THROWAWAY probe for U-065 step I2 under the JDK provider (same annotations as the JDK class). */
+@RunWith(RobolectricTestRunner.class)
+@ConscryptMode(OFF)
+@LooperMode(LEGACY)
+public class U065JdkProbeTest {
+
+    @Test
+    public void probe() throws Exception {
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(null, null, null);
+        out("provider", ctx.getProvider().getName());
+        SSLSocket u = (SSLSocket) ctx.getSocketFactory().createSocket();
+        out("unconnected_names", names(u));
+        u.close();
+        String[] hosts = {"imap.right.test", "192.168.1.10", "::1", "fe80::1",
+                "2001:0db8:0000:0000:0000:0000:0000:0001", "bad_host.example", "host.example.",
+                "-x.example", "", "   ", null};
+        for (int i = 0; i < hosts.length; i++) {
+            out("layered_" + i, "host=" + (hosts[i] == null ? "null" : "'" + hosts[i] + "'")
+                    + " " + layered(ctx, hosts[i]));
+        }
+        SSLSocket e = (SSLSocket) ctx.getSocketFactory().createSocket();
+        try {
+            e.setEnabledProtocols(new String[0]);
+            out("empty_protocols", "accepted enabled_count=" + e.getEnabledProtocols().length);
+        } catch (Exception ex) {
+            out("empty_protocols", "threw " + ex.getClass().getName());
+        }
+        e.close();
+    }
+
+    private static String layered(SSLContext ctx, String host) {
+        try (ServerSocket listener = LoopbackTlsTestServer.bindPlainLoopback();
+             Socket plain = LoopbackTlsTestServer.connectPlain(listener.getLocalPort());
+             Socket accepted = listener.accept()) {
+            SSLSocket s = (SSLSocket) ctx.getSocketFactory().createSocket(plain, host, listener.getLocalPort(), true);
+            String result = "names=" + names(s);
+            s.close();
+            return result;
+        } catch (Throwable t) {
+            return "threw " + t.getClass().getName();
+        }
+    }
+
+    private static String names(SSLSocket s) {
+        List<SNIServerName> n = s.getSSLParameters().getServerNames();
+        if (n == null || n.isEmpty()) {
+            return "none";
+        }
+        List<String> out = new ArrayList<>();
+        for (SNIServerName name : n) {
+            out.add(name instanceof SNIHostName ? ((SNIHostName) name).getAsciiName() : name.toString());
+        }
+        return String.join(",", out);
+    }
+
+    private static void out(String key, String value) {
+        System.out.println("U065-PROBE j_" + key + "=" + value);
+    }
+}

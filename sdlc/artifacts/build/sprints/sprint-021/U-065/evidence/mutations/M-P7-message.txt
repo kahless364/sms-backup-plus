@@ -1,0 +1,4 @@
+message="java.lang.AssertionError: the handshake against a server limited to TLSv1.1 must be refused, but it completed at TLSv1.1"
+message="com.google.common.truth.AssertionErrorWithFacts: pinned layered socket: TLSv1 must not be enabled; enabled=[TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]&#10;expected not to contain: TLSv1&#10;but was                : [TLSv1, TLSv1.1, TLSv1.2, TLSv1.3]"
+message="java.lang.AssertionError: the handshake against a server limited to TLSv1 must be refused, but it completed at TLSv1"
+message="com.google.common.truth.AssertionErrorWithFacts: layered socket for host &quot;imap.right.test&quot;: enabled protocols in order&#10;contents match, but order was wrong&#10;expected: [TLSv1.2, TLSv1.3]&#10;but was : [TLSv1.3, TLSv1.2]"

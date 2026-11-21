@@ -1,0 +1,27 @@
+IC-1 emulator check, story U-065. Run by the orchestrator.
+clock (host, UTC): 2026-11-21T05:29:51Z
+avd: Pixel_9_Pro (the only device attached; started by the orchestrator with the product owner's permission, answer "Start it for me")
+sdk: 36
+apk: app/build/outputs/apk/debug/app-debug.apk size=6622678
+apk sha256: d34f0d58c51c392dd47ba781ce1eed2c972f7fade5810fb4f3c5e5acb38a8415
+apk sha256 in hand-off (evidence/I9-checks.txt): d34f0d58c51c392dd47ba781ce1eed2c972f7fade5810fb4f3c5e5acb38a8415
+install: adb install -r -> Success (app data kept; no uninstall, no downgrade flag, no data cleared)
+versionCode before: 1602, lastUpdateTime before: 2026-11-12 13:40:46
+versionCode after: 1602, lastUpdateTime after: 2026-11-20 23:27:58 (device clock)
+run 1 (device 23:28:28): manual backup -> 'BackupWorker: nothing to backup' (0 items; the worker opens no connection) -> not conclusive
+data: one test SMS was then sent to the emulator through the emulator console (sender 5550165, text 'U-065 IC-1 emulator check test message'), under the product owner's standing statement that adding or deleting SMS messages on the emulator is safe. No setting was changed. The app did not ask for a password or a sign-in.
+run 2 lines (app pid, tag SMSBackup+):
+11-20 23:29:07.505  3421  3983 I SMSBackup+: BackupWorker: starting backup (1 messages)
+11-20 23:29:11.401  3421  3983 V SMSBackup+: BackupWorker: sending 1 SMS message(s) to server.
+11-20 23:29:14.287  3421  3983 D SMSBackup+: BackupWorker: watermark advanced for SMS to 1795238941414
+11-20 23:29:14.289  3421  3983 I SMSBackup+: BackupWorker: backup complete, backedUp=1
+count 'BackupWorker: starting backup (': 1 (N=1)
+count 'BackupWorker: backup complete, backedUp=': 1
+count FATAL EXCEPTION from the app's process: 0
+count SSLHandshakeException: 0
+count SSLProtocolException: 0
+count 'BackupWorker: unrecoverable error': 0
+verdict: PASS (start line with N=1, completion line, zero of the four error kinds)
+proves: after the change the app still connects to Gmail and completes a backup on Android 16 through the default factory.
+does not prove: that the removed TLS versions are gone (Android 16 does not offer them); anything about Android 11-era devices, the pinned factory, or physical devices.
+raw logcat and screenshots are kept outside the repository.

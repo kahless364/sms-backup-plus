@@ -1,0 +1,1 @@
+message="com.google.common.truth.AssertionErrorWithFacts: (iii) TLS 1.2 supported but off by default&#10;missing (1): TLSv1.2&#10;---&#10;expected   : [TLSv1.2, TLSv1.3]&#10;but was    : [TLSv1.3]"

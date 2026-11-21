@@ -1,6 +1,7 @@
 package com.zegoggles.smssync.mail.ssl;
 
 import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
+import com.fsck.k9.mail.ssl.TrustedSocketFactory;
 import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
 
 import org.junit.Before;
@@ -13,6 +14,8 @@ import org.robolectric.annotation.LooperMode;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
@@ -37,10 +40,11 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
 /**
  * Characterisation tests for {@link DefaultTrustedSocketFactory} that run on the JDK's own TLS
  * provider (SunJSSE) instead of the Conscrypt provider that Robolectric installs by default
- * (story U-063, acceptance criteria AC-3, AC-4 and the supported-protocols clause of AC-16). It also
- * holds AC-19 for the pinned factory, because that check needs the same provider: under Conscrypt the
- * server-name observable reads nothing whatever is set, so mutation M-E2 was not detected there
- * (product owner decision of 2026-11-20).
+ * (story U-063, acceptance criteria AC-3, AC-4 and the supported-protocols clause of AC-16; changed and
+ * extended by story U-065). It also holds the pinned factory's checks that need this provider: under
+ * Conscrypt the server-name observable reads nothing whatever is set, so mutation M-E2 was not detected
+ * there (product owner decision of 2026-11-20), and only this provider supports old protocols while
+ * leaving them off by default.
  *
  * <p><b>Why this class exists.</b> Under Conscrypt, the default test provider, three things cannot
  * be observed. The socket reports no server names before or after a handshake whatever the factory
@@ -60,39 +64,58 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
  * every run. The annotation is deprecated in this Robolectric version, so the compiler prints a
  * deprecation note for this file; that note is expected.
  *
- * <p><b>What these tests prove.</b> With the JDK provider: the factory's socket for a DNS host
- * carries exactly that host as its one server name; the socket for an eight-group IPv6 literal
- * carries none and creating it does not throw (RFC 6066 section 3: the server name list holds DNS
- * names, never IP literals); the factory enables exactly the provider's supported protocols minus
- * SSLv3, with TLS 1.2, 1.1 and 1.0 first in that order; and the factory enables TLS 1.0 and 1.1 on
- * a provider that leaves them off by default (RFC 8996 deprecates both; this is the decision
- * point DP-2 finding, recorded as a characterisation, not as approval).
+ * <p><b>What these tests prove.</b> With the JDK provider: the default factory's socket for a DNS host
+ * carries exactly that host as its one server name; the socket for an eight-group IPv6 literal carries
+ * none and creating it does not throw (RFC 6066 section 3: the server name list holds DNS names, never IP
+ * literals). Since U-065 (BUG-019; product owner decision Record 8 of 2026-11-20) the default factory
+ * enables exactly the provider's supported protocols that are TLS 1.2 or newer, TLS 1.2 first, and none of
+ * TLS 1.0, TLS 1.1, SSLv3 and SSLv2Hello on the direct or the layered socket, although this provider
+ * supports all four (until U-065 it enabled TLS 1.0, 1.1 and SSLv2Hello here; RFC 8996 deprecates TLS 1.0
+ * and 1.1). For the pinned-certificate factory (BUG-020; Record 9, "Same as default"): its sockets enable
+ * exactly TLS 1.2 and 1.3 on both shapes, so it gains no protocol this provider leaves off; its direct
+ * socket for a DNS host carries that host as its only server name, with the floor and the default
+ * factory's cipher order still in place after that step; for an IPv4-form host, a host with a colon, a
+ * null, empty or blank host, and a name SNIHostName rejects it sets no server name and does not throw
+ * (statements S2 to S5 of CR-013); and its sockets match the default factory's in protocols, cipher suites
+ * and server names (U-065 AC-5).
  *
  * <p><b>What they cannot prove.</b>
  * <ul>
  *   <li>This provider is neither the app's runtime provider nor a device's. Nothing here shows what
  *       a device's TLS stack sends or enables.
  *   <li>"Enabled" is not "negotiable". The JDK security property for disabled algorithms lists
- *       TLS 1.0 and 1.1 and may still refuse them during a handshake, so the tests assert only
- *       what the factory enables.
- *   <li>No handshake is run in this class: every socket here is unconnected. Rejection of
- *       certificates, host names and resumed sessions is the business of the handshake classes.
+ *       TLS 1.0 and 1.1 and refuses them in a handshake whatever the client enables, so the tests
+ *       assert only what the factory enables; the handshake classes show what is negotiated.
+ *   <li>No handshake is run in this class: every socket here is unconnected, or layered over a plain
+ *       connection that never carries TLS. Rejection of certificates, host names and resumed sessions
+ *       is the business of the handshake classes.
+ *   <li>On the layered shape this provider sets the host as server name by itself (U-065 probe), so
+ *       the factories' server-name step cannot be observed there; for that shape only the absence of an
+ *       exception is asserted, and the statement rests on reading the code (CR-013 Scope Concern D).
+ *   <li>Whether the protocol list is built from the supported or the enabled protocols is no longer
+ *       visible here (both give TLS 1.2 and 1.3 on this provider); the stand-in socket test of the
+ *       Hardening class covers it.
  *   <li>The wire-level contents of a client hello are not examined.
  * </ul>
  *
- * <p><b>Mutations that must break each test</b> (ids as in the U-063 mutation log).
+ * <p><b>Mutations that must break each test</b> (ids as in the U-063 and U-065 mutation logs).
  * <ul>
  *   <li>AC-3: the guard and the safety net in {@code setSniViaSSLParameters} both removed (M-A1,
  *       the exception escapes {@code createSocket}); {@code setSniHost} reporting a name for an IP
  *       literal (M-A3).
- *   <li>AC-4: {@code setSniHost} made a no-op or deleted from {@code createSocket} (M-A4); the
- *       host replaced by another name (M-A3).
- *   <li>AC-16 first test: the protocol list built from the enabled instead of the supported
- *       protocols (M-D11); SSLv3 no longer blocked (M-D2); the known order changed (M-D5); the
- *       hardening call removed (M-D8) or its protocol part removed (M-D13).
- *   <li>AC-16 second test: M-D11; TLS 1.0 added to the blocked protocols (M-D12).
- *   <li>AC-19 (pinned factory): the pinned factory's {@code createSocket} made to set a server name
- *       (M-E2).
+ *   <li>AC-4: {@code setSniHost} made a no-op or deleted from {@code createSocket} (M-A4, and U-065's
+ *       M-P6 (iii)); the host replaced by another name (M-A3).
+ *   <li>AC-16, both tests as changed by U-065: the TLS 1.2 floor removed (M-P1/M-P8), or the old list
+ *       given back to the default factory alone (M-P6 (ii)).
+ *   <li>AC-19 as changed by U-065 (pinned, DNS host): the pinned server-name step removed (M-P5); the
+ *       pinned cipher handling removed (M-P4) or one of its entries swapped (M-P6 (i)); the pinned list
+ *       widened (M-P3); the floor removed (M-P1/M-P8).
+ *   <li>U-065 pinned exact-protocol test: M-P3, M-P1/M-P8. It compares sets, so it does not detect a
+ *       layered socket left untouched (M-P7): this provider already enables exactly TLS 1.3 and 1.2 there;
+ *       the parity test detects M-P7 by order.
+ *   <li>U-065 pinned rejected-name test: the catch in {@code setSniViaSSLParameters} removed (M-S5).
+ *   <li>U-065 parity test: each of M-P2 to M-P7 and M-S5, in particular the three one-factory drifts
+ *       M-P6 (i) to (iii).
  * </ul>
  *
  * <p><b>Guard A1-G3 is a permanent tripwire.</b> If the JDK's TLS classes were initialised under
@@ -111,6 +134,12 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
     private static final String IPV6_EIGHT_GROUP_LITERAL = "2001:0db8:0000:0000:0000:0000:0000:0001";
     private static final String DNS_HOST = "imap.right.test";
     private static final int CIPHER_ENTRIES_IN_MESSAGES = 5;
+
+    /** The allowed protocols of the factory (U-065, Record 8). */
+    private static final String[] ALLOWED_PROTOCOLS_BASELINE = {"TLSv1.2", "TLSv1.3"};
+
+    /** Protocol versions older than TLS 1.2 that must never be enabled (Record 8). */
+    private static final String[] OLD_PROTOCOLS = {"TLSv1", "TLSv1.1", "SSLv3", "SSLv2Hello"};
 
     /**
      * Isolation guards, in this order (A-W2): A1-G3 first, so that nothing touches the factory's
@@ -203,13 +232,14 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
     }
 
     /**
-     * AC-16 (supported-protocols clause): the factory enables the provider's supported protocols
-     * minus SSLv3, with TLS 1.2, 1.1 and 1.0 first in that order. Precondition A1-P1: on this
-     * provider the supported set differs from the default enabled set, otherwise this class cannot
-     * tell a list built from the supported protocols from one built from the enabled ones.
+     * AC-16 (supported-protocols clause), as changed by U-065 (AC-1 (b), BUG-019 AC-4): the factory
+     * enables exactly the provider's supported protocols that are TLS 1.2 or newer, TLS 1.2 first, and
+     * not SSLv3. Precondition A1-P1: on this provider the supported set differs from the default enabled
+     * set. Since U-065 both sets give the same list here, so this test no longer tells them apart; the
+     * stand-in socket test of the Hardening class does (AC-1 (d)).
      */
     @Test
-    public void createSocket_enabledProtocols_areProviderSupportedMinusSslv3_inRecordedOrder_jdkProvider()
+    public void createSocket_enabledProtocols_areProviderSupportedTls12AndNewer_inRecordedOrder_jdkProvider()
             throws Exception {
         SSLSocket plain = defaultSocket();
         Set<String> supported;
@@ -224,6 +254,8 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
                 + "protocols, so this class cannot tell supported from enabled; supported="
                 + supported + ", default enabled=" + defaultEnabled)
                 .that(supported.equals(defaultEnabled)).isFalse();
+        assertWithMessage("precondition: the provider supports TLS 1.2; supported=" + supported)
+                .that(supported).contains("TLSv1.2");
 
         SSLSocket socket = hardenedSocket(DNS_HOST);
         List<String> enabled;
@@ -235,45 +267,30 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
 
         assertThat(enabled).doesNotContain("SSLv3");
         Set<String> expected = new HashSet<>(supported);
-        expected.remove("SSLv3");
-        assertThat(new HashSet<>(enabled)).isEqualTo(expected);
+        expected.retainAll(Arrays.asList(ALLOWED_PROTOCOLS_BASELINE));
+        assertWithMessage("enabled protocols must be the supported protocols that are TLS 1.2 or newer")
+                .that(new HashSet<>(enabled)).isEqualTo(expected);
         assertThat(enabled).containsNoDuplicates();
-
-        // Among the protocols present, TLSv1.2 precedes TLSv1.1 precedes TLSv1, and all of
-        // them precede any other protocol.
-        List<String> known = Arrays.asList("TLSv1.2", "TLSv1.1", "TLSv1");
-        int last = -1;
-        for (String name : known) {
-            int index = enabled.indexOf(name);
-            if (index >= 0) {
-                assertWithMessage(name + " must come after the preceding known protocol in " + enabled)
-                        .that(index).isGreaterThan(last);
-                last = index;
-            }
-        }
-        for (int i = 0; i < enabled.size(); i++) {
-            if (!known.contains(enabled.get(i))) {
-                assertWithMessage(enabled.get(i) + " must come after every known protocol in "
-                        + enabled).that(i).isGreaterThan(last);
-            }
-        }
+        assertWithMessage("TLSv1.2 must come first in " + enabled).that(enabled.get(0)).isEqualTo("TLSv1.2");
     }
 
     /**
-     * AC-16 (second test, JDK form; decision point DP-2): TLS 1.0 and TLS 1.1 are enabled by the
-     * factory although this provider leaves them off by default. RFC 8996 deprecates both. This
-     * records the factory's own part in enabling them; it is a characterisation of present
-     * behaviour, not an endorsement. Precondition A1-P2: for each of the two the default socket
-     * lists it as supported and not enabled, otherwise the test cannot tell the factory from the
-     * provider. Bug id: BUG-019 (filed; Option A applies, so this test passes as a characterisation).
+     * AC-16 (second test, JDK form; decision point DP-2), as changed by U-065 (AC-1 (a), (b), (c);
+     * BUG-019 AC-1, AC-2): the factory enables none of TLSv1, TLSv1.1, SSLv3 and SSLv2Hello, on the
+     * direct and on the layered socket, although this provider supports all four; TLS 1.2 and 1.3 are
+     * enabled if and only if supported. Precondition A1-P2: TLSv1 and TLSv1.1 are supported and not
+     * enabled by default, so the test is made against a provider that supports them. Until U-065 the
+     * factory enabled TLS 1.0, 1.1 and SSLv2Hello here (BUG-019); decided by the product owner on
+     * 2026-11-20 (Record 8).
      */
     @Test
-    public void createSocket_legacyProtocols_enabledByFactory_whereJdkProviderLeavesThemOff()
+    public void createSocket_legacyProtocols_notEnabledByFactory_whereJdkProviderSupportsThem()
             throws Exception {
         List<String> legacy = Arrays.asList("TLSv1", "TLSv1.1");
         SSLSocket plain = defaultSocket();
+        List<String> supported;
         try {
-            List<String> supported = Arrays.asList(plain.getSupportedProtocols());
+            supported = Arrays.asList(plain.getSupportedProtocols());
             List<String> defaultEnabled = Arrays.asList(plain.getEnabledProtocols());
             for (String name : legacy) {
                 assertWithMessage("A1-P2: " + name + " must be supported and not enabled by default "
@@ -287,39 +304,227 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
 
         SSLSocket socket = hardenedSocket(DNS_HOST);
         try {
-            List<String> enabled = Arrays.asList(socket.getEnabledProtocols());
-            for (String name : legacy) {
-                assertWithMessage(name + " should be enabled by the factory, enabled=" + enabled)
-                        .that(enabled).contains(name);
-            }
+            assertProtocolFloor("default factory, direct socket", supported,
+                    Arrays.asList(socket.getEnabledProtocols()));
         } finally {
             closeQuietly(socket);
+        }
+        try (Layered layered = new Layered(
+                new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication()), DNS_HOST)) {
+            assertProtocolFloor("default factory, layered socket", supported,
+                    Arrays.asList(layered.socket.getEnabledProtocols()));
         }
     }
 
     /**
-     * AC-19, implicit shape, unconnected: the pinned factory's socket for the DNS host reports no server
-     * name. The control is AC-4 in this class, which shows that the observable can report a name on this
-     * provider. The mutation that must break this test is M-E2 (the pinned factory made to set a server
-     * name).
-     *
-     * <p>What it cannot prove: this is a desktop JDK provider, not a device's. The environment
-     * diagnostic's capture of the first handshake message found that the default test provider puts a
-     * name into the client hello on its own for both factories, so "the factory sets no name" is not
-     * "no name is sent". The layered shape is not asserted, because a provider may add a name itself.
+     * AC-19 as changed by U-065 (AC-4 (a), (d); BUG-020 AC-2, AC-3; CR-013 S1 and S6): the pinned
+     * factory's direct socket for a DNS host carries exactly one server name, an SNIHostName equal to
+     * the host, and on the same socket, after that step, exactly TLS 1.2 and 1.3 and the default
+     * factory's cipher suites in the default factory's order. Precondition: an unconnected socket of this
+     * provider carries no server name of its own, so the name can only be the factory's (U-063 mutation
+     * M-E2-jdk showed that this observable reports what the factory sets). Control: the default factory's
+     * createSocket_dnsHost_setsServerNameOnRealSocket. The layered shape is not asserted for the name:
+     * on this provider a layered socket already carries the host before any factory step (U-065 probe).
      */
     @Test
-    public void pinnedFactory_createSocket_implicit_setsNoServerNames_jdkProvider() throws Exception {
-        SSLSocket socket = (SSLSocket) new PinnedCertificateSocketFactory(
-                RuntimeEnvironment.getApplication(), DNS_HOST, certificate(OTHER_HOST_CERT))
-                .createSocket(null, DNS_HOST, 993, null);
+    public void pinnedFactory_createSocket_implicit_setsDnsHostAsOnlyServerName_jdkProvider() throws Exception {
+        SSLSocket plain = defaultSocket();
         try {
+            assertWithMessage("precondition: an unconnected default socket carries no server name")
+                    .that(serverNames(plain)).isEmpty();
+        } finally {
+            closeQuietly(plain);
+        }
+        SSLSocket socket = pinnedSocket(DNS_HOST);
+        SSLSocket reference = null;
+        try {
+            reference = hardenedSocket(DNS_HOST);
             assertThat(socket).isInstanceOf(SSLSocket.class);
             List<SNIServerName> names = socket.getSSLParameters().getServerNames();
-            assertWithMessage("server names on the pinned implicit socket")
-                    .that(names == null || names.isEmpty()).isTrue();
+            assertWithMessage("server names on the pinned implicit socket").that(names).isNotNull();
+            assertThat(names).hasSize(1);
+            assertThat(names.get(0)).isInstanceOf(SNIHostName.class);
+            assertThat(((SNIHostName) names.get(0)).getAsciiName()).isEqualTo(DNS_HOST);
+            assertWithMessage("AC-4 (d): protocols on the same socket after the server-name step")
+                    .that(Arrays.asList(socket.getEnabledProtocols())).containsExactly("TLSv1.2", "TLSv1.3");
+            assertWithMessage("AC-4 (d): cipher suites on the same socket after the server-name step,"
+                    + " in the default factory's order")
+                    .that(Arrays.asList(socket.getEnabledCipherSuites()))
+                    .containsExactlyElementsIn(Arrays.asList(reference.getEnabledCipherSuites())).inOrder();
         } finally {
             closeQuietly(socket);
+            if (reference != null) {
+                closeQuietly(reference);
+            }
+        }
+    }
+
+    /**
+     * U-065 AC-2 (a), (c) (BUG-020, first refinement of its Suggested Approach): the pinned factory's
+     * direct and layered sockets enable exactly TLS 1.2 and TLS 1.3 on this provider, which supports
+     * SSLv3, TLS 1.0, TLS 1.1 and SSLv2Hello and leaves them off by default. A pinned factory that took
+     * the default factory's old list (every supported protocol except SSLv3) would add TLSv1, TLSv1.1 and
+     * SSLv2Hello here and fail. Mutations: M-P3 (that widening), M-P1/M-P8 (the floor removed). It
+     * compares sets, so a socket the factory left untouched passes it on this provider (its defaults are
+     * TLS 1.3 and 1.2); the parity test below catches that by order (M-P7).
+     */
+    @Test
+    public void pinnedFactory_createSocket_enablesExactlyTls12AndTls13_bothShapes_jdkProvider() throws Exception {
+        SSLSocket plain = defaultSocket();
+        List<String> supported;
+        List<String> defaultEnabled;
+        try {
+            supported = Arrays.asList(plain.getSupportedProtocols());
+            defaultEnabled = Arrays.asList(plain.getEnabledProtocols());
+        } finally {
+            closeQuietly(plain);
+        }
+        for (String name : OLD_PROTOCOLS) {
+            assertWithMessage("precondition: " + name + " must be supported and not enabled by default on"
+                    + " this provider; supported=" + supported + ", default enabled=" + defaultEnabled)
+                    .that(supported.contains(name) && !defaultEnabled.contains(name)).isTrue();
+        }
+
+        SSLSocket direct = pinnedSocket(DNS_HOST);
+        try {
+            List<String> enabled = Arrays.asList(direct.getEnabledProtocols());
+            assertWithMessage("pinned direct socket").that(enabled).containsExactly("TLSv1.2", "TLSv1.3");
+            assertProtocolFloor("pinned direct socket", supported, enabled);
+        } finally {
+            closeQuietly(direct);
+        }
+        try (Layered layered = new Layered(pinnedFactory(), DNS_HOST)) {
+            List<String> enabled = Arrays.asList(layered.socket.getEnabledProtocols());
+            assertWithMessage("pinned layered socket").that(enabled).containsExactly("TLSv1.2", "TLSv1.3");
+            assertProtocolFloor("pinned layered socket", supported, enabled);
+        }
+    }
+
+    /**
+     * U-065 AC-4, statements S2, S3 and S4 of CR-013 for the pinned factory: for an IPv4-form host, a
+     * host with a colon, and a null, empty or blank host, the direct socket carries no server name and
+     * createSocket does not throw; the layered socket is created without an exception (AC-4 (b), (c): on
+     * this provider a layered socket may carry a name the provider set itself, so only the absence of an
+     * exception is asserted there; this provider accepts a null layered host, U-065 probe). Every host is
+     * tried before the assertion, so a failure lists all of them. These hold with or without the step
+     * (the shared guard skips them); they fail if the pinned path ever sets a name for them (S6).
+     */
+    @Test
+    public void pinnedFactory_createSocket_ipLiteralAndBlankHosts_setNoServerName_jdkProvider() throws Exception {
+        String[] hosts = {"192.168.1.10", "::1", "fe80::1", IPV6_EIGHT_GROUP_LITERAL, null, "", "   "};
+        List<String> problems = new ArrayList<>();
+        for (String host : hosts) {
+            SSLSocket direct;
+            try {
+                direct = pinnedSocket(host);
+            } catch (RuntimeException e) {
+                problems.add("direct " + quote(host) + " threw " + e);
+                continue;
+            }
+            try {
+                List<String> names = serverNames(direct);
+                if (!names.isEmpty()) {
+                    problems.add("direct " + quote(host) + " carries server names " + names);
+                }
+            } finally {
+                closeQuietly(direct);
+            }
+            try (Layered layered = new Layered(pinnedFactory(), host)) {
+                // created without an exception; the cast in Layered checks that it is an SSLSocket
+            } catch (RuntimeException e) {
+                problems.add("layered " + quote(host) + " threw " + e);
+            }
+        }
+        assertWithMessage("S2 to S4 on the pinned factory; hosts tried: " + Arrays.toString(hosts))
+                .that(problems).isEmpty();
+    }
+
+    /**
+     * U-065 AC-4, statement S5 of CR-013 for the pinned factory (the call-through test the U-064 reviews
+     * asked for): for each name that passes the IP/blank guard and that SNIHostName rejects, the guard
+     * answers false, the pinned factory's direct createSocket throws nothing and its socket carries no
+     * server name, and the layered createSocket throws nothing. Only the catch of IllegalArgumentException
+     * in DefaultTrustedSocketFactory.setSniViaSSLParameters provides this; the pinned factory reaches it
+     * through setSniHost. Mutation: that catch removed (M-S5, the edit of U-064's M-N2).
+     */
+    @Test
+    public void pinnedFactory_createSocket_nameRejectedBySniHostName_doesNotThrowAndSetsNoServerName_jdkProvider()
+            throws Exception {
+        String[] names = {"bad_host.example", "host.example.", "-x.example"};
+        java.lang.reflect.Method guard = DefaultTrustedSocketFactory.class
+                .getDeclaredMethod("isIpOrBlankHostname", String.class);
+        guard.setAccessible(true);
+        List<String> escaped = new ArrayList<>();
+
+        for (String name : names) {
+            assertWithMessage("isIpOrBlankHostname(\"" + name + "\") must be false, so the name reaches"
+                    + " SNIHostName").that((Boolean) guard.invoke(null, name)).isFalse();
+            SSLSocket direct;
+            try {
+                direct = pinnedSocket(name);
+            } catch (RuntimeException e) {
+                escaped.add("direct " + name + " -> " + e);
+                continue;
+            }
+            try {
+                assertWithMessage("server names on the pinned direct socket for \"" + name + "\"")
+                        .that(serverNames(direct)).isEmpty();
+            } finally {
+                closeQuietly(direct);
+            }
+            try (Layered layered = new Layered(pinnedFactory(), name)) {
+                // created without an exception
+            } catch (RuntimeException e) {
+                escaped.add("layered " + name + " -> " + e);
+            }
+        }
+        assertWithMessage("the pinned createSocket must not throw for a name SNIHostName rejects; names"
+                + " tried: " + Arrays.toString(names) + "; escaped").that(escaped).isEmpty();
+    }
+
+    /**
+     * U-065 AC-5 and AC-3 (a) (JDK provider): for each host, the pinned factory's direct socket and the
+     * default factory's direct socket have the same enabled protocols (as a set and in order), the same
+     * enabled cipher suites in the same order, and the same server names; for a DNS host the protocols and
+     * cipher suites of the two layered sockets are compared too (their names are not: the provider sets
+     * them itself). Precondition: the default factory's cipher order is not the provider's own, so parity
+     * cannot hold on provider defaults. A drift of one factory's protocol, cipher or server-name handling
+     * fails here (M-P6 (i) to (iii)). It does not prescribe how the code is shared.
+     */
+    @Test
+    public void pinnedAndDefaultFactories_sameProtocolsCiphersAndServerNames_jdkProvider() throws Exception {
+        SSLSocket plain = defaultSocket();
+        SSLSocket probe = hardenedSocket(DNS_HOST);
+        try {
+            assertWithMessage("precondition: the default factory's cipher order must differ from the"
+                    + " provider's own")
+                    .that(Arrays.asList(probe.getEnabledCipherSuites()))
+                    .isNotEqualTo(Arrays.asList(plain.getEnabledCipherSuites()));
+        } finally {
+            closeQuietly(plain);
+            closeQuietly(probe);
+        }
+
+        String[] hosts = {DNS_HOST, "192.168.1.10", "::1", "", null, "bad_host.example"};
+        for (String host : hosts) {
+            SSLSocket pinned = pinnedSocket(host);
+            SSLSocket reference = null;
+            try {
+                reference = hardenedSocket(host);
+                assertSameHandling("direct socket for host " + quote(host), reference, pinned);
+                assertWithMessage("server names, direct socket for host " + quote(host))
+                        .that(serverNames(pinned)).isEqualTo(serverNames(reference));
+            } finally {
+                closeQuietly(pinned);
+                if (reference != null) {
+                    closeQuietly(reference);
+                }
+            }
+        }
+        try (Layered pinned = new Layered(pinnedFactory(), DNS_HOST);
+             Layered reference = new Layered(
+                     new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication()), DNS_HOST)) {
+            assertSameHandling("layered socket for host " + quote(DNS_HOST), reference.socket, pinned.socket);
         }
     }
 
@@ -345,6 +550,110 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
     private static SSLSocket hardenedSocket(String host) throws Exception {
         return (SSLSocket) new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication())
                 .createSocket(null, host, 993, null);
+    }
+
+    /** The pinned factory, built with the DNS host; the other-host leaf is enrolled (no handshake here). */
+    private static PinnedCertificateSocketFactory pinnedFactory() throws Exception {
+        return new PinnedCertificateSocketFactory(RuntimeEnvironment.getApplication(), DNS_HOST,
+                certificate(OTHER_HOST_CERT));
+    }
+
+    /** The pinned factory's own socket for the given host, unconnected. */
+    private static SSLSocket pinnedSocket(String host) throws Exception {
+        return (SSLSocket) pinnedFactory().createSocket(null, host, 993, null);
+    }
+
+    /** The ASCII server names the socket reports; empty for null or none. */
+    private static List<String> serverNames(SSLSocket socket) {
+        List<SNIServerName> names = socket.getSSLParameters().getServerNames();
+        List<String> out = new ArrayList<>();
+        if (names != null) {
+            for (SNIServerName name : names) {
+                out.add(name instanceof SNIHostName ? ((SNIHostName) name).getAsciiName() : name.toString());
+            }
+        }
+        return out;
+    }
+
+    /** AC-1 (a) and (b) for one socket: none of the old four; TLS 1.2 and 1.3 each enabled iff supported. */
+    private static void assertProtocolFloor(String label, List<String> supported, List<String> enabled) {
+        for (String old : OLD_PROTOCOLS) {
+            assertWithMessage(label + ": " + old + " must not be enabled; enabled=" + enabled)
+                    .that(enabled).doesNotContain(old);
+        }
+        for (String modern : ALLOWED_PROTOCOLS_BASELINE) {
+            assertWithMessage(label + ": " + modern + " enabled must equal " + modern + " supported;"
+                    + " supported=" + supported + ", enabled=" + enabled)
+                    .that(enabled.contains(modern)).isEqualTo(supported.contains(modern));
+        }
+        Set<String> expected = new HashSet<>(supported);
+        expected.retainAll(Arrays.asList(ALLOWED_PROTOCOLS_BASELINE));
+        assertWithMessage(label + ": the enabled set must be the supported protocols that are TLS 1.2 or"
+                + " newer").that(new HashSet<>(enabled)).isEqualTo(expected);
+    }
+
+    /** Protocols as a set and in order, and cipher suites in order, of candidate against reference. */
+    private static void assertSameHandling(String label, SSLSocket reference, SSLSocket candidate) {
+        List<String> expectedProtocols = Arrays.asList(reference.getEnabledProtocols());
+        List<String> actualProtocols = Arrays.asList(candidate.getEnabledProtocols());
+        assertWithMessage(label + ": enabled protocols as a set")
+                .that(new HashSet<>(actualProtocols)).isEqualTo(new HashSet<>(expectedProtocols));
+        assertWithMessage(label + ": enabled protocols in order")
+                .that(actualProtocols).containsExactlyElementsIn(expectedProtocols).inOrder();
+        assertWithMessage(label + ": enabled cipher suites in order")
+                .that(Arrays.asList(candidate.getEnabledCipherSuites()))
+                .containsExactlyElementsIn(Arrays.asList(reference.getEnabledCipherSuites())).inOrder();
+    }
+
+    private static String quote(String host) {
+        return host == null ? "null" : "\"" + host + "\"";
+    }
+
+    private static void quietClose(java.io.Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException ignored) {
+                // nothing to do for a test socket
+            }
+        }
+    }
+
+    /** A socket a factory layered over a fresh plain loopback connection, with the plain sockets it needs. */
+    private static final class Layered implements java.io.Closeable {
+        private final ServerSocket listener;
+        private final Socket client;
+        private final Socket accepted;
+        private final SSLSocket socket;
+
+        Layered(TrustedSocketFactory factory, String host) throws Exception {
+            ServerSocket l = LoopbackTlsTestServer.bindPlainLoopback();
+            Socket c = null;
+            Socket a = null;
+            SSLSocket s;
+            try {
+                c = LoopbackTlsTestServer.connectPlain(l.getLocalPort());
+                a = l.accept();
+                s = (SSLSocket) factory.createSocket(c, host, l.getLocalPort(), null);
+            } catch (Exception | Error e) {
+                quietClose(c);
+                quietClose(a);
+                quietClose(l);
+                throw e;
+            }
+            listener = l;
+            client = c;
+            accepted = a;
+            socket = s;
+        }
+
+        @Override
+        public void close() {
+            quietClose(socket);
+            quietClose(client);
+            quietClose(accepted);
+            quietClose(listener);
+        }
     }
 
     private static void closeQuietly(SSLSocket socket) {

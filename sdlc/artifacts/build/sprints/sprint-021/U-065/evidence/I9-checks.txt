@@ -1,0 +1,25 @@
+732
+713
+ M app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java
+ M app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+ M k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java
+app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java
+6d9a52e7fa59c26a9993da0611e6b50fd8266704
+--- build-file diff stat (empty expected)
+vm-exit=0
+--- K9MailTransport / TlsTestFixtures diff stat (empty expected)
+app/src/main/java/com/zegoggles/smssync/mail/transport/K9MailTransport.java:103:     *   <li>{@code SYSTEM_VALIDATED} → {@code new DefaultTrustedSocketFactory(context)}</li>
+app/src/main/java/com/zegoggles/smssync/mail/transport/K9MailTransport.java:104:     *   <li>{@code PINNED_CERTIFICATE} → {@code new PinnedCertificateSocketFactory(context, host, pinnedCert)}</li>
+app/src/main/java/com/zegoggles/smssync/mail/transport/K9MailTransport.java:145:            return new PinnedCertificateSocketFactory(context, host, config.pinnedCert);
+app/src/main/java/com/zegoggles/smssync/mail/transport/K9MailTransport.java:148:        return new DefaultTrustedSocketFactory(context);
+k9mail-vendored/src/main/java/com/fsck/k9/mail/Transport.java:26:            return new SmtpTransport(storeConfig, new DefaultTrustedSocketFactory(context));
+k9mail-vendored/src/main/java/com/fsck/k9/mail/store/RemoteStore.java:52:                        new DefaultTrustedSocketFactory(context),
+k9mail-vendored/src/main/java/com/fsck/k9/mail/store/RemoteStore.java:56:                        new DefaultTrustedSocketFactory(context));
+ignore-exit=1
+6622678 Nov 20 23:15 app/build/outputs/apk/debug/app-debug.apk
+d34f0d58c51c392dd47ba781ce1eed2c972f7fade5810fb4f3c5e5acb38a8415 *app/build/outputs/apk/debug/app-debug.apk

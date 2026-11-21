@@ -1,0 +1,2 @@
+message="com.google.common.truth.AssertionErrorWithFacts: server names, direct socket for host &quot;imap.right.test&quot;&#10;expected to be empty&#10;but was: [imap.right.test]"
+message="com.google.common.truth.AssertionErrorWithFacts: expected not to be: null"

@@ -1,0 +1,25 @@
+app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java
+@@ -90,0 +91,10 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -93 +103 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -105 +115,2 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -107 +118 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -116,2 +127 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -149,0 +160,27 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -182,6 +219,20 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -188,0 +240 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
+@@ -19,0 +20 @@ import com.fsck.k9.mail.MessagingException;
+@@ -22,0 +24 @@ import javax.net.ssl.SSLContext;
+@@ -51,0 +54,9 @@ import java.util.Arrays;
+@@ -80,0 +92 @@ public class PinnedCertificateSocketFactory implements TrustedSocketFactory {
+@@ -82 +94 @@ public class PinnedCertificateSocketFactory implements TrustedSocketFactory {
+@@ -84 +96 @@ public class PinnedCertificateSocketFactory implements TrustedSocketFactory {
+@@ -85,0 +98,6 @@ public class PinnedCertificateSocketFactory implements TrustedSocketFactory {
+43e5a78ead7c4c32a6af2734514ab8ba5d5ccbd3
+21cc5f345977ab6fa161b2aa6925a04aea6a1479
+6d9a52e7fa59c26a9993da0611e6b50fd8266704
+app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java:101:        DefaultTrustedSocketFactory.hardenSocket(sslSocket);
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java:213:        hardenSocket(sslSocket);
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java:226:    public static void hardenSocket(SSLSocket sock) {
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java:227:        hardenSocket(sock, ENABLED_CIPHERS, ENABLED_PROTOCOLS);
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java:236:    protected static void hardenSocket(SSLSocket sock, String[] ciphers, String[] protocols) {

@@ -1,0 +1,2 @@
+message="com.google.common.truth.AssertionErrorWithFacts: server names on the pinned implicit socket&#10;expected not to be: null"
+message="com.google.common.truth.AssertionErrorWithFacts: server names, direct socket for host &quot;imap.right.test&quot;&#10;missing (1): imap.right.test&#10;---&#10;expected   : [imap.right.test]&#10;but was    : []"

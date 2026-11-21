@@ -1,0 +1,100 @@
+package com.zegoggles.smssync.mail.ssl;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+
+import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.RIGHT_HOST_CERT;
+import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.RIGHT_HOST_KEY_PKCS8;
+import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.TRUSTED_CA_CERT;
+import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.serverContext;
+import static com.zegoggles.smssync.mail.ssl.TlsTestFixtures.trustManagerFor;
+
+/** THROWAWAY probe for U-065 step I2 under the default (Conscrypt) provider. Deleted after one run. */
+@RunWith(RobolectricTestRunner.class)
+public class U065ConscryptProbeTest {
+
+    @Test
+    public void probe() throws Exception {
+        out("provider", SSLContext.getInstance("TLS").getProvider().getName());
+        SSLSocket s = clientSocket(null);
+        out("supported", String.join(",", s.getSupportedProtocols()));
+        out("default_enabled", String.join(",", s.getEnabledProtocols()));
+        s.setEnabledProtocols(new String[] {"TLSv1.2", "TLSv1.3"});
+        List<String> reversed = new ArrayList<>(Arrays.asList(s.getEnabledCipherSuites()));
+        Collections.reverse(reversed);
+        s.setEnabledCipherSuites(reversed.toArray(new String[0]));
+        String[] before = s.getEnabledCipherSuites();
+        SSLParameters p = s.getSSLParameters();
+        p.setServerNames(Collections.singletonList(new SNIHostName("imap.right.test")));
+        s.setSSLParameters(p);
+        out("roundtrip_protocols", String.join(",", s.getEnabledProtocols()));
+        out("roundtrip_cipher_order_kept", String.valueOf(Arrays.equals(before, s.getEnabledCipherSuites())));
+        try {
+            s.setEnabledProtocols(new String[0]);
+            out("empty_protocols", "accepted enabled_count=" + s.getEnabledProtocols().length);
+        } catch (Exception e) {
+            out("empty_protocols", "threw " + e.getClass().getName());
+        }
+        s.close();
+        for (String version : new String[] {"TLSv1.2", "TLSv1.1", "TLSv1"}) {
+            out("hs_" + version + "_client_provider_default", handshake(version, false));
+            out("hs_" + version + "_client_floor", handshake(version, true));
+        }
+    }
+
+    private static String handshake(String serverVersion, boolean floor) {
+        LoopbackTlsTestServer server = null;
+        SSLSocket client = null;
+        try {
+            server = LoopbackTlsTestServer.start(LoopbackTlsTestServer.Mode.IMPLICIT_TLS,
+                    serverContext(RIGHT_HOST_CERT, RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT),
+                    new String[] {serverVersion});
+            client = clientSocket(new TrustManager[] {trustManagerFor(TRUSTED_CA_CERT)});
+            if (floor) {
+                client.setEnabledProtocols(new String[] {"TLSv1.2", "TLSv1.3"});
+            }
+            LoopbackTlsTestServer.connect(client, server.port());
+            client.startHandshake();
+            int b = client.getInputStream().read();
+            return "completed protocol=" + client.getSession().getProtocol() + " byte=" + b
+                    + " server=" + server.awaitOutcome();
+        } catch (Throwable e) {
+            return "refused type=" + e.getClass().getName()
+                    + " server=" + (server == null ? "none" : server.awaitOutcome());
+        } finally {
+            if (client != null) {
+                try {
+                    client.close();
+                } catch (IOException ignored) {
+                    // probe
+                }
+            }
+            if (server != null) {
+                server.close();
+            }
+        }
+    }
+
+    private static SSLSocket clientSocket(TrustManager[] tms) throws Exception {
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(null, tms, null);
+        return (SSLSocket) ctx.getSocketFactory().createSocket();
+    }
+
+    private static void out(String key, String value) {
+        System.out.println("U065-PROBE c_" + key + "=" + value);
+    }
+}

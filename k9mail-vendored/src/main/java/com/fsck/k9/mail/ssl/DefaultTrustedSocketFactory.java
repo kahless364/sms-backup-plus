@@ -88,9 +88,19 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
             "SSLv3"
     };
 
+    /**
+     * The only protocol versions this factory ever enables, where the platform supports them
+     * (BUG-019, BUG-020; product owner decision Record 8 of 2026-11-20: nothing older than
+     * TLS 1.2). A name not in this list is never enabled, including a protocol name the factory
+     * does not know, so a later TLS version needs an entry here before it is used.
+     */
+    protected static final String[] ALLOWED_PROTOCOLS = {
+            "TLSv1.2", "TLSv1.3"
+    };
+
     static {
         String[] enabledCiphers = null;
-        String[] supportedProtocols = null;
+        String[] enabledProtocols = null;
 
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -102,9 +112,10 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
             /*
              * Retrieve all supported protocols, not just the (default) enabled
              * ones. TLSv1.1 & TLSv1.2 are supported on API levels 16+, but are
-             * only enabled by default on API levels 20+.
+             * only enabled by default on API levels 20+. The list is then
+             * limited to TLS 1.2 and newer (U-065): see protocolsToEnable.
              */
-            supportedProtocols = sock.getSupportedProtocols();
+            enabledProtocols = protocolsToEnable(sock);
         } catch (Exception e) {
             Log.e(LOG_TAG, "Error getting information about available SSL/TLS ciphers and " +
                     "protocols", e);
@@ -113,8 +124,7 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
         ENABLED_CIPHERS = (enabledCiphers == null) ? null :
                 reorder(enabledCiphers, ORDERED_KNOWN_CIPHERS, BLACKLISTED_CIPHERS);
 
-        ENABLED_PROTOCOLS = (supportedProtocols == null) ? null :
-                reorder(supportedProtocols, ORDERED_KNOWN_PROTOCOLS, BLACKLISTED_PROTOCOLS);
+        ENABLED_PROTOCOLS = enabledProtocols;
     }
 
     public DefaultTrustedSocketFactory(Context context) {
@@ -145,6 +155,33 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
         result.addAll(unknown);
 
         return result.toArray(new String[result.size()]);
+    }
+
+    /**
+     * The protocols this factory enables on {@code socket}: the protocols the platform supports
+     * (not only those it enables by default), with the blocked protocols removed and the known
+     * ones first ({@link #reorder}), and then only those in {@link #ALLOWED_PROTOCOLS}, so that
+     * nothing older than TLS 1.2 is ever enabled (Record 8). TLS 1.2 and 1.3 are enabled wherever
+     * the platform supports them, also where it leaves one off by default. If the platform
+     * supports neither, the result is empty: the socket then cannot complete a handshake (or the
+     * platform refuses the empty list), so the connection fails instead of falling back to an
+     * older version. Every Android version this app supports (API 21 and later) supports TLS 1.2
+     * and enables it by default (supported from API 16, enabled by default from API 20, as the
+     * comment in the static initialiser and the SSLSocket reference documentation record).
+     */
+    protected static String[] protocolsToEnable(SSLSocket socket) {
+        String[] ordered = reorder(socket.getSupportedProtocols(), ORDERED_KNOWN_PROTOCOLS,
+                BLACKLISTED_PROTOCOLS);
+        List<String> enabled = new ArrayList<String>();
+        for (String protocol : ordered) {
+            for (String allowed : ALLOWED_PROTOCOLS) {
+                if (allowed.equals(protocol)) {
+                    enabled.add(protocol);
+                    break;
+                }
+            }
+        }
+        return enabled.toArray(new String[enabled.size()]);
     }
 
     private Context context;
@@ -179,13 +216,28 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
         return trustedSocket;
     }
 
-    private static void hardenSocket(SSLSocket sock) {
-        if (ENABLED_CIPHERS != null) {
-            sock.setEnabledCipherSuites(ENABLED_CIPHERS);
+    /**
+     * Applies this factory's cipher-suite and protocol handling to {@code sock}. Public so that
+     * {@code com.zegoggles.smssync.mail.PinnedCertificateSocketFactory} applies exactly the same
+     * handling (BUG-020; product owner decision Record 9 of 2026-11-20, "Same as default"). It only
+     * narrows and orders what the platform offers on the socket; it touches no trust manager and no
+     * host-name decision.
+     */
+    public static void hardenSocket(SSLSocket sock) {
+        hardenSocket(sock, ENABLED_CIPHERS, ENABLED_PROTOCOLS);
+    }
+
+    /**
+     * Applies the given lists. A null {@code ciphers} leaves the platform's cipher suites. A null
+     * {@code protocols} (the lists could not be computed at class initialisation) does not leave
+     * the platform's protocols: the list is computed from {@code sock} itself, so the TLS 1.2
+     * floor still applies (Record 8).
+     */
+    protected static void hardenSocket(SSLSocket sock, String[] ciphers, String[] protocols) {
+        if (ciphers != null) {
+            sock.setEnabledCipherSuites(ciphers);
         }
-        if (ENABLED_PROTOCOLS != null) {
-            sock.setEnabledProtocols(ENABLED_PROTOCOLS);
-        }
+        sock.setEnabledProtocols(protocols != null ? protocols : protocolsToEnable(sock));
     }
 
     public static void setSniHost(SSLSocketFactory factory, SSLSocket socket, String hostname) {

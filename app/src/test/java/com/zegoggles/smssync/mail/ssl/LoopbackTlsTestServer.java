@@ -36,6 +36,11 @@ import javax.net.ssl.SSLSocket;
  * throws: {@link #awaitOutcome()} returns {@code OK} or {@code FAILED:} followed by the exception class
  * name, or {@code TIMEOUT} if the task did not finish within {@link #TIMEOUT_MILLIS}.
  *
+ * <p><b>Protocol limit (U-065).</b> {@link #start(Mode, SSLContext, String[])} limits the server's TLS socket
+ * to the given protocol versions, set after the socket is put in server mode and before its handshake, so that
+ * a test can show which versions a client still negotiates. {@link #start(Mode, SSLContext)} leaves the
+ * server's protocols as the context enables them, exactly as before.
+ *
  * <p><b>Why it always wraps a plain socket.</b> The server always wraps an accepted plain socket and passes
  * the loopback address string as the peer host, because Conscrypt's server engine otherwise reflects into
  * {@code java.net.InetAddress} internals, which the JDK's module system refuses ({@code java.base} does not
@@ -76,14 +81,15 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
     private final Future<String> outcome;
     private volatile Socket accepted;
 
-    private LoopbackTlsTestServer(final Mode mode, final SSLContext serverContext) throws IOException {
+    private LoopbackTlsTestServer(final Mode mode, final SSLContext serverContext,
+                                  final String[] serverProtocols) throws IOException {
         this.serverSocket = bindPlainLoopback();
         this.executor = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "u063-loopback-test-server");
             thread.setDaemon(true);
             return thread;
         });
-        this.outcome = executor.submit(() -> serve(mode, serverContext));
+        this.outcome = executor.submit(() -> serve(mode, serverContext, serverProtocols));
     }
 
     /**
@@ -91,10 +97,23 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
      * The caller must {@link #close()} it.
      */
     public static LoopbackTlsTestServer start(Mode mode, SSLContext serverContext) throws IOException {
-        return new LoopbackTlsTestServer(mode, serverContext);
+        return new LoopbackTlsTestServer(mode, serverContext, null);
     }
 
-    private String serve(Mode mode, SSLContext serverContext) {
+    /**
+     * Starts a server as {@link #start(Mode, SSLContext)} does, whose TLS socket enables only the given
+     * protocol versions (story U-065, AC-8). The array must name at least one protocol; the client is not
+     * touched. The caller must {@link #close()} it.
+     */
+    public static LoopbackTlsTestServer start(Mode mode, SSLContext serverContext, String[] serverProtocols)
+            throws IOException {
+        if (serverProtocols == null || serverProtocols.length == 0) {
+            throw new IllegalArgumentException("serverProtocols must name at least one protocol");
+        }
+        return new LoopbackTlsTestServer(mode, serverContext, serverProtocols.clone());
+    }
+
+    private String serve(Mode mode, SSLContext serverContext, String[] serverProtocols) {
         try {
             Socket plain = serverSocket.accept();
             accepted = plain;
@@ -107,6 +126,9 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
             SSLSocket tls = (SSLSocket) serverContext.getSocketFactory().createSocket(
                     plain, InetAddress.getLoopbackAddress().getHostAddress(), plain.getPort(), true);
             tls.setUseClientMode(false);
+            if (serverProtocols != null) {
+                tls.setEnabledProtocols(serverProtocols);
+            }
             tls.startHandshake();
             OutputStream out = tls.getOutputStream();
             out.write(PAYLOAD);

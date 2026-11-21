@@ -1,10 +1,13 @@
 package com.zegoggles.smssync.mail.ssl;
 
 import com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory;
+import com.fsck.k9.mail.ssl.TrustedSocketFactory;
+import com.zegoggles.smssync.mail.PinnedCertificateSocketFactory;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
@@ -24,43 +27,56 @@ import javax.net.ssl.SSLSocket;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Characterisation tests for the cipher and protocol hardening of {@link DefaultTrustedSocketFactory}
- * (story U-063, Group D, acceptance criteria AC-11 to AC-17), run under Robolectric's default TLS
- * provider. At the environment probe (I0b) that provider was Conscrypt.
+ * (story U-063, Group D, acceptance criteria AC-11 to AC-17; protocol tests changed and tests added by
+ * story U-065), run under Robolectric's default TLS provider. At the environment probe (I0b) that
+ * provider was Conscrypt.
  *
  * <p><b>What the code does, and what these tests pin down.</b> The factory computes two static lists
  * once per class loader: the provider's default enabled cipher suites with 16 blocked names removed
  * and 24 known names placed first in a fixed order, and the provider's <em>supported</em> protocols
- * with SSLv3 removed and TLS 1.2, 1.1, 1.0 placed first in that order. Every socket it creates gets
- * both lists applied. The tests check the pure reordering function, the four constant lists against
- * literal copies kept here (snapshot tests, so that any edit to a list is a conscious, reviewed
- * change), the lists on a real implicit-TLS socket, and the same lists on a socket layered over a
- * plain connection. Expectations come from the live provider at test time plus those literal
- * baselines; no list of provider suites is hard-coded.
+ * with SSLv3 removed, TLS 1.2, 1.1, 1.0 placed first in that order, and then only TLS 1.2 and TLS 1.3
+ * kept. The last step is the protocol floor of U-065 (BUG-019; product owner decision Record 8 of
+ * 2026-11-20: no protocol older than TLS 1.2, for either factory). Every socket it creates gets both
+ * lists applied; if the lists could not be computed at class initialisation, the floor is computed
+ * from the socket itself. The tests check the pure reordering function, the four constant lists and
+ * the allowed-protocol list against literal copies kept here (snapshot tests, so that any edit to a
+ * list is a conscious, reviewed change), the protocol step fed given supported lists through a
+ * stand-in socket, the lists on a real implicit-TLS socket, and the same lists on a socket layered
+ * over a plain connection. Since U-065 the pinned-certificate factory's cipher suites are checked here
+ * against the same recorded rule (BUG-020; Record 9, "Same as default"). Expectations come from the
+ * live provider at test time plus those literal baselines; no list of provider suites is hard-coded.
  *
  * <p><b>What they cannot prove.</b>
  * <ul>
  *   <li>The lists here are those of a desktop test provider, not of a device. What a device's
  *       platform enables or reorders is not shown.
  *   <li>"Enabled" is not "negotiable": nothing here connects to a server, so nothing shows which
- *       suite or protocol a handshake would settle on. No handshake is run in this class.
- *   <li>The array of enabled protocols is not a preference order (SC-5). The factory appends
- *       protocols it does not know after TLS 1.0, so TLS 1.3, where supported, sits after TLS 1.0;
- *       the TLS stack does not read the array as a preference list, and this is not claimed to be a
- *       defect. The order is recorded as it is.
+ *       suite or protocol a handshake would settle on. No handshake is run in this class; the
+ *       handshake classes show TLS 1.2 negotiated and older versions refused.
+ *   <li>The array of enabled protocols is not a preference order (SC-5). Since U-065 it holds TLS 1.2
+ *       and then TLS 1.3 where both are supported; the TLS stack does not read the array as a
+ *       preference list, and this is not claimed to be a defect. The order is recorded as it is.
  *   <li>The provider fixes some suites in front of whatever the caller sets (under Conscrypt, the
  *       three TLS 1.3 suites). The order checks of AC-15 therefore run on the list with those
  *       provider-fixed suites removed (plan deviation 7), within bounds that are asserted so that the
  *       checks cannot pass on an empty or tiny remainder.
- *   <li>The branches where the factory's static lists are null (provider failure at class
- *       initialisation) are not reached.
- *   <li>The second AC-16 test cannot tell the factory from the provider under this provider (see
- *       its own comment); the form that can is in {@code DefaultTrustedSocketFactoryJdkProviderTest}.
+ *   <li>The class initialiser's failure branch (provider query failed, both static lists null) cannot
+ *       be made to run: the initialiser runs once per class loader and the lists are final. The code
+ *       of that branch is called directly with null lists (U-065 AC-1 (e)).
+ *   <li>Under this provider the supported protocols equal the default enabled ones, so whether the
+ *       protocol list is built from the supported or the enabled list is shown only by the stand-in
+ *       socket test (U-065 AC-1 (d)).
  * </ul>
  *
- * <p><b>Mutations that must break each test</b> (ids as in the U-063 mutation log).
+ * <p><b>Mutations that must break each test</b> (ids as in the U-063 and U-065 mutation logs).
  * <ul>
  *   <li>AC-11: a name removed from the blocked-cipher list (M-D1), the blocked-protocol list
  *       emptied (M-D2), or the removal loop in {@code reorder} deleted (M-D3).
@@ -71,19 +87,23 @@ import static org.junit.Assert.fail;
  *       AC-14, protocols: any entry of the known or blocked protocol list changed (M-D2, M-D5, M-D12).
  *   <li>AC-15: the hardening call removed from {@code createSocket} (M-D8), the cipher part of
  *       {@code hardenSocket} removed (M-D9), or the unknown items dropped (M-D6b).
- *   <li>AC-16, first test: the protocol part of {@code hardenSocket} removed (M-D13, the order
- *       changes), the hardening call removed (M-D8), or the known order changed (M-D5). Building the
- *       list from the enabled instead of the supported protocols (M-D11) is not detectable here,
- *       because under this provider the two sets are equal; the JDK-provider class kills M-D11.
- *   <li>AC-16, second test: nothing under this provider (criterion status NOTED-AC16 for M-D11 and
- *       M-D12; the JDK-provider class detects both).
+ *   <li>AC-16, both tests as changed by U-065: the TLS 1.2 floor removed (M-P1/M-P8), or the old
+ *       protocol list given back to the default factory alone (M-P6 (ii)).
  *   <li>AC-17: hardening applied only when no plain socket is passed in (M-D10).
+ *   <li>U-065 stand-in socket test: the floor removed (M-P1/M-P8); the list built from the enabled
+ *       instead of the supported protocols (M-D11r).
+ *   <li>U-065 null-lists test: the floor not applied when the lists are null (M-F1).
+ *   <li>U-065 pinned cipher test: the pinned factory's cipher handling removed (M-P4), or one entry of
+ *       its order swapped (M-P6 (i)).
  * </ul>
+ * The U-063 mutations ran against the code before U-065 and are not repeated.
  *
  * <p><b>Isolation guard A1-G2.</b> The before-method fails, naming A1-G2, if the factory's static
- * lists were computed under the JDK provider (they would contain SSLv2Hello or DHE suites, which
- * this class's provider never produces). That would mean the JDK-provider class's Robolectric
- * sandbox was reused here.
+ * cipher list was computed under the JDK provider (it would contain DHE suites, which this class's
+ * provider never produces). That would mean the JDK-provider class's Robolectric sandbox was reused
+ * here. The guard also has an SSLv2Hello clause on the protocol list; since U-065 the factory never
+ * enables SSLv2Hello under either provider, so that clause can no longer fire and the DHE clause alone
+ * carries the guard (U-065 AC-6 (e); the guard code is left unchanged).
  *
  * <p><b>After the CR-009 move:</b> a missing field, method or class means this test's seam needs
  * retargeting to the moved class; a failed behavioural assertion is a regression, and the test is
@@ -145,6 +165,12 @@ public class DefaultTrustedSocketFactoryHardeningTest {
 
     private static final String[] KNOWN_PROTOCOLS_BASELINE = {"TLSv1.2", "TLSv1.1", "TLSv1"};
     private static final String[] BLOCKED_PROTOCOLS_BASELINE = {"SSLv3"};
+
+    /** The allowed protocols of the factory, in order (snapshot; U-065, Record 8). */
+    private static final String[] ALLOWED_PROTOCOLS_BASELINE = {"TLSv1.2", "TLSv1.3"};
+
+    /** Protocol versions older than TLS 1.2 that must never be enabled (Record 8). */
+    private static final String[] OLD_PROTOCOLS = {"TLSv1", "TLSv1.1", "SSLv3", "SSLv2Hello"};
 
     /**
      * Isolation guard A1-G2: the factory's static lists must have been computed under this class's
@@ -328,12 +354,13 @@ public class DefaultTrustedSocketFactoryHardeningTest {
     }
 
     /**
-     * AC-16 (first test): SSLv3 is not enabled; the enabled protocols are the provider's supported
-     * protocols minus SSLv3; among those present TLS 1.2 precedes 1.1 precedes 1.0, and all three
-     * precede any other protocol (SC-5: an order of the array, not a preference).
+     * AC-16 (first test), as changed by U-065 (AC-1 (b), BUG-019 AC-4): SSLv3 is not enabled; the
+     * enabled protocols are exactly the provider's supported protocols that are TLS 1.2 or newer;
+     * TLS 1.2 comes before every other enabled protocol (SC-5: an order of the array, not a
+     * preference). Implicit shape; the layered shape is in the second test.
      */
     @Test
-    public void createSocket_enabledProtocols_areProviderSupportedMinusSslv3_inRecordedOrder()
+    public void createSocket_enabledProtocols_areProviderSupportedTls12AndNewer_inRecordedOrder()
             throws Exception {
         SSLSocket plain = defaultSocket();
         Set<String> supported;
@@ -342,6 +369,8 @@ public class DefaultTrustedSocketFactoryHardeningTest {
         } finally {
             closeQuietly(plain);
         }
+        assertWithMessage("precondition: the provider supports TLS 1.2; supported=" + supported)
+                .that(supported).contains("TLSv1.2");
         SSLSocket socket = hardenedSocket();
         List<String> enabled;
         try {
@@ -352,64 +381,54 @@ public class DefaultTrustedSocketFactoryHardeningTest {
 
         assertThat(enabled).doesNotContain("SSLv3");
         Set<String> expected = new HashSet<>(supported);
-        expected.remove("SSLv3");
-        assertThat(new HashSet<>(enabled)).isEqualTo(expected);
-
-        List<String> known = Arrays.asList(KNOWN_PROTOCOLS_BASELINE);
-        int last = -1;
-        for (String name : known) {
-            int index = enabled.indexOf(name);
-            if (index >= 0) {
-                assertWithMessage(name + " must come after the preceding known protocol in "
-                        + enabled).that(index).isGreaterThan(last);
-                last = index;
-            }
-        }
-        for (int i = 0; i < enabled.size(); i++) {
-            if (!known.contains(enabled.get(i))) {
-                assertWithMessage(enabled.get(i) + " must come after every known protocol in "
-                        + enabled).that(i).isGreaterThan(last);
-            }
-        }
+        expected.retainAll(Arrays.asList(ALLOWED_PROTOCOLS_BASELINE));
+        assertWithMessage("enabled protocols must be the supported protocols that are TLS 1.2 or newer;"
+                + " supported=" + supported).that(new HashSet<>(enabled)).isEqualTo(expected);
+        assertThat(enabled).containsNoDuplicates();
+        assertWithMessage("TLSv1.2 must come first in " + enabled).that(enabled.get(0)).isEqualTo("TLSv1.2");
     }
 
-    // DP-2 (decision point: TLS 1.0 and 1.1 stay enabled). Bug id: BUG-019 (filed). Option A applies:
-    // this test passes as a characterisation of present behaviour.
+    // DP-2 (decision point: TLS 1.0 and 1.1). Bug id: BUG-019, decided by the product owner on
+    // 2026-11-20 (Record 8: no protocol older than TLS 1.2 is enabled, by either factory). Since
+    // U-065 this test asserts the decided behaviour; until then it recorded that the two stayed enabled.
     /**
-     * AC-16 (second test): TLS 1.0 and TLS 1.1 are enabled if and only if the provider supports
-     * them. RFC 8996 deprecates both. This records that the factory does not remove them.
+     * AC-16 (second test), as changed by U-065 (AC-1 (a), (b), (c); BUG-019 AC-1, AC-2): none of
+     * TLSv1, TLSv1.1, SSLv3 and SSLv2Hello is enabled on the factory's socket, direct or layered, and
+     * TLS 1.2 and 1.3 are each enabled if and only if the provider supports them. RFC 8996 deprecates
+     * TLS 1.0 and 1.1.
      *
-     * <p><b>Status NOTED-AC16.</b> Under this provider (Conscrypt) TLS 1.0 and 1.1 are supported
-     * and also enabled by the provider's own default, so this test cannot tell the factory's
-     * behaviour from the provider's: it would pass if the factory enabled nothing at all about them,
-     * and it does not detect M-D11 or M-D12. The form of the test that can tell the two apart, on a
-     * provider that supports these protocols but leaves them off by default, is
-     * {@code createSocket_legacyProtocols_enabledByFactory_whereJdkProviderLeavesThemOff} in
-     * {@code DefaultTrustedSocketFactoryJdkProviderTest}. "Enabled" is not "negotiable": the JDK's
-     * disabled-algorithms setting may still refuse these at handshake, and a device's platform
-     * behaviour is not shown.
+     * <p>Precondition (AC-1 (c)): this provider (Conscrypt) enables TLS 1.0 and 1.1 on its own default
+     * socket, so their absence on the factory's sockets can only be the factory's doing. "Enabled" is
+     * not "negotiable"; the handshake class shows what is negotiated.
      */
     @Test
-    public void createSocket_legacyProtocols_remainEnabled_whenProviderSupportsThem() throws Exception {
+    public void createSocket_legacyProtocols_notEnabled_althoughProviderEnablesThemByDefault() throws Exception {
         SSLSocket plain = defaultSocket();
         List<String> supported;
+        List<String> providerEnabled;
         try {
             supported = Arrays.asList(plain.getSupportedProtocols());
+            providerEnabled = Arrays.asList(plain.getEnabledProtocols());
         } finally {
             closeQuietly(plain);
         }
-        SSLSocket socket = hardenedSocket();
-        List<String> enabled;
-        try {
-            enabled = Arrays.asList(socket.getEnabledProtocols());
-        } finally {
-            closeQuietly(socket);
+        for (String name : Arrays.asList("TLSv1", "TLSv1.1")) {
+            assertWithMessage("precondition AC-1 (c): the provider's default socket must enable " + name
+                    + ", so that its absence is the factory's doing; default enabled=" + providerEnabled)
+                    .that(providerEnabled).contains(name);
         }
 
-        for (String name : Arrays.asList("TLSv1", "TLSv1.1")) {
-            assertWithMessage(name + " enabled must equal " + name + " supported; supported="
-                    + supported + ", enabled=" + enabled)
-                    .that(enabled.contains(name)).isEqualTo(supported.contains(name));
+        SSLSocket direct = hardenedSocket();
+        try {
+            assertProtocolFloor("default factory, direct socket", supported,
+                    Arrays.asList(direct.getEnabledProtocols()));
+        } finally {
+            closeQuietly(direct);
+        }
+        try (Layered layered = new Layered(
+                new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication()), HOST)) {
+            assertProtocolFloor("default factory, layered socket", supported,
+                    Arrays.asList(layered.socket.getEnabledProtocols()));
         }
     }
 
@@ -445,6 +464,76 @@ public class DefaultTrustedSocketFactoryHardeningTest {
             closeQuietly(listener);
             closeQuietly(implicit);
         }
+    }
+
+    /**
+     * U-065 AC-1 (d): the protocol step, fed a given supported list through a stand-in socket, keeps
+     * exactly the supported protocols that are TLS 1.2 or newer, whatever the stand-in enables by
+     * default. Case (iii) is a provider that supports TLS 1.2 but leaves it off by default: TLS 1.2 is
+     * still enabled ("stay enabled where the platform supports them", Record 8, read literally). Case
+     * (iv) shows that an unknown name is never enabled and that a platform with nothing at or above
+     * TLS 1.2 gets an empty list (story Scope Concern 7). The allowed list is checked against its
+     * literal copy. Mutations: the floor removed (M-P1/M-P8); the list built from the enabled instead
+     * of the supported protocols (M-D11r, which only case (iii) can tell).
+     */
+    @Test
+    public void protocolsToEnable_givenSupportedList_keepsOnlySupportedTls12AndNewer() throws Exception {
+        assertThat(Arrays.asList(constant("ALLOWED_PROTOCOLS")))
+                .containsExactlyElementsIn(ALLOWED_PROTOCOLS_BASELINE).inOrder();
+        String[] everything = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+
+        assertWithMessage("(i) every old name supported and enabled")
+                .that(Arrays.asList(protocolsToEnable(stubSocket(everything, everything))))
+                .containsExactly("TLSv1.2", "TLSv1.3").inOrder();
+        assertWithMessage("(ii) only TLS 1.2 supported")
+                .that(Arrays.asList(protocolsToEnable(
+                        stubSocket(new String[] {"TLSv1.2"}, new String[] {"TLSv1.2"}))))
+                .containsExactly("TLSv1.2");
+        assertWithMessage("(iii) TLS 1.2 supported but off by default")
+                .that(Arrays.asList(protocolsToEnable(stubSocket(
+                        new String[] {"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"},
+                        new String[] {"TLSv1.3"}))))
+                .containsExactly("TLSv1.2", "TLSv1.3").inOrder();
+        assertWithMessage("(iv) nothing at or above TLS 1.2, and an unknown name")
+                .that(Arrays.asList(protocolsToEnable(stubSocket(
+                        new String[] {"SSLv3", "TLSv1", "TLSv1.1", "U065_UNKNOWN_PROTOCOL"},
+                        new String[] {"TLSv1", "TLSv1.1", "U065_UNKNOWN_PROTOCOL"}))))
+                .isEmpty();
+    }
+
+    /**
+     * U-065 AC-1 (e): the branch taken when the provider query failed at class initialisation (both
+     * static lists null). The class initialiser cannot be made to fail here: it runs once per class
+     * loader and the lists are final. So the code of that branch is called directly, with both lists
+     * null, on a stand-in socket that supports and enables every old version: the protocol floor is
+     * still applied, computed from the socket itself, and the cipher suites are left as they are.
+     * Mutation: the fallback removed (M-F1, the behaviour before U-065: nothing applied).
+     */
+    @Test
+    public void hardenSocket_withNullLists_stillAppliesTheProtocolFloorFromTheSocket() throws Exception {
+        String[] everything = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+        SSLSocket socket = stubSocket(everything, everything);
+
+        hardenSocket(socket, null, null);
+
+        ArgumentCaptor<String[]> protocols = ArgumentCaptor.forClass(String[].class);
+        verify(socket).setEnabledProtocols(protocols.capture());
+        assertThat(Arrays.asList(protocols.getValue())).containsExactly("TLSv1.2", "TLSv1.3").inOrder();
+        verify(socket, never()).setEnabledCipherSuites(any());
+    }
+
+    /**
+     * U-065 AC-3 (b) (BUG-020, Record 9): the pinned-certificate factory's direct socket passes the
+     * same three checks as AC-15 above, against the literal baselines, so that the two factories cannot
+     * be wrong the same way. Mutations: the pinned cipher handling removed (M-P4); one entry of the
+     * cipher order swapped in the pinned factory only (M-P6 (i)).
+     */
+    @Test
+    public void pinnedFactory_createSocket_enabledCipherSuites_areProviderDefaultsMinusBlockedWithKnownFirst()
+            throws Exception {
+        List<String> defaults = enabledCiphersOf(defaultSocket());
+        List<String> pinned = enabledCiphersOf(pinnedSocket());
+        assertCipherRule("pinned direct socket", defaults, pinned);
     }
 
     // -----------------------------------------------------------------------
@@ -513,6 +602,148 @@ public class DefaultTrustedSocketFactoryHardeningTest {
             return fixed;
         } finally {
             closeQuietly(socket);
+        }
+    }
+
+    /** Calls the protected static protocolsToEnable of the factory by reflection (U-065). */
+    private static String[] protocolsToEnable(SSLSocket socket) throws Exception {
+        Method method = DefaultTrustedSocketFactory.class.getDeclaredMethod("protocolsToEnable",
+                SSLSocket.class);
+        method.setAccessible(true);
+        return (String[]) method.invoke(null, socket);
+    }
+
+    /** Calls the protected static three-argument hardenSocket of the factory by reflection (U-065). */
+    private static void hardenSocket(SSLSocket socket, String[] ciphers, String[] protocols)
+            throws Exception {
+        Method method = DefaultTrustedSocketFactory.class.getDeclaredMethod("hardenSocket",
+                SSLSocket.class, String[].class, String[].class);
+        method.setAccessible(true);
+        method.invoke(null, socket, ciphers, protocols);
+    }
+
+    /** A stand-in socket that reports the given supported and default-enabled protocols. */
+    private static SSLSocket stubSocket(String[] supported, String[] enabled) {
+        SSLSocket socket = mock(SSLSocket.class);
+        when(socket.getSupportedProtocols()).thenReturn(supported.clone());
+        when(socket.getEnabledProtocols()).thenReturn(enabled.clone());
+        return socket;
+    }
+
+    /** The pinned-certificate factory's implicit-TLS socket, unconnected (the other-host leaf enrolled). */
+    private static SSLSocket pinnedSocket() throws Exception {
+        return (SSLSocket) new PinnedCertificateSocketFactory(RuntimeEnvironment.getApplication(), HOST,
+                TlsTestFixtures.certificate(TlsTestFixtures.OTHER_HOST_CERT))
+                .createSocket(null, HOST, 993, null);
+    }
+
+    /** AC-1 (a) and (b) for one socket: none of the old four; TLS 1.2 and 1.3 each enabled iff supported. */
+    private static void assertProtocolFloor(String label, List<String> supported, List<String> enabled) {
+        for (String old : OLD_PROTOCOLS) {
+            assertWithMessage(label + ": " + old + " must not be enabled; enabled=" + enabled)
+                    .that(enabled).doesNotContain(old);
+        }
+        for (String modern : ALLOWED_PROTOCOLS_BASELINE) {
+            assertWithMessage(label + ": " + modern + " enabled must equal " + modern + " supported;"
+                    + " supported=" + supported + ", enabled=" + enabled)
+                    .that(enabled.contains(modern)).isEqualTo(supported.contains(modern));
+        }
+        Set<String> expected = new HashSet<>(supported);
+        expected.retainAll(Arrays.asList(ALLOWED_PROTOCOLS_BASELINE));
+        assertWithMessage(label + ": the enabled set must be the supported protocols that are TLS 1.2 or"
+                + " newer").that(new HashSet<>(enabled)).isEqualTo(expected);
+    }
+
+    /**
+     * The three checks of AC-15 for a hardened cipher list against the provider defaults, with the
+     * same bounds on the provider-fixed suites F. A copy of AC-15's body, kept separate so that AC-15
+     * stays as U-063 wrote it (U-065 AC-3 (b)).
+     */
+    private static void assertCipherRule(String label, List<String> defaults, List<String> hardened)
+            throws Exception {
+        Set<String> expectedSet = new HashSet<>(defaults);
+        expectedSet.removeAll(Arrays.asList(BLOCKED_CIPHERS_BASELINE));
+        assertWithMessage(label + ": (i) the set must equal the provider defaults minus the blocked names")
+                .that(new HashSet<>(hardened)).isEqualTo(expectedSet);
+
+        List<String> fixed = providerFixedSuites();
+        for (String name : fixed) {
+            assertWithMessage(label + ": D6'': provider-fixed suite " + name + " is a baseline known or"
+                    + " blocked suite; F=" + fixed)
+                    .that(Arrays.asList(KNOWN_CIPHERS_BASELINE).contains(name)
+                            || Arrays.asList(BLOCKED_CIPHERS_BASELINE).contains(name)).isFalse();
+            assertWithMessage(label + ": D6'': provider-fixed suite " + name + " contains _WITH_; F="
+                    + fixed).that(name.contains("_WITH_")).isFalse();
+        }
+        List<String> remainder = new ArrayList<>(hardened);
+        remainder.removeAll(fixed);
+        List<String> knownInRemainder = new ArrayList<>();
+        for (String name : KNOWN_CIPHERS_BASELINE) {
+            if (remainder.contains(name)) {
+                knownInRemainder.add(name);
+            }
+        }
+        assertWithMessage(label + ": D6'': fewer than 2 known ciphers remain; remainder=" + remainder)
+                .that(knownInRemainder.size()).isAtLeast(2);
+        assertWithMessage(label + ": D6'': no unknown suite remains; remainder=" + remainder)
+                .that(remainder.size() - knownInRemainder.size()).isAtLeast(1);
+
+        List<String> actualKnownOrder = new ArrayList<>();
+        for (String name : remainder) {
+            if (Arrays.asList(KNOWN_CIPHERS_BASELINE).contains(name)) {
+                actualKnownOrder.add(name);
+            }
+        }
+        assertWithMessage(label + ": (ii) the known suites must appear in the literal order")
+                .that(actualKnownOrder).containsExactlyElementsIn(knownInRemainder).inOrder();
+
+        int lastKnown = -1;
+        int firstUnknown = Integer.MAX_VALUE;
+        for (int i = 0; i < remainder.size(); i++) {
+            if (Arrays.asList(KNOWN_CIPHERS_BASELINE).contains(remainder.get(i))) {
+                lastKnown = i;
+            } else if (firstUnknown == Integer.MAX_VALUE) {
+                firstUnknown = i;
+            }
+        }
+        assertWithMessage(label + ": (iii) a known cipher follows an unknown one in " + remainder)
+                .that(lastKnown).isLessThan(firstUnknown);
+    }
+
+    /** A socket a factory layered over a fresh plain loopback connection, with the plain sockets it needs. */
+    private static final class Layered implements java.io.Closeable {
+        private final ServerSocket listener;
+        private final Socket client;
+        private final Socket accepted;
+        private final SSLSocket socket;
+
+        Layered(TrustedSocketFactory factory, String host) throws Exception {
+            ServerSocket l = LoopbackTlsTestServer.bindPlainLoopback();
+            Socket c = null;
+            Socket a = null;
+            SSLSocket s;
+            try {
+                c = LoopbackTlsTestServer.connectPlain(l.getLocalPort());
+                a = l.accept();
+                s = (SSLSocket) factory.createSocket(c, host, l.getLocalPort(), null);
+            } catch (Exception | Error e) {
+                closeQuietly(c);
+                closeQuietly(a);
+                closeQuietly(l);
+                throw e;
+            }
+            listener = l;
+            client = c;
+            accepted = a;
+            socket = s;
+        }
+
+        @Override
+        public void close() {
+            closeQuietly(socket);
+            closeQuietly(client);
+            closeQuietly(accepted);
+            closeQuietly(listener);
         }
     }
 

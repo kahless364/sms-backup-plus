@@ -1,0 +1,5 @@
+com.zegoggles.smssync.mail.ssl.U065ConscryptProbeTest#probe PASS
+com.zegoggles.smssync.mail.ssl.U065JdkProbeTest#probe PASS
+CLASS com.zegoggles.smssync.mail.ssl.U065ConscryptProbeTest cases=1
+CLASS com.zegoggles.smssync.mail.ssl.U065JdkProbeTest cases=1
+files=2 cases=2 pass=2 fail=0 error=0 skip=0

@@ -1,0 +1,3 @@
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+probe-files=0
+prod-end

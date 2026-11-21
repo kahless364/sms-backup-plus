@@ -1,0 +1,26 @@
+U065-PROBE c_provider=Conscrypt
+U065-PROBE c_supported=TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+U065-PROBE c_default_enabled=TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+U065-PROBE c_roundtrip_protocols=TLSv1.2,TLSv1.3
+U065-PROBE c_roundtrip_cipher_order_kept=true
+U065-PROBE c_empty_protocols=accepted enabled_count=0
+U065-PROBE c_hs_TLSv1.2_client_provider_default=completed protocol=TLSv1.2 byte=42 server=OK
+U065-PROBE c_hs_TLSv1.2_client_floor=completed protocol=TLSv1.2 byte=42 server=OK
+U065-PROBE c_hs_TLSv1.1_client_provider_default=completed protocol=TLSv1.1 byte=42 server=OK
+U065-PROBE c_hs_TLSv1.1_client_floor=refused type=javax.net.ssl.SSLHandshakeException server=FAILED:javax.net.ssl.SSLHandshakeException
+U065-PROBE c_hs_TLSv1_client_provider_default=completed protocol=TLSv1 byte=42 server=OK
+U065-PROBE c_hs_TLSv1_client_floor=refused type=javax.net.ssl.SSLHandshakeException server=FAILED:javax.net.ssl.SSLHandshakeException
+U065-PROBE j_provider=SunJSSE
+U065-PROBE j_unconnected_names=none
+U065-PROBE j_layered_0=host='imap.right.test' names=imap.right.test
+U065-PROBE j_layered_1=host='192.168.1.10' names=none
+U065-PROBE j_layered_2=host='::1' names=none
+U065-PROBE j_layered_3=host='fe80::1' names=none
+U065-PROBE j_layered_4=host='2001:0db8:0000:0000:0000:0000:0000:0001' names=none
+U065-PROBE j_layered_5=host='bad_host.example' names=none
+U065-PROBE j_layered_6=host='host.example.' names=host.example
+U065-PROBE j_layered_7=host='-x.example' names=none
+U065-PROBE j_layered_8=host='' names=none
+U065-PROBE j_layered_9=host='   ' names=none
+U065-PROBE j_layered_10=host=null names=none
+U065-PROBE j_empty_protocols=accepted enabled_count=0

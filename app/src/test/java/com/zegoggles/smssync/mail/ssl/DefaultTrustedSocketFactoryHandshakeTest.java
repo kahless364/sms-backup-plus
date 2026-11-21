@@ -70,6 +70,12 @@ import static org.junit.Assert.fail;
  *       {@link CertificateException} that is a {@link CertificateChainException}. That is the shape the IMAP
  *       connection code needs to report a certificate error rather than a plain I/O error. Nothing below
  *       {@code CertificateException} is asserted, and the server's outcome is not asserted in a rejection.</li>
+ *   <li>Protocol floor (U-065 AC-8; BUG-019; Record 8 of 2026-11-20): against a server limited to TLS 1.2
+ *       the handshake completes at TLS 1.2 on both call shapes (the first handshakes below TLS 1.3 in these
+ *       tests); against a server limited to TLS 1.1 or to TLS 1.0 the client refuses with an
+ *       {@link SSLException} that is not a certificate rejection, and the server does not report
+ *       {@code OK}. The server presents the right-host chain in all of them, so only the protocol can stop
+ *       them.</li>
  * </ul>
  * The two call shapes are those of the IMAP connection code: implicit TLS ({@code createSocket(null, host,
  * port, null)}, then connect and handshake) and STARTTLS ({@code createSocket(plainSocket, host, port,
@@ -79,8 +85,8 @@ import static org.junit.Assert.fail;
  * <ul>
  *   <li>The provider is a desktop test provider, not a device's. What a device's TLS stack accepts or
  *       rejects is not shown.</li>
- *   <li>Every handshake here ran at TLS 1.3 (environment probe). Nothing is shown about the certificate
- *       path under TLS 1.2 or earlier.</li>
+ *   <li>Every handshake here ran at TLS 1.3 (environment probe), except the U-065 tests whose server is
+ *       limited to one version. TLS 1.0 and 1.1 are shown only as refused, under this provider.</li>
  *   <li>The rejection tests rely on a fresh TLS context for every {@code createSocket} call (the factory
  *       builds a new context each time), because a resumed session skips the certificate check. If a later
  *       change caches a context per factory, these tests could stay green while that guarantee weakens.</li>
@@ -103,6 +109,9 @@ import static org.junit.Assert.fail;
  *       accept-all manager (M-B2), the fallback made to accept (M-C2); AC-8 also M-B5.</li>
  *   <li>AC-9 and AC-10 (untrusted, expired; both call shapes): the chain validation call removed (M-C1), the
  *       accept-all manager (M-B2), the fallback made to accept (M-C2); the STARTTLS tests also M-B5.</li>
+ *   <li>U-065 AC-8: the refusal tests break when the TLS 1.2 floor is removed (M-P1/M-P8) or the old list
+ *       is given back to the default factory alone (M-P6 (ii)); the TLS 1.2 tests are controls that keep
+ *       passing under those mutations.</li>
  * </ul>
  *
  * <p><b>Global state.</b> The only JVM-wide state this class touches is the private static default trust
@@ -113,9 +122,12 @@ import static org.junit.Assert.fail;
  * trust decision. The default host-name verifier is not replaced; the before-method fails if the current
  * one looks like a leftover from a test, and the after-method asserts it is unchanged.
  *
- * <p><b>Isolation guard A1-G2.</b> The before-method fails, naming A1-G2, if the factory's static lists
- * were computed under the JDK provider (they would contain SSLv2Hello or DHE suites, which this class's
- * provider never produces). That would mean the JDK-provider class's Robolectric sandbox was reused here.
+ * <p><b>Isolation guard A1-G2.</b> The before-method fails, naming A1-G2, if the factory's static cipher
+ * list was computed under the JDK provider (it would contain DHE suites, which this class's provider never
+ * produces). That would mean the JDK-provider class's Robolectric sandbox was reused here. The guard also
+ * has an SSLv2Hello clause on the protocol list; since U-065 the factory never enables SSLv2Hello under
+ * either provider, so that clause can no longer fire and the DHE clause alone carries the guard (U-065
+ * AC-6 (e); the guard code is left unchanged).
  *
  * <p><b>Time bounds.</b> Every wait is bounded (10 seconds: connect, reads, accept and the wait for the
  * server). There are no sleeps and no retries. Ports are chosen by the operating system and only the
@@ -267,6 +279,84 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
     @Test
     public void startTls_expiredChain_rejected() throws Exception {
         assertRejected(STARTTLS, EXPIRED_HOST_CERT, EXPIRED_HOST_KEY_PKCS8, TRUSTED_CA_CERT, false);
+    }
+
+    /**
+     * U-065 AC-8 (a), implicit TLS: against a server limited to TLS 1.2 the handshake completes at TLS 1.2,
+     * the client reads the byte the server writes, and the server reports OK. It shows that the TLS 1.2
+     * floor does not exclude TLS 1.2.
+     */
+    @Test
+    public void implicitTls_serverLimitedToTls12_handshakeCompletesAtTls12() throws Exception {
+        assertCompletesAt(IMPLICIT_TLS, "TLSv1.2");
+    }
+
+    /** U-065 AC-8 (a), STARTTLS: as the implicit test, on the layered call. */
+    @Test
+    public void startTls_serverLimitedToTls12_handshakeCompletesAtTls12() throws Exception {
+        assertCompletesAt(STARTTLS, "TLSv1.2");
+    }
+
+    /**
+     * U-065 AC-8 (b), implicit TLS: against a server limited to TLS 1.1 the client's handshake throws an
+     * SSLException that is not a certificate rejection, and the server does not report OK. Control: with
+     * the floor removed (M-P1/M-P8) the same handshake completes (U-065 probe and mutation log).
+     */
+    @Test
+    public void implicitTls_serverLimitedToTls11_handshakeRefused() throws Exception {
+        assertRefusedByProtocolFloor(IMPLICIT_TLS, "TLSv1.1");
+    }
+
+    /** U-065 AC-8 (b), STARTTLS, TLS 1.1. */
+    @Test
+    public void startTls_serverLimitedToTls11_handshakeRefused() throws Exception {
+        assertRefusedByProtocolFloor(STARTTLS, "TLSv1.1");
+    }
+
+    /** U-065 AC-8 (b), implicit TLS, TLS 1.0. */
+    @Test
+    public void implicitTls_serverLimitedToTls10_handshakeRefused() throws Exception {
+        assertRefusedByProtocolFloor(IMPLICIT_TLS, "TLSv1");
+    }
+
+    /** U-065 AC-8 (b), STARTTLS, TLS 1.0. */
+    @Test
+    public void startTls_serverLimitedToTls10_handshakeRefused() throws Exception {
+        assertRefusedByProtocolFloor(STARTTLS, "TLSv1");
+    }
+
+    /** The right-host chain, a server limited to one protocol; the handshake must complete at it. */
+    private void assertCompletesAt(LoopbackTlsTestServer.Mode mode, String protocol) throws Exception {
+        server = LoopbackTlsTestServer.start(mode,
+                serverContext(RIGHT_HOST_CERT, RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT), new String[] {protocol});
+        SSLSocket ssl = connectClient(mode);
+
+        ssl.startHandshake();
+        int data = ssl.getInputStream().read();
+
+        assertWithMessage("the byte the server writes after the handshake").that(data)
+                .isEqualTo(LoopbackTlsTestServer.PAYLOAD);
+        assertWithMessage("negotiated protocol").that(ssl.getSession().getProtocol()).isEqualTo(protocol);
+        assertWithMessage("server outcome").that(server.awaitOutcome()).isEqualTo("OK");
+    }
+
+    /** The right-host chain, a server limited to one old protocol; the client must refuse the handshake. */
+    private void assertRefusedByProtocolFloor(LoopbackTlsTestServer.Mode mode, String protocol)
+            throws Exception {
+        server = LoopbackTlsTestServer.start(mode,
+                serverContext(RIGHT_HOST_CERT, RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT), new String[] {protocol});
+        SSLSocket ssl = connectClient(mode);
+
+        try {
+            ssl.startHandshake();
+            fail("the handshake against a server limited to " + protocol + " must be refused, but it"
+                    + " completed at " + ssl.getSession().getProtocol());
+        } catch (SSLException e) {
+            assertWithMessage("the refusal must not be a certificate rejection; chain=" + describeChain(e))
+                    .that(e.getCause() instanceof CertificateException).isFalse();
+            assertWithMessage("server outcome against a client that refused " + protocol)
+                    .that(server.awaitOutcome()).isNotEqualTo("OK");
+        }
     }
 
     // -----------------------------------------------------------------------
