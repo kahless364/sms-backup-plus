@@ -36,7 +36,8 @@ title: Make the backup and restore workers' three cancellation checks observe th
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-022
-updated_at: '2026-11-21T09:46:03.993Z'
+updated_at: '2026-11-21T10:03:13.328Z'
+current_build_phase: implementation
 ---
 
 # U-067: Make the Backup and Restore Workers' Three Cancellation Checks Observe the Running Job, and Prove Each One With a Test That Cancels the Work Mid-Loop
@@ -203,6 +204,8 @@ Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew --versio
 - **Scope Concern 3 (mutation evidence at the WorkManager raise):** recorded for the runtime-library story; its plan re-runs this story's mutations, not only its tests.
 - **Scope Concern on cancelled runs returning `Result.failure`:** not in this story. The new tests do not assert the `Result` type. A separate bug is raised after this story if the plan or the reviews confirm it.
 - **Start condition met:** U-066 is done (commit `1f8ebe3b`, sprint 022 completed 2026-11-21).
+
+**Ruling on the plan's scope concern P-1 (2026-11-21).** AC-1 (c) asks that the cursors were closed. That close happens in `fetchAndBackupItems`, outside the seam Route S opens, so a test through `backupCursors` cannot see it. Accepted: the plan asserts `closeFolders` once and declares the cursor-close half of AC-1 (c) not observable through the seam; QA judges that half by reading the code path (the `finally` that closes the cursors is not edited by this story). Two corrections from the plan are also accepted: `backupCursors` has two callers inside the class, and the Javadoc AC-9 corrects is `BackupWorkerTest.kt:27-30`.
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
