@@ -5,13 +5,15 @@ gate_id: "planning"
 checkpoint: "planning"
 verdict: "PASS"
 agent: "Solution Architect"
-timestamp: "2026-11-21T14:00:00Z"
-iteration: 1
-base_commit: "c9770c303690a95b6200e82c73316ba8ce2bb4e8"
+timestamp: "2026-11-21T12:09:01Z"
+iteration: 2
+base_commit: "2aad7d709d1f90e510d96369ed64d26b4e9d80d0"
 contracts_verified:
   - CNTR-MODERNIZATION-007
   - CNTR-MODERNIZATION-004
-risks_identified: 12
+  - CNTR-MODERNIZATION-003
+  - CNTR-MODERNIZATION-002
+risks_identified: 13
 ---
 
 # Implementation Plan: U-070 — Back Up an SMS That Becomes Visible After Later Messages Were Backed Up, Exactly Once (6-Hour Look-Back and a Local Record)
@@ -25,12 +27,68 @@ starting point; where the story corrected it, the story wins).
 Model plans: `sdlc/artifacts/build/sprints/sprint-023/U-067/plan.md` (with its Amendment A1 lessons built in from the
 start) and `sdlc/artifacts/build/sprints/sprint-022/U-066/plan.md`.
 
-**Planning state.** HEAD was `c9770c30` on `sdlc/modernization-plan`. Story U-067 was being built in this checkout at the
-same time: `git status --porcelain -- app` showed its five modified files and its new
-`BackupWorkerLoopCancellationTest.kt`. All code facts below were read from `HEAD` (`git show HEAD:<path>`) or from the
-working tree where U-067 had not touched the file. No Gradle was run, no build, no test. The authoritative count at
-`c9770c30` was **746**. It is not this story's start count; the start is taken at I0, after U-067, U-068 and U-069 have
-landed (row D1).
+## Iteration 2 (after the plan gates, 2026-11-21)
+
+The gates of iteration 1 were:
+- plan-review **FAIL** (blockers B-1, B-2; observations O-1 to O-10);
+- contract-verification **PASS** (O-1 to O-4);
+- expert-depth-check **PASS**, with two recommendations (criteria 3 and 8).
+
+The reports are `plan-review.md`, `contract-verification.md` and `expert-depth-check.md` in this workspace, read in
+full. The orchestrator's rulings on them are binding: story Implementation Notes, "Rulings after the plan gates of
+iteration 1", Record 18. Every change is made in place. The table says where. No finding is declined.
+
+**Verified in this iteration, outside the repository.** The production Java of the plan (P1 to P5, as now written) was
+extracted from this file by a script and applied to `HEAD` copies in the planner's scratch folder:
+- it compiles with `javac --release 17 -Werror -Xlint:unchecked` against `android-35/android.jar` and
+  `androidx.annotation` 1.2.0 (stub `App`, `Consts`, `MmsConsts`, `DataType` and `ContactGroupIds`);
+- each of the 32 Java mutants of I8 has a unique `old_string` and compiles;
+- the five Kotlin mutation anchors are unique in `HEAD` with P6 and P7 applied;
+- the seven digest vectors of T5 were computed in Python and by a scratch Java copy of the planned `digest`, with equal
+  results.
+
+Kotlin test text was not compiled (no Kotlin compiler outside Gradle).
+
+| Finding | Change, and where |
+|---------|-------------------|
+| plan-review **B-1** (B3 fails on correct code) | T3, B3: the five backed-up rows are uploaded in one first run and asserted, exactly as the report's fix says. Re-derived under the new fetch code (below): correct code `late, f0, f1` / `f2` / nothing; M-L19 (i) and (ii) both fail it (I8) |
+| plan-review **B-2** (M-L19 (i) cannot bite B2) and ruling "every test bitten, every id detected" | M-L19 (i) now lists B3 only. Table 4.8 row B2 is "M-L1, M-L5, M-L18 (b)". The plan-review's "M-L8 (a)" is corrected: B2's MMS watermark is -1, so M-L8 (a) never reaches it. The whole test list was checked against the table. Four tests were bitten by no mutation, and each now has one single-edit mutation: S3 (new **M-L22**: Skip's SMS branch also taken for MMS), S4 (new **M-L23**: Skip writes `max`), W2 (new **M-L24**: the digest over UTF-8 again), W6 (new **M-L25**: the restore write's pruning removed). The new test B26 is bitten by new **M-L26**. Every one of the 50 tests is now in at least one must-fail set (4.8, "Bitten by"), and every id has a non-empty set (I8) |
+| plan-review O-1 and ruling "exact failing sets" | Every I8 row now gives the **complete** failing set, re-derived test by test against the iteration-2 code. These are no longer must-fail plus "also". A row is met when the observed failing set equals the listed set (D16). The reviewer's additions are included: M-L2 S1, B18; M-L3 (3 h) B1, B14; M-L19 (ii) S5. So are others found in the re-derivation, for example M-L19 (ii) B16, M-L2 B4 and B22, and M-L5 R3 |
+| plan-review O-2 and ruling (rows the SQL group clause excludes) | 2.8 new item 5 (Signatures moves to item 6): such rows are never recorded, so a widened group uploads the matching SMS of the last 6 h. Neither a duplicate nor a loss, and bounded by W. It is the opposite of item 4 (rows the converter rejects are recorded and not looked at again). Both sentences are in I10's declared items and section 11 item 7, for the next requirements pass |
+| plan-review O-3 and ruling (digest input encoding) | P1 `digest` hashes the canonical text's UTF-16 code units, two bytes per char, big-endian, by hand, not through a charset encoder. The `StandardCharsets` import is gone. 2.5 gives the injectivity argument. T5 (W2) has seven new vectors, three of them unpaired-surrogate or `?` bodies that must differ. L21 is updated. M-L24 reverts to UTF-8 and is caught by W2 |
+| plan-review O-4 and ruling (fresh store) | T7 `moveToAnotherPhone()` clears every file the descriptor excludes (after the copy, before the owner signs in again), so the test starts from what a restored phone has. 4.7 says what the test shows and does not show. New probe N7 and row D11 cover a secret store that does not survive the clear |
+| plan-review O-5 | T1 KDoc of `SimulatedProcessDeath` corrected (in the backup path `doWork` turns it into `Result.failure`, after the same persisted state as a real death; it escapes the restore loop) |
+| plan-review O-6 and ruling (counts and own files scoped) | I0 records `C0` (HEAD, tracked) and the foreign untracked tests. I9 counts this story's seven files separately, lists every other untracked or uncommitted test file as "not this story's", and explains the Gradle total from them. The "own files" check is limited to this story's path list. The "no code commit by anyone else" check covers this story's paths only. This is the U-068 iteration-2 scoping and the three binding corrections in the U-068 story (D17, constraint 12) |
+| plan-review O-7 | I6 expects `@@ -87 +87,4 @@` and `@@ -276,0 +280,6 @@` for `README.md` |
+| plan-review O-8 | P5b: the forward query sits in a `try`, and a `RuntimeException` closes the window cursor before it is rethrown |
+| plan-review O-9 and ruling (two sessions) | New 5.1 "Sessions and hand-over". Session 1 is I0 to I7; session 2 is S2-0 (resume) and I8 to I11. Safe stopping points: after I1b, after I7, between I8 entries, before I9. The hand-over state is defined, with the resume step, which rebuilds the pristine copies from the stored blobs |
+| plan-review O-10 | `base_commit` is `2aad7d70`. Line references are `BackupWorker.kt:423` (the seam's write) and `:355-357` (the else-branch) in 2.10 and section 9 |
+| contract-verification **O-1** and ruling (concurrent restore) | P5b reads the record a second time, after both provider queries have returned, and filters window and forward rows against that read. The first read only sizes the forward `LIMIT`. 2.4 gives the ordering argument, and 2.7 has a new row. New test **B26** (a provider double hook performs the restore's two steps during the queries). New mutation **M-L26** (the second read replaced by the first) |
+| contract-verification O-2 | Section 11 item 8: CNTR-MODERNIZATION-007's stale signatures (`appendMessages` returns `long`; `importMessageBody` exists) go to the next contract amendment |
+| contract-verification O-3 | I9 records `git status --porcelain` and `git log $START..HEAD` for `sdlc/artifacts/design`, `requirements` and `build/change-records`. It checks that no file of this story's diff lies there. A change by someone else is recorded, not a stop |
+| contract-verification O-4 | `contracts_verified` and section 8 now name CNTR-MODERNIZATION-003 (the backing-store invariant: `credentials.xml` excluded, the record in the default file) and CNTR-MODERNIZATION-002 (`pinned_certs` excluded) |
+| expert-depth C3 and ruling (compute the trade-offs) | 2.5: collision figures computed; the privacy statement (what the file reveals, what it does not, the short-code recovery cost, the clear dates, the private file carried by Android's own backup, withheld codes recorded hours late); key stretching (PBKDF2) weighed and **rejected**, with the cost and the reason. 2.1 gains row 17 (`apply()` against `commit()`) and row 18 (a 32-bit digest). 2.6 gains the cumulative write cost, with the realistic bound for a large first backlog and for a burst inside one window |
+| expert-depth C8 and ruling (edge cases, R6) | 2.9 states: clock moved backwards; time zones and daylight saving; dual SIM; network re-delivery; non-key column updates; a concurrent backup pruning between the two reads. R6 is resolved from the code: distinct unique-work names with REPLACE (`WorkManagerScheduler.kt:154`, `:289`, `:324`, `:365`, `:400`); no `android:process`, so one process and one `SMS_RECORD_LOCK`; worst case one duplicate per row both workers select, never a loss |
+| expert-depth C1 note (label) | 2.0: "Transactional Outbox" replaced by "a consumer's checkpoint committed atomically with its deduplication state" (Kleppmann, *DDIA*, ch. 11, "Fault Tolerance"). Only the restore's write-ahead entry is Outbox-like, and the plan says so |
+| depth-check consistency note (timestamp) | `timestamp` is from `date -u` |
+| BUG-024 (placed after this story) | B12 (`ac9_cancelledDuringTheAppend_…`), `ProviderDouble` and `RecordingTransport` are kept as they were. The only additions are an optional `beforeQuery` hook on `ProviderDouble` (null by default) and the KDoc fix. Section 11 item 9 |
+
+**Totals after iteration 2:**
+- 50 new tests (iteration 1: 49; added B26);
+- 26 mutation ids (was 21; added M-L22 to M-L26) in 37 runs (was 32);
+- 47 Gradle invocations (was 42).
+
+**Planning state.**
+- Iteration 1 was written at `c9770c30`; this iteration at `2aad7d70`. Between the two:
+  - U-067 landed (commit `c12a2788`);
+  - U-068 has begun committing its increments (`533e9f51` JUnit XML on; `2aad7d70` its receiver test);
+  - the rest are documents.
+- `git diff --name-only c12a2788 HEAD -- app README.md build.gradle app/build.gradle` lists only
+  `BackupBroadcastReceiverTest.java` and the root `build.gradle`, neither of them this story's. The uncommitted U-068
+  work in the checkout (`WorkManagerScheduler.kt`, `SmsReceiverTest.java`, `WorkManagerSchedulerTest.kt`) is not this
+  story's either.
+- Code facts were read from `HEAD` with `git show HEAD:<path>`. No Gradle was run.
+- The start count is taken at I0, after U-067, U-068 and U-069 have landed (row D1).
 
 **Size.**
 - Production: 2 new Java files, 5 edited files and 1 comment-only edit:
@@ -39,8 +97,8 @@ landed (row D1).
     `service/BackupWorker.kt`, `service/RestoreWorker.kt`;
   - comment only: `mail/transport/MailTransport.java`.
   - Plus two README insertions.
-- Tests: 7 new files, **49 new tests**. No existing test file is edited.
-- Runs: 42 Gradle invocations (I0 1, I1 2, I2 1, I3 1, I4 2, I5 1, I7 1, I8 32, I9 1).
+- Tests: 7 new files, **50 new tests**. No existing test file is edited.
+- Runs: 47 Gradle invocations (I0 1, I1 2, I2 1, I3 1, I4 2, I5 1, I7 1, I8 37, I9 1), in two sessions (5.1).
 
 **Scope Concern 7 (size, Record 16 ruling "not split").** The story can be planned as one. It is large, but the parts
 cannot be separated safely (story Scope Concern 11): without the restore write the look-back sends restored messages back
@@ -57,6 +115,17 @@ orchestrator still wanted a cut, the only safe seam is between I5 (restore) and 
 - SC-6: same millisecond, address and text is accepted.
 - SC-7: not split.
 - Order: after U-067, U-068 and U-069; line numbers are re-read at the start.
+- Record 18, the two items of iteration 1:
+  - rejected rows above the watermark are recorded (confirmed, inside ruling 25);
+  - AC-22 applies to the log lines this story adds or changes, checked at DEBUG and above.
+- Record 18, after the gates:
+  - the mutation table is met when every new test fails under at least one mutation and every id is detected;
+  - rows the SQL group clause excludes are never recorded (accepted);
+  - the digest hashes the raw characters;
+  - the record is read after the provider queries;
+  - two developer sessions;
+  - the privacy statement, with a decision on a slower digest;
+  - BUG-024 relies on B12, the provider double and the recording transport.
 
 ## 1. Assumption Ledger
 
@@ -88,7 +157,9 @@ folder. Nothing was written to the repository.
 | L18 | The U-063 tools exist and are read-only: `junit-xml.init.gradle` (turns XML on, prints `U063-DAEMON-JVM`), `sanitize.py`, `junit_totals.py`, `junit_cases.py` and `jacoco_pkgs.py`. Root `build.gradle:30` is `reports.junitXml.required = false` at `c9770c30`; U-068 AC-2 turns it on | verified | file headers; `build.gradle:25-31`; U-068 story `:86`, `:96`, `:129` |
 | L19 | The new names are free under `app/`: `SmsBackupWindow`, `LateVisibleSms*`, `ProviderDouble`, `ProviderRow`, `ProviderQuery`, `ContactsProviderDouble`, `RecordingTransport`, `AppendedMessage`, `CountingSharedPreferences`, `SimulatedProcessDeath`, `LateSmsHarness`, `SmsFixture`, `SmsBackupRecordSizeTest`, `BackupQueryBuilderWindowTest`, `registerProvider` and the key `sms_backup_record` | verified | `git grep -l -w <name> -- app` (0 each, working tree including U-067's files) |
 | L20 | `MailTransport.java` has no `default` or `static` method. Its abstract methods carry no `LineNumberTable`, so a Javadoc edit cannot change the class bytes. The edit also keeps the line count | verified | `git show HEAD:…/MailTransport.java`, 152 lines, no `default `/`static ` |
-| L21 | The digest test vectors of 3.3 (T5) were computed with Python `hashlib.sha256` over the length-prefixed UTF-8 text, using Java UTF-16 lengths. Example: `entryOf("1700000000000", "+15550100001", "hello")` = `1700000000000:e5afc97e664cb3c0` | verified (Python) | session computation; the Java side is checked by T5 at I2 |
+| L21 | Iteration 2. The digest test vectors of T5 (W2) are SHA-256 over the length-prefixed canonical text's UTF-16 code units, big-endian (Python `encode('utf-16-be', 'surrogatepass')`, Java UTF-16 lengths). They were computed twice, in Python and by a scratch Java copy of P1's `digest`, with equal results. Example: `entryOf("1700000000000", "+15550100001", "hello")` = `1700000000000:d6a72b9c218f03eb`. The same scratch Java shows that `"\uD800".getBytes(UTF_8)` decodes to `?`. Under UTF-8, bodies `"\uD800"`, `"\uD801"` and `"?"` all give digest `cf8f38b37afe353e`, which is the O-3 defect | verified (Python and Java 25) | session computation |
+| L23 | Iteration 2. Backups run under distinct unique-work names, each with `ExistingWorkPolicy.REPLACE`: `INCOMING` `:154`, `REGULAR` `:289`, `BROADCAST_INTENT` `:324`, `backupType.name` for MANUAL and SKIP `:365`, and the restore's `config.uniqueName` `:400` in `WorkManagerScheduler.kt`. So a manual backup, an incoming backup and a restore can run at the same time. No `android:process` appears under `app/src/main`, so all of them run in one process | verified | `git grep -n "enqueueUniqueWork\|ExistingWorkPolicy" HEAD -- app/src/main`; `git grep -n "android:process" HEAD -- app/src/main` (no hit) |
+| L24 | Iteration 2. P1 to P5 as written in this plan compile with `javac --release 17 -Werror -Xlint:unchecked` (JDK 25) against `android-35/android.jar`. All 32 Java mutants of I8 have a unique `old_string` and compile. The five Kotlin anchors (M-L11, M-L16 (a), M-L16 (b), M-L20, M-L22) occur exactly once in `HEAD` with P6 and P7 applied | verified (Java compile; Kotlin anchors by text count) | scratch copies extracted from this file by script; stubs for `App`, `Consts`, `MmsConsts`, `DataType`, `ContactGroupIds` |
 | L22 | The five Message-IDs of the AC-6 fixture (MD5 of `date + address + "v2" + type`), written with `(at)` for the at sign: `<a47de1477df7a1f56e069f77b15f2cf9(at)sms-backup-plus.local>`, `<679273385a77bd897b6bcb3e625fb929(at)…>`, `<c8d7686d3b767f1559fb59169aa79b09(at)…>`, `<cb725351ed0002dc94fe152f10504f8e(at)…>`, `<e32b0d35778fa5403a48c10cc5087d80(at)…>` | verified (Python) | session computation; cross-checked at I1b |
 | N1 | The real `MessageConverter` (real `PersonLookup` over a resolver with no contacts provider, so the person is unknown) converts provider-double rows inside `BackupWorker.doWork` under Robolectric | needs_check | I1 probe; rows D3 and D4. `MessageConverterTest.java:109-129` runs the real generator over a `MatrixCursor`, and `BackupWorkerIntegrationTest` builds the converter in `doWork`, so this is likely |
 | N2 | `LateVisibleSmsCursor` (`AbstractCursor` over a `MergeCursor`) behaves under Robolectric as on a device, because neither class is shadowed (L12) | needs_check | I4 run; row D9 |
@@ -96,6 +167,7 @@ folder. Nothing was written to the repository.
 | N4 | The Gradle unit-test JVM's working directory is the `app` module directory, so `user.dir/build/u070/…` is `app/build/u070/…` | needs_check | I1; row D5 (fallback: read the capture from the JUnit XML failure text) |
 | N5 | `Mockito.spy` of the Kotlin final class `WorkerEngineFactory` works with the inline mock maker (Mockito 5.18.0 default) | needs_check | I4 run of B25; row D10 |
 | N6 | A test that replaces `ShadowContentResolver`'s provider for `sms` mid-test (`registerProviderInternal` again) serves later queries from the new provider | needs_check | I5 run of S10/S11; row D11 |
+| N7 | Iteration 2. Clearing the excluded files (`credentials.xml`, `pinned_certs.xml`) in a test leaves `AuthPreferences(context)` and the backup worker able to start. The IMAP user is in the default file (`AuthPreferences.java:204-206`), and the backup path reads no secret (the transport comes from the test factory) | needs_check | I5 run of S10/S11; row D11 |
 
 **Not used, so not verified:** in-memory SQLite under this project's Robolectric mode. The hand-written evaluator is
 chosen on its merits (2.1, row 15), so the story's "not verified" item no longer matters.
@@ -118,9 +190,14 @@ chosen on its merits (2.1, row 15), so the story's "not verified" item no longer
   cannot attach a stable id: here `_id` changes on restore and on a new phone, and the Message-ID includes the type.
 - **At-least-once delivery plus deduplication equals effectively once.** The duplicate window is exactly the one
   in-flight append (REQ AC-10). That is the same exposure as today, because the watermark and the record are written in
-  **one atomic commit** after the server confirms (L14). This is the single-store form of the Transactional Outbox
-  (Richardson, *Microservices Patterns*, ch. 3.3.7): state change and "sent" marker in one write. It is chosen over two
-  stores.
+  **one atomic commit** after the server confirms (L14).
+  - Iteration 2, the accurate name: this is a consumer's checkpoint committed atomically with its deduplication state
+    (Kleppmann, *Designing Data-Intensive Applications*, ch. 11, "Fault Tolerance": "Idempotence" and "Atomic commit
+    revisited"). The position (the watermark) and the set of messages already handled (the record) are one write, after
+    the send. It is chosen over two stores.
+  - It is not a Transactional Outbox (Richardson, *Microservices Patterns*, ch. 3.3.7). An Outbox records the outgoing
+    message *before* it is sent, for a relay. Only the restore's write-ahead entry below is Outbox-like: written before
+    the effect it guards.
 - **Write-ahead rule.** Mohan et al., "ARIES", *ACM TODS* 17(1), 1992, section 1: log before data. A restore writes the
   row's record entry **before** the provider insert. A crash between the two can only leave an entry for a row that was
   never inserted, which is harmless because the message is already on the server. The other order can leave an inserted
@@ -136,8 +213,9 @@ chosen on its merits (2.1, row 15), so the story's "not verified" item no longer
   - constant replacement (M-L2, M-L3, M-L4 (b), M-L13 (b));
   - statement deletion (M-L13 (a), M-L14, M-L15, M-L16 (a), M-L20);
   - statement reordering (M-L11, M-L16 (b));
-  - decision negation (M-L5, M-L17, M-L18);
-  - variable replacement (M-L10, M-L19).
+  - decision negation or widening (M-L5, M-L8, M-L17, M-L18, M-L21, M-L22);
+  - variable or expression replacement (M-L10, M-L19, M-L23, M-L24, M-L26);
+  - statement deletion added in iteration 2 (M-L25).
 - **Seam.** Feathers, *Working Effectively with Legacy Code*, ch. 4, "The Seam Model". The fetch layer reaches the record
   through the `DataTypePreferences` that `BackupQueryBuilder` already holds (IC-3). A mocked builder returns null and the
   old path runs: the null-object seam that keeps `BackupItemsFetcherTest` unedited.
@@ -150,7 +228,13 @@ chosen on its merits (2.1, row 15), so the story's "not verified" item no longer
 - **Two stores for one invariant** (a separate file or table for the record). Two commits leave a gap where the
   watermark and the record disagree (2.1, row 10).
 - **Logging message content** (REQ privacy, AC-22). The new lines carry counts only. A pre-existing debug-build verbose
-  line does leak the address (L15). It is named and handed to the orchestrator (section 11 item 3).
+  line does leak the address (L15). Record 18 rules it out of this story; the orchestrator raises a separate bug
+  (section 11 item 3).
+- **Check-then-act across a concurrent writer** (iteration 2, contract-verification O-1). Reading the record *before*
+  the provider queries would let a restore's write-ahead plus insert fall between the check and the act. The record is
+  read again after the queries (2.4).
+- **Charset-encoding before hashing** (iteration 2, O-3). A charset encoder replaces malformed chars, so the map from
+  strings to bytes is not one-to-one. The code units are hashed instead (2.5).
 - **Shadowed framework class in a test.** `CursorWrapper` is replaced by a Robolectric shadow (L12), so a
   `CursorWrapper` subclass would be tested against a different implementation than production. `AbstractCursor` is used
   instead (2.1, row 12).
@@ -185,6 +269,10 @@ chosen on its merits (2.1, row 15), so the story's "not verified" item no longer
 | 14 | Detect "upgrade" by an empty record or by a marker | The marker separates "no record yet" from "record of an empty window" | One more key | Marker (`sms_backup_record_version`) |
 | 15 | Provider double: hand-written evaluator or in-memory SQLite | The evaluator throws on any selection it does not know, so a changed query shape fails loudly; it does not depend on Robolectric's SQLite mode or on SQLite's "LIMIT inside ORDER BY" idiom | Some code in the test | Evaluator |
 | 16 | At upgrade: seed the window, or upload it | Seeding meets REQ AC-18 (no duplicate) | A message the earlier version lost stays lost (REQ Out of scope) | Seed |
+| 17 | `apply()` instead of `commit()` (iteration 2) | The worker thread does not wait for the file write and `fsync` | A write queued but not yet on disk when the process dies is lost, so every row appended since the last flushed write is uploaded again. The duplicate window grows from one in-flight append (REQ AC-10) to every queued row. Today's `setMaxSyncedDate` already uses `commit()` | Rejected (B13 asserts `applies == 0`; M-L12 (b)) |
+| 18 | A 32-bit digest, 8 hex characters (iteration 2) | 8 of 31 bytes saved (26 %) | The loss probability per late row rises by 2³², to k·2.3·10⁻¹⁰ (2.5) | Rejected: the saving is small next to the whole file, which every commit rewrites anyway |
+| 19 | Key stretching (PBKDF2-HMAC-SHA256, RFC 8018 §5.2) instead of one SHA-256 (iteration 2) | Each guess costs an attacker 10⁴ hashes instead of 1 | About 10 ms per entry on the phone, every window row on every run (2.5). A 6-digit code still falls to 10¹⁰ hashes, which takes seconds to minutes on a GPU | Rejected (2.5, "Key stretching") |
+| 20 | Read the record once, before the queries (iteration 1) | One read | A restore that writes ahead and inserts between the read and the queries uploads the restored row: the duplicate REQ AC-16 forbids | Rejected: read again after the queries (2.4; B26; M-L26) |
 
 **Cost of the choice, stated.** Each run reads up to every row of the last W twice: the window query, then the
 forward query for the rows above. It also computes a SHA-256 per window row, which is microseconds each. Each uploaded
@@ -207,6 +295,11 @@ row's `commit()` rewrites the preferences file with the record, about 31 bytes p
    M-L21 is a real single-site mutation.
 5. **The forward cursor is returned unchanged when nothing is late and nothing was filtered.** The in-order path then
    hands `BackupCursors` the very cursor it gets today (AC-6).
+6. **Iteration 2: the record is read twice in a fetch.** The first read sizes the forward `LIMIT`. The second, after
+   both provider queries have returned, decides which rows are late and which forward rows are dropped (2.4,
+   contract-verification O-1). The story's Mechanism 1 reads it once.
+7. **Iteration 2: the digest input is the canonical text's UTF-16 code units, big-endian.** The story says only "SHA-256
+   over date, address and body"; this fixes the byte form (2.5, Record 18).
 
 ### 2.3 State model
 
@@ -262,42 +355,98 @@ commit can write the marker over a watermark that was never seeded.
    SMS watermark is ≤ 0: today's single query. That covers first run and the -1 sentinel; no look-back query is sent
    (AC-15).
 2. If the marker is absent: run the seed query, write the seed with the marker in one commit, and log the seed line.
-3. Read the record.
-4. Run the window query (no LIMIT). For each row: recorded means "already backed up" (counted for the log). Otherwise it
-   is late, taken while `taken < max` (or always when `max ≤ 0`).
-5. If any were taken, log the selection line (counts only).
-6. If `max ≤ 0` or `remaining > 0`: run the forward query with `LIMIT remaining + entriesAbove(watermark)`. Drop recorded
-   rows, which is only possible when `entriesAbove > 0`, and keep up to `remaining`.
-7. If nothing is late and nothing was dropped, return the forward cursor, repositioned before the first row (today's
+3. **First read** of the record (`before`).
+4. Run the window query (no LIMIT). Count the rows not in `before` (`lateBefore`).
+   `remaining = max − min(lateBefore, max)`, or `max` itself when `max ≤ 0`.
+5. If `max ≤ 0` or `remaining > 0`: run the forward query with `LIMIT remaining + entriesAbove(before, watermark)`.
+   A `RuntimeException` from it closes the window cursor before it is rethrown (plan-review O-8).
+6. **Second read** of the record (`record`), now that both queries have returned.
+7. Window rows: recorded in `record` means "already backed up" (counted for the log). Otherwise the row is late, taken
+   while `taken < max` (or always when `max ≤ 0`). If any were taken, log the selection line (counts only).
+8. Forward rows: drop those in `record` (only possible when `entriesAbove(record) > 0`), and keep up to `remaining`.
+9. If nothing is late and nothing was dropped, return the forward cursor, repositioned before the first row (today's
    cursor). Otherwise return `LateVisibleSmsCursor` over `MergeCursor(window, forward)`: the late positions, then the
    kept forward positions.
 
+**Why the second read closes the restore race** (contract-verification O-1; Record 18).
+- A restore runs `recordRestoredSms(values)` (one `commit()`) and only then `insert` (P7). The backup reads the record
+  again only after its queries have returned.
+- Suppose a query returns a restored row R. Then R's insert completed before that query read the provider. R's
+  write-ahead commit completed, in the restore thread, before the insert began.
+- `SharedPreferencesImpl` updates its in-memory map and serves `getString` under one lock (L14). So the backup's
+  second read acquires that lock after the restore released it, and sees R's entry. R is dropped.
+- The one remaining order: a row inserted after the queries returned. It is not in this run's cursors at all, so it
+  cannot be uploaded by this run, and the next run's second read sees its entry.
+- Hence no restored row is uploaded, whatever the interleaving of one restore and one backup in one process (L23).
+- **Budget.** The record only grows between the two reads, except for the case in 2.9 "a concurrent backup pruning".
+  So the late rows of step 7 are at most `min(lateBefore, max)`, and late plus kept forward rows never exceed `max`.
+  When the record grew, the run takes fewer rows than its budget allows; the rest wait for the next run, which is no
+  loss.
+
 ### 2.5 Privacy (AC-22 and the record)
 
-- **What is stored.** Per row, the date and the first 16 hex characters (64 bits) of SHA-256 over
-  `date|len(address)|address|len(body)|body`, UTF-8. Lengths are Java `String.length()`. The length prefixes make the
-  encoding injective, so address `+1555010000` with body `1hello` differs from address `+15550100001` with body `hello`
-  (T5 vector). No address and no text are stored.
-- **Collisions** (REQ AC-19, SC-6).
-  - The date is part of the key in clear, so two rows collide only if they have the same millisecond **and** the same
-    64-bit truncated digest. For n rows sharing one millisecond, the chance is about n²/2⁶⁵, negligible for any n that
-    occurs.
-  - The effect of a collision is that one message is treated as backed up, which is a loss. It is far below the accepted
-    SC-6 case (same millisecond, address and text, which collides by construction).
-  - 16 hex characters keep each entry at 31 bytes. A longer digest buys nothing measurable.
+- **What is stored.** Per row, the date and the first 16 hex characters (64 bits) of SHA-256 over the canonical text
+  `date|len(address)|address|len(body)|body`. Lengths are Java `String.length()`, in UTF-16 code units. The text is
+  hashed as its **UTF-16 code units, two bytes per char, big-endian**, written by hand (P1 `digest`). No address and no
+  text are stored.
+- **Why two different (date, address, body) triples never give the same digest input** (iteration 2; plan-review O-3;
+  Record 18).
+  - (i) **The triple to canonical text is one-to-one.** The text starts with the decimal date and `|`. Then come
+    `len(address)` in decimal and `|`. Exactly `len(address)` chars follow, then `|`, `len(body)`, `|`, and exactly
+    `len(body)` chars, and the text ends. Every field's extent is fixed by a prefix read before it, so a parser
+    recovers the triple uniquely, whatever chars (`|` and digits included) the address and body contain. Address
+    `+1555010000` with body `1hello` therefore differs from `+15550100001` with `hello` (T5 vector 4).
+  - (ii) **The canonical text to bytes is one-to-one and total.** Each `char` (any 16-bit value, an unpaired surrogate
+    included) becomes exactly two bytes, so the byte string has length `2·n` and is decoded back by pairing. A charset
+    encoder (`getBytes(UTF_8)`, and also Java's `UTF_16BE` charset) replaces a malformed char with a substitute. That
+    makes bodies `"\uD800"`, `"\uD801"` and `"?"` hash alike: Python and scratch Java both give `cf8f38b37afe353e` for
+    all three under UTF-8 (L21). The code-unit form gives three different digests (T5 vectors 5 to 7; M-L24).
+  - The only conflation left is by design: a null field and an empty field are both "", because neither has text.
+- **Collisions, computed** (REQ AC-19, SC-6; expert-depth C3). A loss needs a late row whose `date:digest16` equals a
+  recorded entry, so only entries with the same millisecond compete.
+  - For k such entries, the chance per late row is k/2⁶⁴ ≈ k·5.4·10⁻²⁰.
+  - In normal use k ≤ 1: about 5·10⁻²⁰ per late row, and about 5·10⁻¹⁵ over 10⁵ late rows, which is more late rows
+    than the phone will ever see.
+  - Even if all 5,000 entries of the stress case shared one millisecond: 2.7·10⁻¹⁶.
+  - Ignoring the date entirely, the birthday bound over 5,000 entries is 5,000²/2⁶⁵ ≈ 6.8·10⁻¹³.
+  - A collision's effect is one message treated as backed up, a loss. It is far below the accepted SC-6 case (same
+    millisecond, address and text), which collides by construction.
+  - A 32-bit digest would save 8 of 31 bytes (26 %) and raise the chance to k·2.3·10⁻¹⁰ (2.1 row 18). A longer digest
+    buys nothing measurable. 16 hex characters is kept.
 - **Where it lives.** In the default preferences file, `MODE_PRIVATE`, next to the watermark. Android's own backup
   copies it with the watermark, which AC-17 requires. The encrypted store (`credentials.xml`, `EncryptedPrefsSecretStore`)
   is excluded from backup (L9). Putting the record there would break AC-17, and an HMAC key in it would too (2.1, row 8).
-- **Residual risk, stated for the security review (SC-10).** Whoever holds the default preferences file can test
-  guesses. With the date in clear and a guessed address, a 6-digit one-time code is recovered by trying 10⁶ bodies. Two
-  things limit this: the record holds only the last 6 hours, and the same texts are in the owner's mailbox. The file is
-  private app storage, readable only with root or through the backup channel. No stronger protection is possible without
-  breaking AC-17.
+- **What the record reveals, and to whom** (iteration 2; SC-10; Record 18; expert-depth C3). The file is the app's
+  private default preferences file (`MODE_PRIVATE`). It is readable on the phone only with root or a debuggable build,
+  and it travels in Android's own backup (L9; CNTR-MODERNIZATION-003 keeps only `credentials.xml` out of it).
+  - **A holder of the file can learn:**
+    - (a) the time, to the millisecond, and the number of SMS received or sent in the last 6 hours, because the dates
+      are stored in clear. That is the whole metadata of the window, even with no message text;
+    - (b) the text of a short message whose address and form can be guessed. A 6-digit one-time code is recovered by
+      trying its 10⁶ values: 10⁶ SHA-256 evaluations, well under a second on one CPU core;
+    - (c) confirmation of any guessed (address, body) pair, such as "Ok" to a known number.
+  - **They cannot learn:** any text with real entropy; an address on its own (a guess needs address and body
+    together); anything pruned (older than W below the watermark).
+  - **Mitigating facts.** On Android 17 a withheld one-time code is recorded only after it becomes visible, at least
+    3 hours after receipt, so it has normally expired by the time it is in the record. A code that is not withheld is
+    recorded within minutes and may still be valid for its few minutes. The same texts are in the owner's mailbox.
+- **Key stretching, decided: not used** (iteration 2; Record 18 asks for a decision; 2.1 row 19).
+  - The candidate is PBKDF2-HMAC-SHA256 (RFC 8018 §5.2) with a fixed, public salt. It needs no key, so it would keep
+    AC-17.
+  - At 10⁴ iterations it costs about 10 ms per entry on the phone. Every window row is hashed on every run (twice a run
+    for the two reads' lookups, since entries are recomputed per row). That is tens of rows normally (under 1 s), and
+    10 s or more per run at 1,000 rows in 6 hours.
+  - What it buys: a 6-digit code goes from 10⁶ to 10¹⁰ hash evaluations, which is seconds to minutes on one GPU. The
+    outcome for the case that matters, a short code, does not change.
+  - It is rejected: the cost is real on every run, the protection is a delay for short codes only, and the exposure is
+    already bounded to 6 hours of history that is also in the mailbox.
+  - A secret key would protect only if the key does not travel with the file, and a key that does not travel breaks
+    AC-17 (2.1 row 8).
 - **Logs.** Two new lines, counts only:
   - `BackupItemsFetcher: look-back seeded <n> SMS already on the phone (upgrade|skip)`;
   - `BackupItemsFetcher: look-back selected <n> late SMS, skipped <m> already backed up`.
   - No exception message is built from row content. B24 asserts all of this, at log priority DEBUG and above (L15;
-    section 11 item 3).
+    Record 18: AC-22 applies to the lines this story adds or changes).
 
 ### 2.6 Performance and cost (AC-19, AC-20)
 
@@ -317,6 +466,21 @@ commit can write the marker over a watermark that was never seeded.
   - Normal use (tens of SMS in 6 h): under 100 entries, about 3.1 KB. A 1,000-message day: 31 KB. 5,000: 155 KB. All are
     correct, only larger.
   - The per-row commit cost at the stress case was not measured (SC-8).
+- **Cumulative write cost** (iteration 2; expert-depth C3). Every uploaded row's `commit()` rewrites the whole file, as
+  today, now including the record.
+  - A run uploading n rows while the record holds r entries adds about 31·(n·r + n²/2) bytes of writing, if every row
+    stays in the window.
+  - **The realistic bound.** The record holds only entries within W below the *current* watermark, and each commit
+    prunes. So r is the number of SMS within 6 hours of the row being committed, not the number uploaded in the run.
+  - **A large first backlog**, say 20,000 SMS over years with no per-run limit: the watermark walks forward through
+    history and the record follows it. r is the number of messages in the 6 hours around each one, typically tens. The
+    added writing is about 20,000 × 31 × 50 ≈ 31 MB over the whole backlog, about 1.5 KB per commit, on top of the
+    rewrite of the rest of the file that happens today.
+  - **A burst inside one window**, n messages within 6 hours, all in one run: r grows to n, and the run adds about
+    31·n²/2 bytes. That is 15.5 MB for n = 1,000 and 388 MB for n = 5,000. The per-run limit bounds n when the owner
+    sets one.
+  - The `fsync` per commit exists today, so the added cost is bytes and XML serialisation only. The stress case is
+    accepted unmeasured (SC-8).
   - Z1 runs 200 backups of 50 SMS and asserts the count and length after the 200th are no larger than after the 2nd.
     Both should be 50 entries, 1,549 characters.
 - **Coverage (JaCoCo LINE).**
@@ -345,6 +509,7 @@ What a process death at each point leaves, for one SMS row:
 | 8 | Restore: after the write-ahead commit, before the insert | entry for a row not in the provider | harmless: if that SMS later appears with the same triple, it is already on the server | AC-14; not tested (no such failure point in the double; reasoning only) |
 | 9 | Restore: after the insert, before the watermark raise | row in the provider, entry present, watermark old | forward filter drops it | AC-14 (b); yes (S8) |
 | 10 | Restore: after the raise | as today | window filter drops it | AC-14 (a); yes (S7) |
+| 11 | Iteration 2: a restore records and inserts a row while a backup's queries run (no death; a concurrent interleaving) | the backup's second record read holds the entry (2.4 argument) | the row is not uploaded, in this run or later | AC-14, REQ AC-16; yes (B26, M-L26) |
 
 **What `SharedPreferences.commit()` does and does not guarantee** (L14).
 - **Does:**
@@ -358,9 +523,22 @@ What a process death at each point leaves, for one SMS row:
     never a loss. The return value is ignored, as `setMaxSyncedDate` ignores it today;
   - (b) nothing across files: the restore checkpoint is in another file, which is unchanged and irrelevant here;
   - (c) no ordering with `apply()` writes made elsewhere: none touch these keys.
-- **Concurrency.** A static lock serialises the read-modify-write across `DataTypePreferences` instances in one process.
-  Whether two backup workers can overlap was not examined (SC-9). The lock prevents a lost entry; it does not make the
-  workers mutually exclusive.
+- **Concurrency** (iteration 2: SC-9 and R6 resolved from the code, L23).
+  - **They can overlap.** Each backup type is enqueued under its own unique-work name with REPLACE, so a manual, an
+    incoming, a regular and a broadcast backup can run at the same time, and so can a restore. All run in the one app
+    process (no `android:process`).
+  - **The lock's scope.** `SMS_RECORD_LOCK` is a `static final` field of `DataTypePreferences`: one object per class
+    loader, so one per process. Every `DataTypePreferences` instance of the process (each `Preferences` creates one)
+    takes it for every read-modify-write of the SMS watermark and record:
+    - the upload commit; the examined-row write; the seed; Skip; the restore write; `clearLastSyncData`.
+  - Reads (`getSmsBackupRecord`) take only the preferences object's own lock, which is enough, because each write is a
+    single `commit()`.
+  - **Worst case.** Two backups that select the same late or forward row before either commits both upload it: one
+    duplicate per such row. Today the same happens for forward rows. No loss is possible: the watermark is
+    `max(stored, confirmed)` under the lock, and the record is a set union under the lock, so neither a watermark nor
+    an entry is ever overwritten by an older value.
+  - A restore and a backup: 2.4 and row 11 (no duplicate).
+  - Mutual exclusion would need a scheduler change (CNTR-MODERNIZATION-004) and is not this story's.
 
 ### 2.8 Behaviour preserved (AC-6, AC-23)
 
@@ -378,14 +556,27 @@ What a process death at each point leaves, for one SMS row:
    - (1) an SMS hidden at Skip and released within W is uploaded (REQ AC-14; S2);
    - (2) a restored SMS that an interruption left above the watermark is not uploaded (REQ AC-16; S8).
    - The late-visible SMS themselves are the feature.
-4. **A consequence that changes no upload, stated for the orchestrator** (section 11 item 2). A forward SMS the converter
-   rejects is recorded as examined (2.2 item 3), so a later run no longer selects it. That run makes no `checkSettings`
-   call when nothing else is selected, and the row no longer counts against the per-run limit. Today it is re-selected
-   every run until a later row passes it. Uploads, headers, folders and watermarks are identical. This follows from the
-   Record 16 ruling on SC-1 and is not a third REQ outcome change.
-5. **Signatures and wiring.** `appendBatchAndUpdateWatermark` keeps its signature. The `BackupItemsFetcher` and
-   `BackupQueryBuilder` constructors and both `BulkFetcher(` sites are unchanged. Every `MailTransport` double compiles
-   unchanged (IC-3).
+4. **A stated difference: rows the converter rejects are recorded** (Record 18: confirmed, inside ruling 25). An SMS
+   the converter rejects (an empty address, or a person outside the chosen group) is recorded as examined (2.2 item 3),
+   so no later run looks at it again.
+   - A run that finds only such rows no longer logs in to the server, and such a row no longer counts against the
+     per-run limit. Today it is re-selected every run until a later row passes it.
+   - A row the contact-group rule excluded is not looked at again if the rule is changed later. Today that already holds
+     for every row below the watermark.
+   - Uploads, headers, folders and watermarks of every row that is uploaded today are identical.
+5. **A stated difference: rows the SQL contact-group clause excludes are never recorded** (iteration 2; plan-review O-2;
+   Record 18).
+   - The window query carries the group clause (`type = 2 OR person IN (...)`), so a row it excludes is never returned,
+     never examined and never recorded.
+   - If the owner later widens the group (for example to everybody), every such SMS dated within 6 hours below the
+     watermark is uploaded by the next backup. Today it is never uploaded.
+   - It is neither a duplicate nor a loss, and it is bounded by W. It is accepted.
+   - **It is the opposite of item 4.** Rows the converter rejects are recorded and not looked at again; rows the SQL
+     clause excludes are not recorded and are looked at again.
+   - Both sentences go to the next requirements pass (I10; section 11 item 7).
+6. **Signatures and wiring.** `appendBatchAndUpdateWatermark` keeps its signature.
+   The `BackupItemsFetcher` and `BackupQueryBuilder` constructors and both `BulkFetcher(` sites are unchanged. Every
+   `MailTransport` double compiles unchanged (IC-3).
 
 ### 2.9 Edge cases
 
@@ -404,8 +595,28 @@ What a process death at each point leaves, for one SMS row:
 - **Contact-group change after a row was recorded as examined.** It stays excluded (Record 16 consequence, logged).
 - **Provider normalising the address or body on a restore insert.** The keys would then differ and the restored row would
   be uploaded once: a duplicate, not a loss. This cannot be shown on the provider double and is risk R7.
+- **Iteration 2 (expert-depth C8):**
+  - **Device clock moved backwards** by d after a backup. A new SMS is dated by the clock, so it is dated below the
+    watermark. If d < W it falls inside the window and is uploaded once, which today's code does not do. If d ≥ W it
+    is not uploaded, as today. A forward jump is SC-12.
+  - **Time zones and daylight saving.** `date` is UTC epoch milliseconds. The key, the window and the pruning do not
+    depend on the zone. Only the mail `Date` header uses the default zone (L16), and R3 fixes it to UTC.
+  - **Dual SIM.** `sub_id` is not in the key. The same text from the same sender in the same millisecond on both SIMs
+    gives one entry, which is the SC-6 case. Nothing else changes.
+  - **The network delivers the same SMS twice.** The provider holds two rows with different dates: two keys and two
+    Message-IDs, and both are uploaded, as today. The fix does not try to de-duplicate network re-delivery.
+  - **The SMS app updates columns outside the key** (`read`, `seen`, `status`, `thread_id`, `type`). The key is
+    unchanged, so the row is not uploaded again (B8 for `type`). A change to `date`, `address` or `body` changes the key
+    and gives one duplicate, never a loss (as R7).
+  - **A concurrent backup prunes between this fetch's two reads.** Another backup raised the watermark and pruned
+    entries this fetch's older window still covers. Those rows can be selected again: one duplicate, never a loss
+    (2.7 "Concurrency").
 
-### 2.10 Start state (written while U-067 is being built)
+### 2.10 Start state (iteration 1 written while U-067 was being built; iteration 2 at `2aad7d70`, after U-067)
+
+Iteration 2: U-067 has landed (`c12a2788`). At `HEAD` the anchors read `BackupWorker.kt:207` (Skip), `:355-357` (the
+else-branch) and `:423` (the seam's write), and `RestoreWorker.kt:461` (the insert). The iteration-1 text below is kept
+for its reasoning; its "after U-067" numbers are superseded by these.
 
 - **What this plan relies on from U-067** (its plan, section 3.1):
   - `BackupWorker.kt`: the import line becomes `import kotlinx.coroutines.currentCoroutineContext`; `backupCursors`
@@ -445,7 +656,6 @@ import android.provider.Telephony;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
@@ -462,8 +672,10 @@ import java.util.TreeSet;
  * file, next to the watermark {@code max_synced_date}, so that Android's own app backup copies
  * both together (backup_descriptor.xml excludes only credentials.xml and pinned_certs.xml).
  * Entries are {@code <date>:<digest>}, comma-separated: the row's date in epoch milliseconds
- * and the first 16 hex characters of SHA-256 over the length-prefixed date, address and body
- * (UTF-8). The record holds no address and no text. The key leaves out the row type (an
+ * and the first 16 hex characters of SHA-256 over the length-prefixed date, address and body,
+ * hashed as their raw UTF-16 code units (two bytes per char, big-endian), so that no two
+ * different texts, malformed ones included, give the same input. The record holds no address
+ * and no text. The key leaves out the row type (an
  * outbox row that becomes sent must not be uploaded again) and the provider _id (a restore
  * and a move to another phone give rows new ids).
  */
@@ -624,10 +836,22 @@ public final class SmsBackupWindow {
         }
     }
 
+    /**
+     * SHA-256 of the canonical text's UTF-16 code units, two bytes per char, big-endian. This is
+     * total and one-to-one over Java strings, unpaired surrogates included; a charset encoder
+     * (UTF-8, or the platform's UTF-16) would replace a malformed char, so two different bodies
+     * could hash alike (plan 2.5).
+     */
     private static String digest(String canonical) {
         try {
-            final byte[] hash = MessageDigest.getInstance("SHA-256")
-                    .digest(canonical.getBytes(StandardCharsets.UTF_8));
+            final MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            final byte[] units = new byte[canonical.length() * 2];
+            for (int i = 0; i < canonical.length(); i++) {
+                final char c = canonical.charAt(i);
+                units[2 * i] = (byte) (c >> 8);
+                units[2 * i + 1] = (byte) c;
+            }
+            final byte[] hash = sha256.digest(units);
             final char[] out = new char[DIGEST_HEX_CHARS];
             for (int i = 0; i < DIGEST_HEX_CHARS / 2; i++) {
                 out[2 * i] = HEX[(hash[i] >> 4) & 0xF];
@@ -797,9 +1021,10 @@ import java.util.Set;
         final String entry = SmsBackupWindow.entryOf(values);
         if (entry == null) return false;
         synchronized (SMS_RECORD_LOCK) {
+            final long stored = storedSmsWatermark();
             final Set<String> record = getSmsBackupRecord();
             record.add(entry);
-            SmsBackupWindow.prune(record, storedSmsWatermark());
+            SmsBackupWindow.prune(record, stored);
             final SharedPreferences.Editor editor = sharedPreferences.edit();
             putSmsRecord(editor, record);
             return editor.commit();
@@ -1044,7 +1269,10 @@ import java.util.Set;
      * first, in date order, and count against the per-run limit; rows already in the record are
      * not counted. The forward query (unchanged text) takes the remaining budget; its LIMIT is
      * widened only by the record entries above the watermark (normally none), whose rows are
-     * dropped. With nothing late and nothing dropped, the forward cursor is returned as it is.
+     * dropped. The record is read a second time after both queries have returned, and the rows
+     * are filtered against that read: a restore writes a row's entry before it inserts the row,
+     * so a row a concurrent restore inserted is never mistaken for a late one (plan 2.4).
+     * With nothing late and nothing dropped, the forward cursor is returned as it is.
      */
     private @NonNull Cursor getSmsItemsWithLookBack(@NonNull DataTypePreferences preferences, long watermark,
                                                     @Nullable ContactGroupIds group, int max) {
@@ -1057,9 +1285,31 @@ import java.util.Set;
             Log.i(TAG, String.format(Locale.ENGLISH,
                     "BackupItemsFetcher: look-back seeded %d SMS already on the phone (upgrade)", seed.size()));
         }
-        final Set<String> record = preferences.getSmsBackupRecord();
+        // First read: only to size the forward query's LIMIT.
+        final Set<String> before = preferences.getSmsBackupRecord();
 
         final Cursor window = performQuery(queryBuilder.buildSmsWindowQuery(group, watermark));
+        Cursor forward = null;
+        final int remaining;
+        try {
+            int lateBefore = 0;
+            for (int i = 0; window.moveToPosition(i); i++) {
+                if (!isRecorded(before, SmsBackupWindow.entryOf(window))) lateBefore++;
+            }
+            // Late rows count against the per-run limit; rows already in the record do not.
+            remaining = max > 0 ? max - Math.min(lateBefore, max) : max;
+            if (max <= 0 || remaining > 0) {
+                forward = performQuery(queryBuilder.buildQueryForDataType(DataType.SMS, group,
+                        max > 0 ? remaining + SmsBackupWindow.countAbove(before, watermark) : max));
+            }
+        } catch (RuntimeException e) {
+            window.close();
+            throw e;
+        }
+
+        // Second read, after both queries have returned (REQ-MODERNIZATION-020 AC-16 with a restore
+        // running at the same time): every restored row these queries returned is in this read.
+        final Set<String> record = preferences.getSmsBackupRecord();
         final List<Integer> late = new ArrayList<Integer>();
         int alreadyBackedUp = 0;
         for (int i = 0; window.moveToPosition(i); i++) {
@@ -1075,13 +1325,9 @@ import java.util.Set;
                     late.size(), alreadyBackedUp));
         }
 
-        final int remaining = max > 0 ? max - late.size() : max;
-        Cursor forward = null;
         final List<Integer> accepted = new ArrayList<Integer>();
-        if (max <= 0 || remaining > 0) {
+        if (forward != null) {
             final int entriesAbove = SmsBackupWindow.countAbove(record, watermark);
-            forward = performQuery(queryBuilder.buildQueryForDataType(DataType.SMS, group,
-                    max > 0 ? remaining + entriesAbove : max));
             for (int i = 0; forward.moveToPosition(i); i++) {
                 if (entriesAbove > 0 && isRecorded(record, SmsBackupWindow.entryOf(forward))) continue;
                 if (max > 0 && accepted.size() >= remaining) break;
@@ -1326,7 +1572,12 @@ internal object SmsFixture {
     const val OWNER = "backup-owner"
 }
 
-/** U-070: a process death simulated inside a test (not caught by any catch of the workers). */
+/**
+ * U-070: a process death simulated inside a test. It propagates out of the restore loop
+ * (executeRestoreWithValues catches only IllegalStateException). In the backup path doWork's
+ * catch (e: Exception) turns it into Result.failure, after the same persisted state a real
+ * death leaves (the throw comes before the commit).
+ */
 internal class SimulatedProcessDeath(message: String) : RuntimeException(message)
 
 /** U-070: one row of a provider double. */
@@ -1373,6 +1624,12 @@ internal class ProviderDouble(private val kind: DataType) : ContentProvider() {
     val queries = mutableListOf<ProviderQuery>()
     /** When true, the next insert stores the row and then throws [SimulatedProcessDeath]. */
     var dieAfterNextInsert = false
+    /**
+     * Iteration 2 (B26): called with the selection text at the start of every query, before any
+     * row is selected; a test uses it to run another writer between the app's reads. Null by
+     * default, so the double behaves exactly as before.
+     */
+    var beforeQuery: ((String) -> Unit)? = null
     private var nextId = 1L
 
     fun add(date: Long, address: String?, body: String?, type: Int = SmsFixture.INBOX,
@@ -1412,6 +1669,7 @@ internal class ProviderDouble(private val kind: DataType) : ContentProvider() {
 
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?,
                        selectionArgs: Array<out String>?, sortOrder: String?): Cursor? {
+        beforeQuery?.invoke(selection.orEmpty())
         val args = selectionArgs?.toList() ?: emptyList()
         val match = matcher(selection, args)
         var selected = rows.filter { !it.hidden && match(it) }
@@ -1842,11 +2100,12 @@ class LateVisibleSmsRegressionTest {
 }
 ```
 
-### 4.3 T3 — new `LateVisibleSmsBackupTest.kt` (25 tests; written at I4)
+### 4.3 T3 — new `LateVisibleSmsBackupTest.kt` (26 tests; written at I4; iteration 2 changed B3 and added B26)
 
 ```kotlin
 package com.zegoggles.smssync.service
 
+import android.content.ContentValues
 import android.util.Log
 import androidx.preference.PreferenceManager
 import androidx.work.testing.TestListenableWorkerBuilder
@@ -1941,8 +2200,10 @@ class LateVisibleSmsBackupTest {
      */
     @Test
     fun ac2c_alreadyBackedUpWindowRows_areNotCountedAgainstTheLimit() {
-        (4 downTo 1).forEach { h.sms.add(D - it * 1000L, "+1555010010$it", "backed up $it") }
-        establishWatermarkAtD()
+        val backedUp = (4 downTo 1).map { h.sms.add(D - it * 1000L, "+1555010010$it", "backed up $it") } +
+            h.sms.add(D, "+15550100009", "watermark row")
+        assertThat(ids(h.backupRecording())).containsExactlyElementsIn(backedUp).inOrder()
+        assertThat(h.watermark()).isEqualTo(D)
         val late = h.sms.add(D - 500, "+15550100201", "late")
         val forward = (1..3).map { h.sms.add(D + it * 1000L, "+1555010030$it", "forward $it") }
         h.setMaxItemsPerSync(3)
@@ -2345,6 +2606,39 @@ class LateVisibleSmsBackupTest {
         assertThat(h.sms.queries.count { isWindowQuery(it) }).isEqualTo(2)
     }
 
+    // ---- Iteration 2: a restore running while the backup's queries run (contract-verification O-1) ----
+
+    /**
+     * REQ AC-16 with a concurrent restore: the provider double performs a restore's two steps
+     * (the write-ahead entry, then the insert) at the start of the window query, for a row within
+     * W below the watermark, and at the start of the forward query, for a row above it. That is
+     * after any record read the fetch makes before its queries. The backup uploads neither restored
+     * row, uploads the genuine late SMS, and the next backup uploads nothing.
+     */
+    @Test
+    fun race_restoreRecordsAndInsertsWhileTheQueriesRun_restoredRowsNotUploaded() {
+        establishWatermarkAtD()
+        val late = h.sms.add(D - 3 * HOUR, "+15550100001", "genuine late")
+        fun restoreStep(date: Long, address: String) {
+            val values = ContentValues().apply {
+                put("date", date); put("address", address); put("body", "restored $date"); put("type", SmsFixture.INBOX)
+            }
+            h.dataTypePreferences.recordRestoredSms(values)
+            h.sms.add(date, address, "restored $date")
+        }
+        h.sms.beforeQuery = { selection ->
+            when {
+                selection.startsWith("date > ? AND date <= ?") -> restoreStep(D - HOUR, "+15550300001")
+                selection.startsWith("date > ? AND type <> ?") -> restoreStep(D + HOUR, "+15550300002")
+            }
+        }
+        val run = h.backupRecording()
+        h.sms.beforeQuery = null
+        assertWithMessage("SMS queries: ${h.sms.queries}").that(ids(run)).containsExactly(late)
+        assertThat(h.sms.rows).hasSize(4)
+        assertThat(h.backupRecording().appended).isEmpty()
+    }
+
     private companion object {
         const val LOOK_BACK_LINE = "BackupItemsFetcher: look-back (seeded [0-9]+ SMS already on the phone \\((upgrade|skip)\\)|selected [0-9]+ late SMS, skipped [0-9]+ already backed up)"
     }
@@ -2444,13 +2738,21 @@ class SmsBackupWindowTest {
         assertThat(SmsBackupWindow.LOOK_BACK_MS).isEqualTo(TimeUnit.HOURS.toMillis(6))
     }
 
-    /** The key: the date and a stable truncated SHA-256 of the length-prefixed fields (vectors computed independently). */
+    /**
+     * The key: the date and a stable truncated SHA-256 of the length-prefixed fields, hashed as
+     * UTF-16 code units (vectors computed independently, L21). Malformed text (unpaired
+     * surrogates) and "?" give three different keys.
+     */
     @Test
     fun entry_isTheDateAndAStableDigest_ofLengthPrefixedFields() {
-        assertThat(SmsBackupWindow.entryOf("1700000000000", "+15550100001", "hello")).isEqualTo("1700000000000:e5afc97e664cb3c0")
-        assertThat(SmsBackupWindow.entryOf("1700000000000", null, null)).isEqualTo("1700000000000:092c3a0f85c12115")
-        assertThat(SmsBackupWindow.entryOf("1700000000000", "+15550100001", "héllo 😀")).isEqualTo("1700000000000:b1f014502ba924fc")
-        assertThat(SmsBackupWindow.entryOf("1700000000000", "+1555010000", "1hello")).isEqualTo("1700000000000:6c3e0764a787e21c")
+        val d = "1700000000000"
+        assertThat(SmsBackupWindow.entryOf(d, "+15550100001", "hello")).isEqualTo("1700000000000:d6a72b9c218f03eb")
+        assertThat(SmsBackupWindow.entryOf(d, null, null)).isEqualTo("1700000000000:3706ccdcb316cbe4")
+        assertThat(SmsBackupWindow.entryOf(d, "+15550100001", "héllo 😀")).isEqualTo("1700000000000:5588e89c715c32e9")
+        assertThat(SmsBackupWindow.entryOf(d, "+1555010000", "1hello")).isEqualTo("1700000000000:49c3523d5656f055")
+        assertThat(SmsBackupWindow.entryOf(d, "+15550100001", "\uD800")).isEqualTo("1700000000000:b237423d5ff1a2c6")
+        assertThat(SmsBackupWindow.entryOf(d, "+15550100001", "\uD801")).isEqualTo("1700000000000:e636bc987e5e57c5")
+        assertThat(SmsBackupWindow.entryOf(d, "+15550100001", "?")).isEqualTo("1700000000000:570e37f30ca551d2")
         assertThat(SmsBackupWindow.entryOf("not a date", "+15550100001", "hello")).isNull()
         assertThat(SmsBackupWindow.entryOf(null, "+15550100001", "hello")).isNull()
     }
@@ -2580,6 +2882,20 @@ class BackupQueryBuilderWindowTest {
 ```
 
 ### 4.7 T7 — new `LateVisibleSmsSkipResetRestoreTest.kt` (11 tests; written at I5)
+
+**What S10 and S11 show, and what they do not** (iteration 2; plan-review O-4; Record 18).
+- **They show:**
+  - the record travels in a file the descriptor lets Android copy, with the names parsed from the resource;
+  - after the copied files are re-created from their contents, the excluded files are emptied, and the provider is
+    replaced by one holding the same messages under new row ids, the first backup uploads nothing already backed up
+    (S10), and does upload a within-W SMS the old phone never uploaded (S11).
+- **They do not show:**
+  - Android's backup transport itself (key/value or full backup, its encryption, what a device-to-device transfer copies
+    on Android 12 and above, where the platform may ignore the descriptor);
+  - a different app version on the new phone;
+  - a provider that changed a row's date, address or text, where a duplicate is accepted (REQ AC-19).
+- The test empties the excluded files rather than deleting them. A preferences object for those names may stay cached in
+  the process, and an emptied file holds what a fresh phone holds: nothing.
 
 ```kotlin
 package com.zegoggles.smssync.service
@@ -2808,8 +3124,9 @@ class LateVisibleSmsSkipResetRestoreTest {
     /**
      * Copies to a fresh store the preference files that backup_descriptor.xml lets Android copy
      * (the excluded names are parsed, not hard-coded): each copied file is snapshotted, cleared
-     * and written back from the snapshot. Excluded files are not copied (the owner signs in again
-     * on the new phone). Asserts the record travels in a copied file.
+     * and written back from the snapshot, and every excluded file is cleared, as a restored phone
+     * has none of them (iteration 2, plan-review O-4). The owner then signs in again. Asserts the
+     * record travels in a copied file.
      */
     private fun moveToAnotherPhone() {
         val excluded = excludedSharedPrefFiles()
@@ -2835,6 +3152,7 @@ class LateVisibleSmsSkipResetRestoreTest {
             }
             editor.commit()
         }
+        excluded.forEach { h.context.getSharedPreferences(it.removeSuffix(".xml"), Context.MODE_PRIVATE).edit().clear().commit() }
         AuthPreferences(h.context).setImapUser(OWNER)
     }
 
@@ -2872,59 +3190,66 @@ class LateVisibleSmsSkipResetRestoreTest {
 }
 ```
 
-### 4.8 Test table (49 new tests)
+### 4.8 Test table (50 new tests)
+
+"Bitten by" is iteration 2's complete list. It is derived test by test and is the transpose of the I8 failing sets.
+Every test has at least one mutation, and every mutation id has at least one test (Record 18).
 
 | Id | Class.test | AC | Bitten by |
 |----|-----------|----|-----------|
 | R1 | Regression.ac1_lateVisibleSms_isUploadedOnceByTheNextBackup | AC-1, AC-11 | red on start; M-L1, M-L5, M-L10, M-L18b |
-| R2 | Regression.ac1_lateVisibleSms_afterBackupsInBetween_isUploadedOnce | AC-1 | red on start; M-L1, M-L10 |
+| R2 | Regression.ac1_lateVisibleSms_afterBackupsInBetween_isUploadedOnce | AC-1 | red on start; M-L1, M-L5, M-L10, M-L18b |
 | R3 | Regression.ac6_inOrderSequence_isTheStartCommitSequence | AC-6, AC-19 (calls) | M-L5 |
-| B1 | Backup.ac2a_limitN_nPlusOneLate_… | AC-2 (a) | M-L1 |
-| B2 | Backup.ac2b_lateRowsCountAgainstTheLimit_… | AC-2 (b) | M-L1, M-L8a, M-L19i |
-| B3 | Backup.ac2c_alreadyBackedUpWindowRows_… | AC-2 (c) | M-L1, M-L5, M-L19i, M-L19ii |
-| B4 | Backup.ac3_lateDraftAndOutOfGroup… | AC-3 | M-L1, M-L9a, M-L9b |
-| B5 | Backup.ac5_lateRowAtWMinus1ms… | AC-5 | M-L1, M-L3 (3 h), M-L4b |
-| B6 | Backup.ac5_rowExactlyWBelow… | AC-5 | M-L2, M-L3 (7 h), M-L4a |
-| B7 | Backup.ac7_runsWithALateRow_… | AC-7 | M-L5 |
+| B1 | Backup.ac2a_limitN_nPlusOneLate_… | AC-2 (a) | M-L1, M-L3a, M-L5, M-L10, M-L18b |
+| B2 | Backup.ac2b_lateRowsCountAgainstTheLimit_… | AC-2 (b) | M-L1, M-L5, M-L18b (not M-L19i: plan-review B-2; not M-L8a: B2's MMS watermark is -1) |
+| B3 | Backup.ac2c_alreadyBackedUpWindowRows_… | AC-2 (c) | M-L1, M-L5, M-L18b, M-L19i, M-L19ii |
+| B4 | Backup.ac3_lateDraftAndOutOfGroup… | AC-3 | M-L1, M-L2i, M-L2ii, M-L3a, M-L3b, M-L4a, M-L4b, M-L5, M-L9a, M-L9b, M-L18b |
+| B5 | Backup.ac5_lateRowAtWMinus1ms… | AC-5 | M-L1, M-L3a, M-L4b, M-L5, M-L18b |
+| B6 | Backup.ac5_rowExactlyWBelow… | AC-5 | M-L2i, M-L2ii, M-L3b, M-L4a |
+| B7 | Backup.ac7_runsWithALateRow_… | AC-7 | M-L1, M-L5, M-L18b |
 | B8 | Backup.ac8_rowWhoseTypeChanges… | AC-8 | M-L5, M-L6 |
-| B9 to B12 | Backup.ac9_… (open, append, login, cancel) | AC-9 | M-L11 (B10, B12) |
-| B13 | Backup.ac10_deathAfterTheServerConfirmed_… | AC-10 | M-L11, M-L12a, M-L12b |
-| B14 | Backup.ac11_backupOfOnlyAnOlderLateRow_… | AC-11 | M-L10 |
+| B9 | Backup.ac9_openFolderFails_… | AC-9 | M-L1, M-L5, M-L18b |
+| B10 | Backup.ac9_appendFails_… | AC-9 | M-L1, M-L5, M-L11, M-L18b |
+| B11 | Backup.ac9_loginFails_… | AC-9 | M-L1, M-L5, M-L18b |
+| B12 | Backup.ac9_cancelledDuringTheAppend_… | AC-9 | M-L1, M-L5, M-L11, M-L18b |
+| B13 | Backup.ac10_deathAfterTheServerConfirmed_… | AC-10 | M-L1, M-L5, M-L11, M-L12a, M-L12b, M-L18b |
+| B14 | Backup.ac11_backupOfOnlyAnOlderLateRow_… | AC-11 | M-L1, M-L3a, M-L5, M-L10, M-L18b |
 | B15 | Backup.ac11_confirmedDateMinusOne_… | AC-11 | M-L10 |
-| B16 | Backup.ac15_firstRun_sendsOnlyTodaysQuery_… | AC-15 | M-L21 |
+| B16 | Backup.ac15_firstRun_sendsOnlyTodaysQuery_… | AC-15 | M-L5, M-L19ii, M-L21 |
 | B17 | Backup.ac15_recordOnlyWritesKeepTheFirstRun_… | AC-15, AC-21 | M-L20 |
-| B18 | Backup.ac16_upgrade_… | AC-16 | M-L18a, M-L18b, M-L5 |
+| B18 | Backup.ac16_upgrade_… | AC-16 | M-L1, M-L2i, M-L2ii, M-L5, M-L6, M-L7, M-L18a, M-L18b |
 | B19 | Backup.ac18_mmsAndCallLog_keepTodaysQueries_… | AC-18 | M-L8a |
 | B20 | Backup.ac18_mmsWatermark_isWrittenAsToday_… | AC-18 | M-L8b |
-| B21 | Backup.ac19_onlyRowsWithinWAreReturned_… | AC-19 | M-L2, M-L3 (7 h) |
-| B22 | Backup.ac20_pruning_entryWMinus1msBelow… | AC-20 | M-L13b |
-| B23 | Backup.ac21_rowsTheConverterRejects_… | AC-21 | M-L20, M-L1 |
-| B24 | Backup.ac22_logLinesCarryCountsOnly_… | AC-22 | (log text; any mutation that removes a line) |
-| B25 | Backup.ic2_xoauthRetryPath_alsoRunsTheLookBack | IC-2 | M-L1 |
+| B21 | Backup.ac19_onlyRowsWithinWAreReturned_… | AC-19 | M-L1, M-L2i, M-L2ii, M-L3b, M-L4a, M-L5, M-L6, M-L7, M-L10, M-L18a, M-L18b |
+| B22 | Backup.ac20_pruning_entryWMinus1msBelow… | AC-20 | M-L2i, M-L2ii, M-L3a, M-L3b, M-L4a, M-L5, M-L13a, M-L13b |
+| B23 | Backup.ac21_rowsTheConverterRejects_… | AC-21 | M-L1, M-L5, M-L18b, M-L20 |
+| B24 | Backup.ac22_logLinesCarryCountsOnly_… | AC-22 | M-L1, M-L5, M-L18a, M-L18b |
+| B25 | Backup.ic2_xoauthRetryPath_alsoRunsTheLookBack | IC-2 | M-L1, M-L4a, M-L5, M-L18b |
+| B26 | Backup.race_restoreRecordsAndInsertsWhileTheQueriesRun_… (iteration 2) | AC-14, REQ AC-16 | M-L1, M-L3a, M-L5, M-L7, M-L17, M-L18b, M-L26 |
 | Z1 | SmsBackupRecordSizeTest.ac20_twoHundredBackupsOfFifty_… | AC-20 | M-L13a |
-| S1 | SkipResetRestore.ac12a_skip_… | AC-12 (a) | M-L15, M-L5 |
-| S2 | SkipResetRestore.ac12b_skip_smsHiddenAtSkip… | AC-12 (b), AC-23 (1) | M-L1 |
-| S3 | SkipResetRestore.ac12_skipWithoutSms_… | AC-12 | (guard against a Skip that touches SMS) |
-| S4 | SkipResetRestore.ac11_skip_stillSetsTheWatermarkOutright | AC-11 | (guard against max() on Skip) |
-| S5 | SkipResetRestore.ac13_reset_backupThenUploads… | AC-13 | M-L14a, M-L14b |
-| S6 | SkipResetRestore.ac13_reset_thenSkip_… | AC-13 | M-L15 |
-| S7 | SkipResetRestore.ac14a_restoreFromTheServer_… | AC-14 (a) | M-L16a, M-L7, M-L5 |
-| S8 | SkipResetRestore.ac14b_deathAfterTheInsert… | AC-14 (b), AC-23 (2) | M-L16a, M-L16b, M-L17 |
-| S9 | SkipResetRestore.ac14c_lateRowBeforeARestore… | AC-14 (c) | M-L1 |
+| S1 | SkipResetRestore.ac12a_skip_… | AC-12 (a) | M-L2i, M-L2ii, M-L4a, M-L5, M-L6, M-L7, M-L15 |
+| S2 | SkipResetRestore.ac12b_skip_smsHiddenAtSkip… | AC-12 (b), AC-23 (1) | M-L1, M-L5, M-L6, M-L7, M-L15, M-L18b |
+| S3 | SkipResetRestore.ac12_skipWithoutSms_… | AC-12 | M-L22 (iteration 2) |
+| S4 | SkipResetRestore.ac11_skip_stillSetsTheWatermarkOutright | AC-11 | M-L23 (iteration 2) |
+| S5 | SkipResetRestore.ac13_reset_backupThenUploads… | AC-13 | M-L5, M-L14a, M-L14b, M-L19ii |
+| S6 | SkipResetRestore.ac13_reset_thenSkip_… | AC-13 | M-L5, M-L6, M-L7, M-L15 |
+| S7 | SkipResetRestore.ac14a_restoreFromTheServer_… | AC-14 (a) | M-L5, M-L7, M-L16a |
+| S8 | SkipResetRestore.ac14b_deathAfterTheInsert… | AC-14 (b), AC-23 (2) | M-L5, M-L7, M-L16a, M-L16b, M-L17 |
+| S9 | SkipResetRestore.ac14c_lateRowBeforeARestore… | AC-14 (c) | M-L1, M-L5, M-L7, M-L16a, M-L18b |
 | S10 | SkipResetRestore.ac17_…firstBackupThereUploadsNothing… | AC-17 | M-L5, M-L7 |
-| S11 | SkipResetRestore.ac17_…smsTheOldPhoneNeverUploaded… | AC-17 | M-L1 |
-| W1 | SmsBackupWindowTest.ac4_lookBackIsSixHours | AC-4 | M-L3 |
-| W2 | SmsBackupWindowTest.entry_isTheDateAndAStableDigest_… | AC-22, key | (digest stability) |
+| S11 | SkipResetRestore.ac17_…smsTheOldPhoneNeverUploaded… | AC-17 | M-L1, M-L5, M-L7, M-L18b |
+| W1 | SmsBackupWindowTest.ac4_lookBackIsSixHours | AC-4 | M-L3a, M-L3b |
+| W2 | SmsBackupWindowTest.entry_isTheDateAndAStableDigest_… | AC-22, key | M-L24 (iteration 2) |
 | W3 | SmsBackupWindowTest.record_roundTrips_prunes… | AC-20 | M-L13a, M-L13b |
-| W4 | SmsBackupWindowTest.afterAppend_sms_… | AC-10, AC-11, AC-16 | M-L10, M-L12, M-L18b |
-| W5 | SmsBackupWindowTest.clearLastSyncData_removes… | AC-13 | M-L14a, M-L14b |
-| W6 | SmsBackupWindowTest.recordRestoredSms_… | AC-14 | (method level; M-L16 mutates the call site in `RestoreWorker`, which S7 and S8 catch) |
-| Q1 | BackupQueryBuilderWindowTest.windowQuery_selects… | AC-4, AC-19 | M-L2, M-L3, M-L4, M-L9a |
-| Q2 | BackupQueryBuilderWindowTest.windowQuery_carries… | AC-3 | M-L9b |
-| Q3 | BackupQueryBuilderWindowTest.seedQuery_… | AC-12, AC-16 | M-L2, M-L3, M-L4b, M-L9a |
+| W4 | SmsBackupWindowTest.afterAppend_sms_… | AC-10, AC-11, AC-16 | M-L6, M-L7, M-L10, M-L12a, M-L12b, M-L18b |
+| W5 | SmsBackupWindowTest.clearLastSyncData_removes… | AC-13 | M-L14a, M-L14b, M-L18b |
+| W6 | SmsBackupWindowTest.recordRestoredSms_… | AC-14 | M-L13a, M-L13b, M-L25 (iteration 2) |
+| Q1 | BackupQueryBuilderWindowTest.windowQuery_selects… | AC-4, AC-19 | M-L2i, M-L2ii, M-L3a, M-L3b, M-L4a, M-L4b, M-L9a |
+| Q2 | BackupQueryBuilderWindowTest.windowQuery_carries… | AC-3 | M-L4a, M-L9b |
+| Q3 | BackupQueryBuilderWindowTest.seedQuery_… | AC-12, AC-16 | M-L2i, M-L2ii, M-L3a, M-L3b, M-L4b, M-L9a |
 
-Per file (`grep -c "@Test"`): Regression 3, Backup 25, Size 1, SkipResetRestore 11, SmsBackupWindowTest 6,
-BackupQueryBuilderWindowTest 3. Total 49.
+Per file (`grep -c "@Test"`): Regression 3, Backup 26, Size 1, SkipResetRestore 11, SmsBackupWindowTest 6,
+BackupQueryBuilderWindowTest 3. Total **50**.
 
 ## 5. Increments
 
@@ -2949,7 +3274,7 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
 - **Class sets** (`--tests` values):
   - **NEW5** = `com.zegoggles.smssync.service.LateVisibleSmsRegressionTest`, `…service.LateVisibleSmsBackupTest`,
     `…service.LateVisibleSmsSkipResetRestoreTest`, `…service.BackupQueryBuilderWindowTest`,
-    `com.zegoggles.smssync.preferences.SmsBackupWindowTest` (48 cases).
+    `com.zegoggles.smssync.preferences.SmsBackupWindowTest` (49 cases: 3 + 26 + 11 + 3 + 6).
   - **SIZE** = `…service.SmsBackupRecordSizeTest` (1).
   - **PIN** = `…service.BackupQueryBuilderTest`, `BackupWorkerWatermarkTest`, `BackupWorkerIntegrationTest`,
     `BackupItemsFetcherTest`, `BulkFetcherTest`, `BackupCursorsTest`, `BackupWorkerTest`,
@@ -2976,6 +3301,51 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
 - **CRLF check of an edited tracked file**:
   `python -I -c "import sys;d=open(sys.argv[1],'rb').read();print(sys.argv[1],d.count(b'\n'),d.count(b'\r\n'))" <file>`.
   The two counts are equal.
+- **This story's own paths** (iteration 2; the U-068 scoping, plan-review O-6, Record 18). The variable `OWN` is used
+  by I0 and I9:
+  ```bash
+  OWN="$SBW $LVC $DTP $BQB $BIF $BW $RW $MT README.md $TS/LateVisibleSmsFixtures.kt $TS/LateVisibleSmsRegressionTest.kt $TS/LateVisibleSmsBackupTest.kt $TS/SmsBackupRecordSizeTest.kt $TS/LateVisibleSmsSkipResetRestoreTest.kt $TS/BackupQueryBuilderWindowTest.kt $TP/SmsBackupWindowTest.kt"
+  MINE="$TS/LateVisibleSmsFixtures.kt $TS/LateVisibleSmsRegressionTest.kt $TS/LateVisibleSmsBackupTest.kt $TS/SmsBackupRecordSizeTest.kt $TS/LateVisibleSmsSkipResetRestoreTest.kt $TS/BackupQueryBuilderWindowTest.kt $TP/SmsBackupWindowTest.kt"
+  ```
+  Together with `$W`, these are the only paths whose changes count as this story's. Any other changed, uncommitted or
+  untracked file in the checkout is "not this story's". It is recorded with its path, and at I9 with its `@Test`
+  count. It is never counted as this story's, and it is never a stop except as rows D1 and D17 say.
+
+### 5.1 Sessions and hand-over (iteration 2; plan-review O-9; Record 18)
+
+The run is planned as **two developer sessions**. Neither session commits anything.
+- **Session 1: I0 to I7.** It ends with every production edit and every test in place and green (I7), the pristine
+  copies taken, the seven `<NAME>_NEW` blobs written to the object store (`git hash-object -w`), and `PROD_DIFF`
+  recorded. Its last log entry is the hand-over block below, with "Next step: S2-0".
+- **Session 2: S2-0, then I8 to I11.**
+  - **S2-0, resume** (no Gradle):
+    1. `git rev-parse HEAD`, and `git log --oneline $START..HEAD`. Commits by others are recorded. A commit that
+       touches `OWN` is row D1.
+    2. `git status --porcelain -- $OWN` lists exactly this story's seven ` M` paths (the five edited production files,
+       `MailTransport.java` and `README.md`) and nine `??` paths (the two new production files and the seven test
+       files).
+    3. `git hash-object` of the seven files equals `<NAME>_NEW`.
+    4. `git diff HEAD -- app/src/main | git hash-object --stdin` equals `PROD_DIFF`.
+    5. `mutation-log.md` has no `APPLYING` entry without a `restored` line.
+    6. Rebuild `$WORK/pristine/` in the new session's own work folder from the blobs, which needs no copy from session 1:
+       - tracked CRLF files: `git cat-file --filters --path=<path> <NAME>_NEW > $WORK/pristine/<file>`;
+       - the two new files: `git cat-file blob <NAME>_NEW > $WORK/pristine/<file>` when I7 recorded LF, otherwise
+         `--filters`.
+       - Then `cmp` each pristine copy with the working-tree file. All must be identical.
+    - Any difference is row D22.
+- **Other safe stopping points.** At each one the session may end, and the next starts with S2-0's steps 1 to 5, plus
+  step 6 if mutations follow:
+  - after I1b (the start evidence is frozen; no production edit yet; the next step is I2);
+  - after I7 (the planned hand-over);
+  - between two I8 entries (each finished entry has its `restored` line; the next step is the next id);
+  - before I9 (every mutation entry is closed; the next step is I9).
+- **What the hand-over state guarantees.**
+  - Nothing is half-edited: every production and test edit of the finished steps is complete, and the CRLF check
+    passes.
+  - No mutation is in place: the I8 clean check passes.
+  - No Gradle run is in flight.
+  - The implementation log's last entry is a block giving: `Session <n> ends at <clock>`; the last finished step; the
+    next step; `START`; the seven blobs; `PROD_DIFF`; the counts so far.
 
 ### I0 — Baseline (no edit before this passes)
 
@@ -2996,8 +3366,9 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
    grep -c -x -F "    public boolean setMaxSyncedDate(DataType dataType, long max) {" $DTP; grep -c -x -F "    public void clearLastSyncData() {" $DTP
    grep -c -F "as the watermark" $MT; grep -c -x -F "Gmail." README.md; grep -c -F "sync state. All messages on the phone will be backed up on the next run." README.md
    for f in $SBW $LVC $TS/LateVisibleSmsFixtures.kt $TS/LateVisibleSmsRegressionTest.kt $TS/LateVisibleSmsBackupTest.kt $TS/SmsBackupRecordSizeTest.kt $TS/LateVisibleSmsSkipResetRestoreTest.kt $TS/BackupQueryBuilderWindowTest.kt $TP/SmsBackupWindowTest.kt; do test -e $f; echo "exists=$? $f"; done
-   git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
+   git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"   # C0 (tracked, at START)
    git grep -h "@Ignore" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Ignore"
+   git ls-files --others --exclude-standard -- app; git diff --name-only HEAD -- app; echo "foreign-app-end"   # expected: nothing
    grep -v '^#' gradle/gradle-daemon-jvm.properties
    git hash-object $BW $RW $BIF $BQB $DTP $MT README.md
    ```
@@ -3009,7 +3380,10 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
    - `minSdkVersion 24`. The two U-067 greps print `1`, `2` and `1`.
    - Every anchor count is `1`.
    - Every `exists=1`.
-   - Record the count as **"the count at the start of this story"** with the HEAD id, and the `@Ignore` count.
+   - Record the count as **"the count at the start of this story"**, `C0`, with the HEAD id, and the `@Ignore` count.
+   - Nothing before `foreign-app-end`. The sprint is serial (U-068, then U-069, then this story), so no other story's
+     file is uncommitted under `app` at the start. If one is, it is row D1 (iteration 2: the orchestrator may rule
+     that it stays; then it is recorded as foreign with its `@Test` count `F0`, and I9 explains it).
    - `toolchainVersion=25`.
    - **Rows:** D1, D2, D6.
 2. Gate G (`I0-gates`). Expected `exit=0`, `U063-DAEMON-JVM: java.version=25…`, `failures=0 errors=0`. Record `<n>`
@@ -3068,8 +3442,8 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
    - R1 and R2 are now green;
    - R3 is green with the **start** literal unchanged (AC-6);
    - `git diff --stat HEAD -- app/src/test` shows no tracked test file.
-3. Write T3 and T4. TR(`I4-new`, `…LateVisibleSmsBackupTest`, `…SmsBackupRecordSizeTest`). Expected 25 + 1 pass. Record
-   the Z1 duration from the XML (`time=`).
+3. Write T3 and T4. TR(`I4-new`, `…LateVisibleSmsBackupTest`, `…SmsBackupRecordSizeTest`). Expected 26 + 1 pass,
+   including B3 as corrected in iteration 2 and the race test B26. Record the Z1 duration from the XML (`time=`).
 4. **Rows:** D7 to D10, D14.
 
 ### I5 — Restore (P7); T7
@@ -3085,7 +3459,7 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
    ```bash
    git diff -U0 HEAD -- $MT | grep '^@@'                                              # @@ -74,4 +74,4 @@
    git diff -U0 HEAD -- $MT | grep -E '^[-+]' | grep -vE '^(\+\+\+|---) ' | grep -vcE '^[-+]     \* '; echo "mt-non-comment-end"   # 0
-   git diff -U0 HEAD -- README.md | grep '^@@'                                         # two insertion hunks after old :87 and :275
+   git diff -U0 HEAD -- README.md | grep '^@@'                                         # @@ -87 +87,4 @@ and @@ -276,0 +280,6 @@ (plan-review O-7, measured on the applied edits)
    ```
 3. **Row:** D13.
 
@@ -3097,9 +3471,10 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
 3. Record the endings of the two new files: `grep -c $'\r$' $SBW $LVC` against `wc -l`. A CR count of 0 means LF, and
    their recovery uses `git cat-file blob`. Equal counts mean CRLF, and recovery uses `--filters`.
 4. Record `PROD_DIFF` = `git diff HEAD -- app/src/main | git hash-object --stdin`.
-5. **Row:** D14.
+5. Write the hand-over block (5.1). **This is the end of session 1.** The next step is S2-0.
+6. **Row:** D14.
 
-### I8 — Mutations (AC-24; write-ahead and restore protocol)
+### I8 — Mutations (AC-24; write-ahead and restore protocol; session 2)
 
 `$E/mutation-log.md` starts with a header containing:
 - the title;
@@ -3119,152 +3494,253 @@ WORK=<a u070-work folder inside the developer's own session scratch folder>   # 
 **Clean check** (before and after each entry):
 - the seven hashes equal `<NAME>_NEW`;
 - `git diff HEAD -- app/src/main | git hash-object --stdin` equals `PROD_DIFF`;
-- `git status --porcelain -- app/src/main` lists exactly the six ` M` files (`MailTransport.java`,
-  `DataTypePreferences.java`, `BackupItemsFetcher.java`, `BackupQueryBuilder.java`, `BackupWorker.kt`, `RestoreWorker.kt`)
-  and the two `??` files.
+- `git status --porcelain -- app/src/main` lists exactly this story's six ` M` files (`MailTransport.java`,
+  `DataTypePreferences.java`, `BackupItemsFetcher.java`, `BackupQueryBuilder.java`, `BackupWorker.kt`,
+  `RestoreWorker.kt`) and its two `??` files.
+- Iteration 2: any other path under `app/src/main` (not this story's) is recorded and is row D1. With a serial sprint
+  none is expected.
 
 **Each entry:**
 1. Clean check.
-2. Write-ahead `### <id> APPLYING <clock>`: the file, its hash, the edit, the class set and the expected result.
+2. Write-ahead `### <id> APPLYING <clock>`: the file, its hash, the edit, the class set and the **expected failing set**
+   (copied from the list below).
 3. One Edit; Read the lines first.
 4. One TR(`<id>`, NEW5, plus SIZE for M-L13a and M-L13b), with cases into `$M/<id>-cases.txt` and messages into
    `$M/<id>-message.txt`.
 5. Restore at once with `cp "$WORK/pristine/<file>" <path>`.
-6. Clean check, then append `run_exit`, `cases`, `failed`, `passed`, `expected: matches | does not match`, `verdict` and
-   `restored: <clock> hash-ok diff-hash-ok porcelain-ok`.
+6. Clean check, then append:
+   - `run_exit`, `cases`, `failed` (the ids), `passed`;
+   - `expected: matches | does not match` (the observed failing set compared with the listed set **as sets**);
+   - `verdict`;
+   - `restored: <clock> hash-ok diff-hash-ok porcelain-ok`.
+7. The session may end here (5.1); the next entry starts with step 1.
 
-The **mutations**, 32 runs. Each gives the file, `old_string` → `new_string` (both exact), the tests that must fail
-(test ids of 4.8), and the tests also expected to fail. Every other NEW5 test must pass; an extra failure is row D16.
-- **M-L1** — `$BIF`: `        final Cursor window = performQuery(queryBuilder.buildSmsWindowQuery(group, watermark));`
-  → `        final Cursor window = emptyCursor();`. Must fail: R1, R2, B1, B2, B3, B4, B5, S2, S9, B23 (AC-1, AC-2 (a)-(c), AC-3,
-  AC-5 boundary, AC-12 (b), AC-14 (c), AC-21). Also: B7, B9 to B14, B18, B21, B24, B25, S11.
-- **M-L2 (i)** — `$BQB`: `            String.valueOf(watermark - SmsBackupWindow.LOOK_BACK_MS),` →
-  `            String.valueOf(Long.MIN_VALUE),`. Must fail: B21, B6, Q1, Q3. Also: B22.
-- **M-L2 (ii)** — same `old_string` → `            String.valueOf(watermark - 10 * SmsBackupWindow.LOOK_BACK_MS),`. Must
-  fail: B21, B6, Q1, Q3. Also: B22.
-- **M-L3 (3 h)** — `$SBW`: `    public static final long LOOK_BACK_MS = 21_600_000L;` → `… = 10_800_000L;`. Must fail: W1,
-  B5. Also: Q1, Q3, B4, B22.
-- **M-L3 (7 h)** — same → `… = 25_200_000L;`. Must fail: W1, B21. Also: Q1, Q3, B4, B6, B22.
-- **M-L4 (a)** — `$BQB`: `                "%s > ? AND %s <= ? AND %s <> ? %s",` →
-  `                "%s >= ? AND %s <= ? AND %s <> ? %s",`. Must fail: B6. Also: Q1, Q2, B4, B21, B22, S1.
-- **M-L4 (b)** — `$BQB`: `            String.valueOf(watermark - SmsBackupWindow.LOOK_BACK_MS),` →
-  `            String.valueOf(watermark - SmsBackupWindow.LOOK_BACK_MS + 1),`. Must fail: B5. Also: Q1, Q3, B4.
-- **M-L5** — `$BIF`: `            if (isRecorded(record, SmsBackupWindow.entryOf(window))) {` → `            if (false) {`. Must
-  fail: B7, B8, S1, S7, B18, S10. Also: most tests with a later run (R1 to R3, B1 to B3, B13, B21 to B24, S2, S5, S6, S9,
-  S11).
-- **M-L6** — `$SBW`: `                row.get(Telephony.TextBasedSmsColumns.BODY));` →
-  `                row.get(Telephony.TextBasedSmsColumns.BODY) + row.get(Telephony.TextBasedSmsColumns.TYPE));`. Must
-  fail: B8. Also: B18, B21, B24, S1, S2, S6 (the seed projection has no type column).
-- **M-L7** — same `old_string` → `                row.get(Telephony.TextBasedSmsColumns.BODY) + row.get("_id"));`. Must fail:
-  S10, S7. Also: B18, B21, B24, S1, S2, S6, S8, S9.
-- **M-L8 (a)** — `$BIF`: `        if (dataType == DataType.SMS) {` →
-  `        if (dataType == DataType.SMS || dataType == DataType.MMS) {`. Must fail: B19. Also: B2.
-- **M-L8 (b)** — `$DTP`: `        if (dataType != DataType.SMS) {` → `        if (dataType == DataType.CALLLOG) {`. Must fail:
-  B20.
-- **M-L9 (a)** — `$BQB`, two lines: `            String.valueOf(Telephony.TextBasedSmsColumns.MESSAGE_TYPE_DRAFT)` /
-  `        };` → `            String.valueOf(-1)` / `        };`. Must fail: B4. Also: Q1, Q3.
-- **M-L9 (b)** — `$BQB`, two lines: `                    groupSelection(SMS, groupIds)).trim(),` /
-  `            windowArgs(watermark),` → `                    "").trim(),` / `            windowArgs(watermark),`. Must
-  fail: B4. Also: Q2.
-- **M-L10** — `$DTP`: `            final long watermark = Math.max(stored, confirmedMaxDate);` →
-  `            final long watermark = confirmedMaxDate;`. Must fail: B14, B15, R1. Also: R2, B1, W4.
-- **M-L11** — `$BW`: `        val confirmedMaxDate: Long = transport.appendMessages(folder, result)` → two lines:
-  `        dataTypePreferences.setMaxSyncedDateAfterAppend(type, DataType.Defaults.MAX_SYNCED_DATE, result.mapList)` /
-  `        val confirmedMaxDate: Long = transport.appendMessages(folder, result)`. Must fail: B10, B12. Also: B13.
-- **M-L12 (a)** — `$DTP`, two lines: `            final SharedPreferences.Editor editor = sharedPreferences.edit()` /
+**The mutations: 26 ids, 37 runs** (iteration 2: M-L22 to M-L26 added; M-L19 rewritten for the new fetch code).
+- Each gives the file, the exact `old_string` → `new_string`, and the **complete failing set** over the 49 NEW5 cases
+  (plus Z1 where SIZE is included).
+- The sets were derived test by test from the test text of section 4 and the production text of section 3, as they
+  stand in iteration 2. Every NEW5 test not listed must pass.
+- Every Java `old_string` was checked unique, and every Java mutant compiled, in the planner's scratch copy (L24).
+- Story table rows are given in brackets.
+
+- **M-L1** [no look-back] — `$BIF`: `        final Cursor window = performQuery(queryBuilder.buildSmsWindowQuery(group, watermark));` →
+  `        final Cursor window = emptyCursor();`.
+  Fails (23): R1, R2, B1, B2, B3, B4, B5, B7, B9, B10, B11, B12, B13, B14, B18, B21, B23, B24, B25, B26, S2, S9, S11.
+- **M-L2 (i)** [look-back unbounded] — `$BQB`: `            String.valueOf(watermark - SmsBackupWindow.LOOK_BACK_MS),` →
+  `            String.valueOf(Long.MIN_VALUE),`. The window and the seed share `windowArgs`, so the seed takes rows older
+  than W, the commit prunes them, and the window returns them unrecorded.
+  Fails (8): B4, B6, B18, B21, B22, S1, Q1, Q3.
+- **M-L2 (ii)** — same `old_string` → `            String.valueOf(watermark - 10 * SmsBackupWindow.LOOK_BACK_MS),`.
+  Fails (8): B4, B6, B18, B21, B22, S1, Q1, Q3.
+- **M-L3 (3 h)** — `$SBW`: `    public static final long LOOK_BACK_MS = 21_600_000L;` → `    public static final long LOOK_BACK_MS = 10_800_000L;`.
+  Fails (9): B1 (the row exactly 3 h below falls outside), B4 (window arguments), B5, B14 (5 h below), B22, B26 (its
+  late row is 3 h below), W1, Q1, Q3.
+- **M-L3 (7 h)** — same `old_string` → `    public static final long LOOK_BACK_MS = 25_200_000L;`.
+  Fails (7): B4, B6, B21, B22, W1, Q1, Q3.
+- **M-L4 (a)** [inclusive bound; the provider double evaluates `>=`] — `$BQB`: `                "%s > ? AND %s <= ? AND %s <> ? %s",` →
+  `                "%s >= ? AND %s <= ? AND %s <> ? %s",`.
+  Fails (8): B4 (its window query no longer matches `isWindowQuery`), B6, B21, B22, B25 (window count 0), S1 (the
+  row exactly W below is returned but was not seeded), Q1, Q2.
+- **M-L4 (b)** [shifted by 1 ms] — `$BQB`: `            String.valueOf(watermark - SmsBackupWindow.LOOK_BACK_MS),` →
+  `            String.valueOf(watermark - SmsBackupWindow.LOOK_BACK_MS + 1),`.
+  Fails (4): B4, B5, Q1, Q3.
+- **M-L5** [window rows not filtered against the record] — `$BIF`: `            if (isRecorded(record, SmsBackupWindow.entryOf(window))) {` →
+  `            if (false) {`.
+  Fails (33): R1, R2, R3, B1, B2, B3, B4, B5, B7, B8, B9, B10, B11, B12, B13, B14, B16, B18, B21, B22, B23, B24, B25, B26,
+  S1, S2, S5, S6, S7, S8, S9, S10, S11.
+- **M-L6** [key includes the type] — `$SBW`: `                row.get(Telephony.TextBasedSmsColumns.BODY));` →
+  `                row.get(Telephony.TextBasedSmsColumns.BODY) + row.get(Telephony.TextBasedSmsColumns.TYPE));`. The seed
+  projection has no type column, and W4's map has no type key.
+  Fails (7): B8, B18, B21, S1, S2, S6, W4.
+- **M-L7** [key uses `_id`] — same `old_string` → `                row.get(Telephony.TextBasedSmsColumns.BODY) + row.get("_id"));`.
+  A restore's values, the seed projection and W4's map carry no `_id`.
+  Fails (12): B18, B21, B26, S1, S2, S6, S7, S8, S9, S10, S11, W4.
+- **M-L8 (a)** [look-back applied to MMS] — `$BIF`: `        if (dataType == DataType.SMS) {` →
+  `        if (dataType == DataType.SMS || dataType == DataType.MMS) {`. Only B19 has an MMS watermark above 0 in a
+  fetch.
+  Fails (1): B19.
+- **M-L8 (b)** [watermark guard applied to MMS] — `$DTP`: `        if (dataType != DataType.SMS) {` →
+  `        if (dataType == DataType.CALLLOG) {`.
+  Fails (1): B20.
+- **M-L9 (a)** [draft exclusion dropped] — `$BQB`, two lines:
+  `            String.valueOf(Telephony.TextBasedSmsColumns.MESSAGE_TYPE_DRAFT)` / `        };` →
+  `            String.valueOf(-1)` / `        };`.
+  Fails (3): B4, Q1, Q3.
+- **M-L9 (b)** [group clause dropped] — `$BQB`, two lines: `                    groupSelection(SMS, groupIds)).trim(),` /
+  `            windowArgs(watermark),` → `                    "").trim(),` / `            windowArgs(watermark),`.
+  Fails (2): B4, Q2.
+- **M-L10** [watermark moved backwards] — `$DTP`: `            final long watermark = Math.max(stored, confirmedMaxDate);` →
+  `            final long watermark = confirmedMaxDate;`.
+  Fails (7): R1, R2, B1 (its final watermark assertion), B14, B15, B21 (the lowered watermark brings older rows into
+  the idle run's window), W4.
+- **M-L11** [record written before the confirmation] — `$BW`: `        val confirmedMaxDate: Long = transport.appendMessages(folder, result)` →
+  two lines: `        dataTypePreferences.setMaxSyncedDateAfterAppend(type, DataType.Defaults.MAX_SYNCED_DATE, result.mapList)` /
+  `        val confirmedMaxDate: Long = transport.appendMessages(folder, result)`. It is placed after `openFolder`, so B9
+  and B11 (which fail before it) pass.
+  Fails (3): B10, B12, B13.
+- **M-L12 (a)** [separate commit] — `$DTP`, two lines:
+  `            final SharedPreferences.Editor editor = sharedPreferences.edit()` /
   `                .putLong(dataType.maxSyncedPreference, watermark);` → two lines:
   `            sharedPreferences.edit().putLong(dataType.maxSyncedPreference, watermark).commit();` /
-  `            final SharedPreferences.Editor editor = sharedPreferences.edit();`. Must fail: B13. Also: W4.
-- **M-L12 (b)** — `$DTP`, three lines:
+  `            final SharedPreferences.Editor editor = sharedPreferences.edit();`.
+  Fails (2): B13, W4.
+- **M-L12 (b)** [`apply()`] — `$DTP`, three lines:
   `                editor.putInt(SmsBackupWindow.MARKER_KEY, SmsBackupWindow.RECORD_VERSION);` / `            }` /
   `            return editor.commit();` → the same first two lines, then `            editor.apply();` /
-  `            return true;`. Must fail: B13. Also: W4.
-- **M-L13 (a)** — `$SBW`: `        if (watermark <= 0) return;` → `        if (true) return;`. Must fail: Z1 (SIZE included in
-  this run). Also: W3, B22.
-- **M-L13 (b)** — `$SBW`: `        final long bound = watermark - LOOK_BACK_MS;` →
-  `        final long bound = watermark - LOOK_BACK_MS + 1;`. Must fail: B22. Also: W3. Z1 must still pass (SIZE included).
-- **M-L14 (a)** — `$DTP`, two lines: `            editor.remove(SmsBackupWindow.RECORD_KEY);` /
-  `            editor.remove(SmsBackupWindow.MARKER_KEY);` → `            editor.remove(SmsBackupWindow.MARKER_KEY);`. Must
-  fail: S5. Also: W5.
-- **M-L14 (b)** — same two lines → `            editor.remove(SmsBackupWindow.RECORD_KEY);`. Must fail: S5. Also: W5.
-- **M-L15** — `$BIF`: `                ? queryEntries(queryBuilder.buildSmsSeedQuery(newest))` →
-  `                ? new HashSet<String>()`. Must fail: S1. Also: S2, S6.
-- **M-L16 (a)** — `$RW`: `            preferences.dataTypePreferences.recordRestoredSms(values)` → (the line deleted; the comment
-  stays). Must fail: S7, S8. Also: S9.
-- **M-L16 (b)** — `$RW`, two lines: `            preferences.dataTypePreferences.recordRestoredSms(values)` /
+  `            return true;`.
+  Fails (2): B13, W4.
+- **M-L13 (a)** [pruning removed; SIZE included] — `$SBW`: `        if (watermark <= 0) return;` → `        if (true) return;`.
+  Fails (4): B22, W3, W6, Z1.
+- **M-L13 (b)** [pruning 1 ms too wide; SIZE included] — `$SBW`: `        final long bound = watermark - LOOK_BACK_MS;` →
+  `        final long bound = watermark - LOOK_BACK_MS + 1;`.
+  Fails (3): B22, W3, W6. Z1 passes.
+- **M-L14 (a)** [Reset leaves the record] — `$DTP`, two lines: `            editor.remove(SmsBackupWindow.RECORD_KEY);` /
+  `            editor.remove(SmsBackupWindow.MARKER_KEY);` → `            editor.remove(SmsBackupWindow.MARKER_KEY);`.
+  Fails (2): S5, W5.
+- **M-L14 (b)** [Reset leaves the marker] — same two lines → `            editor.remove(SmsBackupWindow.RECORD_KEY);`.
+  Fails (2): S5, W5.
+- **M-L15** [Skip seeding removed] — `$BIF`: `                ? queryEntries(queryBuilder.buildSmsSeedQuery(newest))` →
+  `                ? new HashSet<String>()`.
+  Fails (3): S1, S2, S6.
+- **M-L16 (a)** [restore write-ahead removed] — `$RW`: `            preferences.dataTypePreferences.recordRestoredSms(values)` →
+  (the line deleted; its comment stays).
+  Fails (3): S7, S8, S9.
+- **M-L16 (b)** [restore write made after the insert] — `$RW`, two lines:
+  `            preferences.dataTypePreferences.recordRestoredSms(values)` /
   `            val uri = ctx.contentResolver.insert(Consts.SMS_PROVIDER, values)` → the same two lines in the other order.
-  Must fail: S8.
-- **M-L17** — `$BIF`:
+  Fails (1): S8.
+- **M-L17** [forward rows not filtered] — `$BIF`:
   `                if (entriesAbove > 0 && isRecorded(record, SmsBackupWindow.entryOf(forward))) continue;` →
-  `                if (false) continue;`. Must fail: S8.
-- **M-L18 (a)** — `$BIF`: `        if (!preferences.hasSmsBackupRecordMarker()) {` → `        if (false) {`. Must fail: B18.
-  Also: B21, B24.
-- **M-L18 (b)** — `$DTP`: `        return sharedPreferences.contains(SmsBackupWindow.MARKER_KEY);` → `        return false;`
-  ("marker never seen", the same as never written: every run seeds). Must fail: B18 (the late row after the first
-  post-upgrade backup). Also: R1, R2, most late-row tests, W4, W5.
-- **M-L19 (i)** — `$BIF`: `        final int remaining = max > 0 ? max - late.size() : max;` →
-  `        final int remaining = max;`. Must fail: B2, B3.
-- **M-L19 (ii)** — same `old_string` → `        final int remaining = max > 0 ? max - late.size() - alreadyBackedUp : max;`.
-  Must fail: B3.
-- **M-L20** — `$BW`: `                    if (cursor.type == DataType.SMS) {` → `                    if (false) {`. Must fail:
-  B23. Also: B17.
-- **M-L21** — `$BIF`: `                if (watermark > 0) {` → `                if (watermark != 0) {`. Must fail: B16.
+  `                if (false) continue;`.
+  Fails (2): S8, B26.
+- **M-L18 (a)** [upgrade seeding removed] — `$BIF`: `        if (!preferences.hasSmsBackupRecordMarker()) {` →
+  `        if (false) {`.
+  Fails (3): B18, B21, B24.
+- **M-L18 (b)** [marker never seen, so every run seeds] — `$DTP`:
+  `        return sharedPreferences.contains(SmsBackupWindow.MARKER_KEY);` → `        return false;`.
+  Fails (25): R1, R2, B1, B2, B3, B4, B5, B7, B9, B10, B11, B12, B13, B14, B18, B21, B23, B24, B25, B26, S2, S9, S11,
+  W4, W5.
+- **M-L19 (i)** [late rows not counted against the limit] — `$BIF`:
+  `            remaining = max > 0 ? max - Math.min(lateBefore, max) : max;` → `            remaining = max;`.
+  Fails (1): B3.
+- **M-L19 (ii)** [already-backed-up window rows counted] — `$BIF`:
+  `                if (!isRecorded(before, SmsBackupWindow.entryOf(window))) lateBefore++;` → `                lateBefore++;`.
+  Fails (3): B3, B16 (its second run's two recorded rows use the limit), S5 (the same after the Reset).
+- **M-L20** [rows the converter rejects not recorded] — `$BW`: `                    if (cursor.type == DataType.SMS) {` →
+  `                    if (false) {`.
+  Fails (2): B17, B23.
+- **M-L21** [look-back while the watermark is -1] — `$BIF`: `                if (watermark > 0) {` →
+  `                if (watermark != 0) {`.
+  Fails (1): B16.
+- **M-L22** (iteration 2) [Skip's SMS branch also taken for another type] — `$BW`: `                if (type == DataType.SMS) {` →
+  `                if (type == DataType.SMS || type == DataType.MMS) {`.
+  Fails (1): S3 (Skip over a type set without SMS then sets the SMS watermark).
+- **M-L23** (iteration 2) [Skip no longer sets the watermark outright] — `$DTP`:
+  `                .putLong(DataType.SMS.maxSyncedPreference, watermark)` →
+  `                .putLong(DataType.SMS.maxSyncedPreference, Math.max(watermark, storedSmsWatermark()))`.
+  Fails (1): S4.
+- **M-L24** (iteration 2) [digest over a charset encoding again] — `$SBW`: `            final byte[] hash = sha256.digest(units);` →
+  `            final byte[] hash = sha256.digest(canonical.getBytes(java.nio.charset.StandardCharsets.UTF_8));`.
+  Fails (1): W2. Every other test uses keys computed one way, which stay consistent.
+- **M-L25** (iteration 2) [restore write keeps entries no window can reach] — `$DTP`:
+  `            SmsBackupWindow.prune(record, stored);` → (the line deleted).
+  Fails (1): W6.
+- **M-L26** (iteration 2) [record read once, before the queries: contract-verification O-1] — `$BIF`:
+  `        final Set<String> record = preferences.getSmsBackupRecord();` → `        final Set<String> record = before;`.
+  Fails (1): B26.
 
-The predicted failure lists are derived from the test text in section 4 and the production text in section 3. Order:
-M-L1 to M-L21 as listed. At the end, a summary table under the header: id, file, must-fail met, extra failures,
-verdict. **Rows:** D15, D16.
+**Coverage of the table** (Record 18).
+- Every mutation id has a non-empty failing set.
+- Every one of the 50 tests is in at least one set; 4.8's "Bitten by" is the transpose of this list.
+- The story's table rows map as follows:
+  - M-L19 "AC-2 (b), (c)" is met by B3 (AC-2 (c)) for both variants. AC-2 (b)'s MMS budget is the cursor count, which
+    `BulkFetcher` reduces whatever the forward `LIMIT` is, so no single edit of the budget can make B2 fail (plan-review
+    B-2; ruled). B2 is bitten by M-L1, M-L5 and M-L18 (b).
+  - M-L1's story set "AC-3 late-in-group case" is B4.
+  - M-L2's "window-query text test" is Q1 and Q3.
 
-### I9 — Final gate, counts and file checks
+The order is M-L1 to M-L26 as listed. At the end, a summary table under the header: id, file, failing set observed,
+`expected: matches`, verdict. **Rows:** D15, D16.
+
+### I9 — Final gate, counts and file checks (session 2)
 
 1. The I8 clean check passes, and every entry has its `restored` line.
 2. Gate G (`I9-gates`). Expected:
-   - `exit=0`, `tests=<n>+49 failures=0 errors=0 skipped=<s>` (not above the start, and at most 2);
+   - `exit=0`, `failures=0 errors=0 skipped=<s>` (not above the start, and at most 2);
+   - `tests=<n> + 50 + Fd`, where `Fd` is the change in foreign test cases since I0 (step 4; normally 0);
    - JaCoCo passes, with the `service` and `preferences` ratios recorded beside I0's.
    - Then `$E/I9-mailtransport-classes.txt` as at I0, and
      `diff $E/I0-mailtransport-classes.txt $E/I9-mailtransport-classes.txt; echo "mt-classes-diff-exit=$?"`, which
      prints 0.
    - **Rows:** D13, D17.
-3. `$E/I9-checks.txt`:
+3. `$E/I9-checks.txt`. Iteration 2: every check is scoped to `OWN` and `MINE` (5.0), with the U-068 scoping and its
+   three binding corrections:
    ```bash
-   git grep --untracked -h "@Test" -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"   # start + 49 (working tree, --untracked: CR-016 form)
-   for f in $TS/LateVisibleSmsRegressionTest.kt $TS/LateVisibleSmsBackupTest.kt $TS/SmsBackupRecordSizeTest.kt $TS/LateVisibleSmsSkipResetRestoreTest.kt $TS/BackupQueryBuilderWindowTest.kt $TP/SmsBackupWindowTest.kt $TS/LateVisibleSmsFixtures.kt; do printf '%s ' $f; grep -c "@Test" $f; done   # 3 25 1 11 3 6 0
-   git status --porcelain -- app k9mail-vendored
-   git diff --stat HEAD -- app/src/test; echo "tracked-test-diff-end"                     # nothing (AC-6, AC-23)
-   git diff --name-only HEAD -- app/src/main k9mail-vendored                              # the six files
+   # Counts, this story's files only (REQ-MODERNIZATION-015 AC-13 as amended by CR-016; plan-review O-6)
+   git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"            # C_head: C0, unless others committed tests since START (listed below)
+   git grep --untracked -h "@Test" -- $MINE | grep -c "@Test"                                               # 50
+   for f in $MINE; do printf '%s ' $f; grep -c "@Test" $f; done                                             # fixtures 0, 3, 26, 1, 11, 3, 6
+   git log --format='%h %s' $START..HEAD -- 'app/src/test'; echo "foreign-test-commits-end"                 # each listed with its commit id; not this story's
+   git ls-files --others --exclude-standard -- app/src/test | grep -v -F -x -f <(printf '%s\n' $MINE); echo "foreign-untracked-tests-end"
+   git diff --name-only HEAD -- app/src/test; echo "foreign-modified-tests-end"                             # nothing (no tracked test edited by this story)
+   # this story's own files: the changed paths, limited to OWN and $W (U-068 correction 1)
+   { git diff --name-only HEAD -- $OWN; git ls-files --others --exclude-standard -- $OWN $W; } | LC_ALL=C sort -u
    git diff -U0 HEAD -- $BQB | grep '^@@'                                                 # -13,0 and -163,0 only (AC-18)
    git diff -U0 HEAD -- $DTP | grep '^@@'                                                 # imports; after :70; :79-85 (no hunk over :59-66)
    git grep -n -E "21600000|21_600_000|6 \* 60 \* 60" -- app/src/main                     # one line, SmsBackupWindow.java (AC-4)
    git grep -n -E "max_synced|MaxSyncedDate|maxSyncedPreference|clearLastSyncData|getMostRecentSyncedDate" -- app/src/main   # IC-1 table
    git grep -n "BulkFetcher(" -- app/src/main                                             # BackupWorker.kt, two sites (IC-2)
    git diff --quiet HEAD -- $S/activity/fragments/AdvancedSettings.java $S/activity/StatusPreference.java $S/activity/fragments/MainSettings.java $S/preferences/Preferences.java; echo "display-exit=$?"   # 0 (AC-11, IC-1)
-   git diff --stat HEAD -- build.gradle app/build.gradle k9mail-vendored settings.gradle gradle app/lint-baseline.xml app/src/main/AndroidManifest.xml; echo "build-diff-end"   # nothing (AC-25)
-   git diff --quiet HEAD -- gradle/verification-metadata.xml; echo "vm-exit=$?"           # 0
-   git diff HEAD -- app/src/main | grep -E '^\+' | grep -c -E 'import com\.fsck|k9mail'; echo "k9-imports-end"   # 0 (AC-25)
-   git grep --untracked -h "@Ignore" -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Ignore"   # equals I0
-   grep -cE '@Ignore|Assume' $TS/LateVisible*.kt $TS/SmsBackupRecordSizeTest.kt $TS/BackupQueryBuilderWindowTest.kt $TP/SmsBackupWindowTest.kt
-   git diff --name-only $START HEAD -- app k9mail-vendored build.gradle settings.gradle gradle gradle.properties gradlew gradlew.bat README.md; echo "no-code-commit-end"   # nothing
+   git diff --stat $START -- k9mail-vendored settings.gradle gradle app/lint-baseline.xml app/src/main/AndroidManifest.xml gradle/verification-metadata.xml; echo "build-diff-end"   # nothing from this story (AC-25); a commit by another story is listed, not counted
+   git diff HEAD -- $OWN | grep -E '^\+' | grep -c -E 'import com\.fsck|k9mail'; echo "k9-imports-end"   # 0 (AC-25)
+   git grep -n "@Ignore\|Assume" -- $MINE; echo "mine-ignore-exit=$?"                     # exit 1 (none)
+   # no code commit by anyone else on this story's paths (U-068 correction 2: scoped to this story's paths only)
+   git log --format='%h %s' $START..HEAD -- $OWN; echo "own-path-commits-end"            # nothing
+   # design, requirement, contract and change-record directories (contract-verification O-3)
+   git status --porcelain -- sdlc/artifacts/design sdlc/artifacts/requirements sdlc/artifacts/build/change-records; echo "records-status-end"
+   git log --format='%h %s' $START..HEAD -- sdlc/artifacts/design sdlc/artifacts/requirements sdlc/artifacts/build/change-records; echo "records-log-end"
    ```
-   Scope: these checks cover this story's own paths only (`app`, `k9mail-vendored`, the build files, `README.md`, `$W`).
-   A change elsewhere, for example `sdlc/artifacts/build/sprints/sprint-024/**` or document commits by the orchestrator,
-   is recorded with its path and is not a stop. The story's `<start>..HEAD` forms apply after the orchestrator's commit.
-   Before it, the working-tree forms above are the same checks, and the log says so (REQ-MODERNIZATION-015 AC-13 as
-   amended by CR-016). **Row:** D17.
+   **Expected and how it is read:**
+   - `C_head` equals `C0` plus the tests that `foreign-test-commits-end` lists. Those are not this story's and are
+     listed with their commit ids.
+   - The end count is **`C0` + 50**, taken as `C_head` + `MINE` minus the foreign commits' tests, over the working tree
+     before the orchestrator's commit (`git grep --untracked` over this story's files, said so). After the commit it is
+     `git grep … HEAD`, and equals the same figure.
+   - `foreign-untracked-tests-end` and `foreign-modified-tests-end` list any other story's uncommitted test files. They
+     are recorded as "not this story's". Their `@Test` count, `F1`, is recorded. The Gradle total of step 2 is
+     explained with `Fd = F1 − F0`. None is counted as this story's.
+   - The own-files list is exactly the 16 paths of `OWN` plus this story's own files in `$W` (the implementation log and
+     `evidence/`). A file in `$W` that the developer did not write, for example a gate report, is recorded and is not a
+     stop.
+   - `own-path-commits-end` and `records-status-end` are preceded by nothing. `records-log-end` may list document
+     commits by the orchestrator: these are recorded as not this story's. The check shows that no file of this story's
+     diff lies under those directories, because `OWN` holds none.
+   - A change outside this story's paths (`sprint-024/**`, other stories' files under `app`, document commits) is
+     recorded with its path and is never a stop. **Row:** D17.
+4. `Fd` for step 2: run `git grep --untracked -h "@Test" -- <foreign untracked test files> | grep -c "@Test"` at I0
+   (`F0`, normally 0) and here (`F1`).
 
 ### I10 — Implementation log and hand-off
 
 For each step, log the clock, a command summary (repository-relative; `$WORK` named only as "the work folder"), the
 result line and any decision row used. Close with:
-- **Counts:** the 49 tests by name, relative to "the count at the start of this story"; none deleted or edited. Any test
-  added by another story between `START` and the end is listed with its commit id and not counted.
+- **Counts:** the 50 tests by name, relative to "the count at the start of this story" (`C0` with its commit); none
+  deleted or edited. Any test added by another story between `START` and the end is listed with its commit id and not
+  counted. Any foreign uncommitted test file is listed as "not this story's", with its count.
 - **Declared items:**
   - the upgrade treatment (2.3);
-  - the largest expected size (2.6);
-  - the departures (2.2);
-  - the AC-21 consequence (2.8 item 4);
-  - the Record 16 consequence (a group-excluded row stays excluded);
-  - the AC-22 VERBOSE exclusion (section 11 item 3);
+  - the largest expected size, and the cumulative write cost (2.6);
+  - the departures (2.2, items 1 to 7);
+  - the two stated differences for the next requirements pass (2.8 items 4 and 5), in these words: "rows the converter
+    rejects are recorded and are not looked at again, also if the contact-group rule is changed later" and "rows the
+    SQL contact-group clause excludes are never recorded, so widening the group uploads the matching SMS of the last
+    6 hours, which is the opposite of the rows the converter rejects";
+  - the AC-22 scope (Record 18: the lines this story adds or changes; the two existing VERBOSE lines go to a separate
+    bug);
+  - the privacy statement and the key-stretching decision (2.5);
   - the `MailTransport` Javadoc outcome;
-  - IC-4 "not run" unless the orchestrator runs it.
+  - IC-4 "not run" unless the orchestrator runs it;
+  - the hand-over blocks of the two sessions (5.1).
 - **"Runtime Claims"**: only what the evidence files show.
 - Last line: "Hygiene scan: step I11, result in `evidence/I11-scan.txt`".
 
@@ -3294,7 +3770,7 @@ precisely so the AC-6 literal and messages pass this scan. **Row:** D18.
 | Criterion | Where shown |
 |-----------|-------------|
 | AC-1 | R1, R2: red at I1/I1b on `START`, green at I4; M-L1 |
-| AC-2 | B1, B2, B3; M-L1, M-L19 |
+| AC-2 | B1, B2, B3 (B3 corrected in iteration 2); M-L1, M-L5, M-L19 (B3) |
 | AC-3 | B4, Q2; M-L9 |
 | AC-4 | W1, Q1; I9 `git grep` (one definition); the comment in P1; M-L3 |
 | AC-5 | B5, B6; M-L2, M-L3, M-L4 |
@@ -3303,9 +3779,9 @@ precisely so the AC-6 literal and messages pass this scan. **Row:** D18.
 | AC-9 | B9 to B12; `BackupWorkerWatermarkTest` unedited; M-L11 |
 | AC-10 | B13 (death after confirmation; one commit carrying both, no apply); W4; M-L12; 2.7 rows 5 and 6 |
 | AC-11 | B14, B15, S4; I9 `display-exit=0`; M-L10 |
-| AC-12 | S1, S2, S3; M-L15 |
+| AC-12 | S1, S2, S3; M-L15, M-L22 |
 | AC-13 | S5, S6, W5; M-L14 |
-| AC-14 | S7 (doWork), S8, S9, W6; restore PIN unedited (d); M-L16, M-L17 |
+| AC-14 | S7 (doWork), S8, S9, W6, and (iteration 2) B26 for a restore running at the same time; restore PIN unedited (d); M-L16, M-L17, M-L25, M-L26 |
 | AC-15 | B16, B17; existing first-run tests unedited; M-L21 |
 | AC-16 | B18 (literal list); M-L18; 2.3 "Upgrade" |
 | AC-17 | S10, S11 (descriptor parsed); M-L5, M-L7 |
@@ -3313,9 +3789,9 @@ precisely so the AC-6 literal and messages pass this scan. **Row:** D18.
 | AC-19 | B21, R3 (calls); 2.6; M-L2, M-L3 |
 | AC-20 | Z1, B22, W3; 2.6 Size; M-L13 |
 | AC-21 | B23, B17; M-L20 |
-| AC-22 | B24, W2; 2.5 |
+| AC-22 | B24, W2 (with the code-unit vectors); 2.5; M-L24 |
 | AC-23 | 2.8; PIN unedited; S2 and S8 are the two deliberate changes |
-| AC-24 | I8 `mutation-log.md` |
+| AC-24 | I8 `mutation-log.md`: 26 ids, 37 runs, exact failing sets; every test bitten, every id detected (Record 18) |
 | AC-25 | I9 checks (build, manifest, metadata, lint baseline, k9 imports, port: comment only) |
 | AC-26 | P8, P9; I6, I9 class bytes |
 | AC-27 | I0 and I9 gates; counts (start with commit; end `--untracked`); no floor or limit edit; no `@Ignore` |
@@ -3328,7 +3804,7 @@ precisely so the AC-6 literal and messages pass this scan. **Row:** D18.
 
 | Row | Observation | What the developer does |
 |-----|-------------|-------------------------|
-| D1 | I0: not a descendant of `c9770c30`; a story path dirty; a commit since `c9770c30` touches this story's files other than U-067's; U-067 not landed (U-067 greps); U-069 not landed (`u069-end` empty); minSdk not 24 (U-068 not landed); toolchain not 25; a new file already exists; or the gate fails | Stop and report with the sanitised evidence. Nothing has been edited |
+| D1 | I0: not a descendant of `c9770c30`; a story path dirty; another story's file uncommitted under `app` (`foreign-app-end`), unless the orchestrator rules that it stays, in which case it is recorded as foreign (iteration 2); a commit since `c9770c30` touches this story's files other than U-067's; U-067 not landed (U-067 greps); U-069 not landed (`u069-end` empty); minSdk not 24 (U-068 not landed); toolchain not 25; a new file already exists; or the gate fails | Stop and report with the sanitised evidence. Nothing has been edited |
 | D2 | I0: `junitXml.required = true` already in `build.gradle` (U-068 landed) | Keep passing `-I "$INIT"`. It sets the same flag and prints the JVM line. Record "XML: build file (U-068) and init script". If false: "XML: init script" |
 | D3 | I1: R1/R2 fail with an exception from conversion (not an assertion), e.g. an NPE in `MessageGenerator` or `PersonLookup` (N1 false) | Fallback fixture, which still proves AC-1 through the real fetch layer. Drive `BulkFetcher(BackupItemsFetcher(resolver, BackupQueryBuilder(prefs.dataTypePreferences))).fetch(...)` and the `internal` `backupCursors` (U-067), with a `MessageConverter` built as in `MessageConverterTest.java:115-121` (mocked `PersonLookup` returning a record whose `getAddress` is the address). Change only the harness's `backup()` body. Log it, and tell the orchestrator before any production edit (story "Real collaborators"). IC-2's `doWork` entry is then shown by B25 and S1 only if they pass; if no route works: stop and report |
 | D4 | I1 or I1b: R1/R2 **pass** on `START`, or R3 fails at I1b | Stop and report. The regression test does not discriminate (R1/R2), or the capture is not deterministic (R3: compare the two captures and name the differing field) |
@@ -3338,17 +3814,19 @@ precisely so the AC-6 literal and messages pass this scan. **Row:** D18.
 | D8 | I2: a W2 vector differs | Stop and report: the Java digest differs from the independently computed vector (encoding or length rule). Do not edit the vector to match |
 | D9 | I4: a test fails in cursor positioning or column reads (N2) | Diagnose against 2.4. If `MergeCursor`/`AbstractCursor` misbehave only under Robolectric: stop and report. No shadow-specific production code |
 | D10 | I4: B25 fails at `Mockito.spy` (N5) | Replace the spy with `Mockito.mock(WorkerEngineFactory::class.java)` whose `createPersonLookup`, `createMessageConverter` and `createCalendarSyncerIfEnabled` answer by delegating to the real instance, and `createTokenRefresher` returns the mock. Test text only; log it |
-| D11 | I5: S10/S11 fail at `listed` contains the default file (N3), or re-registering the provider does not take effect (N6) | N3: use `listed = listOf(defaultFile)` (the default file is the one that must travel; a record moved elsewhere would still fail S10). N6: register the new provider under `"sms"` after `ShadowContentResolver.reset()`. Log either. If still failing: stop and report |
+| D11 | I5: S10/S11 fail at `listed` contains the default file (N3); re-registering the provider does not take effect (N6); or (iteration 2, N7) an exception from `AuthPreferences` or the secret store after the excluded files are cleared | N3: use `listed = listOf(defaultFile)` (the default file is the one that must travel; a record moved elsewhere would still fail S10). N6: register the new provider under `"sms"` after `ShadowContentResolver.reset()`. N7: clear only `pinned_certs.xml` and leave `credentials.xml` (it holds only the three secrets, CNTR-MODERNIZATION-003, none of which the backup path reads). Record in the log, word for word, that S10/S11 then do not show the absence of `credentials.xml`. Test text only; log it. If still failing: stop and report |
 | D12 | I3: a hunk overlaps old lines 103-147 | Re-apply P3 exactly. Never edit the forward, MMS or call-log code |
 | D13 | I6/I9: a non-comment line in the `MailTransport` diff, or `mt-classes-diff-exit` not 0, or a class file missing at I0 | Restore the file with `git cat-file --filters --path=$MT $(git rev-parse HEAD:$MT) > $MT`. Record "Javadoc left knowingly out of date; AC-26's port sentence not done" and report (ruling SC-3) |
 | D14 | A PIN test fails at I4, I5 or I7 | Stop and report: existing behaviour changed. No PIN file is ever edited |
 | D15 | I8: a mutation does not compile | Log `invalid` with the compiler line. Use the nearest compiling form with the same intent (for example `if (1 > 2)` for `if (false)`), run as `<id>'`. An invalid entry never counts |
-| D16 | I8: a must-fail test passes | Restore, log a **finding** "AC-24 unmet for <id>", finish the remaining entries, then stop and report before I9. If only extra tests fail beyond the lists: log `expected: does not match`, which is a deviation for the reviewers, and still a detection |
-| D17 | I9: gate not 0; failures; skipped above the start or above 2; Gradle total not `<n>+49`; count not start + 49; a story-path check not as expected; a code commit since `START` | Stop and report with the evidence. No floor, `limit` or `minimum` edit; no `@Ignore`. A change outside the story's paths is recorded, not a stop |
+| D16 | I8 (iteration 2: the sets are exact): the observed failing set differs from the listed set | Restore first. **(a) A listed test passes:** log it. If the mutation's id now has no failing test at all, log a **finding** "AC-24 unmet for <id>"; finish the remaining entries, then stop and report before I9. Otherwise log `expected: does not match` with the difference, as a planning error for the reviewers, not a stop. **(b) An unlisted test fails:** log `expected: does not match` with the extra ids and the failure messages, as a deviation for the reviewers, still a detection. Either way the developer never edits a test or a mutation to make the sets agree, and never re-runs a mutation to get a different set. Record 18's rule (every test bitten by at least one mutation, every id detected) is checked over the whole log at the end of I8: an unmet half is a finding and a stop before I9 |
+| D17 | I9: gate not 0; failures; skipped above the start or above 2; Gradle total not `<n> + 50 + Fd`; the end count not `C0` + 50 after the foreign commits of `foreign-test-commits-end` are taken out; an own-path check not as expected; a commit since `START` touching `OWN` | Stop and report with the evidence. No floor, `limit` or `minimum` edit; no `@Ignore`. A change outside this story's paths, another story's uncommitted file, or a document commit is recorded with its path and is not a stop |
 | D18 | I11: any scan `exit=0` | Re-sanitise or correct the named file and repeat. A hit in a code file: stop and report |
 | D19 | The tool moves a Gradle run to the background | Wait for the completion notice; never poll; start nothing else |
 | D20 | "bash.exe … not found", or a process killed without a visible reason | Stop and report (endpoint security). Do not work around it |
 | D21 | Z1 takes longer than 10 minutes in one run | Not a failure. Record the time. If the 600000 ms tool timeout is hit, report: the criterion fixes 200 × 50 and it is not reduced |
+| D22 | S2-0 (resume) or a resume at any safe stopping point: a hash differs from `<NAME>_NEW`; `PROD_DIFF` differs; an `APPLYING` entry has no `restored` line; a `cmp` of a rebuilt pristine copy differs; or a commit since `START` touches `OWN` | For an open `APPLYING` entry: restore by the recovery note first. Then repeat the check. If anything still differs: stop and report, and start no Gradle run. Never re-create a pristine copy from the working tree |
+| D23 | I8: B26 passes under M-L26 (the iteration-1 single read) | The race test is not observing the window. Check that `beforeQuery` runs before the provider selects rows. Test text only; log it. If still undetected: finding, as D16 (a) |
 
 ## 8. Contracts, Standards, Risks
 
@@ -3360,6 +3838,21 @@ change follows.
 
 **CNTR-MODERNIZATION-004** (`…/CNTR-MODERNIZATION-004-backup-scheduler.md`, INV-4). Read and not changed: no enqueue path
 changes. The worker `Result`s and progress keys are unchanged.
+- Iteration 2 (contract-verification row 13 and O-1): INV-1 gives one run per unique name, not one run overall. Rule 8
+  makes the distinct names deliberate (L23). The plan therefore assumes a backup and a restore, or two backups, can
+  overlap, and handles both (2.4, 2.7 "Concurrency").
+- Validation Rule 6 (checkpoint after each successful insert, before the cursor advances) is unchanged: the write-ahead
+  call sits before the insert, inside the existing `smsExists` branch, and is idempotent on replay.
+
+**CNTR-MODERNIZATION-003** (iteration 2, contract-verification O-4; the backing-store invariant). `credentials.xml` stays
+excluded from Android's auto-backup, and no file holding the three secret keys (`login_password`, `oauth2_token`,
+`oauth2_refresh_token`) is included. The record keys `sms_backup_record` and `sms_backup_record_version` go into the
+default preferences file, which the contract's Note already describes as holding plaintext non-secret user data. Neither
+key is a secret. Every new write is `commit()`, and the secret store is untouched. The descriptor and the manifest are
+not edited (I9).
+
+**CNTR-MODERNIZATION-002** (iteration 2, O-4). `pinned_certs.xml` stays excluded. It is neither touched nor read. T7's
+fresh-store step empties it as a restored phone has it.
 
 `integration_contracts: []` is right. The record is state inside one module, shared by the backup worker, the restore
 worker and settings reset. No component boundary is crossed, so the Contract Gate does not apply. This decision is noted
@@ -3377,18 +3870,20 @@ for the story's Implementation Notes (story "Integration Contract References").
 |---|------|------------|--------|------------|
 | R1 | The real converter does not run over the provider double (N1) | Low: the generator ran over a `MatrixCursor` in `MessageConverterTest`, and `doWork` already builds it | Medium: fixture rework | D3 fallback keeps the real fetch layer |
 | R2 | The AC-6 capture is not deterministic (random `reference_uid`, time zone, `backup-time`) | Low: all three are fixed or excluded (L16) | Medium: R3 unusable | I1b re-runs on `START`; D4 |
-| R3 | Mutation runs take long (32 runs) | Medium | Low: time only | SIZE excluded except for M-L13; foreground; D19 |
-| R4 | A mutation is masked by the defence in depth of another site | Low: one guard per behaviour by design (2.2 item 4) | High: an undetected weakness | Predicted lists; D16 is a finding |
+| R3 | Mutation runs take long (37 runs) | High | Low: time only | SIZE excluded except for M-L13; foreground; two sessions with safe stopping points (5.1); D19 |
+| R4 | A mutation is masked by the defence in depth of another site | Low: one guard per behaviour by design (2.2 item 4). The two record reads are one site each (M-L19 (ii) on the first, M-L5 and M-L26 on the second) | High: an undetected weakness | Exact failing sets; D16 |
 | R5 | Per-row commits grow with the record (SC-8) | Low in normal use (about 3 KB) | Low to medium at 5,000 entries (155 KB per commit) | Stated; not tested; for the runtime-library story to measure if wanted |
-| R6 | Two workers overlap and lose an entry (SC-9) | Unknown (not examined) | Medium: one duplicate | The static lock prevents a lost entry within a process |
+| R6 | Two backup workers overlap (SC-9; iteration 2, resolved from the code) | Possible: each backup type has its own unique-work name with REPLACE (`WorkManagerScheduler.kt:154`, `:289`, `:324`, `:365`, `:400`), so a manual and an incoming backup can run at once (L23) | Low: both can select the same late or forward row before either commits, so it is uploaded twice, as today for forward rows. No loss: the watermark takes `max()` and the record a set union under `SMS_RECORD_LOCK`, one lock per process, and both workers run in the one app process (no `android:process`) | 2.7 "Concurrency". Mutual exclusion would need a scheduler change (CNTR-MODERNIZATION-004) and is not designed here |
 | R7 | The real provider normalises the address or body on a restore insert, so keys differ | Unknown (not observable on the double) | Low: one duplicate per restored row in the window, never a loss | Stated (2.9); a device check could show it |
 | R8 | Android 16/17 `SharedPreferencesImpl` differs from Android 10 (L14) | Low | High in principle (atomicity) | The same code path since API 1 is assumed; stated as not verified |
-| R9 | A digest collision causes a loss | Negligible (2.5) | High for that message | 64-bit digest plus the clear date |
-| R10 | The record is used to guess short message texts | Low (needs the private file) | Low (6 hours of history; the texts are in the mailbox) | 2.5; for the security review |
+| R9 | A digest collision causes a loss | Negligible: about k·5.4·10⁻²⁰ per late row (2.5) | High for that message | 64-bit digest plus the clear date |
+| R9b | Two malformed bodies hash alike through a charset encoding (plan-review O-3) | Removed in iteration 2 | High for that message | Code-unit hashing; W2 vectors 5 to 7; M-L24 |
+| R10 | The record is used to recover short message texts and the timing of the last 6 hours | Low (needs the private file: root, a debuggable build, or the backup channel) | Low to medium (a 6-digit code falls to 10⁶ guesses; dates in clear; 6 hours only; the texts are in the mailbox) | 2.5 states it in full; key stretching weighed and rejected (2.1 row 19); for the security review |
 | R11 | Robolectric's `CursorWrapper` shadow hides a wrapper defect | Avoided: `AbstractCursor` is used (L12) | — | 2.1 row 12 |
 | R12 | Edits change line endings (CRLF) | Low: Edit keeps them | Low: diff noise | CRLF check after each edit; `--filters` recovery |
+| R13 | A restore running during a backup uploads a restored row (contract-verification O-1) | Removed in iteration 2 (was low: two workers with distinct names) | Medium: the duplicate REQ AC-16 forbids | Second record read after the queries (2.4); B26; M-L26 |
 
-## 9. IC-1 — Every reader and writer of the SMS watermark (`git grep` at `c9770c30`; re-run at I9)
+## 9. IC-1 — Every reader and writer of the SMS watermark (`git grep` at `c9770c30`, line numbers re-read at `2aad7d70`; re-run at I9)
 
 | Hit | Role | Handled |
 |-----|------|---------|
@@ -3396,7 +3891,7 @@ for the story's Implementation Notes (story "Integration Contract References").
 | `BackupQueryBuilder.java:119`, `:144` | MMS and call-log reads | unchanged (AC-18) |
 | `BackupWorker.kt:207` | Skip writes it | now through `skipSms`, then `setSmsWatermarkAndSeed` (outright, as before; S4) |
 | `BackupWorker.kt:259-260` | first-run sentinel | unchanged (B17) |
-| `BackupWorker.kt:423` (HEAD; `:424` after U-067) | backup writes it | now `setMaxSyncedDateAfterAppend` (max for SMS; MMS and call log as before) |
+| `BackupWorker.kt:423` (at `2aad7d70`, after U-067) | backup writes it | now `setMaxSyncedDateAfterAppend` (max for SMS; MMS and call log as before) |
 | `BackupWorker.kt:71`, `:292`, `:297`, `:388`, `:416` | comments | unchanged |
 | `RestoreWorker.kt:466-467` | restore reads and raises it | unchanged; a write-ahead record call is added before the insert |
 | `DataTypePreferences.java:59-85` | read, write, `getMostRecentSyncedDate`, `clearLastSyncData` | read and write unchanged; `clearLastSyncData` also removes the record and the marker |
@@ -3438,27 +3933,40 @@ install the debug build with `adb -s <serial> install -r`, keeping the data, the
 ## 11. Items for the Orchestrator
 
 1. **No ruling is needed before the build.** Scope Concern 7 is answered: plannable as one (PASS).
-2. **AC-21 consequence above the watermark** (2.8 item 4; needs a confirming nod, not blocking). Recording rejected rows
-   also stops a rejected *forward* row from being re-selected each run until a later row passes it. Uploads, headers and
-   watermarks are unchanged. Only server logins and limit use drop in that case. This follows from the Record 16 ruling
-   on SC-1, and the plan treats it as inside that ruling. If the orchestrator rules otherwise, the only alternative is to
-   exempt rows above the watermark. That would bring back the AC-21 starvation as soon as the watermark passes them, so
-   the plan does not recommend it.
-3. **AC-22 and a pre-existing debug-build log line** (needs a ruling on wording; the test is planned with the
-   exclusion). `PersonLookup.java:76` logs the address at VERBOSE when `LOCAL_LOGV`, which is `BuildConfig.DEBUG` (L15).
-   It runs in debug builds and in debug unit tests, not in release builds. B24 therefore asserts "no address or body" on
-   every line of priority DEBUG and above and excludes VERBOSE. The new code logs nothing at VERBOSE. Fixing
-   `PersonLookup` is outside this story's file list ("Not touched" does not name it, but it is not in Affected Code
-   either). Recommended: a small follow-up bug to drop the address from that line and from `MessageGenerator.java:311`,
-   or a ruling that this story may edit those two lines. Either way, AC-22's "no log line" is met for release builds
-   today and for all builds by the new code.
+2. **AC-21 consequence above the watermark: ruled** (Record 18: confirmed, inside ruling 25). 2.8 item 4 states it as a
+   named difference.
+3. **AC-22 and the pre-existing debug-build log lines: ruled** (Record 18). AC-22 applies to the lines this story adds
+   or changes, checked at DEBUG and above. `PersonLookup.java:76` and `MessageGenerator.java:311` are not changed here;
+   the orchestrator raises a separate low-severity bug for them.
 4. **Story text corrections for the record** (no plan change):
    - Affected Code says the record is "one `date:digest` per line". It is comma-separated (2.2 item 1).
    - Restore pruning uses the stored watermark (2.2 item 2). The recorded set is identical to the story's rule.
-5. **The security review** should read 2.5 (SC-10): the digest, its residual guessability, and why no key is possible
-   under AC-17.
-6. **Commit.** The developer commits nothing. After the orchestrator's commit, the HEAD count equals the log's end
-   count.
+5. **The security review** should read 2.5 (SC-10): the digest and its encoding, what the file reveals (the dates in
+   clear, short codes recoverable by trying the code space), why no key is possible under AC-17, and the key-stretching
+   decision.
+6. **Commit.** The developer commits nothing in either session. After the orchestrator's commit, the HEAD count equals
+   the log's end count.
+7. **For the next requirements pass** (Record 18; I10), the two stated differences, side by side (2.8 items 4 and 5):
+   - rows the converter rejects are recorded and are not looked at again, also if the contact-group rule changes later;
+   - rows the SQL contact-group clause excludes are never recorded, so widening the group uploads the matching SMS of the
+     last 6 hours. This is the opposite of the first.
+8. **For the next CNTR-MODERNIZATION-007 amendment** (contract-verification O-2). The contract's port listing is stale
+   against the code:
+   - it shows `appendMessages(...): void`, while the port declares `long appendMessages(...)` with the confirmed-date
+     contract (`MailTransport.java:84-87`);
+   - it does not list `importMessageBody` (`:149`).
+
+   This plan follows the code. Its Javadoc edit (P8) is true against the code. No contract is edited by this story.
+9. **For BUG-024** (placed after this story; its Suggested Approach relies on this story's test fixtures).
+   - Unchanged from iteration 1: B12 `ac9_cancelledDuringTheAppend_nothingSaved_rowsUploadedByTheNextBackup` (it throws
+     `CancellationException` from `appendMessages` while the job is active, inside `runBlocking`), `RecordingTransport`,
+     and `ProviderDouble`'s selection evaluator, row operations and insert behaviour.
+   - Changed in iteration 2, additively only:
+     - `ProviderDouble` gains an optional `beforeQuery: ((String) -> Unit)?`, null by default and called at the start
+       of `query`;
+     - the KDoc of `SimulatedProcessDeath` is corrected;
+     - `LateSmsHarness` is unchanged.
+   - Nothing BUG-024 relies on has a different behaviour.
 
 ## 12. Constraints for the Developer (binding)
 
@@ -3479,10 +3987,21 @@ install the debug build with `adb -s <serial> install -r`, keeping the data, the
    `@Ignore`, no `Assume`. No edit to any existing test file.
 10. No test text may contain the string "@Test" except the annotations.
 11. No new file under `app/` other than P1, P4 and T1 to T7. The capture file under `app/build/` is build output.
-12. Leave other work in the checkout alone: `sdlc/.skill-delegation-audit.log`, `sdlc/.skill-context.json`, the other
-    sprint folders, any design, requirement, contract or change record, and the story file. The orchestrator may commit
-    documents (never code) while you run.
+12. Leave other work in the checkout alone (iteration 2: the U-068 iteration-2 form of this constraint). That is:
+    - `sdlc/.skill-*` (the delegation audit log, `sdlc/.skill-context.json`);
+    - `sdlc/artifacts/build/sprints/sprint-024/**` except this story's own files in `$W` (the implementation log and
+      `evidence/`). In `$W`, this plan, the plan-gate reports and `compiled-pipeline.json` are not the developer's;
+    - `sdlc/artifacts/stories/**` and the decision appendix;
+    - any design, requirement, contract or change record; the story file;
+    - any other story's changed, uncommitted or untracked file under `app` or elsewhere. Never stash, restore, edit or
+      commit someone else's change.
+
+    The orchestrator may commit documents (never code) while you run, and planners and reviewers of other stories write
+    under other folders. Changes outside this story's paths (`OWN`, `$W`) are recorded if noticed and are never a reason
+    to stop, except as rows D1 and D17 say.
 13. No emulator, no device, no `adb`.
+14. Two sessions (5.1). A session ends only at a safe stopping point and with the hand-over block written. A new session
+    starts with S2-0 (or its steps 1 to 5) and with row D22. Commit nothing in either session.
 
 ## 13. Quality Attribute Coverage (ISO/IEC 25010)
 
@@ -3493,9 +4012,9 @@ install the debug build with `adb -s <serial> install -r`, keeping the data, the
 | Compatibility | **Co-existence:** the same preferences file and keys, and MMS and call log untouched. **Interoperability:** the port is unchanged (comment only), there is no server-side assumption, and Android's own backup carries the record (AC-17). **Upgrade compatibility:** seeding (AC-16) |
 | Usability | No UI change. Two README sentences tell the owner the 6-hour bound and the Skip consequence (AC-26) |
 | Reliability | **Fault tolerance and recoverability:** the BUG-010 order is kept. Watermark and record are in one atomic commit (L14), the restore is write-ahead, and a crash at any point leaves at most one duplicate, never a loss (2.7). The watermark never moves down (AC-11) |
-| Security | **Confidentiality:** no address or body in the record or in the new logs (AC-22). The digest's residual guessability is stated (2.5). A pre-existing debug VERBOSE line is flagged (section 11 item 3). No permission and no manifest change (AC-25) |
-| Maintainability | **Modifiability:** W is one constant with its derivation. The record format is versioned by the marker. **Testability:** a Fake provider that rejects unknown selections, a Spy transport, a counting Decorator; 21 mutation ids (32 runs) logged. **Analysability:** counts-only log lines |
-| Portability | **Adaptability:** framework APIs only (`AbstractCursor`, `MergeCursor`, `MessageDigest` SHA-256, `StandardCharsets`), present at minSdk 21 and 24. No Robolectric-shadow-dependent production code (L12) |
+| Security | **Confidentiality:** no address or body in the record or in the new logs (AC-22). What the file does reveal is stated: the dates of the last 6 hours, and short codes recoverable by guessing (2.5). The digest input is one-to-one (code units, length prefixes). Key stretching was weighed and rejected with its cost. The pre-existing debug VERBOSE lines go to a separate bug (Record 18). No permission and no manifest change (AC-25); CNTR-MODERNIZATION-003 and -002 hold |
+| Maintainability | **Modifiability:** W is one constant with its derivation. The record format is versioned by the marker. **Testability:** a Fake provider that rejects unknown selections (with an optional hook for a concurrent writer), a Spy transport, a counting Decorator; 26 mutation ids (37 runs) with exact failing sets. **Analysability:** counts-only log lines |
+| Portability | **Adaptability:** framework APIs only (`AbstractCursor`, `MergeCursor`, `MessageDigest` SHA-256), present at minSdk 21 and 24; the digest's byte form is written by hand and depends on no charset. No Robolectric-shadow-dependent production code (L12) |
 
 ## 14. Artifacts Consulted
 
@@ -3517,26 +4036,51 @@ install the debug build with `adb -s <serial> install -r`, keeping the data, the
 | Coverage | `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml` (2026-11-20) | L17 |
 | Standards | plugin cache 1.7.2 `knowledge/standards/expert-exceeding-depth.md`, `truth-and-accuracy.md`, `phase-completion-report.md`; `templates/build-artifacts/build-plan.md` | Depth criteria, the PCR form, frontmatter |
 | REQ and DES corpus | `sdlc/artifacts/requirements/modernization/`, `sdlc/artifacts/design/modernization/DES-MODERNIZATION-014-…` | REQ-020 in full. REQ-017, REQ-015 AC-13 and DES-014 were not re-read in full: their lines relevant here are quoted by the story, and this plan changes none of them |
+| Plan-gate reports (iteration 2) | `sdlc/artifacts/build/sprints/sprint-024/U-070/plan-review.md`, `contract-verification.md`, `expert-depth-check.md` | Read in full; the "Iteration 2" table |
+| Story rulings (iteration 2) | the U-070 story, Implementation Notes, Record 18 (both blocks) | Binding rulings |
+| U-068 plan and story (iteration 2) | `sdlc/artifacts/build/sprints/sprint-024/U-068/plan.md` (I7 checks `:1150-1165`, counts 5.3, constraint 11); `U-068-minsdk-24-floor.md:298-305` (the three binding corrections) | The scoping of counts, own files and foreign commits |
+| BUG-024 | `sdlc/artifacts/stories/BUG-024-cancelled-backup-or-restore-reported-as-failure.md` (as described by the orchestrator: it relies on B12, the provider double and the recording transport) | Section 11 item 9 |
+| Scheduler (iteration 2) | `app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt` (`git grep` of `enqueueUniqueWork`/`ExistingWorkPolicy`); `android:process` search | L23, R6 |
+| Scratch compile (iteration 2) | the planner's session scratch folder: HEAD copies with this plan's P1 to P5 applied by script; JDK 25 `javac`; `android-35/android.jar`; `androidx.annotation` 1.2.0 from the Gradle cache | L24; the digest vectors (L21) |
 
 ## Verdict
 
-**PASS.** The story's facts hold against the code at `c9770c30`. The design meets every one of its 27 criteria and 4
-integration criteria with a named test or check:
+**PASS (iteration 2).** Every finding of the three gates is taken up in place (the "Iteration 2" table), and none is
+declined.
+- **The blockers:**
+  - B3 now backs up its five rows in one first run, as the review's fix says;
+  - M-L19 (i) lists only the test it can bite, B3, and B2's "Bitten by" is corrected.
+- **Coverage.** The whole test list was checked against the mutation table. The four tests no mutation reached (S3, S4,
+  W2, W6) each have one new single-edit mutation (M-L22 to M-L25). Every I8 row now carries its exact failing set,
+  derived test by test, and the table is its transpose. There are 26 ids and 37 runs, every id detected and every one
+  of the 50 tests bitten.
+- **Production changes:**
+  - the concurrent-restore duplicate found by contract verification is closed by a second record read after the
+    queries, shown by B26 and M-L26;
+  - the digest hashes UTF-16 code units, with recomputed vectors that Python and Java agree on.
+- **Scratch verification.** The Java of P1 to P5 compiles under `-Werror` in a scratch copy, and all 32 Java mutants
+  compile there.
+- The run is planned as two sessions, with a defined hand-over and resume.
+
+What follows is the iteration-1 verdict, still true where not superseded above.
+
+The story's facts hold against the code at `c9770c30` and at `2aad7d70`. The design meets every one of its 27 criteria
+and 4 integration criteria with a named test or check:
 - a window query in the fetch layer, null-safe against the mocked builder;
 - a content-keyed, digest-only record in the watermark's own preferences file, bounded by W and with no count cap;
 - one atomic commit for the watermark and the record after the confirmed append;
 - seeding at upgrade and Skip, a write-ahead entry at restore, clearing at Reset.
 
 Every library or framework fact the story left open is either read from the compiled jars (L11 to L14) or turned into a
-probe with an outcome for each result (N1 to N6). In particular:
+probe with an outcome for each result (N1 to N7). In particular:
 - Robolectric shadows `CursorWrapper`, which is why the cursor is an `AbstractCursor`;
 - `ShadowContentResolver` neither wraps provider exceptions nor answers without a provider;
 - `SharedPreferencesImpl` commits all-or-nothing.
 
-The plan departs from the story's Technical Context in five stated places (2.2). None weakens a criterion. The 49 tests
-are given in full. The regression test and the in-order literal are run first on the start commit. The 21 mutations
-(32 runs) are given with exact text and predicted failures. Two items go to the orchestrator without blocking the build:
-section 11 items 2 and 3.
+The plan departs from the story's Technical Context in seven stated places (2.2). None weakens a criterion. The 50 tests
+are given in full. The regression test and the in-order literal are run first on the start commit. The 26 mutation ids
+(37 runs) are given with exact text and exact failing sets. No item needs a ruling before the build: section 11 items
+2 and 3 are ruled, and items 7 to 9 are hand-overs.
 
 ## Phase Completion Report
 ---

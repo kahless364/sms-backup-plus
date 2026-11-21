@@ -301,6 +301,15 @@ To record at build (not before): the start commit and the authoritative test cou
 - **Privacy of the record:** the plan states what the record reveals (dates in clear; a short code can be recovered from its digest by trying the code space) and where it lives (the app's private preferences; carried by Android's own backup). It decides, with reasons, whether a slower digest is used.
 - **Order with BUG-024:** BUG-024's fix is built after this story and relies on this story's provider double, recording transport and the test that cancels during an append; they are kept as planned.
 
+**Plan gates, iteration 2 (2026-11-21): plan review PASS, contract verification PASS, depth check PASS.** Iteration 1 failed plan review on two blockers in test text and the mutation table; both are closed. The following corrections from the iteration-2 gate reports are binding on the developer in addition to the plan's text (the exact wording is in `sdlc/artifacts/build/sprints/sprint-024/U-070/plan-review.md`, observations O-1 to O-4, and `expert-depth-check.md`, the two notes at its end):
+
+- **Two mutation rows have incomplete failing sets in the plan.** M-L8 (a): the complete failing set is B2, B4, B19, B21, B25 and B26 (the mutated branch reads the SMS watermark, so it is not B19 alone). M-L4 (a): B26 also fails (its changed window text no longer matches B26's hook prefix). The developer compares observed failures against these corrected sets, not the plan's rows, for these two entries.
+- **The final Gradle-total check** counts only this story's tests against the story's own start count: tests that other stories committed during the run are listed as "not this story's" and are not a stop.
+- **The per-run limit when a concurrent backup prunes between the two record reads:** the SMS rows taken can then exceed the per-run limit by the number of entries pruned. The developer applies the plan-review's fix if it gives one for this (cap the late rows at the remaining budget) only if it is a single, local change that every existing test and mutation row survives unchanged; otherwise the plan's code stands, the log states the case in one sentence, and the orchestrator is told at hand-over. No other production edit beyond the plan is made.
+- **A concurrent restore's pruning** can cause one duplicate per row, the same bound as the concurrent-backup case the plan names; the log states it.
+- **Line numbers** in files that story U-068 changed (for example the backup attributes in `AndroidManifest.xml`) are re-read at this story's start commit, as the plan's baseline step says.
+- **Start commit:** the commit that closes story U-069.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 

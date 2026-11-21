@@ -4,261 +4,185 @@ story_id: "U-070"
 gate: plan-review
 gate_id: "plan-review"
 checkpoint: plan-gate
-verdict: FAIL
-iteration: 1
+verdict: PASS
+iteration: 2
 agent: "Solution Architect (separate instance, plan-review)"
-timestamp: "2026-11-21T11:53:27Z"
+timestamp: "2026-11-21T12:35:50Z"
 artifact_reviewed: "sdlc/artifacts/build/sprints/sprint-024/U-070/plan.md"
-base_commit: "533e9f51b5f880cdad05c81880c401b130352b95"
-blockers: 2
-observations: 10
+base_commit: "c8e98a7f98e5c28593bddbf207c6d19ef5f1ed52"
+blockers: 0
+observations: 4
 ---
 
 # Gate Report: gate-result — U-070
 
 ## Gate: plan-review @ plan-gate
 
-## Verdict: FAIL
+## Verdict: PASS
+
+## Iteration 1 (history)
+
+Iteration 1 was a FAIL with two blockers. Both were in test text and the mutation table. The design and the production edits were found correct against the code.
+
+- **B-1.** Test B3 (`ac2c_…`, AC-2 (c), REQ AC-22) failed on correct code. It added four rows and then called `establishWatermarkAtD()`, which asserts that the first run uploads only the D row. With no watermark and no limit, the first run uploads all five.
+- **B-2.** M-L19 (i) listed B2 as must-fail, but B2 passes under that mutant, because the MMS budget comes from the cursor count. Row D16 would then have stopped the run before I9.
+
+Iteration 1 also had ten observations (O-1 to O-10).
 
 ## Summary
 
-I read the story in full, including both sets of binding rulings (Record 16 and Record 18), REQ-MODERNIZATION-020 AC-1 to AC-24, and the plan in full (3,550 lines). I checked the plan against the code itself and did not take its line numbers or quotations on trust.
+I re-read the plan in full in its iteration-2 form (4,094 lines; `iteration: 2`; base `2aad7d70`). I also read the story's "Rulings after the plan gates of iteration 1" (Record 18).
 
-**Base.** HEAD moved during the review from `c12a2788` to `533e9f51`. The four commits in between are documents plus root `build.gradle` (U-068 S1-I1, JUnit XML on; the plan's row D2 covers this). `git diff --name-only c12a2788 HEAD -- app README.md` is empty. The plan and story in the working tree equal HEAD. The worker files were read with `git show HEAD:`.
+**Base.** HEAD is now `c8e98a7f`, after U-068's local commits `2aad7d70`, `853483e2` and `c8e98a7f`. `git diff --name-only 2aad7d70 HEAD` is empty for:
+- `app/src/main/.../service`;
+- `app/src/main/.../preferences`;
+- `app/src/main/.../mail`;
+- `README.md`.
 
-**Code traced.** I read these at HEAD:
-- `BackupQueryBuilder`, `BackupItemsFetcher`, `BulkFetcher`, `BackupCursors`;
-- `BackupWorker.kt`: `executeSkip`, `fetchAndBackupItems`, `backupCursors`, `appendBatchAndUpdateWatermark`, `handleAuthError`, `doWork` and its catch blocks, the two test factories;
-- `RestoreWorker.kt`: `doWork`, `executeRestore`, `importMessage`, `insertSmsValues`, `smsExists`, `executeRestoreWithValues`, `TestableRestoreWorkerFactory`;
-- `MessageConverter`, `MessageGenerator` (SMS path, `includePersonInBackup`), `HeaderGenerator`, `ConversionResult`, `PersonLookup`, `ContactAccessor`, `ContactGroupIds`;
-- `DataTypePreferences`, `Preferences`, `DataType`, `Defaults`, `MailTransport`, `MessageImportResult`, `XOAuth2FailedException`, `RequiresLoginException`;
-- `backup_descriptor.xml` and the manifest's backup attributes; k9 `Address`, `Message`, `TextBody`.
+So the plan's anchors still hold. Every source was read with `git show c8e98a7f:<path>`. The only working-tree file I read is the plan itself, which is uncommitted.
 
-**Edits applied outside the repository.** A script extracted every production edit verbatim from the plan's line ranges and applied it to HEAD copies in my session scratch folder: P2a to P2c, P3a, P3b, P5a, P5b, P6a to P6c, P7, P8, P9a and P9b.
-- Every `old_string` occurs exactly once.
-- `javac -Werror -Xlint:unchecked` (the build's flags, `app/build.gradle:203`) against `android-35/android.jar` compiles P1, P2, P3, P4 and P5 with no warning, using a stub `App` that holds `TAG` and `LOCAL_LOGV`.
-- The Kotlin edits (P6, P7) were read, not compiled. They are statement-level, and every member they use exists with the type used.
-- `git diff --no-index -U0` hunks:
-  - `BackupQueryBuilder`: `-13,0` and `-163,0`, which is the plan's I3 expectation. Old lines 103-147 are untouched, so the forward, MMS and call-log text is unchanged (AC-6, AC-18).
-  - `MailTransport.java`: one hunk `@@ -74,4 +74,4 @@`. The non-comment count is 0.
-- All 28 Java mutation `old_string`s occur exactly once, and each mutant compiles. The 4 Kotlin anchors (M-L11, M-L16 a/b, M-L20) occur exactly once in the edited files.
-- The four W2 digest vectors and the five Message-ID MD5s (L21, L22) recompute exactly in Python, using Java UTF-16 lengths and `HeaderGenerator.createMessageId`'s input.
+**Edits applied outside the repository.**
+- **Application.** A script extracted every production edit of iteration 2 from the plan by line range and applied it to `git show` copies in my scratch folder. The edits are P2a to P2c, P3a, P3b, P5a, P5b, P6a to P6c, P7, P8, P9a and P9b. Every `old_string` occurs exactly once.
+- **Compile.** P1 to P5 compile with `javac --release 17 -Werror -Xlint:unchecked` against `android-35/android.jar`, using a stub `App`.
+- **Mutants.** I applied 14 Java mutants alone and compiled each: every new or rewritten one (M-L19 (i), M-L19 (ii), M-L23, M-L24, M-L25, M-L26), plus M-L1, M-L4 (a), M-L5, M-L8 (a), M-L10, M-L13 (a), M-L17 and M-L18 (b). Each `old_string` is unique, and each compiles. The new Kotlin anchor of M-L22 occurs exactly once in the edited `BackupWorker.kt`.
+- **Counts.**
+  - Tests: 50 tests in the seven files (3, 26, 1, 11, 6, 3; fixtures 0).
+  - Mutation runs: 37, of which 32 are Java and 5 Kotlin.
+  - Gradle invocations: 47 = 1 + 2 + 1 + 1 + 2 + 1 + 1 + 37 + 1.
 
-**Design: correct against the code.** I traced the design through the code and found no blocker in it.
-- **Window and boundary.**
-  - The window is `date > wm − W AND date <= wm`, and the forward query is `date > wm`. The two partition the rows, with no gap and no overlap at `wm`.
-  - Pruning removes `date <= wm − W`, the same bound as the window's exclusive lower bound. So an entry leaves the record exactly when no window at this watermark or a higher one can return its row (AC-20).
-  - A row exactly W below is not returned, and one W − 1 ms below is returned. This matches REQ AC-4 and AC-5 and story AC-5.
-- **Arithmetic.** There is no overflow: the look-back runs only when `wm > 0`, and `prune` returns early when `wm <= 0`.
-- **No clock.** The selection never reads a wall clock or a time zone.
-- **Equal dates.** Rows with equal dates are separated by digest. When a forward `LIMIT` cuts through a run of equal dates, the rows left over become window rows on the next run and are uploaded. That is an improvement on today.
-- **Per-run limit.**
-  - Late rows are taken first, up to `max`, and recorded window rows are not counted.
-  - When the late rows use the whole budget, the forward query is not sent, so the watermark cannot move past waiting late rows.
-  - The cursor's `getCount()` is the number of late rows plus accepted forward rows, so `BulkFetcher` gives MMS and call log exactly the rest (AC-2, AC-21).
-- **First run.** With `wm <= 0` there is no window query, and only the fetch layer checks this.
-- **MMS and call log.** They are untouched: `setMaxSyncedDateAfterAppend` delegates to `setMaxSyncedDate` for both, and the examined-row write is gated on SMS.
-- **Key.** It is the date plus 64 bits of SHA-256 over `date|len|address|len|body`. The length prefixes make the input string injective, and null fields count as "". It contains no type and no `_id`. One encoding caveat is in O-3.
-- **Commit.** There is one `commit()` for the watermark, the record and the marker, and the watermark is `max(stored, confirmed)`. The marker test (`stored <= 0 || marker`) means no upload commit can hide the need for the upgrade seeding.
-- **Restore.** Both restore paths, the server loop (`RestoreWorker.kt:529`) and `executeRestoreWithValues` (`:402`), reach the single write-ahead call before `:461`. That call sits after `smsExists`, so a skipped duplicate is not recorded.
-- **Reset.** `clearLastSyncData` removes all five keys under the lock.
+**What I checked, in the order the coordinator asked.**
 
-Failure windows (process death between any two steps), checked against plan 2.7:
+1. **B-1 and B-2 are fixed.**
+   - **B3 (`plan.md` T3, scratch test lines 97-108).** The five backed-up rows are now uploaded in one first run and asserted in order. Under the new fetch code with limit 3:
+     - the window holds 5 recorded rows plus `late`, so `lateBefore = 1` and `remaining = 2`;
+     - the forward query is sent with `LIMIT 2` and returns f0 and f1;
+     - the second read leaves `late` as the only late row, so the run uploads `late, f0, f1`;
+     - the next run uploads f2, and the third uploads nothing.
+   - **B3 under the two mutants:**
+     - M-L19 (i) (`remaining = max`): `LIMIT 3`, so 4 uploads, and B3 fails;
+     - M-L19 (ii) (`lateBefore++` unconditional): `lateBefore = 6`, so `remaining = 0` and there is no forward query. Only `late` is uploaded, and B3 fails.
+   - **The rest of M-L19 (i)'s set, re-derived.** B1, B2, B16, B23 and S5 pass under it, so its set is {B3}, as listed.
+   - **The rest of M-L19 (ii)'s set, re-derived.**
+     - B16 fails: its second run's two recorded rows make `remaining = 0`, so rows[2] is not fetched.
+     - S5 fails in the same way after the Reset.
+     - B1, B2 and B23 pass, because their late rows already use the budget.
 
-| Point | State left | Outcome |
-|-------|-----------|---------|
-| During the seed query, window query, forward query or conversion | nothing written | the same selection runs next time; no loss |
-| After the seed commit | record plus marker | no re-seed |
-| Before the server confirms (open, login, append, cancellation) | unchanged (BUG-010 order kept) | the row is selected again; no loss |
-| After the confirmation, before `commit()` | unchanged | that one row is uploaded twice: today's window, no wider |
-| After `commit()` | watermark and record together | no duplicate |
-| Restore: after the write-ahead entry, before the insert | entry without a row | harmless |
-| Restore: after the insert, before the raise | entry above the watermark | the forward filter drops the row; the forward `LIMIT` is widened by the entries above |
-| Two workers overlapping (SC-9) | either may upload the same late row | a duplicate is possible, as for forward rows today. No loss: the watermark never moves down, and the record's read-modify-write is under the static lock |
+     So its set is {B3, B16, S5}, as listed.
+   - **B2 is bitten** by M-L1 (no late rows, 1 upload instead of 3), M-L5 and M-L18 (b). Record 18's rule is met: every test fails under at least one mutation, and every id is detected. B-2 is closed under that ruling.
+   - **The plan's correction about M-L8 (a) is wrong** (O-1): the plan's reason (B2's MMS watermark is −1) does not hold, because the mutated branch reads the SMS watermark. That makes the failing set listed for M-L8 (a) incomplete. It is not a blocker: D16 (b) logs it as a deviation and the run continues.
 
-**Tests traced.** I traced 31 of the 49 tests against the real sources:
-- R1, R2, R3;
-- B1 to B4, B5, B6, B7, B8, B9 to B12, B13, B14, B15, B16, B17, B18, B19, B20, B21, B22, B23, B24, B25;
-- Z1;
-- W3, W4, W5, W6;
-- Q1 to Q3;
-- S1 to S11.
+2. **The production edits that changed in iteration 2.**
+   - **The second record read (P5b, `plan.md:1288-1336`).**
+     - The first read `before` sizes only the forward `LIMIT`. The second read `record` comes after both queries have returned, and window and forward rows are filtered against it.
+     - The ordering argument (2.4) holds. A restore commits the entry before it inserts the row (P7). If a query returns the restored row, the insert finished before the query read the provider, and the entry commit finished before the insert. The second read then takes the preferences lock after that commit, so it sees the entry.
+     - Every `DataTypePreferences` in the process wraps the one default `SharedPreferences` object, so there is a single lock.
+     - **Budget.** The record normally only grows between the two reads, so the late rows are at most `min(lateBefore, max)`, and late plus kept forward rows stay within `max`. The forward filter uses `entriesAbove(record)`, so an entry added during the forward query still drops its row.
+     - **Cursor close.** A `RuntimeException` from the forward query closes the window cursor and is rethrown (O-8 closed). The fast path is unchanged: it still hands back today's forward cursor.
+   - **The digest (P1 `digest`, scratch lines 195-214).**
+     - It hashes two bytes per `char`, big-endian, by hand, with no charset encoder. The mapping is total and one-to-one over Java strings, and the length prefixes keep the fields apart. This meets the Record 18 ruling.
+     - I recomputed **all seven** W2 vectors independently, in Python (`utf-16-be` with `surrogatepass`) and by running the compiled scratch `SmsBackupWindow.entryOf`. Both give exactly the plan's values, including the three malformed or `?` bodies:
+       - `"\uD800"` → `b237423d5ff1a2c6`;
+       - `"\uD801"` → `e636bc987e5e57c5`;
+       - `"?"` → `570e37f30ca551d2`.
+     - M-L24 (back to UTF-8) changes every vector, so W2 fails, and every other test keeps consistent keys.
+   - **B26** (`race_restoreRecordsAndInsertsWhileTheQueriesRun_…`) **does show the race closed.**
+     - **Set-up.** The provider double's `beforeQuery` hook runs a restore's two steps (`recordRestoredSms`, then the row's insert) at the start of the window query for D − 1 h, and at the start of the forward query for D + 1 h. Both are after the fetch's first read and before any row is selected.
+     - **Correct code.** The window returns D − 3 h (late), D − 1 h (restored) and D. The forward query returns D + 1 h. The second read holds both restored entries, so the run uploads only the late row, and the next run uploads nothing.
+     - **Under M-L26** (`record = before`):
+       - D − 1 h is not in `before`, so it is taken as late;
+       - `entriesAbove(before) = 0`, so D + 1 h is not filtered.
 
-This covers every test the brief names (AC-1, AC-5, AC-7, AC-9, AC-10, AC-12, AC-14, AC-16, AC-17, AC-20, AC-21). Every fixture, constructor, preference key and seam exists as used, including:
-- the `BackupWorker` and `RestoreWorker` constructors;
-- `TestableRestoreWorkerFactory(store, interceptor)` and `InMemoryCheckpointStore` (`RestoreWorkerCheckpointTest.kt:580`);
-- `RestoreInsertInterceptor.NoOp`;
-- `MailTransportTestFactories.createFolderHandle` and `createHandle`;
-- `MessageImportResult(String, DataType, ContentValues)`;
-- `XOAuth2FailedException(int, Throwable)`;
-- `RequiresLoginException()`;
-- `ContactGroupIds.add(id, rawId)` and `contains`, which uses the contact id;
-- `ContactAccessor`'s `data1 = ? AND mimetype = ?` query;
-- `Message.getHeaderNames`, `TextBody.getRawText` and `Preferences.setReferenceUid`;
-- the keys `max_items_per_sync` and `backup_contact_group`, which are string preferences read by `getStringAsInt`;
-- `MmsConsts.DELIVERY_REPORT = "134"`.
+       Three rows are uploaded, and B26 fails.
+     - **D23** covers a hook that does not fire.
 
-The selection regexes of the provider double match the texts the code emits, including the two spaces before the group clause. R1 and R2 fail on the start commit for the stated reason (the forward-only selection, `returned=[]`). Existing pinned tests keep passing:
-- every `BackupWorkerWatermarkTest` and `BackupWorkerIntegrationTest` case writes increasing or −1-based watermarks, so `max()` changes no expectation;
-- `BackupItemsFetcherTest`'s mocked builder returns null from `getDataTypePreferences()`;
-- tests that mock `Preferences`/`DataTypePreferences` return 0 from `getMaxSyncedDate`, which keeps them on today's path.
+3. **Mutation rows.**
+   - **New and rewritten rows, re-derived exactly as listed:**
+     - M-L19 (i) {B3};
+     - M-L19 (ii) {B3, B16, S5};
+     - M-L22 {S3}: Skip over {MMS} now runs `skipSms` and sets the SMS watermark to D + 1 h;
+     - M-L23 {S4}: `max(D, D + 5 h)`;
+     - M-L24 {W2};
+     - M-L25 {W6}: the entry at `wm − w − 1` is kept;
+     - M-L26 {B26}.
+   - **Sampled rows against the "complete set" claim:**
+     - M-L1, M-L2 (i), M-L3 (3 h), M-L5, M-L7, M-L10, M-L12 (a), M-L15, M-L16 (a), M-L17, M-L18 (b) and M-L21 match;
+     - M-L8 (a) and M-L4 (a) do not (O-1).
 
-**Mutations.** I re-derived the failing set of all 32 runs. One prediction is wrong in a way that stops the run (B-2). Three runs have incomplete "also" lists (O-1). Every other must-fail set holds.
+   Both mismatches are D16 (b) deviations: still detections, not stops. Every id still has a detecting test, and every test is still bitten.
+4. **Two sessions and scoped counts.**
+   - **Resume.** S2-0 rebuilds the pristine copies from the `git hash-object -w` blobs and checks them with `cmp`.
+     - With `core.autocrlf=true`, the stored blobs are LF.
+     - `git cat-file --filters --path=` smudges them back to the CRLF working-tree bytes, and `cat-file blob` returns LF new files byte for byte.
+     - So nothing on disk is lost between sessions.
+   - **What session 2 needs from session 1.** Everything else it needs is in the repository: the sanitised `$E` files, including `I0-mailtransport-classes.txt`, and the implementation log, which holds `<n>`, `<s>`, `F0`, `C0`, the JaCoCo ratios, the LF/CRLF record, `START`, the blobs and `PROD_DIFF`.
+   - **The hand-over state** is checkable by S2-0 steps 1 to 5 (hashes, `PROD_DIFF`, porcelain over `OWN`, open `APPLYING` entries), and D22 stops on any difference.
+   - **Counts.** The I9 counts are scoped to `MINE` and `OWN`. Foreign untracked or modified test files are listed and counted separately as `F0` and `F1`, so the iteration-1 false stop (O-6) cannot happen. One small gap in the Gradle-total formula is O-3.
+5. **Iteration-1 observations.**
+   - Closed: O-2 (2.8 item 5), O-3 (the digest), O-4, O-5, O-6, O-7, O-8, O-9 (5.1) and O-10.
+   - O-1 is closed as asked (M-L2: S1, B18; M-L3 (3 h): B1, B14; M-L19 (ii): S5, all in the sets). Its iteration-2 form, "complete sets", introduces two new mismatches (O-1 below).
+   - None was left open without a reason.
 
-**Verdict: FAIL, with two blockers.**
-- **B-1:** test B3 (AC-2 (c), REQ AC-22) fails on correct code because of its own set-up.
-- **B-2:** the must-fail list of M-L19 (i) names B2, which passes under that mutant, so row D16 stops the story before I9.
-
-Both fixes are confined to test text and the mutation table. No production edit, design decision or other assertion changes.
+**No new blocker.** Iteration 2 introduces nothing that would make the run fail, leave a criterion unproven, or ship a duplicate or a loss. The four observations below are recommended corrections; none changes a design decision or a production edit.
 
 **Not reached or not executable here:**
-- the Robolectric runtime probes N1 to N6, which need Gradle;
+- the Robolectric probes N1 to N7 (they need Gradle);
 - a Kotlin compile of T1 to T7 and of P6 and P7 (read only);
-- the exact extra failures under M-L8 (a), whose MMS conversion over SMS rows goes through `MmsSupport`, which I did not trace. Its must-fail test B19 fails regardless;
 - the JaCoCo estimate (not recomputed);
-- IC-4 (the orchestrator's).
+- IC-4.
+
+The Java compile used the `app/build` class directory as a classpath for unchanged types such as `DataType`. That is build output, not source.
 
 ## Blockers
 
-### B-1 — B3 `ac2c_alreadyBackedUpWindowRows_areNotCountedAgainstTheLimit` fails on correct code (AC-2 (c), REQ AC-22 unproven; M-L19 (ii) evidence void)
-
-**Where:** `sdlc/artifacts/build/sprints/sprint-024/U-070/plan.md:1944-1945`, with the helper at `:1900-1905`.
-
-**What goes wrong.**
-1. The test adds four rows dated D − 4000 to D − 1000 and then calls `establishWatermarkAtD()`.
-2. That helper adds the row at D and asserts that the first backup uploads exactly that one row: `containsExactly(id)`.
-3. No watermark exists yet, and the default per-run limit is −1 (`Defaults.java:23`). So the first run's forward query, `date > -1 AND type <> 3`, returns and uploads all five rows.
-4. The assertion fails before the scenario starts.
-
-**Consequences.**
-- I4-new ("25 + 1 pass") cannot be met, and no decision row covers it: D7 is for compile errors only.
-- The REQ AC-22 / story AC-2 (c) scenario is never exercised.
-- Under M-L19 (ii) the test "fails" for the wrong reason, so that entry would record a detection that proves nothing.
-
-**Exact fix.** Replace plan lines 1944-1945:
-```kotlin
-        (4 downTo 1).forEach { h.sms.add(D - it * 1000L, "+1555010010$it", "backed up $it") }
-        establishWatermarkAtD()
-```
-with:
-```kotlin
-        val backedUp = (4 downTo 1).map { h.sms.add(D - it * 1000L, "+1555010010$it", "backed up $it") } +
-            h.sms.add(D, "+15550100009", "watermark row")
-        assertThat(ids(h.backupRecording())).containsExactlyElementsIn(backedUp).inOrder()
-        assertThat(h.watermark()).isEqualTo(D)
-```
-Leave the rest of the test unchanged. Re-derived with the fix:
-- **Correct code:** the window holds 5 recorded rows and 1 late row. `late` = [late] and `remaining` = 2, so the forward query `LIMIT 2` returns f0 and f1. The run uploads `late, f0, f1`, the next run uploads f2, and the third run uploads nothing.
-- **M-L19 (i):** `LIMIT 3`, so 4 uploads, and the test fails.
-- **M-L19 (ii):** 3 − 1 − 5 < 0, so no forward query, and the test fails.
-- **M-L1 and M-L5:** the test fails, as table 4.8 says.
-
-### B-2 — M-L19 (i)'s must-fail list names B2, which passes under that mutant (D16 stops the story before I9)
-
-**Where:**
-- `plan.md:3205-3206`: "M-L19 (i) … `final int remaining = max;`. Must fail: B2, B3.";
-- table 4.8, row B2, at `:2883`: "Bitten by … M-L19i".
-
-**Why B2 passes.**
-- **The B2 scenario.** The limit is 5. The window holds the recorded row D plus 2 late rows, and there is 1 forward row.
-- **The mutant.** With `remaining = max` the forward query is sent with `LIMIT 5` instead of `LIMIT 3`. It still returns the single forward row.
-- **The budget.** The SMS cursor's `getCount()` stays 2 + 1 = 3, so `BulkFetcher.java:30` still gives MMS `max(5 − 3, 0) = 2`. B2 asserts exactly `["date LIMIT 2"]` and 3 uploads, so it passes.
-- **Why no test of this shape can catch it.** The MMS budget is driven by the cursor count, which this mutant does not change. A forward-row count above `remaining` would make both variants use the whole budget.
-
-**Consequence.** D16 (`:3346`) says "a must-fail test passes → … log a finding 'AC-24 unmet for <id>', finish the remaining entries, then stop and report before I9". The run halts at the end of I8 on a false finding.
-
-**Exact fix.**
-1. `:3206`: "Must fail: B2, B3." → "Must fail: B3."
-2. `:2883`: B2's "Bitten by" → "M-L1, M-L8a".
-3. Add one sentence under the M-L19 entries: "The story's M-L19 row ('AC-2 (b), (c)') is met by B3 (AC-2 (c)) for both variants. AC-2 (b)'s budget is the cursor count, which `BulkFetcher` reduces whatever the forward `LIMIT` is; B2 is bitten by M-L1 and M-L8 (a)."
-4. If the orchestrator reads the story's table as requiring AC-2 (b)'s test itself to fail under M-L19, that is a question for it before the build. No single-edit mutant of `remaining` can make B2 fail.
+None.
 
 ## Observations
 
-**O-1 — Three "also expected to fail" lists are incomplete** (each produces an "expected: does not match" deviation under D16's second sentence, not a stop).
-- **M-L2 (i) and (ii)** (`:3141-3144`) also fail S1 and B18:
-  - the seed query shares `windowArgs`, so it seeds rows older than W;
-  - `prune` then drops those rows;
-  - the unbounded window returns them unrecorded, and they are uploaded.
+**O-1 — Two "complete" failing sets are incomplete, and the plan's correction of my iteration-1 M-L8 (a) remark is wrong.**
 
-  Fix: add "S1, B18" to both "Also" lists.
-- **M-L3 (3 h)** (`:3145-3146`) also fails B1 (`late[2]` at exactly D − 3 h is outside the exclusive bound) and B14 (the row at D − 5 h is outside a 3-hour window). Fix: add "B1, B14".
-- **M-L19 (ii)** (`:3207-3208`) also fails S5: after the Reset, run 2 has two recorded window rows, so `remaining = 2 − 0 − 2 = 0`, and r1 to r3 are never fetched. Fix: add "Also: S5".
+This is not a stop: D16 (b) logs an unlisted failure as "expected: does not match", still a detection. But the plan claims exact sets, so these two rows will be logged as planning errors.
 
-**O-2 — An unnamed behaviour difference: rows excluded by the SQL contact-group clause become uploadable after a group change.** Plan 2.8 (`:365-388`) names the converter-rejection consequence (Record 16/18). It does not name the reverse case.
-- A row that the window's SQL group clause (`type = 2 OR person IN (...)`) excludes is never returned, so it is never recorded.
-- If the owner widens the group, for example to "everybody", every such SMS dated within W below the watermark is uploaded by the next backup. Today it is never uploaded.
-- This is neither a loss nor a duplicate. It is also the opposite of what Record 16 says for converter-rejected rows, which stay excluded.
+- **M-L8 (a)** (`plan.md:3558-3561`; also the Iteration 2 table at `:55` and table 4.8 row B2).
+  - **Why the plan's reason is wrong.** The mutated condition `dataType == SMS || dataType == MMS` leads into code that reads `preferences.getMaxSyncedDate(DataType.SMS)` (P5b, `:1257`). `getSmsItemsWithLookBack` then queries the **SMS** provider (`buildSmsWindowQuery`, `buildQueryForDataType(DataType.SMS, …)`). So the MMS watermark does not matter. Whenever the SMS watermark is above 0 and MMS (enabled by default) still has budget, the MMS fetch re-runs the SMS window and forward queries. It returns SMS rows as the MMS cursor.
+  - **What then happens.** Converting those rows as MMS throws in `MmsSupport.getDetails`: `Integer.parseInt(msgMap.get("msg_box"))` gets null (`MmsSupport.java`, `getDetails`). That happens after the SMS rows are uploaded. B19 and B2 also send an `…/addr` query to the MMS double.
+  - **Failing set, re-derived:**
+    - B2 (`mms.queries` holds no `date LIMIT 2` query);
+    - B4 (`single { isWindowQuery }` finds two window queries);
+    - B19;
+    - B21 (SMS query counts become 5, 4 and 4 instead of 3, 2 and 2);
+    - B25 (4 window queries instead of 2);
+    - B26 (the hook fires again during the MMS fetch, so `rows` has 6 entries, not 4).
+  - **Fix.**
+    - Set M-L8 (a)'s failing set to {B2, B4, B19, B21, B25, B26}.
+    - Restore "M-L8 (a)" in the "Bitten by" column of rows B2, B4, B21, B25 and B26 of table 4.8.
+    - Replace the sentence "Only B19 has an MMS watermark above 0 in a fetch" and the Iteration 2 table's "B2's MMS watermark is −1" with: "the mutated branch reads the SMS watermark and sends SMS queries for the MMS type."
+- **M-L4 (a)** (`:3540-3543`).
+  - **Why B26 fails.** B26's hook is keyed on `startsWith("date > ? AND date <= ?")`, which the mutated window text `date >= ? AND …` no longer matches. So the window-time restore step never runs, `h.sms.rows` ends at 3, and `hasSize(4)` fails.
+  - **Fix.** Add B26 to M-L4 (a)'s set, making 9 tests, and add M-L4 (a) to B26's "Bitten by" column.
 
-Fix: add a 2.8 item 6 stating this, put it in the I10 declared items, and tell the orchestrator (no code change).
+**O-2 — A concurrent restore's pruning is the same class as 2.9's "concurrent backup pruning", but it is not named.** `recordRestoredSms` prunes against the stored watermark, which the same restore may just have raised above this backup's start watermark (`RestoreWorker.kt:464-468`). Entries in (start − W, raised − W] can then disappear between the fetch's two reads, and those rows are selected again: one duplicate per row, never a loss, and `late` may then exceed `min(lateBefore, max)`. Fix: in 2.9's last bullet and 2.4 "Budget", say "a concurrent backup **or restore** pruning".
 
-**O-3 — The digest input is not injective for unpaired UTF-16 surrogates.**
-- **Cause.** `canonical.getBytes(StandardCharsets.UTF_8)` (P1, `plan.md:630`) replaces an unpaired surrogate with `?`. So bodies `"\uD800"`, `"\uD801"` and `"?"`, with the same date and address, produce the same digest. A late row whose body is one of these would be treated as backed up: a loss.
-- **Likelihood.** Very unlikely (malformed SMS text), and distinct from the accepted SC-6 case (identical text).
-- **Fix, either of:**
-  - (a) Hash the UTF-16 code units losslessly: feed `MessageDigest` two bytes per `char` of `canonical` instead of `getBytes(UTF_8)`. Recompute the four W2 vectors (`:2450-2453`) and L21 independently. D8 then compares against the new vectors.
-  - (b) Keep the code and record it as accepted risk R9b in section 8.
+**O-3 — The I9 Gradle total omits committed foreign tests.**
+- **The gap.** I9 step 2 expects `tests=<n> + 50 + Fd`, where `Fd` counts only foreign untracked or modified test files. Step 3 accounts for foreign *committed* tests (`C_head − C0`, listed by `foreign-test-commits-end`), but the Gradle formula does not. D17 would then stop on a commit by another story that adds tests.
+- **Likelihood.** Very unlikely in this serial sprint, but the AC-27 wording anticipates it.
+- **Fix.** Expect `tests=<n> + 50 + Fd + Fc`, where `Fc` is the number of test cases added by the commits that `foreign-test-commits-end` lists (normally 0), and name `Fc` in D17.
 
-**O-4 — AC-17's "fresh store" is approximated** (REQ AC-19: "copies to a fresh store exactly the files that `backup_descriptor.xml` lets Android copy").
-- `moveToAnotherPhone()` (`:2814-2839`) clears and rewrites the copied files with their own contents. It leaves the excluded files in place.
-- The test still proves that the record lives in a copied file (`:2823`) and that content keys survive new row ids. But it does not model the absence of the excluded files.
-
-Fix: after the copy loop, add `excluded.forEach { h.context.getSharedPreferences(it.removeSuffix(".xml"), Context.MODE_PRIVATE).edit().clear().commit() }`, keeping the existing `setImapUser(OWNER)` after it.
-
-**O-5 — The KDoc of `SimulatedProcessDeath` is inaccurate for the backup path.**
-- `plan.md:1329` says the exception is "not caught by any catch of the workers". `BackupWorker.doWork` catches `Exception` (`BackupWorker.kt:168-171`), so in B13 the "death" becomes `Result.failure`.
-- The persisted state is the same as after a real death (the throw precedes the commit), so B13 still proves AC-10.
-- In S8 the exception does escape, because `executeRestoreWithValues` catches only `IllegalStateException`.
-
-Fix: change the KDoc to "propagates out of the restore loop; in the backup path `doWork`'s `catch (e: Exception)` turns it into `Result.failure` after the same persisted state a real death leaves".
-
-**O-6 — The I9 working-tree count can include other stories' untracked tests.**
-- **Current state.** `git status` now shows `app/src/test/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiverTest.java` untracked: U-068 is in progress in this checkout.
-- **At the start.** I0's porcelain check stops on such a file (D1).
-- **During the run.** A file that appears mid-run makes `git grep --untracked` (`:3229`) differ from start + 49, and D17 stops.
-
-Fix: in I9 also record `git ls-files --others --exclude-standard -- app/src/test`, subtract the `@Test` count of every listed file that is not one of the seven U-070 files, and list those files in the log as "not this story's". D17 then stops only on an unexplained difference.
-
-**O-7 — The I6 README hunk comment does not match what git prints.**
-- `plan.md:3088` says "two insertion hunks after old :87 and :275".
-- `git diff -U0` of the applied P9a and P9b prints `@@ -87 +87,4 @@` (line 87, `Gmail.`, is rewritten) and `@@ -276,0 +280,6 @@`.
-
-Fix: write those two headers as the expected value.
-
-**O-8 — The window cursor leaks if the forward query throws.** In P5b (`:1062-1090`), a `SecurityException` from the forward `performQuery` leaves `window` open. The backup fails either way, so this is only a resource leak. Fix (optional): wrap the forward part in `try { … } catch (RuntimeException e) { window.close(); throw e; }`.
-
-**O-9 — Feasibility and hand-over points.** The run is 42 Gradle invocations:
-- 3 full gates (I0, I9, and Gate G inside them);
-- 7 targeted runs;
-- 32 mutation runs, each a recompilation plus 48 Robolectric cases, with Z1 added for M-L13.
-
-That is several hours and a large context for one developer session, but it is feasible. M-L13 (a) is the slowest: the record grows to about 10,000 entries, each commit rewrites and `fsync`s a file of about 300 KB, and D19 and D21 cover the time. Natural hand-over points:
-- after I1b (start evidence frozen);
-- after I7 (all code and tests green, pristine copies and `<NAME>_NEW` blobs recorded);
-- between any two I8 entries (the write-ahead log and the recovery note already support resumption);
-- before I9.
-
-Recommended: two sessions, I0 to I7 and then I8 to I11.
-
-**O-10 — Stale line references (no effect: every edit is anchored by text).**
-- Plan 2.10 and the IC-1 table (`:3399`) give "`:424` after U-067" for the seam's write. At HEAD, which is after U-067, it is `BackupWorker.kt:423`.
-- The else-branch is `:355-357`.
-- The plan's `base_commit` is `c9770c30`. Iteration 2 should cite the HEAD it re-reads.
+**O-4 — Small consistency points (no effect on the run):**
+- S2-0 step 2 expects seven ` M` paths. After D13 (Javadoc left out), `MailTransport.java` is unmodified and there are six. Fix: add "(six after D13)".
+- The `git hash-object -w` blobs are unreachable loose objects. Git keeps them for two weeks (`gc.pruneExpire`), which is ample for a two-session run. Fix (optional): note in 5.1 that session 2 should start within that time, or that the pristine copies can be rebuilt only while the blobs exist.
 
 ## Checks that hold (re-derived)
 
 | Item | Plan says | I found |
 |------|-----------|---------|
-| Production `old_string`s | each exactly once | each exactly once at HEAD (after U-067) |
-| `BackupQueryBuilder` hunks | `-13,0`, `-163,0` | the same (`git diff --no-index -U0`) |
-| `MailTransport.java` | one hunk `-74,4 +74,4`, comment lines only | the same; 0 non-comment lines |
-| Java compile with `-Werror -Xlint:unchecked` | n/a | P1 to P5 compile clean (API 35) |
-| 28 Java mutants | single edits | each `old_string` unique; each mutant compiles |
-| W2 vectors and L22 Message-IDs | computed in Python | all nine recompute exactly |
-| Test count per file | 3, 25, 1, 11, 6, 3 (49); fixtures 0 | the same, from the plan text; no `@Ignore` or `Assume`; no address pattern |
-| I0 anchors | each `1` | each `1`. Git for Windows `grep -x` matches the CRLF working tree (checked on `BackupItemsFetcher.java`) |
-| AC-4 grep at HEAD | no hit before P1 | no hit |
-| U-068 and U-069 overlap | no common file | none. U-069 changes `BackupTriggerWorker.kt` and one `app/build.gradle` JaCoCo line; U-068 changes neither worker file nor any U-070 file |
-| Must-fail sets | 32 runs | all hold except M-L19 (i) / B2 (B-2); the extra lists of M-L2, M-L3 (3 h) and M-L19 (ii) are short (O-1) |
-| Criterion map | every AC and IC | every AC-1 to AC-27 and IC-1 to IC-4 has a step; REQ-020 AC-1 to AC-24 are all mapped (AC-25 is the targetSdk story's). REQ AC-22 / AC-2 (c) depends on B-1 |
-| Developer constraints | foreground, 600000 ms, no `MSYS_NO_PATHCONV` for Gradle, wait for backgrounded runs, stop on kills, commit nothing, no build-file change, no `@Ignore` | all present (section 12; D19, D20) |
+| Production `old_string`s (iteration 2) | each exactly once | each exactly once at `c8e98a7f` |
+| Java compile | `--release 17 -Werror -Xlint:unchecked` clean | clean (API 35, stub `App`) |
+| New and rewritten Java mutants | unique, compile | M-L19 i/ii, M-L23 to M-L26 and 8 sampled others: unique, compile |
+| W2 vectors | seven, computed two ways | all seven recomputed in Python and by running the scratch Java: equal |
+| B3 under the new fetch code | `late, f0, f1` / `f2` / nothing | the same; fails under M-L19 (i) and (ii) |
+| B26 | restored rows not uploaded; fails under M-L26 | the same, traced through `beforeQuery` and the second read |
+| Failing sets | complete | M-L1, 2 (i), 3 (3 h), 5, 7, 10, 12 (a), 15, 16 (a), 17, 18 (b), 19 (i), 19 (ii), 21 to 26 match; M-L8 (a) and M-L4 (a) short (O-1) |
+| Record 18 coverage | every test bitten, every id detected | holds (including B2: M-L1, M-L5, M-L18 (b)) |
+| Totals | 50 tests, 26 ids, 37 runs, 47 Gradle calls | the same |
+| Two sessions | blob-rebuilt pristine copies, checkable hand-over | sound; nothing on disk lost; D22 covers every mismatch |
+| Iteration-1 observations | all addressed | closed; O-1's new form gives the two mismatches above |

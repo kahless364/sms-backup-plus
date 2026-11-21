@@ -13,10 +13,10 @@ severity: warning
 agent: "Solution Architect"
 reviewer_agent: amp/agents/solution-architect
 reviewer_mode: separate_instance
-iteration: 1
-timestamp: "2026-11-21T11:27:06Z"
-produced_at: 2026-11-21T11:27:06Z
-recommendations_count: 2
+iteration: 2
+timestamp: "2026-11-21T12:27:53Z"
+produced_at: 2026-11-21T12:27:53Z
+recommendations_count: 0
 criterion_results:
   - criterion: "Pattern grounding"
     verdict: satisfied
@@ -25,7 +25,7 @@ criterion_results:
     verdict: satisfied
     deficit_present: false
   - criterion: "Trade-off articulation"
-    verdict: satisfied_with_recommendation
+    verdict: satisfied
     deficit_present: false
   - criterion: "Citation depth"
     verdict: satisfied
@@ -40,7 +40,7 @@ criterion_results:
     verdict: satisfied
     deficit_present: false
   - criterion: "Anti-AI-slop check"
-    verdict: satisfied_with_recommendation
+    verdict: satisfied
     deficit_present: false
 ---
 
@@ -48,40 +48,59 @@ criterion_results:
 
 ## Gate: expert-depth-check @ plan-gate
 
-## Verdict: PASS (severity warning, observe-only), 2 recommendations
+## Verdict: PASS (severity warning, observe-only), no recommendations
+
+## History
+
+- **Iteration 1** (2026-11-21T11:27:06Z, plan at `36e715e7`): PASS with 2 recommendations. Criterion 3: collision,
+  privacy, `apply()` and cumulative write cost were not quantified. Criterion 8: five edge cases were absent and R6 was
+  "Unknown".
+- **Iteration 2** (this report): the plan is the working-tree revision (`iteration: 2`, `base_commit` `2aad7d70`,
+  4,094 lines). HEAD is `c8e98a7f`.
 
 ## Summary
 
-The plan is iteration 1. It was committed at `36e715e7`, which is HEAD. Its `base_commit` is `c9770c30`. Between the two,
-`app/src/main` differs only in U-067's two worker files (`git diff --stat c9770c30 HEAD -- app/src/main`: 7 insertions,
-6 deletions in `BackupWorker.kt` and `RestoreWorker.kt`), and the plan's section 2.10 expects exactly that.
+Every item of both iteration-1 recommendations is taken up, in the place the developer reads. In most places the text
+is close to the wording the report proposed:
 
-What this review read:
-- **In full:** sections 1, 2.0 to 2.10, 3.1 to 3.5, 4.8, 5.0, I0 to I8's header, 6, 7, 8, 9, 10, 11, 12 and 13.
-- **Test samples:** B7, B8, B9 to B12, B13, B14 (plan.md:2009-2114), S8 and S9 (plan.md:2765-2790), and the start of
-  S10/S11's descriptor parsing.
-- **Read-only checks:** `git grep` at HEAD for `enqueueUniqueWork` / `ExistingWorkPolicy` and for `android:process`.
-  These were used for the Criterion 8 recommendation.
+- **Collision figures.** 2.5 (plan.md:405-415) computes the per-row chance k·5.4·10⁻²⁰, the stress case 2.7·10⁻¹⁶ and
+  the birthday bound 6.8·10⁻¹³. A 32-bit digest is weighed and rejected (2.1 row 18).
+- **Privacy statement.** 2.5 (plan.md:419-432) separates what a holder of the file *can* learn (dates in clear,
+  short-code recovery in under a second, confirmation of a guess) from what they *cannot*. It gives the "hours late"
+  mitigation and is honest that a code that is not withheld may still be valid.
+- **Key stretching.** Weighed in 2.5 (plan.md:433-444) and 2.1 row 19. The soundness is judged under Criterion 3.
+- **`apply()`.** 2.1 row 17 states the deciding reason: the duplicate window grows to every queued row.
+- **Cumulative write cost.** 2.6 (plan.md:469-483) does more than iteration 1 asked. It adds the realistic bound, that
+  pruning keeps r at the 6-hour neighbourhood (about 31 MB over a 20,000-SMS first backlog), next to the quadratic
+  burst case (15.5 MB and 388 MB).
+- **Edge cases.** 2.9 (plan.md:598-613) adds all five, plus a sixth found by the planner: a concurrent prune between
+  the two reads.
+- **R6.** Resolved from the code (L23, plan.md:161; 2.7 "Concurrency", plan.md:526-541). The lock's per-process scope
+  is argued from `static final` and one class loader.
+- **The C1 label.** "A consumer's checkpoint committed atomically with its deduplication state" (Kleppmann ch. 11)
+  replaces "Transactional Outbox". The plan also says why the restore's write-ahead entry is the one Outbox-like part
+  (plan.md:194-200).
+- **Timestamp.** It is now `12:09:01Z`, before this review's clock (12:27:53Z), and so consistent with `date -u`.
 
-The design is grounded and tested to a standard well above the usual:
-- **Grounding.** It names the patterns: allowed lateness in the Dataflow sense, Idempotent Receiver, at-least-once
-  delivery plus deduplication, the write-ahead rule, and the Fake / Spy test doubles. It applies each to a named site.
-- **Atomicity.** The claim rests on the disassembled `SharedPreferencesImpl` (L14), not on folklore. The plan says
-  which part was not verified (API 36/37).
-- **Rejected options.** There are 16 rows, most of them with a criterion-level reason.
-- **Process death.** The failure-window table covers ten points, and says which of them can be tested.
-- **Proving "exactly once".** The deterministic multi-run tests check row id, Message-ID and triple for duplicates
-  (B7). The death-after-confirm test pins the duplicate to exactly one message (B13). 21 mutation ids (32 runs) have
-  predicted failures.
-
-Two areas fall short of the quantified, senior-level standard the brief sets:
-- **Criterion 3.** Several trade-offs are stated but not computed: digest length and collision probability, what the
-  digest gives an attacker and what it costs to guess, `commit()` against `apply()`, and the cumulative write cost of
-  rewriting the record on every commit.
-- **Criterion 8.** Some edge cases from the brief are absent: clock moved backwards, time zones, dual SIM, network
-  re-delivery, and updates to non-key columns. Risk R6 is left as "Unknown" when a grep answers it.
-
-Neither gap changes the design.
+Two design changes since iteration 1 were judged. Both are sound and grounded:
+- **(1) The UTF-16 code-unit digest.**
+  - The injectivity argument (plan.md:392-404) is correct in both steps. Step (i): length prefixes make the canonical
+    text a prefix-decodable encoding of the triple. Step (ii): two bytes per `char` is total and one-to-one, unpaired
+    surrogates included.
+  - The defect it closes is real and demonstrated. Under UTF-8, `"\uD800"`, `"\uD801"` and `"?"` share a digest (L21).
+  - It is pinned by W2's new vectors and by M-L24.
+  - The P1 code (plan.md:845-864) implements exactly the stated form: `c >> 8`, then the low byte.
+- **(2) The second record read** (2.4, plan.md:358-384; P5b, plan.md:1288-1336).
+  - **The happens-before argument is sound.** The restore commits the entry before it starts the insert (program
+    order). A query that returns R observes the completed insert. The backup's second read comes after the queries
+    return. The entry is therefore visible:
+    - `commit()` applies its change to the in-memory map under the `SharedPreferencesImpl` lock before it writes;
+    - `getString` takes the same lock;
+    - both threads hold the same cached instance from `getDefaultSharedPreferences`.
+  - **The test bites.** B26 (plan.md:2611-2640) injects the restore's two steps at the start of each query, so it
+    runs after the first read and before the second. M-L26 (the iteration-1 single read) therefore fails it, and D23
+    covers the case where it does not.
+  - **The anti-pattern is named.** It is "Check-then-act across a concurrent writer" (plan.md:233-235).
 
 ## Findings
 
@@ -89,31 +108,11 @@ Neither gap changes the design.
 
 **Verdict:** satisfied
 
-**Evidence present:** Section 2.0 (plan.md:105-143) names each pattern with its source and maps it onto this
-mechanism:
-- **Watermarks and allowed lateness** (Dataflow §2.3; *Streaming Systems* ch. 2, 3). The SMS watermark is a heuristic
-  watermark, a withheld SMS is late data, W is the allowed-lateness horizon, and the record is the per-window state
-  that the horizon lets the code garbage-collect (plan.md:110-114). This is the right lens for the failure of a
-  high-watermark incremental sync when data arrives late. It goes further than the bug's own framing.
-- **Idempotent Receiver** (EIP ch. 10), applied on the sender side because IMAP APPEND is not idempotent. The key is
-  the content, not `_id`, with the reason given (plan.md:115-118).
-- **At-least-once delivery plus deduplication equals effectively once**, with the duplicate window bounded to one
-  in-flight append (plan.md:119-123).
-- **The ARIES write-ahead rule**, applied to restore with the direction of the harmless failure argued
-  (plan.md:124-127).
-- **Meszaros test doubles**, each mapped to a class (plan.md:128-132).
-- **The Feathers seam**: a mocked builder returns null and the old path runs (plan.md:141-143).
+**Evidence present:** Section 2.0 (plan.md:177-221) keeps all of iteration 1's grounded patterns, each applied to a
+named site: Dataflow allowed lateness, Idempotent Receiver, ARIES write-ahead, the Meszaros doubles, the Feathers seam,
+and the DeMillo mutant classes, now including M-L22 to M-L26. The checkpoint label is corrected (plan.md:194-200).
 
-**Evidence missing:** (none at a level that affects the verdict). One accuracy note, which needs no plan change. "The
-single-store form of the Transactional Outbox" (plan.md:121-123) is a loose fit:
-- Richardson's Outbox records the *outgoing message* in the same transaction as the state change, *before* it is sent,
-  and a relay sends it later.
-- The upload commit here is written *after* the send. It is closer to committing a consumer's checkpoint together with
-  its deduplication state (Kleppmann, *Designing Data-Intensive Applications*, ch. 11, "Fault Tolerance", the
-  "Idempotence" and "Atomic commit revisited" parts).
-- Only the restore's write-ahead entry is Outbox-like.
-
-The design conclusion (one atomic write, not two stores) is unaffected.
+**Evidence missing:** (none)
 
 **Passage:** (N/A)
 
@@ -123,20 +122,11 @@ The design conclusion (one atomic write, not two stores) is unaffected.
 
 **Verdict:** satisfied
 
-**Evidence present:** "Anti-patterns named and avoided" (plan.md:145-156) names six, each with its consequence:
-- moving the watermark backwards, which re-uploads the last W on every run;
-- bounded-by-count state that evicts live entries (an LRU cap), which is a loss path;
-- a Bloom filter for "already sent", where a false positive is a silent loss;
-- two stores for one invariant;
-- logging message content, including a pre-existing debug VERBOSE leak (L15), handed on in section 11 item 3;
-- testing a subclass of a Robolectric-shadowed class (`CursorWrapper`, L12).
-
-The other anti-patterns in the brief are handled where the design makes the choice:
-- **Keying on the provider `_id`:** rejected in 2.1 row 5 and pinned by M-L7.
-- **Unbounded deduplication sets:** avoided by pruning at `watermark - W` (plan.md:604-610), which Z1 asserts over
-  200 runs.
-- **Wall-clock assumptions:** avoided by measuring W against the watermark, not the time the backup runs
-  (plan.md:244-245, :479-482, and the test note at :1883).
+**Evidence present:** The six anti-patterns of iteration 1 remain. Two are added, each tied to the defect it caused and
+to the change that removes it:
+- **Check-then-act across a concurrent writer** (plan.md:233-235): the record read before the queries;
+- **Charset-encoding before hashing** (plan.md:236-237): malformed characters are replaced, so the encoding is not
+  one-to-one.
 
 **Evidence missing:** (none)
 
@@ -146,120 +136,61 @@ The other anti-patterns in the brief are handled where the design makes the choi
 
 ### Criterion 3 — Trade-off articulation
 
-**Verdict:** satisfied_with_recommendation
+**Verdict:** satisfied
 
-**Evidence present:**
-- **Section 2.1** (plan.md:170-187) has 16 options with gained, gives way, and the decision. Most rejections cite the
-  criterion they would break:
-  - row 3, server search: needs a port change, adds a round trip per row (forbidden by AC-21), and an outbox-to-sent
-    row would be appended twice;
-  - row 4, an SQLite table: not atomic with the watermark;
-  - row 8, an HMAC key: either useless or breaks AC-17;
-  - row 10, a separate file: two commits.
-- **Cost of the choice** is stated at plan.md:189-191.
-- **The window length** is derived as 3 h + 3 h, with both halves openly unmeasured and a revisit path
-  (plan.md:241-249).
-- **Size** is quantified at 31 bytes per entry, about 3.1 KB normally and 155 KB at 5,000 entries (plan.md:313-321).
+**Evidence present:** 2.1 now has 20 rows (plan.md:254-275), each with gained, gives way and decision. Rows 17 to 20
+carry the reason and the test or mutation that pins the choice:
+- row 17, `apply()`: B13, M-L12 (b);
+- row 18, the 32-bit digest: the 2³² factor;
+- row 19, key stretching: 2.5;
+- row 20, a single read: B26, M-L26.
 
-**Evidence missing:** four trade-offs the brief asks to be quantified are stated only qualitatively, or not at all:
-1. **Collision probability** is given as a formula, "about n²/2⁶⁵ … negligible for any n that occurs"
-   (plan.md:282-284). It is not computed for the realistic number of entries. The digest-length trade is argued in one
-   direction only: "a longer digest buys nothing measurable" (plan.md:287). A shorter one is not considered.
-2. **Privacy residual** (plan.md:291-295). The plan states the 10⁶-guess recovery of a 6-digit code, which is right.
-   It does not state:
-   - the attacker's cost;
-   - what else the file reveals: the dates are stored in clear, so the exact time and number of every SMS in the last
-     6 h are readable. "No address and no text are stored" (plan.md:280) is true but is not the whole disclosure;
-   - what the attacker cannot learn.
+Every quantity iteration 1 asked for is computed: 2.5 for collisions and the cost of a guess, 2.6 for cumulative
+writes.
 
-   Its closing "No stronger protection is possible without breaking AC-17" is an absolute claim. A real alternative is
-   not evaluated: key stretching, a slow hash, which needs no key and so does not conflict with AC-17.
-3. **`commit()` against `apply()`.** Section 2.7 explains what `commit()` does (plan.md:349-360), and B13 asserts
-   `applies == 0` (plan.md:2095). `apply()` is never weighed as a rejected alternative. The decisive reason is
-   unstated: `apply()` would widen AC-10's duplicate window from one in-flight append to every row whose write is
-   still queued.
-4. **Cumulative write cost.** R5 gives the size per commit (plan.md:3382). The whole file is rewritten on every row's
-   commit, so a run that uploads n rows while the record holds r entries writes about 31·(n·r + n²/2) bytes. The
-   per-commit figure hides that this is quadratic.
+**Is the key-stretching rejection sound and honestly argued?** Yes.
+- **Option and cost.** The candidate is named precisely: PBKDF2-HMAC-SHA256, RFC 8018 §5.2, with a public salt and so
+  no key, which keeps AC-17. The phone's cost is stated, about 10 ms per entry at 10⁴ iterations. The plan is candid
+  that its own code computes each window row's entry twice (plan.md:436-438; `entryOf(window)` at plan.md:1297 and
+  :1316).
+- **Gain.** It is stated without inflation: 10⁶ to 10¹⁰ hash evaluations, "seconds to minutes on one GPU". The plan
+  says outright that "the outcome for the case that matters, a short code, does not change".
 
-**Passage:** 2.1 table (plan.md:170-187); 2.5 Collisions and Residual risk (plan.md:281-295); 2.7 (plan.md:349-360);
-2.6 Size and R5 (plan.md:313-321, :3382).
+That is the correct conclusion. A 6-digit code has about 20 bits of entropy, and no work factor a phone can afford on
+every row of every run turns 2²⁰ guesses into a real barrier. The plan does not claim otherwise. The rejection rests on
+three stated grounds: the cost is paid on every run, the gain is only a delay, and the exposure is bounded to 6 hours of
+history that is also in the mailbox. A secret key is handled separately and correctly (row 8, plan.md:443-444). The
+absolute claim of iteration 1, "no stronger protection is possible", is gone.
 
-**Recommendation / Remediation:** add the following to 2.5, 2.1 and 2.6. Text can be used as written.
+**Evidence missing:** (none at a level that affects the verdict). Two optional strengtheners need no plan change:
+- **Memory-hard functions are not mentioned.** scrypt and Argon2 are not in the Android framework at minSdk 24. They
+  would need a library, which section 12 item 9 forbids. One clause would close that alternative.
+- **The general argument.** Raising the iteration count until it matters, for example 10⁶, would cost about 1 s per
+  row on the phone. That strengthens "the outcome does not change" from an observation about 10⁴ iterations into a
+  general argument.
 
-- **2.5 Collisions, replace the second and third bullets with:**
+**Passage:** (N/A)
 
-  > "A loss needs a late row whose `date:digest16` equals a recorded entry, so only entries with the same millisecond
-  > compete. For k such entries the chance per late row is k/2⁶⁴ ≈ k·5.4·10⁻²⁰. In normal use k ≤ 1, so the chance is
-  > about 5·10⁻²⁰ per late row and about 5·10⁻¹⁵ over 10⁵ late rows. Even if all 5,000 entries of the stress case
-  > shared one millisecond, it would be 2.7·10⁻¹⁶. Ignoring the date entirely, the birthday bound over 5,000 entries
-  > is 5,000²/2⁶⁵ ≈ 6.8·10⁻¹³. A 32-bit digest (8 hex characters) would still give k·2.3·10⁻¹⁰ and save 8 of the 31
-  > bytes (26 %). It is not chosen, because the saving is small next to file size and the loss probability rises by a
-  > factor of 2³²."
-
-- **2.5 Residual risk, replace the last sentence with:**
-
-  > "What a holder of the file **can** learn:
-  > (a) the exact time, to the millisecond, and the number of SMS received or sent in the last 6 h;
-  > (b) the full text of a message whose address and template can be guessed. For a 6-digit code that is 10⁶ SHA-256
-  > evaluations, well under a second on one CPU core;
-  > (c) confirmation of any guessed (address, body) pair, such as 'Ok' to a known number.
-  >
-  > What it **cannot** learn:
-  > - any message text with real entropy;
-  > - an address on its own (a guess needs address and body together);
-  > - anything older than W once pruned.
-  >
-  > On Android 17 a withheld one-time code is recorded only after it becomes visible, which is at least 3 h after
-  > receipt, so such codes are normally expired. Codes that are not withheld are recorded within minutes.
-  >
-  > Key stretching (PBKDF2-HMAC-SHA256, RFC 8018 §5.2) at 10⁴ iterations costs about 10 ms per entry on the phone. A
-  > run reads tens of window rows, which is under 1 s; at 1,000 rows in 6 h it is about 10 s per run. It raises an
-  > attacker's cost for one guess hypothesis to 10¹⁰ hashes, which a GPU does in seconds to minutes. It is rejected:
-  > the residual exposure is bounded to 6 h, and the same texts are in the owner's mailbox.
-  >
-  > A key would add protection only if it does not travel with the file. A key that does not travel breaks AC-17
-  > (row 8)."
-
-- **2.1, new row 17:**
-
-  > "`apply()` instead of `commit()` | the worker thread does not wait for fsync | a write that is queued but not yet
-  > on disk when the process dies is lost, so every row appended since the last flushed write is uploaded again: the
-  > duplicate window grows from one in-flight append (AC-10) to every queued row | Rejected (B13 asserts
-  > `applies == 0`)."
-
-- **2.6 Size, add:**
-
-  > "The whole file is rewritten on every row's commit. A run uploading n rows over a record of r entries writes about
-  > 31·(n·r + n²/2) bytes: 15.5 MB for n = 1,000 starting from empty, and 388 MB for n = 5,000. Normal use (n and r in
-  > the tens) is a few tens of KB. The per-run limit bounds n. The stress case is accepted unmeasured (SC-8). The fsync
-  > per commit exists today, so the added cost is bytes and XML serialisation only."
+**Recommendation / Remediation:** (none)
 
 ### Criterion 4 — Citation depth
 
 **Verdict:** satisfied
 
 **Evidence present:**
-- **Literature.** Nearly every citation is anchored:
-  - Dataflow paper, *PVLDB* 8(12), §2.3;
-  - *Streaming Systems*, ch. 2 and 3;
-  - EIP ch. 10, "Idempotent Receiver";
-  - Richardson ch. 3.3.7;
-  - ARIES, *ACM TODS* 17(1), §1;
-  - Meszaros ch. 23;
-  - Feathers ch. 4, "The Seam Model";
-  - DeMillo, Lipton and Sayward, *IEEE Computer* 11(4);
-  - RFC 2104.
+- **Literature.** The iteration-1 anchors stay. New ones are anchored too: Kleppmann *DDIA* ch. 11, "Fault Tolerance",
+  the "Idempotence" and "Atomic commit revisited" parts; RFC 8018 §5.2; Richardson ch. 3.3.7, now cited for what the
+  Outbox *is*.
+- **New code facts are anchored to file and line:**
+  - L23: `WorkManagerScheduler.kt:154`, `:289`, `:324`, `:365`, `:400`, and the empty `android:process` grep;
+  - L21: the UTF-8 substitution, demonstrated in Python and Java 25;
+  - L24: the scratch `javac --release 17 -Werror` compile of P1 to P5, and the 32 Java mutants.
 
-  Only "Gamma et al., 'Decorator'" lacks a chapter, and it is anchored by its catalogue pattern name. That is well
-  above 80 %.
-- **Framework and library behaviour** is anchored to disassembly offsets: `ShadowContentResolver` `:387-420` and
-  `:228-265`, and `SharedPreferencesImpl` `:144-155`, `:997-1095` and `:1164` (L11, L14).
-- **Project facts** are anchored to file and line (L1 to L20).
-- **Unverified claims are labelled.** L14 is "verified (Android 10); plausible, not verified (API 36/37)" (plan.md:84),
-  and R8 carries that limit into the risks (plan.md:3385).
-
-**Evidence missing:** (none)
+**Evidence missing:** (none at a level that affects the verdict). The 2.4 race argument says that
+`SharedPreferencesImpl` "updates its in-memory map and serves `getString` under one lock (L14)". L14 was read for the
+file-write path, not for `commitToMemory` and `getString`. The claim is true of the framework, and it is the one fact
+the race argument rests on. When the developer next touches L14, it should cite those two methods in the same
+disassembly.
 
 **Passage:** (N/A)
 
@@ -269,16 +200,11 @@ The other anti-patterns in the brief are handled where the design makes the choi
 
 **Verdict:** satisfied
 
-**Evidence present:** Section 13 (plan.md:3487-3498) evaluates all eight ISO/IEC 25010 characteristics by name, with
-sub-characteristics:
-- Functional Suitability: completeness, correctness, appropriateness;
-- Performance Efficiency: time behaviour, resource utilisation;
-- Compatibility: co-existence, interoperability, upgrade;
-- Usability: no UI change, two README sentences;
-- Reliability: fault tolerance, recoverability, a monotone watermark;
-- Security: confidentiality, the residual guessability, the VERBOSE line;
-- Maintainability: modifiability, testability, analysability;
-- Portability: adaptability, framework APIs only.
+**Evidence present:** Section 13 still evaluates all eight ISO/IEC 25010 characteristics by name. Iteration 2's
+changes fall inside them:
+- **Security / confidentiality:** the 2.5 disclosure statement;
+- **Performance Efficiency / resource utilisation:** 2.6's cumulative write cost;
+- **Reliability:** 2.7 row 11 and the concurrency resolution.
 
 **Evidence missing:** (none)
 
@@ -290,14 +216,13 @@ sub-characteristics:
 
 **Verdict:** satisfied
 
-**Evidence present:** Each deterministic signal is interpreted and used for a decision:
-- **`javap` disassembly of the Robolectric and Android 10 jars** (L11 to L14). The `CursorWrapper` shadow finding
-  decides 2.1 row 12. The `SharedPreferencesImpl` rename/fsync path is the basis of the atomicity claim.
-- **JaCoCo package ratios** from the last XML report (L17), turned into projected margins of 78.7 % and 80.3 % against
-  floors of 70 % and 65 % (plan.md:322-330), and re-measured at I0 and I9.
-- **`git grep` census** of every watermark reader and writer (section 9) and of name collisions (L19).
-- **Digest test vectors and Message-IDs** computed independently in Python (L21, L22), with D8 forbidding a vector
-  from being edited to match.
+**Evidence present:** Iteration 1's signals stay: `javap`, JaCoCo, the greps and the Python vectors. Iteration 2 adds
+stronger deterministic evidence than most plans carry (plan.md:41-50, L24):
+- the plan's production Java was extracted by script and compiled with `-Werror -Xlint:unchecked`;
+- each of the 32 Java mutants was shown to have a unique anchor and to compile;
+- the digest vectors were computed by two independent implementations.
+
+The limit is stated: Kotlin test text was not compiled.
 
 **Evidence missing:** (none)
 
@@ -309,18 +234,12 @@ sub-characteristics:
 
 **Verdict:** satisfied
 
-**Evidence present:** I0 to I11 (plan.md:2980 onward) are strictly ordered, with stated preconditions:
-- **I0** is "no edit before this passes", and checks the landing of U-067, U-068 and U-069 (D1).
-- **I1 and I1b** write the tests on the start commit and record the AC-6 literal there, before any production edit.
-  This is what proves "fails on START".
-- **I2 to I5** follow the compile dependencies: the record layer P1/P2, then the queries P3, then the fetch layer and
-  worker P4 to P6, then restore P7.
-- **I7** takes pristine copies and blob hashes before the I8 mutations. Each mutation has a write-ahead `APPLYING`
-  entry and a recovery protocol.
-
-Parallelism is ruled out on purpose: foreground Gradle only, no background shells (section 12 items 1 to 3). A strictly
-serial order is therefore correct, not an omission. The decision table (D1 to D21) gives the branch for every observed
-outcome.
+**Evidence present:**
+- The I0 to I11 order and its reasons are unchanged.
+- The new 5.1, "Sessions and hand-over", adds two sessions with named safe stopping points: after I1b, after I7,
+  between I8 entries, and before I9.
+- The resume step S2-0 rebuilds the pristine copies from the stored blobs before any mutation runs. This turns an
+  implicit hazard, a lost session in the middle of a mutation, into an explicit dependency.
 
 **Evidence missing:** (none)
 
@@ -330,114 +249,68 @@ outcome.
 
 ### Criterion 8 — Anti-AI-slop check
 
-**Verdict:** satisfied_with_recommendation
+**Verdict:** satisfied
 
 **Evidence present:**
-- **Failure windows by process-death point.** The table (plan.md:336-347) says which windows can and cannot be tested.
-  Row 6 is "not unit-testable … API 36/37 assumed".
-- **The limits of `commit()` are stated.** A false return leaves memory and disk different, which gives a duplicate,
-  never a loss (plan.md:356-358).
-- **The upgrade marker is reasoned through.** `stored ≤ 0 || marker` means no write can hide a missing seed
-  (plan.md:234-239, :730-732).
-- **The per-run limit arithmetic is explained.** The LIMIT is widened by the entries above the watermark (2.3,
-  plan.md:251-257).
-- **Exactly once is proved with three identities.** B7 (plan.md:2009-2023) checks row id, Message-ID and content
-  triple for duplicates across four runs with a late arrival.
-- **The accepted duplicate is pinned to one message.** B13 (plan.md:2078-2103) shows the duplicate after a confirmed
-  append and death is exactly f1, with one commit that carries both keys.
-- **Restore is tested at the death point.** S8 (plan.md:2765-2777) dies between the insert and the watermark raise.
-- **Each risk has likelihood and impact** (plan.md:3376-3389).
+- **2.9 edge cases.** The new entries each state the outcome and whether it is a duplicate or a loss. They are not a
+  list of words:
+  - clock moved back by d against W;
+  - time zones, with the one zone-dependent header named;
+  - dual SIM reduced to the SC-6 case;
+  - network re-delivery, with the reason no de-duplication is attempted;
+  - updates to non-key columns, against key columns;
+  - the concurrent prune.
+- **R6 and 2.7 "Concurrency".** These replace "Unknown" with a code-derived result: the overlap is possible, one
+  process, one lock, worst case one duplicate per row both workers select, never a loss. The out-of-scope part, mutual
+  exclusion, is justified by naming the contract it would change.
+- **The two new design changes** each come with a proof sketch, a test and a mutation.
 
-None of the nine doctrine anti-patterns degrades the analysis.
+None of the nine doctrine anti-patterns is present.
 
-**Evidence missing:** a senior reviewer in data synchronisation would push back on two things.
-1. **Edge cases in the brief that 2.9 (plan.md:390-406) does not state:**
-   - the device clock moved *backwards* (2.9 has only the future-dated row, SC-12);
-   - time zones and daylight-saving changes;
-   - dual SIM (`sub_id` is not in the key);
-   - network re-delivery of the same SMS under a new `date`;
-   - the default SMS app updating non-key columns (`read`, `seen`, `status`, `thread_id`).
+**Evidence missing:** (none)
 
-   The design handles each of them, but the plan does not say so. That leaves a reviewer to re-derive the results.
-2. **R6 is "Unknown (not examined)"** (plan.md:3383; 2.7 at :361-363). That is a deferral where the code answers the
-   question in one grep:
-   - At HEAD, `WorkManagerScheduler.kt` enqueues each backup type under its own unique name with
-     `ExistingWorkPolicy.REPLACE` (`:154`, `:289`, `:324`, `:365`, `:400`). A manual and an incoming backup can
-     therefore run at the same time. REPLACE's cancellation of the same name is also cooperative.
-   - No `android:process` appears under `app/src/main`, so both workers share one process and `SMS_RECORD_LOCK`
-     covers them.
+**Passage:** (N/A)
 
-   The story's Scope Concern 9 left the question open, and the plan could have closed it.
+**Recommendation / Remediation:** (none)
 
-**Passage:** 2.9 Edge cases (plan.md:390-406); 2.7 Concurrency (plan.md:361-363); Risks R6 (plan.md:3383).
+## Notes for the developer and the plan-review gate (outside the eight criteria; no depth effect)
 
-**Recommendation / Remediation:**
-
-- **Add to 2.9:**
-
-  > - "**Device clock moved backwards** by d after a backup. A new SMS is dated by the clock, so it is dated below the
-  >   watermark. If d < W it falls inside the window and is uploaded once, which today's code does not do. If d ≥ W it
-  >   is skipped, as today. Forward jumps are SC-12."
-  > - "**Time zones and daylight saving.** `date` is UTC epoch milliseconds. The key, the window and pruning do not
-  >   depend on the zone. Only the `Date` header uses the default zone (L16), and the tests fix it to UTC."
-  > - "**Dual SIM.** `sub_id` is not in the key. The same text from the same sender in the same millisecond on both
-  >   SIMs gives one entry, which is the SC-6 case. Nothing else changes."
-  > - "**Network re-delivery** (the same SMS delivered twice). The provider holds two rows with different `date`s, so
-  >   they have two keys and two Message-IDs, and both are uploaded, as today. This is not a target for
-  >   deduplication."
-  > - "**Updates to non-key columns** (`read`, `seen`, `status`, `thread_id`, `type`). The key is unchanged. A change to
-  >   `date`, `address` or `body` changes the key and gives one duplicate, never a loss (as R7)."
-
-- **Replace R6 with:**
-
-  > "Two backup workers overlap (SC-9) | Possible: each backup type has its own unique-work name with REPLACE
-  > (`WorkManagerScheduler.kt:154`, `:289`, `:324`, `:365`, `:400` at HEAD), so a manual and an incoming backup can
-  > run at once | Low: both can select the same late or forward row before either commits, so it is uploaded twice
-  > (as today for forward rows). The watermark takes `max()` and the record a set union under `SMS_RECORD_LOCK`, so no
-  > entry or watermark is lost. Both workers run in the one app process (no `android:process`), so the lock covers
-  > them | Not designed here; mutual exclusion would need a scheduler change (CNTR-MODERNIZATION-004)."
-
-## Edge-case review (the brief's list)
-
-| Edge case | Plan coverage |
-|-----------|---------------|
-| Clock changes | Forward: SC-12 (plan.md:398-399). Backward: absent (Criterion 8 recommendation) |
-| Time zones | Not stated for the key; implicit in epoch dates, and the test fixes UTC (plan.md:1801-1802) (recommendation) |
-| Equal timestamps | 2.9 (plan.md:392-393), SC-6 accepted |
-| Edited or re-delivered messages | Type change: AC-8, B8. Address or body normalisation: R7. Re-delivery and non-key updates: absent (recommendation) |
-| Dual SIM | Absent (recommendation) |
-| Restored phone | AC-17: S10 and S11 parse the real backup descriptor |
-| Skip and Reset | 2.3 table; S1 to S6, W5 |
-| Two workers overlapping | R6, "Unknown" (recommendation) |
-| Process death at each step | 2.7, ten rows; B9 to B13, S8 |
-| Very large backlogs and the per-run limit | 2.3 per-run limit; B1 to B3; Z1; the quadratic write cost is not computed (Criterion 3 recommendation) |
-| Upgrade from the version before this change | Marker, seed, B18, 2.7 rows 1 and 2 |
-| Privacy of a truncated digest | 2.5: the 10⁶ guess is stated; the attacker's cost, the clear-date metadata and key stretching are missing (Criterion 3 recommendation) |
-
-**Consistency note (outside the eight criteria):** the plan's frontmatter `timestamp: "2026-11-21T14:00:00Z"`
-(plan.md:8) is later than this review's `date -u` (2026-11-21T11:27:06Z). The plan's own rule is that timestamps come
-from `date -u`, so the value was not taken from the clock. It should be corrected when the plan is next revised.
+1. **The per-run limit under a concurrent prune.** 2.4 (plan.md:381-382) says the late plus kept forward rows "never
+   exceed `max`", except for the concurrent-prune case in 2.9. 2.9 gives only that case's duplicate, not its effect on
+   the limit.
+   - **How the limit is exceeded.** In that case the second read lacks pruned entries that the first read held. Late
+     rows can then outnumber `lateBefore`, while `remaining` was computed from `lateBefore` (P5b, plan.md:1300 and
+     :1318). The SMS cursor can therefore exceed `max` by the number of rows pruned in between.
+   - **The effect is contained.** At HEAD (`c8e98a7f`), `BulkFetcher.fetch` clamps with `Math.max(max - count, 0)` and
+     breaks at 0, so MMS and call log are not made unlimited.
+   - **Fix options.** Either add one sentence to 2.9 stating the bounded overshoot, or cap step 7 at
+     `late.size() < max - remaining`. The cap keeps the exact limit and defers those rows, which are duplicates in
+     either case, to the next run.
+2. **Line drift since `base_commit`.** `git diff 2aad7d70 HEAD -- app/src/main` shows only `AndroidManifest.xml`, with
+   14 deleted lines (U-068's two `maxSdkVersion` permissions). `allowBackup` and `fullBackupContent` are now at `:81-82`,
+   not L9's `:95-96`.
+   - No edit anchors there, and S10/S11 parse the descriptor, not line numbers. L9's conclusion holds.
+   - I0's re-read covers the drift.
 
 ## Overall Verdict
 
 **Verdict:** PASS
 
-**Rationale:** The plan is grounded in the right literature for a late-data problem in a watermark sync:
-- Dataflow allowed lateness, Idempotent Receiver, at-least-once delivery plus deduplication, and ARIES write-ahead,
-  each applied to a named site.
-- The decisive atomicity claim rests on disassembled framework code, with its API 36/37 limit stated.
-- 16 alternatives are rejected, mostly against named criteria.
-- Exactly once is shown by multi-run tests across three identities, by a death-after-confirm test that pins the
-  accepted duplicate to one message, and by 21 mutation ids.
+**Rationale:** Iteration 2 closes both iteration-1 recommendations completely, and both new design changes are
+correct:
+- **Criterion 3:** the collision probability, the attacker's cost, the clear-date disclosure, `apply()`, a shorter
+  digest and the cumulative write cost are all computed. The key-stretching rejection is honestly argued: the cost is
+  stated, the gain is not inflated, and the plan says plainly that it changes nothing for a 6-digit code.
+- **Criterion 8:** every listed edge case is stated with its outcome. R6 is resolved from the scheduler and the
+  manifest.
+- **The UTF-16 code-unit digest** has a correct two-step injectivity argument and closes a demonstrated UTF-8
+  substitution collision.
+- **The second record read** closes the restore race by a sound happens-before chain, which B26 pins with M-L26.
 
-Two recommendations remain, the maximum for a PASS:
-- **Criterion 3:** compute the collision probability and the digest-length trade; state the attacker's cost and the
-  clear-date disclosure, and weigh key stretching; add `apply()` as a rejected row; give the quadratic commit-write
-  cost.
-- **Criterion 8:** state the clock-backwards, time-zone, dual-SIM, re-delivery and non-key-update cases; replace R6's
-  "Unknown" with the likelihood the scheduler code shows.
+The other six criteria still hold and are strengthened by the new anchors and compile evidence. All eight are
+satisfied, with no recommendations.
 
-**Iteration:** 1
+**Iteration:** 2
 
 **Rework routing (FAIL only):** Not applicable (PASS).
 

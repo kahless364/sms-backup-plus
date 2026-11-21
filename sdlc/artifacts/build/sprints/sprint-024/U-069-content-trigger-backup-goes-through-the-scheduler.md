@@ -46,7 +46,8 @@ title: Make the content-trigger worker start the incoming backup through the sch
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-023
-updated_at: '2026-11-21T11:26:21.726Z'
+updated_at: '2026-11-21T12:17:23.364Z'
+current_build_phase: implementation
 ---
 
 # U-069: Make the Content-Trigger Worker Start the Incoming Backup Through the Scheduler's scheduleIncoming(), So It Obeys the Network, Encryption-Degraded, Auto-Backup and Delay Rules, and Give the Worker Its First Tests
@@ -225,6 +226,13 @@ For QA. Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew 
 - **SC-2 (`dependencies`):** U-067 and U-068 both stay in the field. U-068 is a sequencing dependency (the shared scheduler test file and one scheduler comment); the sprint plan runs U-069 after U-068.
 - **SC-3 (release build):** accepted as written. The release build is checked by its mapping and class listing (IC-4); the device check (IC-3) runs the debug build. No release-build device check is added: `BackupWorker` is built by the same factory through the same pattern and runs in release builds today.
 - **SC-4 to SC-7:** information only; no change to the story. The receiver is not touched (Record 15 row 16).
+
+**Rulings on the plan's scope concerns (2026-11-21; decision appendix, Record 18).**
+
+- **P-1 (`app/build.gradle`): two lines change, not one.** The floor value of the `worker` package and the note beside it that says the trigger worker has no unit tests and the floor stays at 0 percent (it becomes false with this story). AC-11 and AC-13 read "the floor line and its note"; no other line of the file changes, and no exclusion is added.
+- **P-2 (the extra test `ic1_...`): acknowledged.** It is the unit-level detector for a removed `@HiltWorker` annotation, which the story said did not exist. The story adds fifteen tests. Because the test names classes that androidx.hilt generates, the toolchain story (U-071, its androidx.hilt increment) is told that a rename there is fixed in that story's plan by a Solution Architect amendment, not silently.
+- **P-3 to P-6:** accepted as information: the stricter assertions stand, and the scheduler test file is not edited by this story.
+- **Hand-over items accepted:** the change record for the contract example is the next free number and is raised by the orchestrator after this story; the list of Hilt workers in DES-MODERNIZATION-008 gains this worker through that same record or the next design amendment; the runtime-library story re-runs this story's mutation table at its WorkManager increment.
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
