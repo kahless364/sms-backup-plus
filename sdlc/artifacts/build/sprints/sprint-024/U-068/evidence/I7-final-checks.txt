@@ -1,0 +1,204 @@
+== AC-9: empty diff for the must-not-change files (empty expected)
+== manifest hunks vs START (@@ -38,14 +37,0 @@ only)
+@@ -38,14 +37,0 @@
+== git diff --name-only 4300ffa98370b77dcc4dd8d12142079aada8313a -- app/src/main (nine files of AC-9)
+app/src/main/AndroidManifest.xml
+app/src/main/java/com/zegoggles/smssync/App.java
+app/src/main/java/com/zegoggles/smssync/activity/Dialogs.java
+app/src/main/java/com/zegoggles/smssync/activity/MainActivity.java
+app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt
+app/src/main/java/com/zegoggles/smssync/calendar/CalendarAccessorPost40.java
+app/src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java
+app/src/main/java/com/zegoggles/smssync/scheduler/BackupScheduler.java
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt
+== AC-12: empty diff (empty expected)
+== build.gradle changed lines vs START (E1 pair only)
+-        reports.junitXml.required = false
++        reports.junitXml.required = true
+== app/build.gradle changed lines vs START (three E4 pairs only)
+-        minSdkVersion 21
++        minSdkVersion 24
+-    // 2.9.1 is compatible with compileSdk 35 + minSdk 21 (AGP/SDK uplift from U-003).
++    // 2.9.1 is compatible with compileSdk 35 + minSdk 24 (AGP/SDK uplift from U-003; minSdk 24 from U-068).
+-    testImplementation 'org.robolectric:robolectric:4.15.1' // U-060: ASM 9.8 reads Java 25 class files; 4.16+ drops SDK 21/22
++    testImplementation 'org.robolectric:robolectric:4.15.1' // U-060: ASM 9.8 reads Java 25 class files. U-068: no test is configured below the minSd
+== floor words changed in app/build.gradle (0 expected): 0
+== (i) every commit in START..HEAD
+2b927b21 Sprint-023 retro; U-070 gate reports (contract verification PASS, depth check PASS); U-069 opened for planning
+4f041c3f BUG-024 raised (ready): a cancelled backup or restore is logged and reported as a failure
+533e9f51 U-068 S1-I1: switch on JUnit XML test reports
+cf136a2d U-070: plan-review iteration 1 (FAIL on two test-text blockers) and the orchestrator's rulings for iteration 2
+2aad7d70 U-068 S1-I2: unit test for the BACKUP broadcast receiver's opt-in guard
+853483e2 U-068 S1-I3: retarget the five tests below SDK 24 to API 24 and Q
+c8e98a7f U-068 S1-I4: minSdk 24; drop the two permissions capped below API 24
+d93bb508 U-070 plan iteration 2 passed its three gates; U-069 plan (iteration 1) with rulings and two gate reports
+b097d602 Record 18: the endpoint-security event and the product owner's decision; rulings 37 to 46; U-069 plan-review iteration 1
+9aa84266 U-068 S1-I5: remove the code branches the minSdk 24 floor makes dead
+3eba805c Story U-074 ready: a cancelled backup or restore is not reported as a failure (fix for BUG-024)
+1ba97d95 U-074: restore the pipeline frontmatter field the story text dropped; story finalized (ready)
+c23d0e09 Sprint-025 planned (draft): U-074, then U-071, U-072, U-073, one at a time
+92cfc34d Sprint-025 activated; U-071 opened for planning (no code or Gradle before sprint 024 completes)
+7c5e6073 U-068 S1-I6: prune the lint baseline entries made stale
+== (ii) this story's own files (U-068 S1- commits + uncommitted + untracked, scoped to the story's paths)
+warning: in the working copy of 'sdlc/artifacts/engagement/code-location.md', LF will be replaced by CRLF the next time Git touches it
+.github/ISSUE_TEMPLATE/500_bug_report.yml
+CHANGES
+DEVELOPMENT.md
+app/build.gradle
+app/lint-baseline.xml
+app/src/main/AndroidManifest.xml
+app/src/main/java/com/zegoggles/smssync/App.java
+app/src/main/java/com/zegoggles/smssync/activity/Dialogs.java
+app/src/main/java/com/zegoggles/smssync/activity/MainActivity.java
+app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt
+app/src/main/java/com/zegoggles/smssync/calendar/CalendarAccessorPost40.java
+app/src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java
+app/src/main/java/com/zegoggles/smssync/scheduler/BackupScheduler.java
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt
+app/src/test/java/com/zegoggles/smssync/compat/SmsReceiverTest.java
+app/src/test/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiverTest.java
+app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt
+build.gradle
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-apk-entries-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-apk-entries-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-apk.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-configuration.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-gates.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-gradle-version.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-greps.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-jacoco-inventory.json
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-jacoco-lines.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-jacoco-packages.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-javap.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-junit-totals.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-kept-names.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-lint-baseline-count.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-lint-ids.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-lint.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-manifest-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-manifest-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-merged-debug.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-merged-release.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I0-start.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I1-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I1-gates.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I1-jacoco-inventory.json
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I1-jacoco-lines.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I1-jacoco-packages.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I1-junit-totals.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I1-xml-check.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-checks.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-first-run.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-gates.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-jacoco-inventory.json
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-jacoco-lines.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-jacoco-packages.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I2-junit-totals.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-checks.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-first-run.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-gates.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-jacoco-inventory.json
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-jacoco-lines.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-jacoco-packages.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-junit-totals.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-sdk24-jar.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I3-targeted.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-apk-diffs.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-apk-entries-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-apk-entries-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-apk.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-checks.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-configuration.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-gates.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-jacoco-inventory.json
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-jacoco-lines.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-jacoco-packages.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-javap.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-junit-totals.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-kept-names.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-manifest-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-manifest-diffs.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-manifest-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-merged-debug.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I4-merged-release.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-apk-entries-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-apk-entries-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-apk.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-build-diffs.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-bytecode.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-c1-first-run.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-checks.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-configuration.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-gates.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-greps.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-jacoco-inventory.json
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-jacoco-lines.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-jacoco-packages.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-javap.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-junit-totals.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-kept-names.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-manifest-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-manifest-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-merged-debug.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I5-merged-release.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-baseline-diff.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-checks.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-lint-ids-compare.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-lint-ids.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-lint.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-regenerate.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-scratch-lint-ids.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-scratch-lint.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I6-scratch.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-apk-entries-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-apk-entries-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-apk.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-build-diffs.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-configuration.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-docs.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-gates.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-gradle-version.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-jacoco-inventory.json
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-jacoco-lines.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-jacoco-packages.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-javap.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-junit-totals.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-kept-names.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-manifest-debug.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-manifest-release.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-merged-debug.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/I7-merged-release.xml
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutation-log.md
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-B1-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-B1-message.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-B2-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-B2-message.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-C1-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-C1-message.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-R1-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-R1-message.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-R2-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-R2-message.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-W1-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-W1-message.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-W2-cases.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/mutations/M-W2-message.txt
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/tools/baseline_diff.py
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/tools/jacoco_inventory.py
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/tools/jacoco_lines.py
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/tools/lint_ids.py
+sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/tools/sdk_dir.py
+sdlc/artifacts/build/sprints/sprint-024/U-068/implementation-log.md
+sdlc/artifacts/engagement/code-location.md
+== (iii) commits not starting 'U-068 S1-' that touch code or build paths (nothing before the marker)
+foreign-code-commits-end
+== working-tree count (--untracked, said so): 756 (C0+3 = 756)
+== @Ignore on code lines
+app/src/test/java/com/zegoggles/smssync/AppTest.java:13:    @Ignore @Test public void shouldGetVersionName() throws Exception {
+app/src/test/java/com/zegoggles/smssync/preferences/AuthPreferencesTest.java:1079:    @Ignore("Robolectric 4.12.x does not shadow AndroidKeyStore JCA provider — " +

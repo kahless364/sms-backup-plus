@@ -55,7 +55,7 @@ local `gradle.properties` (do not commit local overrides).
 
 - **compileSdkVersion**: 29 (held at S2; raised to 35 at S3)
 - **targetSdkVersion**: 29
-- **minSdkVersion**: 21
+- **minSdkVersion**: 24
 
 Install Android SDK platform 29 via Android Studio SDK Manager or `sdkmanager`:
 ```bash

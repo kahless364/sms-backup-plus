@@ -1,0 +1,367 @@
+Every EV-B file of I7 against I0 (git diff --no-index). Attribution: each difference is the one recorded at I4 (floor, permissions) or I5 (code); see the I4 and I5 entries of the log.
+== merged manifest, debug: I0 vs I7
+@@ -6,7 +6,7 @@
+     android:versionName="1.6.0-BETA2" >
+ 
+     <uses-sdk
+-        android:minSdkVersion="21"
++        android:minSdkVersion="24"
+         android:targetSdkVersion="35" />
+ 
+     <!-- “dangerous” permissions -->
+@@ -45,23 +45,6 @@
+     <!-- android.permission-group.ACCOUNTS -->
+     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+ 
+-    <!-- Allows the app to request authentication tokens. Removed in Android 6 -->
+-    <!-- android.permission-group.ACCOUNTS -->
+-    <uses-permission
+-        android:name="android.permission.USE_CREDENTIALS"
+-        android:maxSdkVersion="22" />
+-
+-    <!--
+-         Allows the app to write to the SD card.
+-         Beginning with Android 4.4 (API level 19), it's no longer necessary for your app to request the
+-         WRITE_EXTERNAL_STORAGE permission when your app wants to write to its own application-specific directories
+-         on external storage
+-    -->
+-    <!-- android.permission-group.STORAGE -->
+-    <uses-permission
+-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+-        android:maxSdkVersion="18" />
+-
+     <!--
+          Allows the app to create network sockets and use custom network protocols. The browser and
+          other applications provide means to send data to the internet, so this permission is not
+@@ -124,7 +107,7 @@
+         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+         android:debuggable="true"
+         android:description="@string/app_description"
+-        android:extractNativeLibs="true"
++        android:extractNativeLibs="false"
+         android:fullBackupContent="@xml/backup_descriptor"
+         android:icon="@drawable/ic_sms_backup"
+         android:label="@string/app_name"
+git-diff-no-index-exit=1
+== merged manifest, release: I0 vs I7
+@@ -6,7 +6,7 @@
+     android:versionName="1.6.0-BETA2" >
+ 
+     <uses-sdk
+-        android:minSdkVersion="21"
++        android:minSdkVersion="24"
+         android:targetSdkVersion="35" />
+ 
+     <!-- “dangerous” permissions -->
+@@ -45,23 +45,6 @@
+     <!-- android.permission-group.ACCOUNTS -->
+     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+ 
+-    <!-- Allows the app to request authentication tokens. Removed in Android 6 -->
+-    <!-- android.permission-group.ACCOUNTS -->
+-    <uses-permission
+-        android:name="android.permission.USE_CREDENTIALS"
+-        android:maxSdkVersion="22" />
+-
+-    <!--
+-         Allows the app to write to the SD card.
+-         Beginning with Android 4.4 (API level 19), it's no longer necessary for your app to request the
+-         WRITE_EXTERNAL_STORAGE permission when your app wants to write to its own application-specific directories
+-         on external storage
+-    -->
+-    <!-- android.permission-group.STORAGE -->
+-    <uses-permission
+-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+-        android:maxSdkVersion="18" />
+-
+     <!--
+          Allows the app to create network sockets and use custom network protocols. The browser and
+          other applications provide means to send data to the internet, so this permission is not
+@@ -123,7 +106,7 @@
+         android:allowBackup="true"
+         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+         android:description="@string/app_description"
+-        android:extractNativeLibs="true"
++        android:extractNativeLibs="false"
+         android:fullBackupContent="@xml/backup_descriptor"
+         android:icon="@drawable/ic_sms_backup"
+         android:label="@string/app_name"
+git-diff-no-index-exit=1
+== packaged manifest, debug (normalised): I0 vs I7
+@@ -9,7 +9,7 @@ N: android=http://schemas.android.com/apk/res/android
+     A: platformBuildVersionCode=35
+     A: platformBuildVersionName=15
+       E: uses-sdk
+-        A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=21
++        A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=24
+         A: http://schemas.android.com/apk/res/android:targetSdkVersion(0x01010270)=35
+       E: uses-permission
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.READ_SMS" (Raw: "android.permission.READ_SMS")
+@@ -35,12 +35,6 @@ N: android=http://schemas.android.com/apk/res/android
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.WRITE_CALENDAR" (Raw: "android.permission.WRITE_CALENDAR")
+       E: uses-permission
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.GET_ACCOUNTS" (Raw: "android.permission.GET_ACCOUNTS")
+-      E: uses-permission
+-        A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.USE_CREDENTIALS" (Raw: "android.permission.USE_CREDENTIALS")
+-        A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=22
+-      E: uses-permission
+-        A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.WRITE_EXTERNAL_STORAGE" (Raw: "android.permission.WRITE_EXTERNAL_STORAGE")
+-        A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=18
+       E: uses-permission
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.INTERNET" (Raw: "android.permission.INTERNET")
+       E: uses-permission
+@@ -78,7 +72,7 @@ N: android=http://schemas.android.com/apk/res/android
+         A: http://schemas.android.com/apk/res/android:debuggable(0x0101000f)=true
+         A: http://schemas.android.com/apk/res/android:description(0x01010020)=@0x7fRESID
+         A: http://schemas.android.com/apk/res/android:allowBackup(0x01010280)=true
+-        A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=true
++        A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=false
+         A: http://schemas.android.com/apk/res/android:fullBackupContent(0x010104eb)=@0x7fRESID
+         A: http://schemas.android.com/apk/res/android:networkSecurityConfig(0x01010527)=@0x7fRESID
+         A: http://schemas.android.com/apk/res/android:appComponentFactory(0x0101057a)="androidx.core.app.CoreComponentFactory" (Raw: "androidx.core.app.CoreComponentFactory")
+git-diff-no-index-exit=1
+== packaged manifest, release (normalised): I0 vs I7
+@@ -9,7 +9,7 @@ N: android=http://schemas.android.com/apk/res/android
+     A: platformBuildVersionCode=35
+     A: platformBuildVersionName=15
+       E: uses-sdk
+-        A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=21
++        A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=24
+         A: http://schemas.android.com/apk/res/android:targetSdkVersion(0x01010270)=35
+       E: uses-permission
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.READ_SMS" (Raw: "android.permission.READ_SMS")
+@@ -35,12 +35,6 @@ N: android=http://schemas.android.com/apk/res/android
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.WRITE_CALENDAR" (Raw: "android.permission.WRITE_CALENDAR")
+       E: uses-permission
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.GET_ACCOUNTS" (Raw: "android.permission.GET_ACCOUNTS")
+-      E: uses-permission
+-        A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.USE_CREDENTIALS" (Raw: "android.permission.USE_CREDENTIALS")
+-        A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=22
+-      E: uses-permission
+-        A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.WRITE_EXTERNAL_STORAGE" (Raw: "android.permission.WRITE_EXTERNAL_STORAGE")
+-        A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=18
+       E: uses-permission
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.INTERNET" (Raw: "android.permission.INTERNET")
+       E: uses-permission
+@@ -77,7 +71,7 @@ N: android=http://schemas.android.com/apk/res/android
+         A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.zegoggles.smssync.App" (Raw: "com.zegoggles.smssync.App")
+         A: http://schemas.android.com/apk/res/android:description(0x01010020)=@0x7fRESID
+         A: http://schemas.android.com/apk/res/android:allowBackup(0x01010280)=true
+-        A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=true
++        A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=false
+         A: http://schemas.android.com/apk/res/android:fullBackupContent(0x010104eb)=@0x7fRESID
+         A: http://schemas.android.com/apk/res/android:networkSecurityConfig(0x01010527)=@0x7fRESID
+         A: http://schemas.android.com/apk/res/android:appComponentFactory(0x0101057a)="androidx.core.app.CoreComponentFactory" (Raw: "androidx.core.app.CoreComponentFactory")
+git-diff-no-index-exit=1
+== kept names: I0 vs I7
+git-diff-no-index-exit=0
+== configuration.txt: I0 vs I7
+git-diff-no-index-exit=0
+== apk summary: I0 vs I7
+@@ -1,6 +1,6 @@
+-debug/app-debug entries=542 so=0 dex=17 size=6468819 sha256=85015e4f3542318c0360167d0db941de628ac53ffeceb1e8c7d157a35b9d1c26
+-release/app-release-unsigned entries=525 so=0 dex=1 size=1994797 sha256=53299699b88366135de4c79f7afd4741c4dbc21811b3be70b467b812722f14f3
+-mapping-lines=95470 kept-names=48
++debug/app-debug entries=536 so=0 dex=23 size=6408559 sha256=40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e
++release/app-release-unsigned entries=516 so=0 dex=1 size=1937712 sha256=e26927cfd64e9a6ea835ff52e96234da00661a5a8dfc30dbfe484cde48175b90
++mapping-lines=91896 kept-names=48
+ self-mapped com.zegoggles.smssync.App=1
+ self-mapped com.zegoggles.smssync.activity.MainActivity=1
+ self-mapped com.zegoggles.smssync.receiver.SmsBroadcastReceiver=1
+git-diff-no-index-exit=1
+== apk entries, debug: I0 vs I7
+@@ -1,8 +1,5 @@
+ AndroidManifest.xml
+ DebugProbesKt.bin
+-META-INF/CERT.RSA
+-META-INF/CERT.SF
+-META-INF/MANIFEST.MF
+ META-INF/NOTICE.md
+ META-INF/README
+ META-INF/androidx.activity_activity.version
+@@ -76,7 +73,13 @@ classes14.dex
+ classes15.dex
+ classes16.dex
+ classes17.dex
++classes18.dex
++classes19.dex
+ classes2.dex
++classes20.dex
++classes21.dex
++classes22.dex
++classes23.dex
+ classes3.dex
+ classes4.dex
+ classes5.dex
+@@ -123,7 +126,6 @@ res/animator/fragment_fade_enter.xml
+ res/animator/fragment_fade_exit.xml
+ res/animator/fragment_open_enter.xml
+ res/animator/fragment_open_exit.xml
+-res/color-v21/abc_btn_colored_borderless_text_material.xml
+ res/color-v23/abc_btn_colored_borderless_text_material.xml
+ res/color-v23/abc_btn_colored_text_material.xml
+ res/color-v23/abc_color_highlight_material.xml
+@@ -135,7 +137,6 @@ res/color-v23/abc_tint_spinner.xml
+ res/color-v23/abc_tint_switch_track.xml
+ res/color/abc_background_cache_hint_selector_material_dark.xml
+ res/color/abc_background_cache_hint_selector_material_light.xml
+-res/color/abc_btn_colored_text_material.xml
+ res/color/abc_hint_foreground_material_dark.xml
+ res/color/abc_hint_foreground_material_light.xml
+ res/color/abc_primary_text_disable_only_material_dark.xml
+@@ -145,12 +146,6 @@ res/color/abc_primary_text_material_light.xml
+ res/color/abc_search_url_text.xml
+ res/color/abc_secondary_text_material_dark.xml
+ res/color/abc_secondary_text_material_light.xml
+-res/color/abc_tint_btn_checkable.xml
+-res/color/abc_tint_default.xml
+-res/color/abc_tint_edittext.xml
+-res/color/abc_tint_seek_thumb.xml
+-res/color/abc_tint_spinner.xml
+-res/color/abc_tint_switch_track.xml
+ res/color/switch_thumb_material_dark.xml
+ res/color/switch_thumb_material_light.xml
+ res/color/text_primary.xml
+@@ -475,7 +470,6 @@ res/layout-v21/notification_action.xml
+ res/layout-v21/notification_action_tombstone.xml
+ res/layout-v21/notification_template_custom_big.xml
+ res/layout-v21/notification_template_icon_group.xml
+-res/layout-v22/abc_alert_dialog_button_bar_material.xml
+ res/layout-v26/abc_screen_toolbar.xml
+ res/layout-watch-v20/abc_alert_dialog_button_bar_material.xml
+ res/layout-watch-v20/abc_alert_dialog_title_material.xml
+git-diff-no-index-exit=1
+== apk entries, release: I0 vs I7
+@@ -59,8 +59,8 @@ META-INF/com/android/build/gradle/app-metadata.properties
+ META-INF/kotlinx_coroutines_android.version
+ META-INF/kotlinx_coroutines_core.version
+ META-INF/services/java.nio.charset.spi.CharsetProvider
+-META-INF/services/r4.b0
+-META-INF/services/w4.t
++META-INF/services/q4.b0
++META-INF/services/v4.t
+ META-INF/version-control-info.textproto
+ assets/about.css
+ assets/about.html
+@@ -327,7 +327,6 @@ res/c6.xml
+ res/cJ.xml
+ res/cV.xml
+ res/ca.png
+-res/color-v21/abc_btn_colored_borderless_text_material.xml
+ res/color-v23/abc_btn_colored_borderless_text_material.xml
+ res/color-v23/abc_btn_colored_text_material.xml
+ res/color-v23/abc_color_highlight_material.xml
+@@ -339,7 +338,6 @@ res/color-v23/abc_tint_spinner.xml
+ res/color-v23/abc_tint_switch_track.xml
+ res/color/abc_background_cache_hint_selector_material_dark.xml
+ res/color/abc_background_cache_hint_selector_material_light.xml
+-res/color/abc_btn_colored_text_material.xml
+ res/color/abc_hint_foreground_material_dark.xml
+ res/color/abc_hint_foreground_material_light.xml
+ res/color/abc_primary_text_disable_only_material_dark.xml
+@@ -349,12 +347,6 @@ res/color/abc_primary_text_material_light.xml
+ res/color/abc_search_url_text.xml
+ res/color/abc_secondary_text_material_dark.xml
+ res/color/abc_secondary_text_material_light.xml
+-res/color/abc_tint_btn_checkable.xml
+-res/color/abc_tint_default.xml
+-res/color/abc_tint_edittext.xml
+-res/color/abc_tint_seek_thumb.xml
+-res/color/abc_tint_spinner.xml
+-res/color/abc_tint_switch_track.xml
+ res/color/switch_thumb_material_dark.xml
+ res/color/switch_thumb_material_light.xml
+ res/color/text_primary.xml
+@@ -479,7 +471,6 @@ res/tU.9.png
+ res/tZ.9.png
+ res/tk.xml
+ res/u0.xml
+-res/u01.xml
+ res/u2.xml
+ res/uJ.xml
+ res/uL.9.png
+git-diff-no-index-exit=1
+== apk entries, debug, qualifier-normalised: I0 vs I7
+@@ -1,8 +1,5 @@
+ AndroidManifest.xml
+ DebugProbesKt.bin
+-META-INF/CERT.RSA
+-META-INF/CERT.SF
+-META-INF/MANIFEST.MF
+ META-INF/NOTICE.md
+ META-INF/README
+ META-INF/androidx.activity_activity.version
+@@ -76,7 +73,13 @@ classes14.dex
+ classes15.dex
+ classes16.dex
+ classes17.dex
++classes18.dex
++classes19.dex
+ classes2.dex
++classes20.dex
++classes21.dex
++classes22.dex
++classes23.dex
+ classes3.dex
+ classes4.dex
+ classes5.dex
+git-diff-no-index-exit=1
+== apk entries, release, qualifier-normalised: I0 vs I7
+@@ -59,8 +59,8 @@ META-INF/com/android/build/gradle/app-metadata.properties
+ META-INF/kotlinx_coroutines_android.version
+ META-INF/kotlinx_coroutines_core.version
+ META-INF/services/java.nio.charset.spi.CharsetProvider
+-META-INF/services/r4.b0
+-META-INF/services/w4.t
++META-INF/services/q4.b0
++META-INF/services/v4.t
+ META-INF/version-control-info.textproto
+ assets/about.css
+ assets/about.html
+@@ -471,7 +471,6 @@ res/tU.9.png
+ res/tZ.9.png
+ res/tk.xml
+ res/u0.xml
+-res/u01.xml
+ res/u2.xml
+ res/uJ.xml
+ res/uL.9.png
+git-diff-no-index-exit=1
+== javap majors: I0 vs I7
+git-diff-no-index-exit=0
+
+== I4 vs I7 (I5's code changes are the only change after I4)
+== merged manifest, debug: I4 vs I7
+git-diff-no-index-exit=0
+== merged manifest, release: I4 vs I7
+git-diff-no-index-exit=0
+== packaged manifest, debug (normalised): I4 vs I7
+git-diff-no-index-exit=0
+== packaged manifest, release (normalised): I4 vs I7
+git-diff-no-index-exit=0
+== kept names: I4 vs I7
+git-diff-no-index-exit=0
+== configuration.txt: I4 vs I7
+git-diff-no-index-exit=0
+== apk summary: I4 vs I7
+@@ -1,6 +1,6 @@
+-debug/app-debug entries=536 so=0 dex=23 size=6408587 sha256=910b25e8ac414049c29c1eaed6daa72832ab4153f0df564642930718ba603d43
+-release/app-release-unsigned entries=516 so=0 dex=1 size=1937824 sha256=b8f54b775ec5836129292a3051c4ff07682106c726849dbad6bb7ac7563bda6e
+-mapping-lines=91897 kept-names=48
++debug/app-debug entries=536 so=0 dex=23 size=6408559 sha256=40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e
++release/app-release-unsigned entries=516 so=0 dex=1 size=1937712 sha256=e26927cfd64e9a6ea835ff52e96234da00661a5a8dfc30dbfe484cde48175b90
++mapping-lines=91896 kept-names=48
+ self-mapped com.zegoggles.smssync.App=1
+ self-mapped com.zegoggles.smssync.activity.MainActivity=1
+ self-mapped com.zegoggles.smssync.receiver.SmsBroadcastReceiver=1
+git-diff-no-index-exit=1
+== apk entries, debug: I4 vs I7
+git-diff-no-index-exit=0
+== apk entries, release: I4 vs I7
+git-diff-no-index-exit=0
+== apk entries, debug, qualifier-normalised: I4 vs I7
+git-diff-no-index-exit=0
+== apk entries, release, qualifier-normalised: I4 vs I7
+git-diff-no-index-exit=0
+== javap majors: I4 vs I7
+git-diff-no-index-exit=0

@@ -1,6 +1,6 @@
 == 1.6.0 (xxx) dd-mm-2019
 
-  * Android minSdk now 14 (4.0, Ice Cream Sandwich)
+  * Minimum Android version is now 7.0 (API 24); Android 5.0, 5.1 and 6.0 (API 21 to 23) are no longer supported
   * Deprecated unsupported authentication via Google OAuth
   * Updated Swedish localization (#890)
   * Removed the in-app donation feature and the in-app billing (Play Billing) dependency

@@ -1,0 +1,10 @@
+> Task :app:assembleDebug
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:testDebugUnitTest
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+> Task :app:jacocoTestReport
+> Task :app:jacocoTestCoverageVerification
+BUILD SUCCESSFUL in 9m 35s
+exit=0

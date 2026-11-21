@@ -1,0 +1,43 @@
+== CHANGES top
+== 1.6.0 (xxx) dd-mm-2019
+
+  * Minimum Android version is now 7.0 (API 24); Android 5.0, 5.1 and 6.0 (API 21 to 23) are no longer supported
+  * Deprecated unsupported authentication via Google OAuth
+  * Updated Swedish localization (#890)
+== code-location minSdk
+28:| minSdk | 24 (Android 7.0) |
+== DEVELOPMENT.md minSdkVersion
+58:- **minSdkVersion**: 24
+== DEVELOPMENT.md numstat (1 1 expected)
+1	1	DEVELOPMENT.md
+== DEVELOPMENT.md changed lines
+-- **minSdkVersion**: 21
++- **minSdkVersion**: 24
+== template Marshmallow|Lollipop (no line expected)
+template-exit=1
+== CR-016 D-5 check 1: grep CR-016 in REQ-001 and REQ-006
+sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-001-restore-play-store-eligibility.md:13:  - CR-016
+sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-001-restore-play-store-eligibility.md:18:> Amended 2026-11-21 by CR-016. Note only; no criterion, level or status is changed. The levels thi
+sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-006-dead-code-and-minsdk-cleanup.md:17:  - CR-016
+sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-006-dead-code-and-minsdk-cleanup.md:24:> Amended 2026-11-21 by CR-016. Note only; no criterion, level or status is changed. The minSdk value
+== check 2: 'superseded by REQ-MODERNIZATION-015' counts
+sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-001-restore-play-store-eligibility.md:1
+sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-006-dead-code-and-minsdk-cleanup.md:1
+== check 3: git diff f0d0d17e^ f0d0d17e, changed lines
+-change_records: []
++change_records:
++  - CR-016
++> Amended 2026-11-21 by CR-016. Note only; no criterion, level or status is changed. The levels this requirement names,
+-change_records: []
++change_records:
++  - CR-016
++> Amended 2026-11-21 by CR-016. Note only; no criterion, level or status is changed. The minSdk value in this requireme
+criterion or status lines changed (0 expected): 0
+== AC-11 (f) sweep (7 expected)
+CHANGES:3:  * Minimum Android version is now 7.0 (API 24); Android 5.0, 5.1 and 6.0 (API 21 to 23) are no longer supported
+app/src/main/java/com/zegoggles/smssync/utils/WindowInsetsUtil.java:48: * <p>On API 21–34 the insets are zero, so no visual change occurs on older devices.
+app/src/main/java/com/zegoggles/smssync/utils/WindowInsetsUtil.java:84:        // the app content. On API 21–34 this is a no-op for the forced-edge-to-edge change
+app/src/test/java/com/zegoggles/smssync/utils/WindowInsetsUtilTest.java:31: *   <li>Dispatching zero insets (as on API 21–34) leaves padding at zero (no regression).</l
+app/src/test/java/com/zegoggles/smssync/utils/WindowInsetsUtilTest.java:116:        // After the call, dispatch zero insets manually (simulates API 21-34 behaviour).
+k9mail-vendored/build.gradle:54:        minSdkVersion 21
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java:153:     * older version. Every Android version this app supports (API 21 and later) s

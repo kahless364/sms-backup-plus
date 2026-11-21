@@ -1,0 +1,6 @@
+Hygiene scan (plan I7 step 6), run over the story workspace (compiled-pipeline.json excluded) and over the code and document diff START..working tree.
+code-diff-exit=0
+user-name-scan exit=1 files=0
+host-name-scan exit=1 files=0
+pattern-scan (address-like '@x.yy', 'Users/' or the application-data folder name): 4 files, all four being the R8 configuration copies (I0, I4, I5, I7 -configuration.txt). Every hit there is a keep-rule annotation name such as '@android.webkit.JavascriptInterface', '@android.support.annotation.Keep', '@com.squareup.otto.Subscribe' (the plan's pattern has no prefix requirement, so annotation names match); none is an e-mail address, host name, user name or profile path. The copies passed sanitize.py, which refuses address-like text with a prefix and any profile path.
+Result: no e-mail address, host name, user name or user-profile path in any file written to the repository by this story.

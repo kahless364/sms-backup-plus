@@ -25,7 +25,7 @@ the defunct Google Code "SMS Backup" project.
 | Build system | Gradle 9.5.1 (wrapper: `./gradlew`), running on **JDK 25** (see Build Environment) |
 | Android Gradle Plugin | 9.0.1 (`com.android.application`, built-in Kotlin); Kotlin 2.3.21, KSP 2.3.6, Hilt 2.59.2 |
 | compileSdk / targetSdk | 35 |
-| minSdk | 21 (Android 5.0) |
+| minSdk | 24 (Android 7.0) |
 | Build tools | 36.0.0+ (AGP 9.0 minimum) |
 | ABIs | `armeabi-v7a`, `arm64-v8a` |
 | Version | 1.6.0-BETA2 (versionCode 1602) |

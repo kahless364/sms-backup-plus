@@ -3,12 +3,12 @@ artifact_type: implementation-log
 story_id: "U-068"
 gate_id: "implementation"
 checkpoint: "implementation"
-verdict: "FAIL"
+verdict: "PASS"
 agent: "Developer"
-timestamp: "2026-11-21T12:45:00Z"
+timestamp: "2026-11-21T14:30:00Z"
 iteration: 1
 base_commit: "4300ffa98370b77dcc4dd8d12142079aada8313a"
-files_changed: 14
+files_changed: 20
 files_created: 1
 tests_added: 3
 tests_passing: 756
@@ -18,7 +18,7 @@ tests_passing: 756
 
 Plan: `sdlc/artifacts/build/sprints/sprint-024/U-068/plan.md` (iteration 2), followed step by step. Evidence is under `sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/`. Raw logs, saved JaCoCo XML copies, pristine copies and commit messages were kept in a work folder outside the repository. One local commit per increment, explicit paths, nothing pushed. No emulator or device was used (I8 is the orchestrator's).
 
-**Status: INCOMPLETE. The run stopped inside increment I5 (before its commit) because endpoint security quarantined `diff.exe`; see "Stopped here" below. `verdict: FAIL` in the frontmatter means "phase not finished", not a failed gate: every gate that was run is green. Sections for I6, I7, Contract Adherence, Capabilities Inventory and Runtime Claims are not written yet.**
+**Status: complete (I0 to I7). The run was interrupted once inside I5 when endpoint security quarantined `diff.exe`; it resumed after the product owner's decision (see "Interruption"). Every gate that was run is green.**
 
 `START` = `4300ffa98370b77dcc4dd8d12142079aada8313a` (subject "Sprint-023 closed: U-067 done, BUG-022 closed; U-068 plan gates passed"), branch `sdlc/modernization-plan`. `C0` = **753** (authoritative command at `START`).
 
@@ -140,5 +140,103 @@ I5 commit: `9aa842665d6fb82622e1a508217327abac5365fa` ("U-068 S1-I5: remove the 
 - **Lint in the real tree** (`I6-lint.txt`, `I6-lint-ids.txt`, `I6-lint-ids-compare.txt`): `exit=1` (pre-existing red, D17: recorded, not fixed, not gated); "Lint found 33 errors (and 18 errors filtered by baseline)" (I0: 39 and 22); **"not found" N6 = 8 = N5 - 11** (I0: 15). Rule IDs, I0 -> I6: `ObsoleteSdkInt` 2 -> 0, `UseRequiresApi` 4 -> 1 (only `ThemeActivity` remains), `UnusedAttribute` 1 -> 0; every other count unchanged; **no new rule ID** (row D44: not fired). The comparison of the two tables used `git diff --no-index`.
 - The scratch copy was removed (`rm -rf`, `scr-removed-exit=1` on `test -e`, i.e. gone); nothing of it is committed. The regenerated baseline file itself was not kept (the copy was removed as the plan's step 7 says before a sanitised copy was taken); `I6-baseline-diff.txt` carries every key it was compared on. Deviation noted.
 - **Must hold (S1-I6):** "entry count before and after, with each removed entry; `app/lint.xml` untouched" - held (37 -> 26).
+
+### I7 - Documents, the CR-016 checks, final gates (AC-11 to AC-15; evidence `I7-*`)
+
+I6 commit: `7c5e6073` ("U-068 S1-I6: prune the lint baseline entries made stale"; full id in the hand-off).
+
+- **Edits E7.1 to E7.4:** `CHANGES:3` now reads "Minimum Android version is now 7.0 (API 24); Android 5.0, 5.1 and 6.0 (API 21 to 23) are no longer supported" (the entry the story names; replaces the stale line "Android minSdk now 14 (4.0, Ice Cream Sandwich)"; no store, release or rollout word); `DEVELOPMENT.md:58` `- **minSdkVersion**: 24` (`--numstat` `1 1`, the one changed line pair); `sdlc/artifacts/engagement/code-location.md:28` `| minSdk | 24 (Android 7.0) |`; `.github/ISSUE_TEMPLATE/500_bug_report.yml`: 6.0, 5.1 and 5.0 removed (`grep Marshmallow|Lollipop` exit 1; the 4.x entries stay by ruling). Evidence `I7-docs.txt`.
+- **CR-016 D-5 checks (AC-11 (d)), output in `I7-docs.txt`:** (1) `grep -n CR-016` over REQ-MODERNIZATION-001 and -006 returns the `change_records` item and the dated note in each (`:13`, `:18` and `:17`, `:24`); (2) "superseded by REQ-MODERNIZATION-015" occurs once in each; (3) `git diff f0d0d17e^ f0d0d17e` of each file shows only `-change_records: []`, `+change_records:`, `+  - CR-016` and the added note, and 0 criterion or status lines. Row D46: not fired.
+- **AC-11 (f) sweep** (7 hits, as planned, row D45 not fired): `CHANGES:3` (the new entry writes "API 21 to 23", intended), `WindowInsetsUtil.java:48` and `:84`, `WindowInsetsUtilTest.java:31` and `:116` ("API 21-34", true as written, follow-up), `k9mail-vendored/build.gradle:54` and `DefaultTrustedSocketFactory.java:153` (kept, D4b).
+- **Final gate G4c (clean first, then `assembleDebug`, `testDebugUnitTest`, `jacocoTestReport`, `jacocoTestCoverageVerification`, `assembleRelease`; no scratch edit or mutation present):** `exit=0`, `BUILD SUCCESSFUL in 9m 35s`, Gradle 9.5.1, Daemon JVM "Compatible with Java 25 ... (from gradle/gradle-daemon-jvm.properties)"; `files=80 tests=756 failures=0 errors=0 skipped=2` (`I7-junit-totals.txt`, `I7-gradle-version.txt`). Row D47: not fired.
+- **Coverage at the end** (`I7-jacoco-packages.txt`, `I7-jacoco-inventory.json`): `receiver` 39/58 = 67.2 % (start 29/58), `compat` 18/71 = 25.4 % (start 16/73; 3 spare lines), `scheduler` 137/185 = 74.1 % (start 140/188); `calendar` 37/50; `activity` 198/1008. Class inventory equal to I0 package by package (the new class is a test class, not measured). All 18 rules satisfied (the verification task passed); no floor edited.
+- **Build comparison I0 vs I7** (`I7-build-diffs.txt`): the differences are exactly those recorded at I4 (floor: `minSdkVersion`, the two permissions, `extractNativeLibs`; dex 17 -> 23; nine collapsed `res/` entries; the three APK differences flagged below) and I5 (code); I4 vs I7 is identical in manifests, kept names, configuration and entry lists. `so=0` for both APKs (AC-13 (d)); javap majors 61, 61, 52. Final APK: `app/build/outputs/apk/debug/app-debug.apk`, 6,408,559 bytes, SHA-256 `40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e` (built by the I7 gate from the tree of the last commit; the device check is the orchestrator's).
+- **Final checks** (`I7-final-checks.txt`): the must-not-change files (`SmsBroadcastReceiver.java`, `BackupBroadcastReceiver.java`, `BackupTriggerWorker.kt`, the two workers, `k9mail-vendored/`, `robolectric.properties`) show an empty diff against START (AC-9); the manifest diff is the single hunk `@@ -38,14 +37,0 @@`; `git diff --name-only START -- app/src/main` lists exactly the nine files of AC-9; the AC-12 list (verification metadata, wrapper, daemon criteria, `settings.gradle`, `gradle.properties`, `gradlew*`, `k9mail-vendored/build.gradle`, `app/lint.xml`, `app/proguard-rules.pro`, workflows) has an empty diff; `build.gradle` shows the E1 pair only; `app/build.gradle` the three E4 pairs only; 0 floor-word lines (no JaCoCo `minimum`, `value`, `limit`, `counter`, `includes`, `excludes` changed). Scoped checks (corrections of the iteration-2 plan review): (i) all commits listed (the orchestrator's document commits are not this story's); (ii) this story's own files are within the AC-12 allowed list; (iii) no commit other than `U-068 S1-` touches code, build paths, `CHANGES`, `DEVELOPMENT.md`, `.github` or `sdlc/artifacts/engagement/code-location.md` (`foreign-code-commits-end` preceded by nothing; row D53 not needed). Working-tree count 756 = C0 + 3; `@Ignore` lines on code: the same 2 as at I0.
+- **Must hold (S1-I7):** "AC-9 and AC-10 evidence: the three D-5 checks and the `CHANGES` entry" - held (location: `CHANGES`, first section, line 3).
+- Hygiene scan: step I7.6, result in `evidence/I7-scan.txt`.
+
+## Counts (AC-14)
+
+- Start `C0` = **753** at `4300ffa98370b77dcc4dd8d12142079aada8313a`. Added by this story (3, by name): `BackupBroadcastReceiverTest.onReceive_integrationOn_schedulesImmediateOnce` and `onReceive_integrationOff_neverSchedules` (I2), `SmsReceiverTest.testEnableThenDisable_togglesReceiverComponent` (C-1, I5; ruling P-5: AC-14's "two added" reads "three added"). Deleted: none. Retargeted and renamed: the five of the rename table under I3.
+- End: 756 = C0 + 3, working tree before the I7 commit (`git grep --untracked`, said so); the figure at the last commit is given in the hand-off. Gradle total 756 (skipped 2 at the start and at the end, failures 0, errors 0). No test was added or deleted by commits that are not this story's between START and the end (all commits that are not `U-068 S1-` are documents).
+
+## Contract Adherence
+
+- **CNTR-MODERNIZATION-004 v3 (backup scheduler):** `scheduleContentTrigger()` keeps its signature `ScheduledJob?` (`WorkManagerScheduler.kt:218`); the degraded path still returns null with no work enqueued (`:219-222`, U-054 test unchanged); INV-4 is one mechanism on every supported level, with no version branch: the SMS provider trigger with `triggerForDescendants = true` (`:225`) and the call-log trigger under the same conditions (`:229`); KDoc (`:57-58`, `:207-209`) and the port javadoc (`BackupScheduler.java:74-77`, `@return` reworded to the encryption-degraded reason, `@Nullable` kept) state only what v3 states and do not cite `SmsBroadcastReceiver`. INV-4's version-boundary assertion is at API 24 (`WorkManagerSchedulerTest.kt:379-380`, `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger`: non-null job with tag `CONTENT_TRIGGER`, unique work, the `content://sms` trigger, descendants true; proven by M-W1 and M-W2). INV-1 to INV-3 and the three INV-4 API 29 tests are unchanged. No port signature, `BackupType`, `SchedulerState` or invariant changed.
+- **CNTR-MODERNIZATION-005 (public BACKUP broadcast, frozen):** only a test was added (`BackupBroadcastReceiverTest.java:47` on, `:59` off); `BackupBroadcastReceiver.java` has an empty diff and its manifest entry is untouched (`I4-checks.txt`, `I7-final-checks.txt`).
+- CNTR-MODERNIZATION-001 (TLS factories): not touched; `k9mail-vendored/` diff empty.
+
+## Capabilities Inventory
+
+| File and capability of the old code | Status | Where |
+|---|---|---|
+| `Dialogs.About` `onPageFinished`: scroll restore when `scrollPosition > 0` and the URL is the about page | RETAINED (only the always-true `SDK_INT >= 14` operand removed) | `Dialogs.java:169` area (`if (scrollPosition > 0 && ABOUT_HTML.equals(url))`) |
+| `CalendarAccessorPost40`: whole class behaviour; `@TargetApi` | RETAINED; annotation INTENTIONALLY REMOVED (AC-7 S-2) | `CalendarAccessorPost40.java:20`; bytecode identical (`I5-bytecode.txt`) |
+| `SmsReceiver`: `onReceive`, `storeMessage`, `enable`, `disable`; `@TargetApi` | RETAINED; annotation INTENTIONALLY REMOVED (S-3) | `SmsReceiver.java` |
+| `isSmsBackupDefaultSmsApp`: role check from Q | RETAINED | `SmsReceiver.java:45-47` |
+| `isSmsBackupDefaultSmsApp`: default-SMS-package check, API 24 to 28 (BUG-009) | RETAINED | `SmsReceiver.java:49` |
+| `isSmsBackupDefaultSmsApp`: `return false` below KitKat | INTENTIONALLY REMOVED (AC-7 S-4; dead at the floor) | - |
+| `MainActivity.startRestore`; `@TargetApi` | RETAINED; annotation INTENTIONALLY REMOVED (S-5) | `MainActivity.java:425` |
+| `SmsDefaultRoleHelper.startRestore`: default-app check, Q branch, legacy pre-Q path (package, setSmsDefaultPackage, dialog, toast) | RETAINED, body unchanged (`git diff -w`: 5 removed lines, 0 added) | `SmsDefaultRoleHelper.kt:74-97` |
+| `SmsDefaultRoleHelper.startRestore`: pre-KitKat `else` | INTENTIONALLY REMOVED (S-6) | - |
+| `WorkManagerScheduler.scheduleContentTrigger`: degraded null, SMS and call-log triggers, unique periodic work, `ScheduledJob`, log | RETAINED | `WorkManagerScheduler.kt:218-250` |
+| `scheduleContentTrigger`: `SDK_INT < N` branch (log + null) | INTENTIONALLY REMOVED (AC-7 S-7; CR-015 ruling) | - |
+| The log text suffix " (API 24+)" | INTENTIONALLY REMOVED (AC-8; no test asserts it) | `WorkManagerScheduler.kt:248` |
+| Manifest: every permission, component and attribute except the two below | RETAINED | `I4-manifest-diffs.txt` |
+| Manifest: `USE_CREDENTIALS` (maxSdk 22), `WRITE_EXTERNAL_STORAGE` (maxSdk 18) | INTENTIONALLY REMOVED (AC-6, D4a) | - |
+| Lint baseline: 26 entries | RETAINED; 11 stale entries INTENTIONALLY REMOVED (AC-10) | `app/lint-baseline.xml` |
+| The five tests below SDK 24 | RETAINED, retargeted and renamed (none deleted) | rename table under I3 |
+
+No item is a REGRESSION.
+
+## Runtime Claims
+
+Empty: this story makes no runtime-provable claim of the five classes (crash and interrupt resilience, concurrency, timing and expiry, git and filesystem mechanics, hook firing). Its behavioural claims are unit-level and carry their own mutation proofs (M-B1, M-B2, M-R1, M-R2, M-W1, M-W2, M-C1). The device claims (install and start on API 36; nothing on API 24) belong to the orchestrator's IC-3 and IC-4 and are not made here. The lint scratch copy is a one-shot filesystem step whose result is checked by the entry counts, not a claim about a failure mode.
+
+## Files
+
+Modified (production, 8 + manifest): `App.java`, `activity/Dialogs.java`, `activity/MainActivity.java`, `activity/SmsDefaultRoleHelper.kt`, `calendar/CalendarAccessorPost40.java`, `compat/SmsReceiver.java`, `scheduler/BackupScheduler.java`, `scheduler/WorkManagerScheduler.kt` (all under `app/src/main/java/com/zegoggles/smssync/`), `app/src/main/AndroidManifest.xml`. Modified (build and docs): `build.gradle`, `app/build.gradle`, `app/lint-baseline.xml`, `CHANGES`, `DEVELOPMENT.md`, `sdlc/artifacts/engagement/code-location.md`, `.github/ISSUE_TEMPLATE/500_bug_report.yml`. Modified (tests): `compat/SmsReceiverTest.java`, `service/WorkManagerSchedulerTest.kt`. Created: `receiver/BackupBroadcastReceiverTest.java` (test); this log, `evidence/` (text only) and `evidence/tools/`.
+
+## Integration path
+
+No new production component. The changed code is reached from the existing entry points: `App.rescheduleJobs` calls `scheduleContentTrigger()` (`App.java:382`); `MainActivity` and `SmsDefaultRoleHelper` call `isSmsBackupDefaultSmsApp` and `startRestore`; `SmsReceiver` is the manifest receiver; the test class is discovered by the unit-test task (80 files in the final gate). Every caller compiled unchanged (IC-1; list in `I5-greps.txt`).
+
+## Criterion-to-evidence table
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| AC-1 | Met | `I0-*` |
+| AC-2 | Met | `I1-xml-check.txt` |
+| AC-3 | Met (receiver 39/58, 10 spare; both mutants caught) | `I2-*`, `mutation-log.md` |
+| AC-4 | Met ((a) to (g)) | `I3-*`, `I4-cases.txt`, `I5-cases.txt`, `I5-jacoco-lines.txt` |
+| AC-5, AC-6 | Met, with the declared `extractNativeLibs` difference | `I4-checks.txt`, `I4-manifest-diffs.txt` |
+| AC-7, AC-8 | Met (14 / 12 lines; one AC-8 hit) | `I5-greps.txt`, `I5-checks.txt`, `I5-bytecode.txt` |
+| AC-9, AC-12 | Met | `I7-final-checks.txt` |
+| AC-10 | Met (37 -> 26, 11 removed, N6 = 8) | `I6-*` |
+| AC-11 | Met | `I7-docs.txt` |
+| AC-13 | Met (gates at I0 and I7, I1 to I5; `so=0`; entry differences explained) | `I*-gates.txt`, `I7-build-diffs.txt` |
+| AC-14 | Met (753 -> 756, three added by name, none deleted) | this log |
+| AC-15 | Met (compat 18/71, scheduler 137/185, receiver 39/58) | `I*-jacoco-packages.txt` |
+| AC-16 | Met (I1 to I7 in order, one commit each, explicit paths) | hand-off `git log` |
+| IC-1, IC-2 | Met | `I5-greps.txt`, `I2-checks.txt` |
+| IC-3, IC-4 | The orchestrator's (IC-4: "not run: needs the product owner's decision PO-A") | - |
+
+## Deviations
+
+1. **Interruption and the comparison tool:** see "Interruption" above. After the quarantine of `diff.exe` the comparisons used `git diff --no-index`. Adapted forms: (a) I5 step 6, I7 step 4: `gd A B` = `git diff --no-index --no-color -- A B | tail -n +5` with the exit code printed (0 equal, 1 differ); process substitutions became scratch files; expected values unchanged (identical manifests, kept names, configuration and entry lists for I4 vs I5 and I4 vs I7; only sizes, hashes and the mapping line count differ). (b) I6: the rule-ID tables of I0 and I6 were compared with the same command (unified form: `-` I0, `+` I6; expected and found: `ObsoleteSdkInt`, one `UseRequiresApi` count and `UnusedAttribute` fall, nothing new). (c) The staged-file check of my commit script (`diff` of the sorted lists) became `git diff --no-index --quiet` (exit 0). No `--strip-trailing-cr` was involved. For I6 the entry comparison was done by `baseline_diff.py` (Python, no `diff`).
+2. One short `tail` command ran at I0 while the first gate was running in the background (harmless).
+3. In M-B2, M-W2 (and the I1 pre-check) a pre-check and an Edit went out in the same step; the recorded hash-before equals the HEAD blob, so the clean check held.
+4. Mutation-log text and evidence text were appended with shell `echo`; no source, test, build or manifest file was edited that way. The offset-free bytecode comparison I had started was not produced and its failed section was removed from `I5-bytecode.txt` (the offset-shifted comparison there carries the result).
+5. I6: the contiguous run of ten `ObsoleteSdkInt` entries was removed with one Edit (and the `Deprecated` entry with another) instead of eleven; the regenerated baseline file was not kept (the copy was removed first); the baseline comparison output is the record.
+6. The lint "not found" count at I0 was 15 where the plan expected 16 (an expectation only); `activity` coverage alternates between 199 and 189 covered lines run to run (not caused by this story).
+7. **Three APK-entry differences the plan did not name, flagged for QA** (explained by the floor; I4 entry above): (a) the debug APK has no `META-INF/CERT.RSA`, `CERT.SF`, `MANIFEST.MF` (AGP stops writing the v1 JAR signature at minSdk 24 or higher; `apksigner verify -v`: Verifies, v1 false, v2 true); (b) release `META-INF/services/r4.b0` -> `q4.b0` and `w4.t` -> `v4.t` (the two kotlinx.coroutines service interfaces under shifted R8 names after the min-api change; kept names and configuration unchanged); (c) release `res/u01.xml` gone (the shortened path of the collapsed `layout-v22` duplicate; nine `res/` entries removed in each APK).
+8. N11 (R8's `SDK_INT` assumption): not confirmed; nothing depends on it.
+
+## Items for the orchestrator
+
+1. IC-3 (device check on `Pixel_9_Pro`): the debug APK is `app/build/outputs/apk/debug/app-debug.apk`, 6,408,559 bytes, SHA-256 `40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e`, built by the final gate from the tree of the last commit. IC-4: "not run: needs the product owner's decision PO-A".
+2. The plan's section 7 items stand: follow-up sites (`README.md:38`, `compat/package-info.java:2`, the `WindowInsetsUtil` comments and test comments, the issue template's 4.x entries); the pre-Q branch of `SmsDefaultRoleHelper.startRestore` has no unit test (pre-existing gap); design corrections for a dated note (`compat` falls from 21.9 % to 21.1 % with S-4 alone; with C-1 it ends 18/71 with 3 spare lines; the `scheduler` comment figure 102/164 in `app/build.gradle` is stale, the measured value is 137/185); for S2: no test is configured below API 24, the SDK 24 `android-all` jar is in the local Maven cache (coordinates, sizes and SHA-512s in `I3-sdk24-jar.txt`), the `extractNativeLibs` outcome (true -> false) and the debug APK's missing v1 signature are the baseline S2's manifest and APK diff starts from; for U-069: the sentences it relies on (`WorkManagerScheduler.kt` old `:61`, `:212-213`) are unchanged and the retargeted API 24 test must stay unchanged.
+3. The 8 `STALE-OTHER` lint baseline entries (3 `NonConstantResourceId`, 5 `GradleDependency`) are kept for S3's regenerate; the lint result stays red by design (33 errors, was 39), recorded and not gated (D17).
+4. `diff.exe` is quarantined on this machine (owner's decision recorded above); nothing was restored.
 
 <!-- LOG-ENTRIES-END -->
