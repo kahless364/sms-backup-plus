@@ -1,0 +1,1 @@
+message="org.mockito.exceptions.verification.WantedButNotInvoked: &#10;Wanted but not invoked:&#10;scheduler.scheduleImmediate();&#10;-&gt; at com.zegoggles.smssync.receiver.BackupBroadcastReceiverTest.onReceive_integrationOn_schedulesImmediateOnce(BackupBroadcastReceiverTest.java:55)&#10;Actually, there were zero interactions with this mock.&#10;"

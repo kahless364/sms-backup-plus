@@ -1,0 +1,10 @@
+== IC-2: root element of the new class's XML (host name and timestamp dropped)
+<testsuite name="com.zegoggles.smssync.receiver.BackupBroadcastReceiverTest" tests="2" skipped="0" failures="0" errors="0" time="0.795">
+== receiver after I2: 39/58; spare lines = covered - ceil(0.50*total) = 39 - 29 = 10
+== working-tree count (git grep --untracked, said so): 755  (C0+2 = 755)
+== git status --porcelain -- app
+?? app/src/test/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiverTest.java
+== after the mutations (I2 step 4)
+main-clean-exit=0
+b038d7fdb8b50d5cddd32ef1899736c29efc7274
+b038d7fdb8b50d5cddd32ef1899736c29efc7274

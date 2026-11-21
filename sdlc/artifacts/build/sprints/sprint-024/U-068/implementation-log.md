@@ -51,4 +51,19 @@ All 19 files of plan table 2.1: HEAD blob equals working-tree hash equals planni
 - **Must hold (S1-I1):** "gates green; XML totals equal I0" - held.
 - Commit: see "I1 commit" at the top of the I2 entry.
 
+### I2 - `BackupBroadcastReceiverTest` first (AC-3, IC-2; evidence `I2-*`, `mutation-log.md`, `mutations/M-B1-*`, `M-B2-*`)
+
+I1 commit: `533e9f51b5f880cdad05c81880c401b130352b95` ("U-068 S1-I1: switch on JUnit XML test reports").
+
+- Pre-check: `git diff --quiet HEAD -- app/src/main` exit 0. New file `app/src/test/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiverTest.java` written exactly as plan 3.2. No production file changed.
+- First targeted run (`I2-first-run.txt`): `exit=0`, two PASS (`onReceive_integrationOff_neverSchedules`, `onReceive_integrationOn_schedulesImmediateOnce`), `cases=2`. Row D16: not fired.
+- Gate G3: `exit=0`, `BUILD SUCCESSFUL in 3m 35s`; `files=80 tests=755 failures=0 errors=0 skipped=2` = C0 + 2. IC-2: `TEST-com.zegoggles.smssync.receiver.BackupBroadcastReceiverTest.xml` has `tests="2" skipped="0" failures="0" errors="0"` (`I2-checks.txt`).
+- Coverage after I2 (`I2-jacoco-packages.txt`, `I2-jacoco-lines.txt`): `receiver` **39/58 = 67.2 %** (was 29/58 = 50.0 %), delta 10, **spare lines = 39 - 29 = 10**. Every `BackupBroadcastReceiver` line has `ci>0` except `:68` (`return App.getScheduler(context)`, the line the test overrides). `compat` 16/73 and `scheduler` 140/188 unchanged. Row D18: not fired.
+- Mutations (plan 4.8; write-ahead entry, one Edit, one targeted run, restore by copying the pristine file, hash and clean check):
+  - **M-B1** (opt-in gate removed, `if (true || ...)`): exactly `onReceive_integrationOff_neverSchedules` failed (`NoInteractionsWanted`, type A); the "on" test passed. Matches the plan row. Restored, hash equals HEAD blob, `app/src/main` diff empty.
+  - **M-B2** (`if (false) getScheduler(context).scheduleImmediate();`): exactly `onReceive_integrationOn_schedulesImmediateOnce` failed (`WantedButNotInvoked`, type A); the "off" test passed. Matches the plan row. Restored the same way.
+  - Row D17: not fired. After both: `git diff --quiet HEAD -- app/src/main` exit 0; `git hash-object` of `BackupBroadcastReceiver.java` equals `b038d7fd...` (its blob at START).
+- Working-tree count with `--untracked`: 755 (C0 + 2); `git status --porcelain -- app` lists only the new test file.
+- **Must hold (S1-I2):** "`receiver` coverage above 50 % with headroom; count + 2" - held (67.2 %, 10 spare, 755).
+
 <!-- LOG-ENTRIES-END -->

@@ -1,0 +1,434 @@
+38 mi=0 ci=3 mb=0 cb=0 | public class BackupBroadcastReceiver extends BroadcastReceiver {
+43 mi=0 ci=19 mb=1 cb=1 | if (LOCAL_LOGV) Log.v(TAG, "onReceive(" + context + "," + intent + ")");
+45 mi=0 ci=5 mb=1 cb=1 | if (BACKUP_ACTION.equals(intent.getAction())) {
+46 mi=0 ci=4 mb=0 cb=0 | backupRequested(context, intent);
+48 mi=0 ci=1 mb=0 cb=0 | }
+51 mi=0 ci=6 mb=0 cb=2 | if (new Preferences(context).isAllow3rdPartyIntegration()) {
+52 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "backup requested via broadcast intent");
+54 mi=0 ci=6 mb=0 cb=0 | getScheduler(context).scheduleImmediate();
+56 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "backup requested via broadcast intent but ignored");
+58 mi=0 ci=1 mb=0 cb=0 | }
+68 mi=3 ci=0 mb=0 cb=0 | return App.getScheduler(context);
+TOTAL com/zegoggles/smssync/receiver/BackupBroadcastReceiver.java covered=10 missed=1
+32 mi=0 ci=2 mb=0 cb=0 | public class SmsReceiver extends BroadcastReceiver {
+33 mi=0 ci=6 mb=0 cb=0 | private final ThreadHelper threadHelper = new ThreadHelper();
+36 mi=0 ci=13 mb=0 cb=0 | Log.d(TAG, "onReceive("+intent+")");
+37 mi=0 ci=3 mb=1 cb=1 | if (isSmsBackupDefaultSmsApp(context)) {
+39 mi=3 ci=0 mb=0 cb=0 | final SmsMessage[] messages = getMessagesFromIntent(intent);
+40 mi=5 ci=0 mb=4 cb=0 | if (messages != null && messages.length > 0) {
+41 mi=4 ci=0 mb=0 cb=0 | storeMessage(context, messages);
+44 mi=0 ci=1 mb=0 cb=0 | }
+47 mi=0 ci=3 mb=0 cb=2 | if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+48 mi=0 ci=5 mb=0 cb=0 | RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);
+49 mi=1 ci=9 mb=2 cb=2 | return (roleManager != null && roleManager.isRoleHeld(ROLE_SMS));
+50 mi=0 ci=3 mb=1 cb=1 | }  else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+51 mi=0 ci=6 mb=0 cb=0 | return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));
+53 mi=2 ci=0 mb=0 cb=0 | return false;
+60 mi=3 ci=0 mb=0 cb=0 | final int pduCount = messages.length;
+61 mi=4 ci=0 mb=0 cb=0 | SmsMessage sms = messages[0];
+62 mi=13 ci=0 mb=0 cb=0 | Log.d(TAG, "storeMessage( "+sms+")");
+64 mi=4 ci=0 mb=0 cb=0 | ContentValues values = new ContentValues();
+65 mi=3 ci=0 mb=0 cb=0 | final String address = sms.getDisplayOriginatingAddress();
+66 mi=4 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.ADDRESS, address);
+67 mi=6 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.DATE_SENT, sms.getTimestampMillis());
+68 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.DATE, System.currentTimeMillis());
+69 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.TYPE, MESSAGE_TYPE_INBOX);
+70 mi=6 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.PROTOCOL, sms.getProtocolIdentifier());
+71 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.SERVICE_CENTER, sms.getServiceCenterAddress());
+72 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.STATUS, STATUS_NONE);
+73 mi=8 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.THREAD_ID, threadHelper.getThreadId(context, address));
+74 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.READ, 0);
+75 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.SEEN, 0);
+76 mi=7 ci=0 mb=4 cb=0 | if (sms.getPseudoSubject() != null && sms.getPseudoSubject().length() > 0) {
+77 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.SUBJECT, sms.getPseudoSubject());
+79 mi=10 ci=0 mb=2 cb=0 | values.put(Telephony.TextBasedSmsColumns.REPLY_PATH_PRESENT, sms.isReplyPathPresent() ? 1 : 0);
+81 mi=3 ci=0 mb=2 cb=0 | if (pduCount == 1) {
+83 mi=6 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.BODY, sms.getDisplayMessageBody());
+86 mi=4 ci=0 mb=0 cb=0 | StringBuilder body = new StringBuilder();
+87 mi=16 ci=0 mb=2 cb=0 | for (SmsMessage message : messages) {
+88 mi=5 ci=0 mb=0 cb=0 | body.append(message.getDisplayMessageBody());
+90 mi=5 ci=0 mb=0 cb=0 | values.put(Telephony.TextBasedSmsColumns.BODY, body.toString());
+93 mi=6 ci=0 mb=0 cb=0 | final Uri uri = context.getContentResolver().insert(Consts.SMS_PROVIDER, values);
+94 mi=11 ci=0 mb=0 cb=0 | Log.d(TAG, "inserted as "+uri);
+95 mi=1 ci=0 mb=0 cb=0 | }
+98 mi=0 ci=6 mb=0 cb=0 | ComponentName receiver = new ComponentName(context, SmsReceiver.class);
+99 mi=0 ci=6 mb=0 cb=0 | context.getPackageManager().setComponentEnabledSetting(receiver,
+102 mi=0 ci=1 mb=0 cb=0 | }
+105 mi=6 ci=0 mb=0 cb=0 | ComponentName receiver = new ComponentName(context, SmsReceiver.class);
+106 mi=6 ci=0 mb=0 cb=0 | context.getPackageManager().setComponentEnabledSetting(receiver,
+109 mi=1 ci=0 mb=0 cb=0 | }
+TOTAL com/zegoggles/smssync/compat/SmsReceiver.java covered=13 missed=34
+80 mi=0 ci=3 mb=0 cb=0 | class WorkManagerScheduler @Inject constructor(
+81 mi=0 ci=3 mb=0 cb=0 | @ApplicationContext private val context: Context,
+82 mi=0 ci=3 mb=0 cb=0 | private val preferences: Preferences,
+83 mi=0 ci=3 mb=0 cb=0 | private val secretStore: SecretStore
+117 mi=0 ci=5 mb=0 cb=0 | private val PERIODIC_MIN_INTERVAL_SECS = TimeUnit.MINUTES.toSeconds(15)
+135 mi=0 ci=4 mb=0 cb=2 | if (secretStore.isEncryptionDegraded()) {
+136 mi=0 ci=4 mb=0 cb=0 | Log.w(TAG, "WorkManagerScheduler.scheduleIncoming: blocked — encryption degraded, credentials in plaintext")
+137 mi=0 ci=2 mb=0 cb=0 | return null
+139 mi=0 ci=4 mb=0 cb=0 | val timeoutSecs = preferences.incomingTimeoutSecs
+140 mi=0 ci=6 mb=0 cb=4 | if (!preferences.isAutoBackupEnabled || timeoutSecs <= 0) {
+141 mi=0 ci=3 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleIncoming: skipped (autoBackup=" +
+142 mi=0 ci=5 mb=0 cb=0 | "${preferences.isAutoBackupEnabled}, timeout=$timeoutSecs)")
+143 mi=0 ci=2 mb=0 cb=0 | return null
+146 mi=0 ci=5 mb=0 cb=0 | val request = OneTimeWorkRequest.Builder(BackupWorker::class.java)
+147 mi=0 ci=5 mb=0 cb=0 | .setConstraints(networkConstraints(BackupType.INCOMING))
+148 mi=0 ci=5 mb=0 cb=0 | .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+149 mi=0 ci=5 mb=0 cb=0 | .setInitialDelay(timeoutSecs.toLong(), TimeUnit.SECONDS)
+150 mi=0 ci=3 mb=0 cb=0 | .addTag(BackupType.INCOMING.name)
+151 mi=0 ci=2 mb=0 cb=0 | .build()
+153 mi=0 ci=3 mb=0 cb=0 | WorkManager.getInstance(context)
+154 mi=0 ci=5 mb=0 cb=0 | .enqueueUniqueWork(BackupType.INCOMING.name, ExistingWorkPolicy.REPLACE, request)
+156 mi=0 ci=3 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleIncoming: enqueued INCOMING with " +
+157 mi=0 ci=5 mb=0 cb=0 | "delay=${timeoutSecs}s, network=${constraintDescription(BackupType.INCOMING)}")
+158 mi=0 ci=7 mb=0 cb=0 | return ScheduledJob(BackupType.INCOMING.name, "WorkManagerScheduler:INCOMING @ ${timeoutSecs}s")
+172 mi=0 ci=4 mb=0 cb=2 | if (secretStore.isEncryptionDegraded()) {
+173 mi=0 ci=4 mb=0 cb=0 | Log.w(TAG, "WorkManagerScheduler.scheduleRegular: blocked — encryption degraded, credentials in plaintext")
+174 mi=0 ci=2 mb=0 cb=0 | return null
+176 mi=0 ci=4 mb=1 cb=1 | if (!preferences.isAutoBackupEnabled) {
+177 mi=4 ci=0 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleRegular: skipped (autoBackup disabled)")
+178 mi=2 ci=0 mb=0 cb=0 | return null
+181 mi=0 ci=7 mb=0 cb=0 | val intervalSecs = maxOf(preferences.regularTimeoutSecs.toLong(), PERIODIC_MIN_INTERVAL_SECS)
+183 mi=0 ci=4 mb=0 cb=0 | val request = PeriodicWorkRequest.Builder(
+184 mi=0 ci=1 mb=0 cb=0 | BackupWorker::class.java,
+185 mi=0 ci=1 mb=0 cb=0 | intervalSecs,
+186 mi=0 ci=1 mb=0 cb=0 | TimeUnit.SECONDS
+188 mi=0 ci=5 mb=0 cb=0 | .setConstraints(networkConstraints(BackupType.REGULAR))
+189 mi=0 ci=5 mb=0 cb=0 | .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+190 mi=0 ci=3 mb=0 cb=0 | .addTag(BackupType.REGULAR.name)
+191 mi=0 ci=2 mb=0 cb=0 | .build()
+193 mi=0 ci=3 mb=0 cb=0 | WorkManager.getInstance(context)
+194 mi=0 ci=2 mb=0 cb=0 | .enqueueUniquePeriodicWork(
+195 mi=0 ci=1 mb=0 cb=0 | BackupType.REGULAR.name,
+196 mi=0 ci=1 mb=0 cb=0 | ExistingPeriodicWorkPolicy.UPDATE,
+197 mi=0 ci=1 mb=0 cb=0 | request
+200 mi=0 ci=3 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleRegular: enqueued REGULAR with " +
+201 mi=0 ci=5 mb=0 cb=0 | "interval=${intervalSecs}s, network=${constraintDescription(BackupType.REGULAR)}")
+202 mi=0 ci=7 mb=0 cb=0 | return ScheduledJob(BackupType.REGULAR.name, "WorkManagerScheduler:REGULAR @ ${intervalSecs}s")
+220 mi=0 ci=4 mb=0 cb=2 | if (secretStore.isEncryptionDegraded()) {
+221 mi=0 ci=4 mb=0 cb=0 | Log.w(TAG, "WorkManagerScheduler.scheduleContentTrigger: blocked — encryption degraded, credentials in plaintext")
+222 mi=0 ci=2 mb=0 cb=0 | return null
+224 mi=0 ci=3 mb=0 cb=2 | if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+227 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleContentTrigger: API < 24, " +
+229 mi=0 ci=2 mb=0 cb=0 | return null
+232 mi=0 ci=4 mb=0 cb=0 | val constraintsBuilder = Constraints.Builder()
+233 mi=0 ci=6 mb=0 cb=0 | .addContentUriTrigger(Consts.SMS_PROVIDER, true)
+235 mi=0 ci=6 mb=0 cb=2 | if (preferences.dataTypePreferences.isBackupEnabled(com.zegoggles.smssync.mail.DataType.CALLLOG)
+236 mi=0 ci=4 mb=1 cb=1 | && preferences.isCallLogBackupAfterCallEnabled()) {
+237 mi=0 ci=8 mb=0 cb=0 | constraintsBuilder.addContentUriTrigger(Consts.CALLLOG_PROVIDER, true)
+240 mi=0 ci=4 mb=0 cb=0 | val request = PeriodicWorkRequest.Builder(
+241 mi=0 ci=1 mb=0 cb=0 | BackupTriggerWorker::class.java,
+242 mi=0 ci=1 mb=0 cb=0 | PERIODIC_MIN_INTERVAL_SECS,
+243 mi=0 ci=1 mb=0 cb=0 | TimeUnit.SECONDS
+245 mi=0 ci=4 mb=0 cb=0 | .setConstraints(constraintsBuilder.build())
+246 mi=0 ci=3 mb=0 cb=0 | .addTag(CONTENT_TRIGGER_UNIQUE_NAME)
+247 mi=0 ci=2 mb=0 cb=0 | .build()
+249 mi=0 ci=3 mb=0 cb=0 | WorkManager.getInstance(context)
+250 mi=0 ci=2 mb=0 cb=0 | .enqueueUniquePeriodicWork(
+251 mi=0 ci=1 mb=0 cb=0 | CONTENT_TRIGGER_UNIQUE_NAME,
+252 mi=0 ci=1 mb=0 cb=0 | ExistingPeriodicWorkPolicy.UPDATE,
+253 mi=0 ci=1 mb=0 cb=0 | request
+256 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleContentTrigger: enqueued CONTENT_TRIGGER (API 24+)")
+257 mi=0 ci=6 mb=0 cb=0 | return ScheduledJob(CONTENT_TRIGGER_UNIQUE_NAME, "WorkManagerScheduler:CONTENT_TRIGGER")
+271 mi=0 ci=4 mb=0 cb=2 | if (secretStore.isEncryptionDegraded()) {
+272 mi=0 ci=4 mb=0 cb=0 | Log.w(TAG, "WorkManagerScheduler.scheduleBootup: blocked — encryption degraded, credentials in plaintext")
+273 mi=0 ci=2 mb=0 cb=0 | return null
+275 mi=0 ci=4 mb=0 cb=2 | if (!preferences.isAutoBackupEnabled) {
+276 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleBootup: autoBackup disabled, cancelling all")
+277 mi=0 ci=2 mb=0 cb=0 | cancelAll()
+278 mi=0 ci=2 mb=0 cb=0 | return null
+281 mi=0 ci=5 mb=0 cb=0 | val request = OneTimeWorkRequest.Builder(BackupWorker::class.java)
+282 mi=0 ci=5 mb=0 cb=0 | .setConstraints(networkConstraints(BackupType.REGULAR))
+283 mi=0 ci=5 mb=0 cb=0 | .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+284 mi=0 ci=4 mb=0 cb=0 | .setInitialDelay(BOOT_BACKUP_DELAY_SECS, TimeUnit.SECONDS)
+285 mi=0 ci=3 mb=0 cb=0 | .addTag(BackupType.REGULAR.name)
+286 mi=0 ci=2 mb=0 cb=0 | .build()
+288 mi=0 ci=3 mb=0 cb=0 | WorkManager.getInstance(context)
+289 mi=0 ci=5 mb=0 cb=0 | .enqueueUniqueWork(BackupType.REGULAR.name, ExistingWorkPolicy.REPLACE, request)
+291 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleBootup: enqueued bootup REGULAR with " +
+293 mi=0 ci=6 mb=0 cb=0 | return ScheduledJob(BackupType.REGULAR.name, "WorkManagerScheduler:bootup @ ${BOOT_BACKUP_DELAY_SECS}s")
+312 mi=0 ci=4 mb=0 cb=2 | if (secretStore.isEncryptionDegraded()) {
+313 mi=0 ci=4 mb=0 cb=0 | Log.w(TAG, "WorkManagerScheduler.scheduleImmediate: blocked — encryption degraded, credentials in plaintext")
+314 mi=0 ci=2 mb=0 cb=0 | return null
+317 mi=0 ci=5 mb=0 cb=0 | val request = OneTimeWorkRequest.Builder(BackupWorker::class.java)
+318 mi=0 ci=3 mb=0 cb=0 | .setConstraints(Constraints.NONE)
+319 mi=0 ci=5 mb=0 cb=0 | .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+320 mi=0 ci=3 mb=0 cb=0 | .addTag(BackupType.BROADCAST_INTENT.name)
+321 mi=0 ci=2 mb=0 cb=0 | .build()
+323 mi=0 ci=3 mb=0 cb=0 | WorkManager.getInstance(context)
+324 mi=0 ci=5 mb=0 cb=0 | .enqueueUniqueWork(BackupType.BROADCAST_INTENT.name, ExistingWorkPolicy.REPLACE, request)
+326 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleImmediate: enqueued BROADCAST_INTENT with Constraints.NONE")
+327 mi=0 ci=6 mb=0 cb=0 | return ScheduledJob(BackupType.BROADCAST_INTENT.name, "WorkManagerScheduler:BROADCAST_INTENT immediate")
+350 mi=13 ci=6 mb=4 cb=2 | require(backupType == BackupType.MANUAL || backupType == BackupType.SKIP) {
+351 mi=2 ci=0 mb=0 cb=0 | "scheduleManual accepts only MANUAL or SKIP, got $backupType"
+353 mi=0 ci=4 mb=0 cb=2 | if (secretStore.isEncryptionDegraded()) {
+354 mi=0 ci=4 mb=0 cb=0 | Log.w(TAG, "WorkManagerScheduler.scheduleManual: blocked — encryption degraded, credentials in plaintext")
+355 mi=0 ci=2 mb=0 cb=0 | return null
+358 mi=0 ci=5 mb=0 cb=0 | val request = OneTimeWorkRequest.Builder(BackupWorker::class.java)
+359 mi=0 ci=3 mb=0 cb=0 | .setConstraints(Constraints.NONE)
+360 mi=0 ci=5 mb=0 cb=0 | .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+361 mi=0 ci=4 mb=0 cb=0 | .addTag(backupType.name)
+362 mi=0 ci=2 mb=0 cb=0 | .build()
+364 mi=0 ci=3 mb=0 cb=0 | WorkManager.getInstance(context)
+365 mi=0 ci=6 mb=0 cb=0 | .enqueueUniqueWork(backupType.name, ExistingWorkPolicy.REPLACE, request)
+367 mi=0 ci=6 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleManual: enqueued ${backupType.name} with Constraints.NONE")
+368 mi=0 ci=9 mb=0 cb=0 | return ScheduledJob(backupType.name, "WorkManagerScheduler:${backupType.name} manual")
+389 mi=0 ci=4 mb=1 cb=1 | if (secretStore.isEncryptionDegraded()) {
+390 mi=0 ci=4 mb=0 cb=0 | Log.w(TAG, "WorkManagerScheduler.scheduleRestore: blocked — encryption degraded, credentials in plaintext")
+391 mi=0 ci=2 mb=0 cb=0 | return null
+393 mi=5 ci=0 mb=0 cb=0 | val request = OneTimeWorkRequest.Builder(RestoreWorker::class.java)
+394 mi=3 ci=0 mb=0 cb=0 | .setConstraints(Constraints.NONE)
+395 mi=5 ci=0 mb=0 cb=0 | .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_INITIAL_SECS, TimeUnit.SECONDS)
+396 mi=7 ci=0 mb=0 cb=0 | .addTag(config.uniqueName)
+397 mi=2 ci=0 mb=0 cb=0 | .build()
+399 mi=3 ci=0 mb=0 cb=0 | WorkManager.getInstance(context)
+400 mi=6 ci=0 mb=0 cb=0 | .enqueueUniqueWork(config.uniqueName, ExistingWorkPolicy.REPLACE, request)
+402 mi=6 ci=0 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.scheduleRestore: enqueued RestoreWorker for ${config.uniqueName}")
+403 mi=9 ci=0 mb=0 cb=0 | return ScheduledJob(config.uniqueName, "WorkManagerScheduler:restore(${config.uniqueName})")
+412 mi=0 ci=2 mb=0 cb=0 | cancelRegular()
+413 mi=0 ci=6 mb=0 cb=0 | WorkManager.getInstance(context).cancelUniqueWork(CONTENT_TRIGGER_UNIQUE_NAME)
+414 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.cancelAll: cancelled REGULAR + CONTENT_TRIGGER")
+415 mi=0 ci=1 mb=0 cb=0 | }
+419 mi=0 ci=6 mb=0 cb=0 | WorkManager.getInstance(context).cancelUniqueWork(BackupType.REGULAR.name)
+420 mi=0 ci=4 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.cancelRegular: cancelled REGULAR")
+421 mi=0 ci=1 mb=0 cb=0 | }
+427 mi=7 ci=0 mb=6 cb=0 | val uniqueName = when (jobKind) {
+428 mi=2 ci=0 mb=0 cb=0 | BackupType.REGULAR -> BackupType.REGULAR.name
+429 mi=2 ci=0 mb=0 cb=0 | BackupType.INCOMING -> BackupType.INCOMING.name
+430 mi=2 ci=0 mb=0 cb=0 | BackupType.BROADCAST_INTENT -> BackupType.BROADCAST_INTENT.name
+431 mi=2 ci=0 mb=0 cb=0 | BackupType.MANUAL -> BackupType.MANUAL.name
+432 mi=2 ci=0 mb=0 cb=0 | BackupType.SKIP -> BackupType.SKIP.name
+434 mi=5 ci=0 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.cancel($jobKind): no unique-work mapping; no-op")
+435 mi=1 ci=0 mb=0 cb=0 | return
+438 mi=6 ci=0 mb=0 cb=0 | WorkManager.getInstance(context).cancelUniqueWork(uniqueName)
+439 mi=6 ci=0 mb=0 cb=0 | Log.d(TAG, "WorkManagerScheduler.cancel($jobKind): cancelled $uniqueName")
+440 mi=1 ci=0 mb=0 cb=0 | }
+457 mi=5 ci=0 mb=0 cb=0 | return SchedulerObservable(SchedulerState.Enqueued)
+472 mi=0 ci=6 mb=0 cb=0 | return when (backupType) {
+473 mi=2 ci=2 mb=1 cb=1 | BackupType.BROADCAST_INTENT -> Constraints.NONE
+474 mi=0 ci=3 mb=0 cb=0 | else -> Constraints.Builder()
+475 mi=0 ci=1 mb=0 cb=0 | .setRequiredNetworkType(
+476 mi=0 ci=6 mb=0 cb=2 | if (preferences.isWifiOnly) NetworkType.UNMETERED
+477 mi=0 ci=1 mb=0 cb=0 | else NetworkType.CONNECTED
+479 mi=0 ci=1 mb=0 cb=0 | .build()
+484 mi=0 ci=6 mb=0 cb=0 | return when (backupType) {
+485 mi=2 ci=2 mb=1 cb=1 | BackupType.BROADCAST_INTENT -> "NONE"
+486 mi=0 ci=7 mb=0 cb=2 | else -> if (preferences.isWifiOnly) "UNMETERED" else "CONNECTED"
+TOTAL com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt covered=132 missed=24
+74 mi=0 ci=3 mb=1 cb=1 | if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+75 mi=0 ci=4 mb=1 cb=1 | if (isSmsBackupDefaultSmsApp(activity)) {
+76 mi=3 ci=0 mb=0 cb=0 | delegate.startViewModelRestore()
+77 mi=3 ci=0 mb=2 cb=0 | } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+79 mi=3 ci=0 mb=2 cb=0 | if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
+80 mi=3 ci=0 mb=0 cb=0 | delegate.requestDefaultSmsPackageChange()
+82 mi=3 ci=0 mb=0 cb=0 | delegate.showSmsDefaultPackageChangeDialog()
+86 mi=4 ci=0 mb=0 cb=0 | val defaultSmsPackage = Telephony.Sms.getDefaultSmsPackage(activity)
+87 mi=5 ci=0 mb=0 cb=0 | Log.d(TAG, "default SMS package: $defaultSmsPackage")
+88 mi=4 ci=0 mb=2 cb=0 | if (!TextUtils.isEmpty(defaultSmsPackage)) {
+89 mi=3 ci=0 mb=0 cb=0 | preferences.setSmsDefaultPackage(defaultSmsPackage)
+90 mi=3 ci=0 mb=2 cb=0 | if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
+91 mi=3 ci=0 mb=0 cb=0 | delegate.requestDefaultSmsPackageChange()
+93 mi=3 ci=0 mb=0 cb=0 | delegate.showSmsDefaultPackageChangeDialog()
+96 mi=7 ci=0 mb=0 cb=0 | Toast.makeText(activity, R.string.error_no_sms_default_package, Toast.LENGTH_LONG).show()
+101 mi=2 ci=0 mb=0 cb=0 | delegate.startViewModelRestore()
+103 mi=1 ci=0 mb=0 cb=0 | }
+111 mi=0 ci=3 mb=1 cb=1 | if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+112 mi=1 ci=11 mb=1 cb=1 | val roleManager = activity.getSystemService(Context.ROLE_SERVICE) as? RoleManager
+113 mi=0 ci=6 mb=1 cb=3 | if (roleManager != null && !roleManager.isRoleHeld(ROLE_SMS)) {
+114 mi=0 ci=3 mb=0 cb=0 | SmsReceiver.enable(activity)
+115 mi=0 ci=7 mb=0 cb=0 | val intent = roleManager.createRequestRoleIntent(ROLE_SMS)
+116 mi=0 ci=5 mb=0 cb=0 | activity.startActivityForResult(intent, MainActivity.REQUEST_CHANGE_DEFAULT_SMS_PACKAGE)
+119 mi=5 ci=0 mb=0 cb=0 | val intent = Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
+120 mi=7 ci=0 mb=0 cb=0 | .putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, activity.packageName)
+121 mi=4 ci=0 mb=0 cb=0 | activity.startActivityForResult(intent, MainActivity.REQUEST_CHANGE_DEFAULT_SMS_PACKAGE)
+123 mi=0 ci=1 mb=0 cb=0 | }
+134 mi=5 ci=0 mb=0 cb=0 | Log.d(TAG, "restoring SMS provider $smsPackage")
+135 mi=3 ci=0 mb=2 cb=0 | if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+136 mi=4 ci=0 mb=0 cb=0 | SmsReceiver.disable(activity)
+137 mi=4 ci=0 mb=2 cb=0 | } else if (!TextUtils.isEmpty(smsPackage)) {
+138 mi=5 ci=0 mb=0 cb=0 | val intent = Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
+139 mi=6 ci=0 mb=0 cb=0 | .putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, smsPackage)
+140 mi=3 ci=0 mb=0 cb=0 | activity.startActivity(intent)
+142 mi=1 ci=0 mb=0 cb=0 | }
+153 mi=12 ci=0 mb=6 cb=0 | val restoreIdle = currentState == null || !currentState.isRunning || currentState !is RestoreState
+154 mi=6 ci=0 mb=4 cb=0 | if (isSmsBackupDefaultSmsApp(activity) && restoreIdle) {
+155 mi=4 ci=0 mb=0 cb=0 | restoreDefaultSmsProvider(activity, preferences.getSmsDefaultPackage())
+157 mi=1 ci=0 mb=0 cb=0 | }
+TOTAL com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt covered=9 missed=30
+55 mi=3 ci=0 mb=0 cb=0 | public class Dialogs {
+56 mi=3 ci=0 mb=0 cb=0 | public enum Type {
+57 mi=7 ci=0 mb=0 cb=0 | FIRST_SYNC(FirstSync.class),
+58 mi=7 ci=0 mb=0 cb=0 | MISSING_CREDENTIALS(MissingCredentials.class),
+59 mi=7 ci=0 mb=0 cb=0 | INVALID_IMAP_FOLDER(InvalidImapFolder.class),
+60 mi=7 ci=0 mb=0 cb=0 | CONFIRM_ACTION(ConfirmAction.class),
+61 mi=7 ci=0 mb=0 cb=0 | SMS_DEFAULT_PACKAGE_CHANGE(SmsRequestDefaultPackage.class),
+63 mi=7 ci=0 mb=0 cb=0 | ABOUT(About.class),
+64 mi=7 ci=0 mb=0 cb=0 | RESET(Reset.class),
+65 mi=7 ci=0 mb=0 cb=0 | VIEW_LOG(ViewLog.class),
+67 mi=7 ci=0 mb=0 cb=0 | WEB_CONNECT(WebConnect.class),
+68 mi=7 ci=0 mb=0 cb=0 | OAUTH2_ACCESS_TOKEN_PROGRESS(OAuth2AccessTokenProgress.class),
+69 mi=7 ci=0 mb=0 cb=0 | OAUTH2_ACCESS_TOKEN_ERROR(OAuth2AccessTokenError.class),
+70 mi=7 ci=0 mb=0 cb=0 | ACCOUNT_MANAGER_TOKEN_ERROR(AccountManagerTokenError.class),
+71 mi=7 ci=0 mb=0 cb=0 | DISCONNECT(Disconnect.class);
+74 mi=4 ci=0 mb=0 cb=0 | Type(Class<? extends BaseFragment> fragment) {
+75 mi=3 ci=0 mb=0 cb=0 | this.fragment = fragment;
+76 mi=1 ci=0 mb=0 cb=0 | }
+79 mi=5 ci=0 mb=0 cb=0 | Fragment fragment = fragmentManager.getFragmentFactory().instantiate(
+80 mi=4 ci=0 mb=0 cb=0 | getClass().getClassLoader(),
+81 mi=1 ci=0 mb=0 cb=0 | this.fragment.getName());
+82 mi=3 ci=0 mb=0 cb=0 | fragment.setArguments(args);
+83 mi=3 ci=0 mb=0 cb=0 | return (BaseFragment) fragment;
+87 mi=3 ci=0 mb=0 cb=0 | public static class BaseFragment extends AppCompatDialogFragment {
+89 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+90 mi=2 ci=0 mb=0 cb=0 | .setTitle(title)
+91 mi=2 ci=0 mb=0 cb=0 | .setMessage(msg)
+92 mi=3 ci=0 mb=0 cb=0 | .setIcon(icon)
+93 mi=1 ci=0 mb=0 cb=0 | .setPositiveButton(ok, null)
+94 mi=1 ci=0 mb=0 cb=0 | .create();
+98 mi=3 ci=0 mb=0 cb=0 | public static class MissingCredentials extends BaseFragment {
+101 mi=5 ci=0 mb=0 cb=0 | return createMessageDialog(
+102 mi=3 ci=0 mb=0 cb=0 | getString(R.string.ui_dialog_missing_credentials_title),
+103 mi=2 ci=0 mb=0 cb=0 | getString(R.string.ui_dialog_missing_credentials_msg_plain),
+108 mi=3 ci=0 mb=0 cb=0 | public static class FirstSync extends BaseFragment {
+114 mi=5 ci=0 mb=0 cb=0 | OnClickListener firstSyncListener =
+115 mi=6 ci=0 mb=0 cb=0 | new OnClickListener() {
+119 mi=7 ci=0 mb=2 cb=0 | Actions action = which == SKIP_BUTTON ? BackupSkip : Backup;
+120 mi=2 ci=0 mb=2 cb=0 | if (App.syncStateRepository() != null) {
+121 mi=8 ci=0 mb=0 cb=0 | boolean emitted = App.syncStateRepository().tryEmitEvent(
+123 mi=6 ci=0 mb=2 cb=0 | if (!emitted) android.util.Log.w(App.TAG, "FirstSync: tryEmitEvent returned false");
+125 mi=1 ci=0 mb=0 cb=0 | }
+127 mi=5 ci=0 mb=0 cb=0 | final int maxItems = getArguments().getInt(MAX_ITEMS_PER_SYNC);
+128 mi=2 ci=0 mb=2 cb=0 | final String syncMsg = maxItems < 0 ?
+129 mi=4 ci=0 mb=0 cb=0 | getString(R.string.ui_dialog_first_sync_msg) :
+130 mi=11 ci=0 mb=0 cb=0 | getString(R.string.ui_dialog_first_sync_msg_batched, maxItems);
+132 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+133 mi=2 ci=0 mb=0 cb=0 | .setTitle(R.string.ui_dialog_first_sync_title)
+134 mi=3 ci=0 mb=0 cb=0 | .setMessage(syncMsg)
+135 mi=3 ci=0 mb=0 cb=0 | .setPositiveButton(R.string.ui_sync, firstSyncListener)
+136 mi=1 ci=0 mb=0 cb=0 | .setNegativeButton(R.string.ui_skip, firstSyncListener)
+137 mi=1 ci=0 mb=0 cb=0 | .create();
+141 mi=3 ci=0 mb=0 cb=0 | public static class InvalidImapFolder extends BaseFragment {
+144 mi=4 ci=0 mb=0 cb=0 | final String title = getString(R.string.ui_dialog_invalid_imap_folder_title);
+145 mi=4 ci=0 mb=0 cb=0 | final String msg = getString(R.string.ui_dialog_invalid_imap_folder_msg);
+146 mi=6 ci=0 mb=0 cb=0 | return createMessageDialog(title, msg, ic_dialog_alert);
+150 mi=3 ci=0 mb=0 cb=0 | public static class About extends BaseFragment {
+157 mi=8 ci=0 mb=0 cb=0 | final View contentView = getActivity().getLayoutInflater().inflate(R.layout.about_dialog, null, false);
+158 mi=6 ci=0 mb=0 cb=0 | webView = (WebView) contentView.findViewById(R.id.about_content);
+159 mi=8 ci=0 mb=2 cb=0 | final float scrollPosition = savedInstanceState == null ? 0f : savedInstanceState.getFloat(SCROLL_POSITION);
+161 mi=17 ci=0 mb=0 cb=0 | webView.setWebViewClient(new WebViewClient() {
+164 mi=10 ci=0 mb=0 cb=0 | startActivity(new Intent(Intent.ACTION_VIEW).setData(Uri.parse(url)));
+165 mi=2 ci=0 mb=0 cb=0 | return true;
+169 mi=4 ci=0 mb=0 cb=0 | super.onPageFinished(view, url);
+170 mi=7 ci=0 mb=2 cb=0 | if (scrollPosition > 0 &&
+171 mi=5 ci=0 mb=4 cb=0 | ABOUT_HTML.equals(url) &&
+173 mi=12 ci=0 mb=0 cb=0 | view.setScrollY((int) (view.getContentHeight() * view.getScale() * scrollPosition));
+175 mi=1 ci=0 mb=0 cb=0 | }
+177 mi=4 ci=0 mb=0 cb=0 | webView.loadUrl(ABOUT_HTML);
+178 mi=8 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+179 mi=2 ci=0 mb=0 cb=0 | .setPositiveButton(ok, null)
+180 mi=6 ci=0 mb=0 cb=0 | .setIcon(R.drawable.ic_sms_backup)
+181 mi=11 ci=0 mb=0 cb=0 | .setTitle(getString(R.string.app_name) + " " + App.getVersionName(getContext()))
+182 mi=1 ci=0 mb=0 cb=0 | .setView(contentView)
+183 mi=1 ci=0 mb=0 cb=0 | .create();
+188 mi=3 ci=0 mb=0 cb=0 | super.onSaveInstanceState(outState);
+189 mi=14 ci=0 mb=0 cb=0 | final float position = webView.getScrollY() / (webView.getContentHeight() * webView.getScale());
+190 mi=4 ci=0 mb=0 cb=0 | outState.putFloat(SCROLL_POSITION, position);
+191 mi=1 ci=0 mb=0 cb=0 | }
+194 mi=3 ci=0 mb=0 cb=0 | public static class Reset extends BaseFragment {
+197 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+198 mi=2 ci=0 mb=0 cb=0 | .setIcon(ic_dialog_alert)
+199 mi=6 ci=0 mb=0 cb=0 | .setTitle(R.string.ui_dialog_reset_title)
+200 mi=8 ci=0 mb=0 cb=0 | .setPositiveButton(ok, new OnClickListener() {
+203 mi=2 ci=0 mb=2 cb=0 | if (App.syncStateRepository() != null) {
+204 mi=4 ci=0 mb=0 cb=0 | boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.SettingsReset.INSTANCE);
+205 mi=6 ci=0 mb=2 cb=0 | if (!emitted) android.util.Log.w(App.TAG, "Reset: tryEmitEvent returned false");
+207 mi=1 ci=0 mb=0 cb=0 | }
+209 mi=3 ci=0 mb=0 cb=0 | .setMessage(R.string.ui_dialog_reset_message)
+210 mi=1 ci=0 mb=0 cb=0 | .setNegativeButton(cancel, null)
+211 mi=1 ci=0 mb=0 cb=0 | .create();
+215 mi=3 ci=0 mb=0 cb=0 | public static class Disconnect extends BaseFragment {
+218 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+219 mi=2 ci=0 mb=0 cb=0 | .setIcon(ic_dialog_alert)
+220 mi=2 ci=0 mb=0 cb=0 | .setTitle(R.string.ui_dialog_confirm_action_title)
+221 mi=3 ci=0 mb=0 cb=0 | .setMessage(R.string.ui_dialog_disconnect_msg)
+222 mi=6 ci=0 mb=0 cb=0 | .setNegativeButton(cancel, null)
+223 mi=7 ci=0 mb=0 cb=0 | .setPositiveButton(ok, new OnClickListener() {
+226 mi=2 ci=0 mb=2 cb=0 | if (App.syncStateRepository() != null) {
+227 mi=4 ci=0 mb=0 cb=0 | boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.AccountRemoved.INSTANCE);
+228 mi=6 ci=0 mb=2 cb=0 | if (!emitted) android.util.Log.w(App.TAG, "Disconnect: tryEmitEvent returned false");
+230 mi=1 ci=0 mb=0 cb=0 | }
+231 mi=1 ci=0 mb=0 cb=0 | }).create();
+235 mi=3 ci=0 mb=0 cb=0 | public static class AccessTokenProgress extends BaseFragment {
+241 mi=6 ci=0 mb=0 cb=0 | android.app.ProgressDialog progress = new android.app.ProgressDialog(getContext());
+242 mi=3 ci=0 mb=0 cb=0 | progress.setTitle(null);
+243 mi=3 ci=0 mb=0 cb=0 | progress.setProgressStyle(android.app.ProgressDialog.STYLE_SPINNER);
+244 mi=5 ci=0 mb=0 cb=0 | progress.setMessage(getString(R.string.ui_dialog_access_token_msg));
+245 mi=3 ci=0 mb=0 cb=0 | progress.setIndeterminate(true);
+246 mi=3 ci=0 mb=0 cb=0 | progress.setCancelable(false);
+247 mi=2 ci=0 mb=0 cb=0 | return progress;
+251 mi=3 ci=0 mb=0 cb=0 | public static class OAuth2AccessTokenError extends BaseFragment {
+254 mi=4 ci=0 mb=0 cb=0 | final String title = getString(R.string.ui_dialog_access_token_error_title);
+255 mi=4 ci=0 mb=0 cb=0 | final String msg = getString(R.string.ui_dialog_access_token_error_msg);
+256 mi=6 ci=0 mb=0 cb=0 | return createMessageDialog(title, msg, ic_dialog_alert);
+261 mi=2 ci=0 mb=0 cb=0 | public static class OAuth2AccessTokenProgress extends AccessTokenProgress {
+262 mi=4 ci=0 mb=0 cb=0 | private kotlinx.coroutines.Job collectionJob = null;
+266 mi=3 ci=0 mb=0 cb=0 | super.onAttach(context);
+268 mi=2 ci=0 mb=2 cb=0 | if (App.syncStateRepository() != null) {
+269 mi=3 ci=0 mb=0 cb=0 | collectionJob = DialogsFlowHelper.collectOAuth2Callback(
+270 mi=2 ci=0 mb=0 cb=0 | App.syncStateRepository(), this);
+272 mi=1 ci=0 mb=0 cb=0 | }
+277 mi=3 ci=0 mb=2 cb=0 | if (collectionJob != null) {
+278 mi=4 ci=0 mb=0 cb=0 | collectionJob.cancel(null);
+279 mi=3 ci=0 mb=0 cb=0 | collectionJob = null;
+281 mi=2 ci=0 mb=0 cb=0 | super.onDetach();
+282 mi=1 ci=0 mb=0 cb=0 | }
+286 mi=2 ci=0 mb=0 cb=0 | dismissAllowingStateLoss();
+287 mi=1 ci=0 mb=0 cb=0 | }
+290 mi=3 ci=0 mb=0 cb=0 | public static class AccountManagerTokenError extends BaseFragment {
+294 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+295 mi=2 ci=0 mb=0 cb=0 | .setTitle(R.string.status_unknown_error)
+296 mi=2 ci=0 mb=0 cb=0 | .setIcon(ic_dialog_alert)
+297 mi=6 ci=0 mb=0 cb=0 | .setMessage(R.string.ui_dialog_account_manager_token_error)
+298 mi=9 ci=0 mb=0 cb=0 | .setPositiveButton(yes, new OnClickListener() {
+302 mi=2 ci=0 mb=2 cb=0 | if (App.syncStateRepository() != null) {
+303 mi=4 ci=0 mb=0 cb=0 | boolean emitted = App.syncStateRepository().tryEmitEvent(SyncEvent.FallbackAuth.INSTANCE);
+304 mi=6 ci=0 mb=2 cb=0 | if (!emitted) android.util.Log.w(App.TAG, "AccountManagerTokenError: tryEmitEvent returned false");
+306 mi=1 ci=0 mb=0 cb=0 | }
+308 mi=1 ci=0 mb=0 cb=0 | .setNegativeButton(android.R.string.no, null)
+309 mi=1 ci=0 mb=0 cb=0 | .create();
+313 mi=3 ci=0 mb=0 cb=0 | public static class WebConnect extends BaseFragment {
+319 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+320 mi=9 ci=0 mb=0 cb=0 | .setTitle(null)
+321 mi=6 ci=0 mb=0 cb=0 | .setMessage(getString(R.string.ui_dialog_connect_msg, getString(R.string.app_name)))
+322 mi=6 ci=0 mb=0 cb=0 | .setNegativeButton(cancel, null)
+323 mi=7 ci=0 mb=0 cb=0 | .setPositiveButton(ok, new OnClickListener() {
+325 mi=7 ci=0 mb=0 cb=0 | final Intent intent = getArguments().getParcelable(INTENT);
+326 mi=6 ci=0 mb=0 cb=0 | getActivity().startActivityForResult(intent, REQUEST_WEB_AUTH);
+327 mi=1 ci=0 mb=0 cb=0 | }
+328 mi=1 ci=0 mb=0 cb=0 | }).create();
+332 mi=3 ci=0 mb=0 cb=0 | public static class ViewLog extends BaseFragment {
+335 mi=4 ci=0 mb=0 cb=0 | return AppLog.displayAsDialog(getContext());
+339 mi=3 ci=0 mb=0 cb=0 | public static class ConfirmAction extends BaseFragment {
+344 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+345 mi=6 ci=0 mb=0 cb=0 | .setTitle(R.string.ui_dialog_confirm_action_title)
+346 mi=8 ci=0 mb=0 cb=0 | .setPositiveButton(ok, new OnClickListener() {
+349 mi=7 ci=0 mb=0 cb=0 | Actions performAction = Actions.valueOf(getArguments().getString(ACTION));
+350 mi=2 ci=0 mb=2 cb=0 | if (App.syncStateRepository() != null) {
+351 mi=8 ci=0 mb=0 cb=0 | boolean emitted = App.syncStateRepository().tryEmitEvent(
+353 mi=6 ci=0 mb=2 cb=0 | if (!emitted) android.util.Log.w(App.TAG, "ConfirmAction: tryEmitEvent returned false");
+355 mi=1 ci=0 mb=0 cb=0 | }
+357 mi=2 ci=0 mb=0 cb=0 | .setMessage(R.string.ui_dialog_confirm_action_msg)
+358 mi=3 ci=0 mb=0 cb=0 | .setIcon(ic_dialog_alert)
+359 mi=1 ci=0 mb=0 cb=0 | .setNegativeButton(cancel, null)
+360 mi=1 ci=0 mb=0 cb=0 | .create();
+364 mi=3 ci=0 mb=0 cb=0 | public static class SmsRequestDefaultPackage extends BaseFragment {
+367 mi=7 ci=0 mb=0 cb=0 | return new AlertDialog.Builder(getContext())
+368 mi=2 ci=0 mb=0 cb=0 | .setTitle(R.string.ui_dialog_sms_default_package_change_title)
+369 mi=6 ci=0 mb=0 cb=0 | .setIcon(ic_dialog_info)
+370 mi=8 ci=0 mb=0 cb=0 | .setPositiveButton(ok, new OnClickListener() {
+372 mi=5 ci=0 mb=2 cb=0 | if (getActivity() instanceof MainActivity) {
+373 mi=5 ci=0 mb=0 cb=0 | ((MainActivity)getActivity()).requestDefaultSmsPackageChange();
+375 mi=1 ci=0 mb=0 cb=0 | }
+377 mi=1 ci=0 mb=0 cb=0 | .setMessage(R.string.ui_dialog_sms_default_package_change_msg)
+378 mi=1 ci=0 mb=0 cb=0 | .create();
+TOTAL com/zegoggles/smssync/activity/Dialogs.java covered=0 missed=176
