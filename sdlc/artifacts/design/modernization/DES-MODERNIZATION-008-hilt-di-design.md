@@ -10,7 +10,8 @@ related_requirements:
 related_stories: []
 related_design_docs: []
 integration_contracts: []
-change_records: []
+change_records:
+  - CR-017
 type: ''
 id: DES-MODERNIZATION-008
 title: ''
@@ -110,7 +111,7 @@ at `App.java:71` becomes an injected `Preferences` field.
 | Hilt scope | Bound here | Rationale |
 |------------|-----------|-----------|
 | `@Singleton` (SingletonComponent) | `Preferences`, `AuthPreferences`, `DataTypePreferences`, the four ports (`BackupScheduler`, `MailTransport`, `SecretStore`, `ContactsPort`/`CalendarPort`), `SyncStateRepository` | Process-lived, stateless-or-app-state collaborators. Replaces the per-call `new Preferences(...)` Service-Locator (ARCH-002). One instance, injected everywhere. |
-| `@HiltWorker` (assisted, per-work) | `BackupWorker`, `RestoreWorker` | Workers are instantiated by WorkManager, not by the graph directly; Hilt supplies their dependencies via `@AssistedInject` + the `HiltWorkerFactory`. See "Integration with DES-005". |
+| `@HiltWorker` (assisted, per-work) | `BackupWorker`, `RestoreWorker`, `BackupTriggerWorker` (since U-069; a plain `Worker` injected with the `BackupScheduler` port and `Preferences`) | Workers are instantiated by WorkManager, not by the graph directly; Hilt supplies their dependencies via `@AssistedInject` + the `HiltWorkerFactory`. See "Integration with DES-005". |
 | Unscoped (`@Inject` constructor, new instance per request) | `MessageConverter`, `MessageGenerator`, `HeaderGenerator`, `PersonLookup`, `ContactAccessor`, `CalendarSyncer`, `BackupItemsFetcher`, `BackupQueryBuilder`, `TokenRefresher`, `OAuth2Client` | Cheap, mostly-stateless conversion/fetch collaborators. No need to cache; constructor-inject and let Hilt build them. These are exactly the types `BackupTask`'s primary constructor `new`s today (verified `BackupTask.java:67-87`). |
 
 ### Provider strategy: `@Inject` constructors for app-owned types; `@Module @Provides`/`@Binds` for the ports
@@ -494,3 +495,5 @@ were likewise not re-read this session; the worker/service transition is correct
 DES-005 ownership rather than asserted here. An implementing story should re-verify the
 sibling port interfaces against DES-004/005/007/009/011 at build time before activating each
 `@Binds`/`@Provides` entry.
+
+Amended 2026-11-21 by CR-017: the `@HiltWorker` row lists `BackupTriggerWorker`, the content-trigger worker that story U-069 made a Hilt worker (commit `d7a69974`). It is created by `HiltWorkerFactory` like the other two; nothing else in this design changes.

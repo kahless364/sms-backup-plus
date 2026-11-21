@@ -16,6 +16,7 @@ related_design_docs: []
 traces_to: []
 change_records:
   - CR-015
+  - CR-017
 notes: |
   Traceability: TECH-002/DEP-002 (gaps), ARCH-003 (patterns), STRUCT-003 (gaps); migration unit MU-005 (THE SPINE); source assessment 20260529-modernization. Highest-leverage single migration — one binding flip retires four dead mechanisms.
 ---
@@ -84,4 +85,6 @@ Boundary: `service/BackupJobs.java`, `service/SmsJobService.java`, `service/Back
 `service/RestoreTask.java`, `service/AlarmManagerDriver.java`.
 Traceability: TECH-002/DEP-002, ARCH-003, STRUCT-003; MU-005; source assessment 20260529-modernization.
 
-Amended 2026-11-21 by CR-015: AC-3(d), "content-URI trigger (with broadcast fallback below API 24)", is unchanged in wording. Since minSdk 24 (REQ-MODERNIZATION-015, CR-011) no supported level is below API 24, so the clause has no case and no test of it is required; AC-3(d) is met by the content-URI trigger tests; their lowest-level assertion is made at API 24 once story S1 of DES-MODERNIZATION-014 retargets `inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast` (CNTR-MODERNIZATION-004 v3, INV-4 note). The `SMS_RECEIVED` path is not removed. Ruled not a behavioural break of CNTR-MODERNIZATION-004 (v3).
+Amended 2026-11-21 by CR-015: AC-3(d), "content-URI trigger (with broadcast fallback below API 24)", is unchanged in wording. Since minSdk 24 (REQ-MODERNIZATION-015, CR-011) no supported level is below API 24, so the clause has no case and no test of it is required; AC-3(d) is met by the content-URI trigger tests; their lowest-level assertion is made at API 24 once story S1 of DES-MODERNIZATION-014 retargets `inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast` (CNTR-MODERNIZATION-004 v3, INV-4 note). CR-015 did not remove the `SMS_RECEIVED` path; CR-017 removes it from the contract on the product owner's decision of 2026-11-21 (decision appendix, Record 20, ruling 56), and its own story removes it from the code. Ruled not a behavioural break of CNTR-MODERNIZATION-004 (v3).
+
+Amended 2026-11-21 by CR-017: no criterion changes. AC-3(d) is met by the content-URI trigger alone; the SMS-received receiver, which it never relied on, has not been delivered the broadcast since U-001 and is to be removed by its own story (ruling 56). "Preserving all current scheduling behavior" (Description) is read with two corrections that CNTR-MODERNIZATION-004 v4 makes, each restoring the legacy behaviour: a regular schedule of "Never" schedules nothing (BUG-026), and a restart keeps the regular backup (BUG-027). The extra backup about a minute after every restart, which the migrated code ran while it deleted the regular schedule, is not kept unless the product owner decides otherwise (BUG-027, PO-1 and PO-2).

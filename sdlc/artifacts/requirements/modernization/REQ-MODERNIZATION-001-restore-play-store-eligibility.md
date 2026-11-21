@@ -11,6 +11,7 @@ source_analysis: "sdlc/analysis/20260529-modernization/promoted/phase0-shippable
 related_stories: []
 change_records:
   - CR-016
+  - CR-017
 ---
 
 # REQ-MODERNIZATION-001: Restore Google Play Eligibility via SDK and Build Uplift
@@ -99,6 +100,8 @@ Add explicit `android:exported` attributes to all six intent-filtered `<receiver
 - `.compat.MmsReceiver` (line 167): `android:exported="true"` — receives the system `WAP_PUSH_DELIVER` broadcast (MMS delivery, guarded by the `BROADCAST_WAP_PUSH` signature permission); must be reachable by the platform.
 
 > **Scope correction:** This requirement originally named only four receivers. The manifest contains six intent-filtered receivers; the two `.compat.*` receivers were omitted. Because a receiver with an intent-filter and no explicit `android:exported` is a hard manifest-merger error under AGP 7+, all six must be addressed or the build fails. Synced with DES-MODERNIZATION-001.
+
+> **Amended 2026-11-21 by CR-017 (note only; no criterion changes).** The rationale above for `SmsBroadcastReceiver` was wrong: `SMS_RECEIVED` is sent by the telephony process, not by this app, so a receiver declared `android:exported="false"` is not delivered it (BUG-023, Suggested Approach). The receiver has not run since the change. The product owner decided on 2026-11-21 to remove it (decision appendix, Record 20, ruling 56). Once its story is done, AC-15 and AC-16 apply to the five remaining receivers, and their `SmsBroadcastReceiver` clause has no case.
 
 #### Acceptance Criteria
 

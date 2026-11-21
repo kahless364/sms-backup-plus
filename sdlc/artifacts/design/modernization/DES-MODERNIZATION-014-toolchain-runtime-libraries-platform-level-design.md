@@ -32,6 +32,7 @@ change_records:
   - CR-014
   - CR-015
   - CR-016
+  - CR-017
 type: ''
 id: DES-MODERNIZATION-014
 title: 'Toolchain, Runtime Libraries and Platform Level 37: One Sequenced Upgrade Plan (REQ-MODERNIZATION-015, -016, -017)'
@@ -50,6 +51,12 @@ updated_at: '2026-11-21T08:45:43.427Z'
 > rules" in D8 item 5, and the remediations of FD-VAL-002 and FD-VAL-003. After CR-016 is applied,
 > REQ-MODERNIZATION-015 AC-13, REQ-MODERNIZATION-016 AC-6 and REQ-MODERNIZATION-017 AC-15 state the practice
 > this design already follows: the count at the start of each story, and the configured floors.
+
+> Note added 2026-11-21 by CR-017 (no decision of this design changes). The SMS-received receiver
+> (`SmsBroadcastReceiver`) is not delivered `SMS_RECEIVED` and is to be removed by its own story (product owner's
+> decision, decision appendix Record 20, ruling 56). Run R and its Design Validation row read only the
+> `BackupTriggerWorker` line. The behaviour-change row 37-5, the "Integration Contracts" argument for CR-015
+> and the D14 file list name the receiver as it was when they were written; they are history and are not edited.
 
 ## Overview
 
@@ -1272,7 +1279,7 @@ unpublished.
 | 36-6 | Health permissions; Bluetooth bond items; MediaStore lockdown; GPU syscall filtering; app-owned photos | None used | NA |
 | 36-7 | Safer intents (`#safer-intents`, opt-in) | Exported components: `MainActivity`, `RedirectReceiverActivity`, `BackupBroadcastReceiver`, `SmsReceiver`, `MmsReceiver`, `ComposeSmsActivity`, `HeadlessSmsSendService` (`AndroidManifest.xml:99-226`). The app has not opted in | NA (opt-in). CNTR-005 checked by AC-12 anyway |
 | 36-8 | Local network permission, opt-in at 36 | — | NA at 36; see 37-6 |
-| 16-1 | JobScheduler quota (behavior-changes-all `#job-quota-opt`) | WorkManager runs on JobScheduler; long work runs as a dataSync foreground service | A-NC: AC-11 forced run; REQ-016 AC-13 scheduled run. Affects any Android 16 device already, whatever the target |
+| 16-1 | JobScheduler quota (behavior-changes-all `#job-quota-opt`) | WorkManager runs on JobScheduler. Today every backup asks for a `dataSync` foreground service, and a start the system refuses (off screen, Android 12 and later) fails the run (BUG-029). From story U-075, automatic backups (incoming, regular, after a restart, the `BACKUP` broadcast) run as ordinary jobs under the job quota, and only work the user starts (manual backup, Skip, restore) asks for the foreground; a refused start continues without it (CR-017, Amendment 2) | A-NC: AC-11 forced run; REQ-016 AC-13 scheduled run. Affects any Android 16 device already, whatever the target |
 | 16-1a | Abandoned empty jobs stop reason (`#abandoned-job-stop-reason`) | A new stop reason for jobs whose `JobParameters` were garbage-collected. The app holds no `JobParameters`; WorkManager owns the jobs | NA (informational; a WorkManager-internal concern) |
 | 16-1b | Predictive back on 3-button navigation (`#three-button-predictive-back`) | Same code as 36-2 | A-NC: AC-7 records back with both gesture and 3-button navigation on DV-2 |
 | 16-1c | Improved bond-loss handling (`#improved-bond-loss-handling`) | No Bluetooth use (grep `Bluetooth`: none in `app/src/main`) | NA |
@@ -1329,7 +1336,7 @@ picked up by the next backup after release, because its `date` is still above th
 MMS has its own watermark and is not named by the OTP pages (research §4.5: "standard SMS
 messages").
 
-The `SMS_RECEIVED` trigger (`SmsBroadcastReceiver.java:58-60`) is also withheld for such a message.
+The `SMS_RECEIVED` broadcast is also withheld for such a message; the app has no receiver for it that is delivered (the SMS-received receiver is to be removed by its own story (ruling 56), CR-017), so the content trigger is the only trigger concerned.
 That delays a trigger; it does not lose data. Restore's own provider reads are unaffected: during
 restore the app holds the default-SMS role, which is exempt. Restore does move the SMS watermark
 (above); BUG-021 handles that.
@@ -1413,7 +1420,7 @@ This is the only evidence of the delay's length and jitter, which BUG-021's 6-ho
 (Record 14, row 10) relies on.
 
 **Run R, trigger at release (auto backup ON).** A second run of M1 with auto backup on, in which
-only the `SmsBroadcastReceiver` and `BackupTriggerWorker` log lines are read: around T0, and around
+only the `BackupTriggerWorker` log lines are read (the SMS-received receiver is not delivered the broadcast and is to be removed by its own story (ruling 56), CR-017): around T0, and around
 the release time found by Run T or after T0 + 3 h. No count is read in this run, because automatic
 backups move the watermark on their own. If Run R is not run, "trigger at release" is recorded as
 **not measured**.
@@ -2244,7 +2251,7 @@ superseded by NS-1: the mechanism detail it added was removed.
 | REQ-020 review: counting control | M0b, before the code message is sent | D14 Run A |
 | REQ-020 review: count of 2 | Inconclusive, never "not affected"; may be repeated once with another form, and the form is recorded | D14 outcomes |
 | REQ-020 review: "nothing to back up" after release | "Gap not ruled out" unless Run T shows visibility by M5's time (then "gap confirmed"); S5-I4 waits either way. Run T checks every 30 minutes up to T0 + 6 h and records the time it appears | D14 Run T, outcomes |
-| REQ-020 review: trigger at release | Run R with auto backup ON, reading only the `SmsBroadcastReceiver` and `BackupTriggerWorker` lines; "not measured" if not run | D14 Run R |
+| REQ-020 review: trigger at release | Run R with auto backup ON, reading only the `BackupTriggerWorker` lines (CR-017); "not measured" if not run | D14 Run R |
 | REQ-020 review: limits | Shell is not the app; emulator not device; one run; WebOTP text from the documentation; trigger "not measured" if Run R absent | D14 Limits |
 | REQ-020 review: outcomes and sequencing | Only "picked up after release with a passing positive control" lets S5-I4 go without the fix; any other outcome or "not run" waits. Fixed-build check belongs to the fix story: `backup complete, backedUp=1` (`BackupWorker.kt:369`), then two `nothing to backup` | D14 outcomes table; "After the fix" |
 | REQ-020 review: citation | "Ruling PO-1 (Record 12)" replaced by Record 13, row 4 | D14; PO-1; INT-008; FD-VAL-001 |

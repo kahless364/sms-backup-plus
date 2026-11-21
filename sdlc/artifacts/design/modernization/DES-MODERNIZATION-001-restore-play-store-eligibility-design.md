@@ -10,7 +10,8 @@ related_requirements:
 related_stories: []
 related_design_docs: []
 integration_contracts: []
-change_records: []
+change_records:
+  - CR-017
 type: ''
 id: DES-MODERNIZATION-001
 title: ''
@@ -303,6 +304,8 @@ Every REQ-MODERNIZATION-001 acceptance criterion is traced to a verification mec
 **Audit-trail note.** Every load-bearing fact in this design was confirmed by direct Read and/or Grep of the actual files this session: `build.gradle`, `app/build.gradle`, `AndroidManifest.xml` (full, 207 lines), `gradle/wrapper/gradle-wrapper.properties`, `AlarmManagerDriver.java` (full), `ServiceBase.java` (full), `migration-units.md` MU-001 (full), plus `REQ-MODERNIZATION-001`, `target-state.md`, and `code-location.md` in full. The AC-12 two-site PendingIntent enumeration was grep-confirmed (exactly two production sites; `AlarmManagerDriver:127`, `ServiceBase:201`). The migration-units cross-check additionally surfaced a real test-coupling hazard not present in the requirement — `AlarmManagerDriverTest:97` asserts the current `FLAG_UPDATE_CURRENT` flag and will break when FLAG_IMMUTABLE is OR'd in — now documented against AC-14. No design claim rests on an unread file.
 
 **Out-of-scope (owned elsewhere), recorded to prevent scope creep.** WorkManager migration and removal of `AlarmManagerDriver`, `SmsJobService`, firebase, and scijava are owned by MU-005 and DES-MODERNIZATION-005. The Robolectric, mockito, and junit upgrade bodies are owned by REQ-MODERNIZATION-002 and DES-MODERNIZATION-003 (co-landed at S3 but specified there). Pre-21 dead-code deletion is owned by MU-011. Trust-all-TLS removal and EncryptedSharedPreferences are owned by DES-MODERNIZATION-004 and DES-MODERNIZATION-007. Billing 7.x is owned by DES-MODERNIZATION-009. This design's boundary is exactly: SDK, AGP, and Gradle versions; manifest conformance; two FLAG_IMMUTABLE additions; one SDK-gated POST_NOTIFICATIONS request; and jcenter removal.
+
+Amended 2026-11-21 by CR-017 (note only; no target value changes). The export rationale for `SmsBroadcastReceiver` in the receiver table ("Receives system `SMS_RECEIVED` implicit broadcast; not a third-party contract") was wrong: the broadcast is sent by the telephony process, not by this app, so a receiver declared `android:exported="false"` is not delivered it (BUG-023, Suggested Approach, "Severity, and the SMS-received receiver"). The receiver has not run since this design was built. The product owner decided on 2026-11-21 to remove it (decision appendix, Record 20, ruling 56); the scheduler contract CNTR-MODERNIZATION-004 v4 no longer describes it. The rows for the other five receivers are unaffected.
 
 ## Artifacts Consulted
 

@@ -14,6 +14,7 @@ integration_contracts:
   - CNTR-MODERNIZATION-005
 change_records:
   - CR-015
+  - CR-017
 type: ''
 id: DES-MODERNIZATION-005
 title: WorkManager Scheduler Spine Design
@@ -85,9 +86,9 @@ lives entirely in the adapter.
 core (no Android scheduler types in signature)
   port: BackupScheduler
     scheduleIncoming()                  // one-off, delay = incomingTimeoutSecs
-    scheduleRegular()                   // periodic / recurring, constraint-bound
+    scheduleRegular()                   // periodic / recurring, constraint-bound; "Never" (<= 0): none, REGULAR cancelled
     scheduleContentTrigger()            // recurring content-URI observer (every supported level, minSdk 24)
-    scheduleBootup()                    // honors isAutoBackupEnabled(); cancelAll() if off
+    scheduleBootup()                    // honors isAutoBackupEnabled(); cancelAll() if off; else registers the REGULAR periodic (no one-off)
     scheduleImmediate()                 // one-off NOW, BROADCAST_INTENT, no constraint
     scheduleRestore(config)             // one-off restore (NEW — no scheduler today)
     cancelAll()                         // cancelRegular() + cancelContentUriTrigger()
@@ -118,7 +119,7 @@ port. It collapses all four legacy mechanisms behind one enqueue path:
 
 | Legacy mechanism | Subsumed by | How |
 |------------------|-------------|-----|
-| Firebase JobDispatcher (scheduling) | `WorkManager.enqueue*` | `PeriodicWorkRequest` (regular, content-trigger) / `OneTimeWorkRequest` (incoming, bootup, immediate, restore) |
+| Firebase JobDispatcher (scheduling) | `WorkManager.enqueue*` | `PeriodicWorkRequest` (regular, content-trigger) / `OneTimeWorkRequest` (incoming, immediate, manual, restore). The boot path registers the regular `PeriodicWorkRequest`, not a one-off (CR-017) |
 | AlarmManager fallback driver | WorkManager internal scheduler | WorkManager selects `JobScheduler` (API 23+) or its own `AlarmManager`+`BroadcastReceiver` implementation (API 14–22); the `isUseOldScheduler()` driver-selection ternary (`BackupJobs.java:68-71`) is **deleted, not ported** |
 | `SmsJobService` lifecycle bridge | `CoroutineWorker.doWork()` | The worker *is* the execution context; there is no separate `JobService` that hand-instantiates `SmsBackupService` (eliminating the `SmsJobService.java:82-84` bypass) |
 | `BackupTask`/`RestoreTask` (`AsyncTask`) | `BackupWorker`/`RestoreWorker` (`CoroutineWorker`) | The backup/restore loop moves to core (DES-001) as suspending functions; the worker is a thin adapter that calls core logic and reports progress through WorkManager state |
@@ -260,6 +261,7 @@ content providers, with progress surfaced via WorkManager `WorkInfo` → `Schedu
 | `CompositeScheduler` | app (debug) | Delegates to both adapters; logs divergence |
 | `BackupWorker` | app | `@HiltWorker` `CoroutineWorker`; calls core backup use-case; emits progress |
 | `RestoreWorker` | app | `@HiltWorker` `CoroutineWorker`; durable checkpoint; calls core restore use-case |
+| `BackupTriggerWorker` | app | `@HiltWorker` `Worker` (U-069); the content-URI-triggered worker of the INV-4 debounce: it runs on a content-URI change (stage 1) and calls `BackupScheduler.scheduleIncoming()` to enqueue the delayed incoming backup (stage 2); never backs up itself |
 | backup/restore use-cases | core | Suspending loop extracted from `BackupTask`/`RestoreTask` |
 | `SchedulerConfig` (value object) | core | Constraint + backoff config (see Interfaces) |
 
@@ -277,14 +279,14 @@ construct in current source (line cited).
 |---------------------------|------------------------|-----------|
 | `setReplaceCurrent(true)` on **every** job (`createBuilder`, `BackupJobs.java:188`) | one-off: `ExistingWorkPolicy.REPLACE`; periodic: `enqueueUniquePeriodicWork(name, REPLACE/UPDATE, …)` with a stable unique name per `BackupType` | INV-1 single-flight |
 | `setRecurring(backupType.isRecurring())` (`:163`); content-trigger `setRecurring(true)` (`:171`) | `PeriodicWorkRequest` for recurring types; `OneTimeWorkRequest` otherwise | timing |
-| `Trigger.NOW` when `inSeconds <= 0` (`:162`) | `OneTimeWorkRequest` with no initial delay | — |
+| `Trigger.NOW` when `inSeconds <= 0` (`:162`), reachable only for a forced job, that is `scheduleImmediate()` (`:99-100`); a job that was not forced and had `inSeconds <= 0` was not scheduled at all (`schedule()`, `:132`) | `OneTimeWorkRequest` with no initial delay (immediate and manual only); a non-positive regular interval ("Never") registers nothing and cancels `REGULAR` (CNTR-MODERNIZATION-004 v4, Rule 4a; CR-017) | — |
 | `Trigger.executionWindow(inSeconds, inSeconds)` — **degenerate window, start == end** (`:162`) | `setInitialDelay(inSeconds, SECONDS)` (one-off) / `PeriodicWorkRequest(interval)` (recurring) | timing |
 | `Trigger.contentUriTrigger(observedUris())` over SMS + (optional) call-log providers (`:170,177-184`) | `Constraints.addContentUriTrigger(uri, triggerForDescendants=true)` per observed URI (every supported level); see "Incoming-SMS trigger" below | INV-4(d) |
 | `newRetryStrategy(RETRY_POLICY_EXPONENTIAL, 30, 300)` — **30 = initial backoff, 300 = maximum/cap** (`:205`) | `setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, SECONDS)`; WorkManager caps backoff at `MAX_BACKOFF_MILLIS` (≈5 h), so the 300s ceiling is enforced at the worker by capping retry scheduling at 300s | INV-3 backoff fidelity |
 | `ON_UNMETERED_NETWORK` when `isWifiOnly()` (`:199`) | `Constraints.setRequiredNetworkType(NetworkType.UNMETERED)` | INV-2 |
 | `ON_ANY_NETWORK` otherwise (`:199`) | `Constraints.setRequiredNetworkType(NetworkType.CONNECTED)` | INV-2 |
 | `BROADCAST_INTENT` → `new int[0]` — **no network constraint for immediate backup** (`jobConstraints`, `:197`) | `Constraints.NONE` (no network requirement) for `scheduleImmediate` | INV-2 |
-| `Lifetime.FOREVER` (recurring) / `UNTIL_NEXT_BOOT` (one-off) (`:164`) | WorkManager work survives reboot by default; one-off `UNTIL_NEXT_BOOT` semantics are emulated by enqueueing at boot, not by a lifetime flag | NFR durability |
+| `Lifetime.FOREVER` (recurring) / `UNTIL_NEXT_BOOT` (one-off) (`:164`) | WorkManager work survives reboot by default; one-off work survives it too (a pending `INCOMING` from before a restart ran after it: `sdlc/artifacts/build/research/2026-11-21-background-backup-and-boot-observation.md`, Run 1, 09:27:45), so legacy `UNTIL_NEXT_BOOT` is not reproduced. At boot the app registers only the regular periodic backup (`UPDATE`, which keeps an existing registration) and enqueues no one-off (CR-017) | NFR durability |
 | `GooglePlayDriver` / `AlarmManagerDriver` selection (`:68-71`) | *deleted* — WorkManager selects the platform scheduler internally | AC-5 |
 
 **Honesty notes (verified-vs-asserted) — corrections from reading the real source:**
@@ -313,12 +315,12 @@ construct in current source (line cited).
 
 Today this is two cooperating jobs: a recurring `contentTrigger` job
 (`scheduleContentTriggerJob`, `BackupJobs.java:82,168-175`) observing the SMS provider (and the
-call-log provider when call-log-after-call is enabled, `:180-181`), and a delayed `INCOMING`
+call-log provider when call-log backup and call-log-after-call are both enabled, `:180-181`), and a delayed `INCOMING`
 follow-up enqueued by `SmsJobService.onStartJob` (`:76`) with delay
 `getIncomingTimeoutSecs()`. The design preserves this two-stage debounce with one mechanism on every supported level (minSdk 24, REQ-MODERNIZATION-015):
 
-- **Content-URI trigger (every supported level):** `Constraints.addContentUriTrigger(SMS_PROVIDER, triggerForDescendants = true)` (the `FLAG_NOTIFY_FOR_DESCENDANTS` equivalent verified at `:179,181`), plus the call-log URI under the same `isCallLogBackupAfterCallEnabled()` condition. The triggered worker enqueues the delayed incoming-backup work (preserving the `getIncomingTimeoutSecs()` debounce) — it does not back up on the raw content change, matching today's follow-up behavior.
-- **SMS-received broadcast (no version check, unchanged):** when delivered, the SMS-received path calls `scheduler.scheduleIncoming()`, enqueueing a delayed `OneTimeWorkRequest(initialDelay = incomingTimeoutSecs)` as unique work `INCOMING` (REPLACE). It runs beside the content trigger for incoming SMS (INV-1 collapses the two at enqueue); it does not see sent messages or call-log changes.
+- **Content-URI trigger (every supported level):** `Constraints.addContentUriTrigger(SMS_PROVIDER, triggerForDescendants = true)` (the `FLAG_NOTIFY_FOR_DESCENDANTS` equivalent verified at `:179,181`), plus the call-log URI under the same condition as the legacy job: call-log backup enabled and `isCallLogBackupAfterCallEnabled()` (`BackupJobs.java:180`; CR-017). The triggered worker enqueues the delayed incoming-backup work (preserving the `getIncomingTimeoutSecs()` debounce) — it does not back up on the raw content change, matching today's follow-up behavior.
+- **No SMS-received path (CR-017).** The SMS-received receiver is not an incoming path: it has not been delivered `SMS_RECEIVED` since U-001 made it non-exported (2026-06-02; `RECEIVE_SMS` is never requested at run time; BUG-023), and the product owner decided on 2026-11-21 to remove it (decision appendix, Record 20, ruling 56). The story that removes it deletes the class, its manifest entry, its enable/disable in `App` and its test. `RECEIVE_SMS` (`AndroidManifest.xml:17`) stays: the default-SMS `SMS_DELIVER` receiver (`compat/SmsReceiver`) needs it while the app holds the SMS role during a restore (CR-017, ruling 3). The story checks, by static inspection of the merged manifest, that no `<receiver>` for `SMS_RECEIVED` remains and that `RECEIVE_SMS` is still declared. The content trigger above is the one incoming path; it also sees sent messages and, when enabled, call-log changes.
 
 History: before the minSdk 24 floor (CR-011, CR-015) the project floor was API 14, later 21, and AC-3(d)'s "broadcast fallback below API 24" was the only trigger on those levels, for incoming SMS only. Ruled by CR-015: the removal of that obligation is not a behavioural break of CNTR-MODERNIZATION-004.
 
@@ -354,7 +356,7 @@ automation (Tasker, etc.) keeps working. This is a public API contract; no drift
 
 ### Hilt worker construction (DES-008 / REQ-008)
 
-`BackupWorker` and `RestoreWorker` are annotated `@HiltWorker` with `@AssistedInject` constructors
+`BackupWorker`, `RestoreWorker` and, since U-069, `BackupTriggerWorker` (a plain `Worker`, injected with the `BackupScheduler` port and `Preferences`) are annotated `@HiltWorker` with `@AssistedInject` constructors
 taking `@Assisted Context`, `@Assisted WorkerParameters`, plus the injected core collaborators
 (backup/restore use-cases, message store / restore-checkpoint store, `Preferences`, auth/token
 dependencies — replacing the hand-construction seen in `BackupTask`'s constructor at
@@ -373,10 +375,11 @@ All run under the WorkManager test harness (`WorkManagerTestInitHelper.initializ
 
 | Invariant | Test |
 |-----------|------|
-| **INV-1 single-flight (AC-3a)** | Enqueue the same job kind twice via the port; query `WorkManager.getWorkInfosForUniqueWork(name)`; assert exactly one non-terminal work item — covering `ExistingWorkPolicy.REPLACE` / `enqueueUniquePeriodicWork`, the equivalent of `setReplaceCurrent(true)`. |
+| **INV-1 single-flight (AC-3a)** | Enqueue the same job kind twice via the port; query `WorkManager.getWorkInfosForUniqueWork(name)`; assert exactly one non-terminal work item — covering `ExistingWorkPolicy.REPLACE` / `enqueueUniquePeriodicWork`, the equivalent of `setReplaceCurrent(true)`. For `REGULAR` (CNTR-MODERNIZATION-004 v4, Rule 4), with auto backup on, encryption not degraded and `regularTimeoutSecs` 3600: (1) after `scheduleRegular()`, `scheduleBootup()` leaves exactly one entry under `REGULAR`, periodic and `ENQUEUED`, with the same `id`, a repeat interval of 3 600 000 ms and a `generation` raised by exactly one; (2) with nothing registered, `scheduleBootup()` leaves exactly one periodic `ENQUEUED` entry with the configured interval, `initialDelayMillis == 60000`, the regular network constraint (for both `isWifiOnly()` values) and the tag `REGULAR`; (3) with a one-time `BackupWorker` entry seeded under `REGULAR` directly through WorkManager, in `ENQUEUED` and in `CANCELLED` state, each of `scheduleRegular()` and `scheduleBootup()` leaves exactly one entry under `REGULAR`, periodic and `ENQUEUED`; (4) after each of the sequences `scheduleRegular()`, `scheduleBootup()`; `scheduleBootup()`, `scheduleRegular()`; and `scheduleRegular()`, `scheduleBootup()`, `cancelAll()`, `scheduleRegular()`, `getWorkInfosByTag("REGULAR")` holds exactly one non-terminal item, it is periodic and it is under `REGULAR`, and no other unique name holds a `REGULAR`-tagged item. These tests are added by the story that fixes BUG-026 and BUG-027 (BUG-027 AC-1 to AC-5); each of (1) to (4) fails on the scheduler code at commit `fd70325a`, and the story records that run. |
 | **INV-2 constraint fidelity (AC-3c)** | For `isWifiOnly()=true` assert enqueued `WorkSpec.constraints.requiredNetworkType == UNMETERED`; for `false` assert `CONNECTED`. For `scheduleImmediate` (`BROADCAST_INTENT`) assert **no network constraint** (`NetworkType.NOT_REQUIRED`). Assert charging is **not** required in all cases — matching verified `jobConstraints`. |
 | **INV-3 backoff fidelity (AC-3b)** | Assert `WorkSpec.backoffPolicy == EXPONENTIAL` and `backoffDelayDuration == 30_000ms`; assert effective retry delay is capped at `300s` (the maximum from `newRetryStrategy(…, 30, 300)`). |
-| **INV-4 content-URI trigger (AC-3d)** | On every supported level, asserted at the lowest, API 24 (`@Config(sdk = [24])`): `scheduleContentTrigger()` returns a job, unique work `CONTENT_TRIGGER` is enqueued, and `WorkSpec.constraints.contentUriTriggers` includes the SMS provider URI with `triggerForDescendants=true`. The test that carries this after story S1 is named `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` (DES-MODERNIZATION-014 D4, table T; retargeted from `inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast`). The call-log URI case and the SMS-only case are asserted at API 29 by `inv4_contentTrigger_callLogEnabled_bothUrisPresent` and `inv4_contentTrigger_callLogDisabled_onlySmsUri`. The SMS-received path's receiver logic is asserted by `SmsBroadcastReceiverTest.shouldScheduleIncomingBackupAfterIncomingMessage` (`scheduleIncoming()` is called once); delivery of the broadcast to the receiver is not unit-tested. |
+| **INV-4 content-URI trigger (AC-3d)** | On every supported level, asserted at the lowest, API 24 (`@Config(sdk = [24])`): `scheduleContentTrigger()` returns a job, unique work `CONTENT_TRIGGER` is enqueued, and `WorkSpec.constraints.contentUriTriggers` includes the SMS provider URI with `triggerForDescendants=true`. The test that carries this after story S1 is named `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` (DES-MODERNIZATION-014 D4, table T; retargeted from `inv4_contentTrigger_pre24_returnsNull_fallbackToBroadcast`). The call-log URI case and the SMS-only case are asserted at API 29 by `inv4_contentTrigger_callLogEnabled_bothUrisPresent` and `inv4_contentTrigger_callLogDisabled_onlySmsUri`. There is no SMS-received path from CNTR-MODERNIZATION-004 v4 (CR-017): `SmsBroadcastReceiverTest` is not INV-4 evidence and is deleted with the receiver by the story that removes it. Stage 2 of the debounce (the trigger worker calls `scheduleIncoming()`) is asserted by `BackupTriggerWorkerTest` (U-069). |
+| **Regular schedule "Never" (CNTR-MODERNIZATION-004 v4, Rule 4a)** | With auto backup on and encryption not degraded: (1) with `regularTimeoutSecs` of −1 and of 0, `scheduleRegular()` returns `null` and leaves no non-terminal entry under `REGULAR`, also after an earlier registration with 3600 and without a `cancelAll()` in between; (2) `scheduleBootup()` with −1 or 0 does the same; (3) the upgrade case: with a periodic `BackupWorker` entry seeded under `REGULAR` with a 900 s interval and tag `REGULAR` (what the code at `fd70325a` registers for "Never") and `regularTimeoutSecs` of −1, each of `scheduleBootup()` (the next boot) and `scheduleRegular()` (the next settings event) leaves no non-terminal entry under `REGULAR`. Each test of (1) to (3) fails on the scheduler code at `fd70325a`, and the story records that run. Guards of unchanged behaviour, which pass at `fd70325a` by design (BUG-026 AC-3, AC-4) and are not gate evidence: a positive value below 900 (60, 899) and 900 give `repeatIntervalMillis` 900 000; each offered value (1800, 3600, 7200, 21600, 86400) gives its own interval in milliseconds. Added by the story that fixes BUG-026 and BUG-027 (BUG-026 AC-1 to AC-4; BUG-027 AC-11). |
 
 ### Public broadcast contract — ADB test (AC-4)
 
@@ -432,12 +435,12 @@ tasks and in `SmsJobService.backupStateChanged` (`SmsJobService.java:110-126`).
 | Operation | Semantics | Maps to |
 |-----------|-----------|---------|
 | `scheduleIncoming()` | delayed one-off, delay = `getIncomingTimeoutSecs()`, network per `isWifiOnly()` | unique `OneTimeWorkRequest` |
-| `scheduleRegular()` | recurring backup, network per `isWifiOnly()`, exponential backoff (30s→300s) | `enqueueUniquePeriodicWork(REGULAR, REPLACE/UPDATE)` |
+| `scheduleRegular()` | recurring backup, network per `isWifiOnly()`, exponential backoff (30s→300s); a non-positive interval ("Never") registers nothing and cancels `REGULAR`; a positive interval below 15 min is raised to 15 min | `enqueueUniquePeriodicWork(REGULAR, UPDATE)`; `CANCEL_AND_REENQUEUE` only when `UPDATE` fails (CR-017) |
 | `scheduleContentTrigger()` | recurring content-URI observer over SMS (+ call-log when enabled), every supported level (minSdk 24) | `PeriodicWorkRequest` + content-URI triggers |
-| `scheduleBootup()` | if `!isAutoBackupEnabled()` → `cancelAll()`; else schedule regular | per-branch, mirrors `BackupJobs.scheduleBootup` |
+| `scheduleBootup()` | if `!isAutoBackupEnabled()` → `cancelAll()`; else registers the regular periodic backup as `scheduleRegular()` does, with the 60 s boot delay as the first-run delay of a new registration; no one-off, no separate boot backup; "Never" registers nothing | the same periodic `REGULAR` request, `UPDATE` (fallback `CANCEL_AND_REENQUEUE`), `setInitialDelay(60 s)`. Translates both legacy branches: the old-scheduler branch restarted the recurring regular job 60 s after boot, the default branch kept the persisted job (`BackupJobs.java:91-95`) (CR-017) |
 | `scheduleImmediate()` | immediate one-off, **no network constraint**, REPLACE | one-off, no delay, `Constraints.NONE` |
 | `scheduleRestore(config)` | one-off restore; resumable via durable checkpoint (NEW) | unique `OneTimeWorkRequest` |
-| `cancelAll()` | cancel regular + content-trigger | `cancelUniqueWork(REGULAR)` + `cancelUniqueWork(contentTrigger)` |
+| `cancelAll()` | cancel regular + content-trigger | `cancelUniqueWork(REGULAR)` + `cancelUniqueWork(CONTENT_TRIGGER)` |
 | `cancelRegular()` | cancel periodic backup | `cancelUniqueWork(REGULAR)` |
 | `cancel(jobKind)` | cancel running/pending job; structured-cancel the coroutine; clear retry | `cancelUniqueWork(name)` |
 | `observe(jobKind): Flow<SchedulerState>` | observable job state + progress | `getWorkInfosForUniqueWork*` flow |
@@ -446,15 +449,15 @@ tasks and in `SmsJobService.backupStateChanged` (`SmsJobService.java:110-126`).
 
 | Field | Type / values | Source of truth (verified) |
 |-------|---------------|----------------------------|
-| `networkType` | `UNMETERED` (wifi-only) \| `CONNECTED` (any) \| `NONE` (immediate) | `Preferences.isWifiOnly()`; `BROADCAST_INTENT → new int[0]` (`BackupJobs.java:197-199`) |
+| `networkType` | `UNMETERED` (wifi-only) \| `CONNECTED` (any) \| `NONE` (immediate, manual; also the content-trigger observer, which is not backup work, CR-017) | `Preferences.isWifiOnly()`; `BROADCAST_INTENT → new int[0]` (`BackupJobs.java:197-199`) |
 | `requiresCharging` | `Boolean`, default `false` | not enforced today (`jobConstraints` emits network only) |
 | `backoffPolicy` | `EXPONENTIAL` | `RETRY_POLICY_EXPONENTIAL` (`:205`) |
 | `initialBackoff` | `30s` | `newRetryStrategy(…, 30, 300)` initial (`:205`) |
 | `maximumBackoff` | `300s` (cap) | `newRetryStrategy(…, 30, 300)` maximum (`:205`) |
-| `existingPolicy` | `REPLACE` | `setReplaceCurrent(true)`, universal (`:188`) |
-| `uniqueName` | per `BackupType` (`REGULAR`/`INCOMING`/`BROADCAST_INTENT`) + `contentTrigger` tag + restore | `setTag(backupType.name())` (`:190`); `CONTENT_TRIGGER_TAG` (`:57`) |
+| `existingPolicy` | `REPLACE` (one-off); `UPDATE` (periodic: `REGULAR`, content trigger), `REGULAR` falling back to `CANCEL_AND_REENQUEUE` when `UPDATE` fails (CR-017) | `setReplaceCurrent(true)`, universal (`:188`) |
+| `uniqueName` | per `BackupType` (`REGULAR`/`INCOMING`/`BROADCAST_INTENT`/`MANUAL`/`SKIP`) + `CONTENT_TRIGGER` (unique name and tag) + restore; the boot path uses `REGULAR`, because it registers the regular backup (CR-017) | `setTag(backupType.name())` (`:190`); `CONTENT_TRIGGER_TAG` (`:57`) |
 | `incomingDelaySecs` | `getIncomingTimeoutSecs()` | `scheduleIncoming` (`:74-75`) |
-| `bootDelaySecs` | `60` (`BOOT_BACKUP_DELAY`) | `BackupJobs.java:56,92` |
+| `bootDelaySecs` | `60` (`BOOT_BACKUP_DELAY`): the first-run delay of a new `REGULAR` registration made at boot (CR-017) | `BackupJobs.java:56,92` |
 
 **Binding invariants:** single-flight (REPLACE); constraint fidelity (network per type, immediate
 unconstrained, charging never required); backoff fidelity (30s initial, 300s cap, exponential);
@@ -494,6 +497,7 @@ These boundaries do NOT yet have an approved CNTR-* artifact. They must be resol
 | scijava removal breaks another consumer | Medium | Grep-confirm no remaining `firebase-jobdispatcher` consumer before removing the repo entry |
 | Content-URI debounce regresses (backs up on every SMS) | Medium | Reproduce the two-stage trigger→delayed-follow-up; INV-4 test asserts the debounce delay |
 | Misreading `(30,300)` as two strategies | Medium | Corrected in this design; INV-3 asserts initial=30s, cap=300s on one strategy |
+| A one-time entry under a periodic unique name blocks `UPDATE` (WorkManager rejects the change of work type) silently, because the returned `Operation` is not read; the regular backup is then gone until WorkManager prunes the entry | Medium | The boot path never enqueues a one-off under `REGULAR`; `scheduleRegular()` and the boot path re-register with `CANCEL_AND_REENQUEUE` when `UPDATE` fails; tests with a one-time entry in `ENQUEUED` and `CANCELLED` state (BUG-027 AC-3; CR-017) |
 
 ## Notes
 
@@ -509,3 +513,5 @@ BACKUP receiver class + manifest intent-filter, and the full set of `BackupJobs`
 sites — both flagged inline as "scope assumed — not verified" rather than asserted.
 
 Amended 2026-11-21 by CR-015: the pre-API-24 content-trigger fallback is retired by the minSdk 24 floor (REQ-MODERNIZATION-015, CR-011) and ruled not a behavioural break of CNTR-MODERNIZATION-004 (now v3). The INV-4 validation row now specifies the API 24 assertion. The code branch and the test follow in story S1 of DES-MODERNIZATION-014. Lines in ADR-005-A that name API 14 to 22 and the "AlarmManager fallback driver" row of the legacy-mechanism table under "WorkManager + CoroutineWorker: four mechanisms collapse to one, flipped once" describe WorkManager's own scheduler choice and the old floor as history and are not edited.
+
+Amended 2026-11-21 by CR-017 (CNTR-MODERNIZATION-004 v4): (1) a regular schedule of "Never" (a non-positive interval) registers nothing and cancels `REGULAR`, and the `Trigger.NOW` mapping row is corrected (it applied only to the forced immediate job); (2) the boot path registers the regular periodic backup (`UPDATE`, fallback `CANCEL_AND_REENQUEUE`) instead of a one-time `REGULAR` backup, and the legacy-mechanism table, the lifetime row, the port table, the value-object rows and a new risk row say so; (3) `BackupTriggerWorker` is listed as a `@HiltWorker` (U-069) and the content-trigger observer as carrying no network constraint; (4) the SMS-received receiver is no longer described as an incoming path (product owner's decision, Record 20, ruling 56). The code reaches (1) and (2) with the story that fixes BUG-026 and BUG-027 and loses the receiver with the story of ruling 56; until then see the contract's "Code not yet at v4". The Design Validation rows for (1) and (2) name tests those stories add.
