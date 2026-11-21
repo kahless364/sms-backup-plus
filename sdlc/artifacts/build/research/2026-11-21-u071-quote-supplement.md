@@ -177,7 +177,59 @@ and that a single run updates `gradle-wrapper.properties` only.
 
 **What this means for the plan:** it confirms the plan's two-run procedure for the wrapper increment.
 
+## Q-13 to Q-17: what the Android Gradle Plugin release notes 9.1 to 9.5 say changed
+
+Added on 2026-11-21 for the plan's iteration 2 (items Q-13 to Q-17), in the same form as the items above. Pages:
+`https://developer.android.com/build/releases/agp-9-1-0-release-notes`, and the same address with `9-2-0`, `9-3-0`,
+`9-4-0` and `9-5-0`. All five were fetched in full. **None of the five pages has a section headed "Behavior changes"
+or "Breaking changes".** What they have instead is listed per version.
+
+Compatibility tables (columns "Minimum version | Default version"), and the highest API level each page names:
+
+| Plugin | Gradle | SDK Build Tools | NDK (default) | JDK | Kotlin Gradle plugin row | Highest API level named |
+|--------|--------|-----------------|---------------|-----|--------------------------|-------------------------|
+| 9.1 | 9.3.1 / 9.3.1 | 36.0.0 / 36.0.0 | 28.2.13676358 | 17 / 17 | 2.2.10 / 2.2.10 | 37.0 (stated for 9.1.1) |
+| 9.2 | 9.4.1 / 9.4.1 | 36.0.0 / 36.0.0 | 28.2.13676358 | 17 / 17 | 2.2.10 / 2.2.10 | 37.0 |
+| 9.3 | 9.5.0 / 9.5.0 | 36.0.0 / 36.0.0 | 28.2.13676358 | 17 / 17 | no such row | 37 |
+| 9.4 | 9.6.0 / 9.6.0 | 36.0.0 / 36.0.0 | 28.2.13676358 | 17 / 17 | no such row | 37 |
+| 9.5 | 9.6.0 / 9.6.0 | 36.0.0 / 36.0.0 | 28.2.13676358 | 17 / 17 | no such row | 37 |
+
+Changes each page describes:
+
+| Item | Plugin | Section on the page | What the page states |
+|------|--------|---------------------|----------------------|
+| Q-13 | 9.1 | "R8 changes" | (1) When compiling to DEX, R8 now repackages classes into the unnamed (default) package by default, as if `-repackageclasses` had been given; the new rule `-dontrepackage` turns this off. (2) `-maximumremovedandroidloglevel` accepts level names in capitals as well as numbers |
+| Q-14 | 9.2 | "R8 changes" | (1) Wildcard `-keepattributes` patterns no longer match the three `RuntimeInvisible...Annotations` attributes; they are kept only when named in full (`RuntimeInvisibleAnnotations`, `RuntimeInvisibleParameterAnnotations`, `RuntimeInvisibleTypeAnnotations`). A rule such as `-keepattributes *Annotation*` no longer keeps them. (2) Member-name patterns in keep rules can be negated. Also on the page, marked experimental and off unless `android.experimental.reportAggregationSupport=true`: combined coverage and test reports |
+| Q-15 | 9.3 | feature sections | (1) A new task `:app:analyzeReleaseR8Config` writes the R8 configuration analyzer report on its own; a release build with R8 still writes it too. (2) A new `optimization` block per build type; with it, turning optimisation on turns on code optimisation and optimised resource shrinking, and the default Android keep-rules file need not be named. The page says the earlier DSL is still supported. (3) Keep rules may be placed in `src/<variant>/keepRules/` with the suffix `.keep` |
+| Q-16 | 9.4 | feature sections | (1) A module can opt out of the new Variant API with `android.newDsl.optOut=<module path>` until plugin 10 makes it mandatory. (2) A mismatch of flavour dimensions between an app and a dynamic-feature module is a warning from 9.4 (`android.enforceDynamicFeatureVariantMatching=true` makes it an error) |
+| Q-17 | 9.5 | feature section | Experimental automated backup-and-restore tests on connected devices (`testOptions.backupTests`), off unless `android.experimental.testSuiteSupport=true` and `android.experimental.enableBackupTest=true` |
+
+Patch releases the pages name: 9.2.1 (one fixed issue, a `ClassNotFoundException` for `com.android.tools.r8.RecordTag`
+after upgrading); 9.3.1 (no public issues fixed), 9.3.2 (a lint crash on JDK 17), 9.3.3 (a longer list, among them
+that the new `optimization { enable = true }` block did not set `isMinifyEnabled` on the variant object); 9.5.1 (no
+public issues fixed). No dates are shown. The 9.1 and 9.4 pages name no patch release. No page names 9.5.2 (as Q-4).
+
+None of the five pages has an item on: lint defaults or the lint baseline format, unit-test defaults, KSP or kapt,
+built-in Kotlin support, the Java toolchain beyond the JDK 17 row, the manifest merger, `compileSdk`/`targetSdk`
+handling, or BuildConfig and R-class generation.
+
+**What this means for the plan (increment I3, the plugin raise from 9.0.1):**
+
+- **Repackaging (9.1) is the change most likely to show in the R8 comparison.** Classes that R8 is free to rename
+  move to the unnamed package, so the mapping file and the list of renamed classes will differ from the previous
+  increment although no keep rule changed. Kept names are not affected by repackaging. A difference of this kind at
+  I3 is explained by Q-13; a kept class, a manifest class or a seeds line that changes is not.
+- **The `-keepattributes` change (9.2) can remove runtime-invisible annotations** that a wildcard rule kept before.
+  Whether the app's own rule file or a library's shipped rules use such a wildcard is read from the build's merged
+  configuration at I3.
+- **Nothing on the pages changes a default the build relies on for lint, unit tests, coverage or the manifest.** The
+  build uses the earlier DSL (`minifyEnabled`, `proguardFiles`), which the 9.3 page says is still supported.
+- The Gradle minimum for 9.5 (9.6.0) is below the plan's Gradle 9.9.2.
+
 ## Not found, or limits of this record
+
+- The five release-notes pages 9.1 to 9.5 have no "Behavior changes" section; the table above lists what they do
+  describe (Q-13 to Q-17). Item Q-18 (Gradle's upgrade guide, 9.6 to 9.9) was not fetched.
 
 - The Android pages do not describe plugin version 9.5.2 (see Q-4).
 - The year of the three action releases is not shown in the fetched text.

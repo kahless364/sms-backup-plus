@@ -1,0 +1,55 @@
+# Run 1: cold boot 09:27, app not opened. App process id 3309.
+11-21 09:27:44.867  3309  3309 I SMSBackup+: bootup
+11-21 09:27:45.062  3309  3309 D SMSBackup+: WorkManagerScheduler.scheduleBootup: enqueued bootup REGULAR with 60s delay
+11-21 09:27:45.172  3309  3353 I WM-Processor: Moving WorkSpec (20f8b277-8590-4dc1-9de2-36e25366e0ce) to the foreground
+11-21 09:27:45.217  3309  3372 D SMSBackup+: BackupWorker.doWork: starting backup, type=INCOMING, attempt=1
+11-21 09:27:45.225  3309  3309 I WM-SystemFgDispatcher: Started foreground service Intent { act=ACTION_START_FOREGROUND xflg=0x4 cmp=com.zegoggles.smssync/androidx.work.impl.foreground.SystemForegroundService (has extras) }
+11-21 09:27:45.529  3309  3372 I SMSBackup+: BackupWorker: nothing to backup
+11-21 09:27:45.590  3309  3353 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=20f8b277-8590-4dc1-9de2-36e25366e0ce, tags={ com.zegoggles.smssync.service.BackupWorker, INCOMING } ]
+11-21 09:27:45.670  3309  3309 I WM-SystemFgDispatcher: Stopping foreground service
+11-21 09:28:57.061  3309  3343 I WM-Processor: Moving WorkSpec (c2d25415-aa2d-4c29-94e2-e31969d3cb5f) to the foreground
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at android.app.ContextImpl.startForegroundService(ContextImpl.java:2009)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.core.content.ContextCompat$Api26Impl.startForegroundService(ContextCompat.java:1091)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.core.content.ContextCompat.startForegroundService(ContextCompat.java:749)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.work.impl.Processor.startForeground(Processor.java:206)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.work.impl.WorkerWrapper$2.run(WorkerWrapper.java:316)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.work.impl.utils.WorkForegroundUpdater$1.run(WorkForegroundUpdater.java:100)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.work.impl.utils.futures.AbstractFuture.get(AbstractFuture.java:474)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: 	at androidx.work.impl.utils.futures.AbstractFuture.getDoneValue(AbstractFuture.java:515)
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: Caused by: android.app.ForegroundServiceStartNotAllowedException: startForegroundService() not allowed due to mAllowStartForeground false: service com.zegoggles.smssync/androidx.work.impl.foreground.SystemForegroundService
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: Work [ id=c2d25415-aa2d-4c29-94e2-e31969d3cb5f, tags={ com.zegoggles.smssync.service.BackupWorker, REGULAR } ] failed because it threw an exception/error
+11-21 09:28:57.073  3309  3343 E WM-WorkerWrapper: java.util.concurrent.ExecutionException: android.app.ForegroundServiceStartNotAllowedException: startForegroundService() not allowed due to mAllowStartForeground false: service com.zegoggles.smssync/androidx.work.impl.foreground.SystemForegroundService
+11-21 09:28:57.073  3309  3343 I WM-WorkerWrapper: Worker result FAILURE for Work [ id=c2d25415-aa2d-4c29-94e2-e31969d3cb5f, tags={ com.zegoggles.smssync.service.BackupWorker, REGULAR } ]
+11-21 09:28:57.083  3309  3309 I WM-SystemFgDispatcher: Stopping foreground service
+
+# Run 2: cold boot 09:41, app not opened until 09:46:34 (opened for 3 s, then Home). App process id 3332.
+11-21 09:42:08.866  3332  3332 I SMSBackup+: bootup
+11-21 09:42:08.917  3332  3332 D SMSBackup+: WorkManagerScheduler.scheduleBootup: enqueued bootup REGULAR with 60s delay
+11-21 09:46:36.024  3332  3369 I WM-Processor: Moving WorkSpec (37a7629a-62e2-448b-9acc-08c749252b26) to the foreground
+11-21 09:46:36.036  3332  3993 D SMSBackup+: BackupWorker.doWork: starting backup, type=REGULAR, attempt=0
+11-21 09:46:36.038  3332  3332 I WM-SystemFgDispatcher: Started foreground service Intent { act=ACTION_START_FOREGROUND xflg=0x4 cmp=com.zegoggles.smssync/androidx.work.impl.foreground.SystemForegroundService (has extras) }
+11-21 09:46:36.042  3332  3996 D SMSBackup+: BackupTriggerWorker.doWork: content-URI trigger fired; enqueueing delayed incoming backup with initialDelay=60s
+11-21 09:46:36.063  3332  3374 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=a1fcadd0-d34e-4cc7-a014-1fa13f8e92a3, tags={ com.zegoggles.smssync.worker.BackupTriggerWorker, CONTENT_TRIGGER } ]
+11-21 09:46:36.189  3332  3993 I SMSBackup+: BackupWorker: starting backup (1 messages)
+11-21 09:46:37.390  3332  3993 V SMSBackup+: BackupWorker: backing up: CursorAndType{type=SMS, cursor=android.content.ContentResolver$CursorWrapperInner@5390ffc}
+11-21 09:46:37.448  3332  3993 V SMSBackup+: BackupWorker: sending 1 SMS message(s) to server.
+11-21 09:46:40.608  3332  3993 D SMSBackup+: BackupWorker: watermark advanced for SMS to 1795275868358
+11-21 09:46:40.610  3332  3993 I SMSBackup+: BackupWorker: backup complete, backedUp=1
+11-21 09:46:40.613  3332  3374 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=37a7629a-62e2-448b-9acc-08c749252b26, tags={ com.zegoggles.smssync.service.BackupWorker, REGULAR } ]
+11-21 09:46:40.618  3332  3332 I WM-SystemFgDispatcher: Stopping foreground service
+11-21 09:47:36.068  3332  3369 I WM-Processor: Moving WorkSpec (8fa33920-75f3-44be-8758-5d653f0e3a5e) to the foreground
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at android.app.ContextImpl.startForegroundService(ContextImpl.java:2009)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.core.content.ContextCompat$Api26Impl.startForegroundService(ContextCompat.java:1091)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.core.content.ContextCompat.startForegroundService(ContextCompat.java:749)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.work.impl.Processor.startForeground(Processor.java:206)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.work.impl.WorkerWrapper$2.run(WorkerWrapper.java:316)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.work.impl.utils.WorkForegroundUpdater$1.run(WorkForegroundUpdater.java:100)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.work.impl.utils.futures.AbstractFuture.get(AbstractFuture.java:474)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: 	at androidx.work.impl.utils.futures.AbstractFuture.getDoneValue(AbstractFuture.java:515)
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: Caused by: android.app.ForegroundServiceStartNotAllowedException: startForegroundService() not allowed due to mAllowStartForeground false: service com.zegoggles.smssync/androidx.work.impl.foreground.SystemForegroundService
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: Work [ id=8fa33920-75f3-44be-8758-5d653f0e3a5e, tags={ com.zegoggles.smssync.service.BackupWorker, INCOMING } ] failed because it threw an exception/error
+11-21 09:47:36.074  3332  3388 E WM-WorkerWrapper: java.util.concurrent.ExecutionException: android.app.ForegroundServiceStartNotAllowedException: startForegroundService() not allowed due to mAllowStartForeground false: service com.zegoggles.smssync/androidx.work.impl.foreground.SystemForegroundService
+11-21 09:47:36.075  3332  3388 I WM-WorkerWrapper: Worker result FAILURE for Work [ id=8fa33920-75f3-44be-8758-5d653f0e3a5e, tags={ com.zegoggles.smssync.service.BackupWorker, INCOMING } ]
+11-21 09:47:36.081  3332  3332 I WM-SystemFgDispatcher: Stopping foreground service
