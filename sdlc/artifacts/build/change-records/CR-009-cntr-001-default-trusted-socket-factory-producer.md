@@ -45,6 +45,22 @@ Sibling records against the same contract: CR-007 (P-3, the `createSocket` excep
 
 ---
 
+> **Note: what stories U-063, U-064 and U-065 made stale in this record, and what the move must now also do.** Added 2026-11-21 by the Requirements Analyst for the orchestrator, after stories U-064 and U-065; the text below this note is kept as approved. Each point was checked against this record and against the code at commit `12b584ab`.
+>
+> **Rows that no longer describe the code** (named by their text; this record's line numbers are as approved):
+> - The Evidence row "Hardening and SNI" (`:85`) cites `hardenSocket` at `:182-189` of the vendored file. It is now `public static` at `:226-241`, with a new step `protocolsToEnable` at `:172-185` and an allow-list `ALLOWED_PROTOCOLS` at `:97-99`; the row says nothing of the protocol floor.
+> - The rows "Producer 2 (unchanged)" (`:87`) and, in the guarantee check, "No (producer 2 is unchanged)" (`:234`). The pinned factory now imports the default factory's class and calls its two steps, `hardenSocket` then `setSniHost` (`app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java:20`, `:101-102`).
+> - The sentence "no test asserts cipher or protocol hardening" (`:206`) and the guarantee row's "the 10 tests" (`:233`). Tests for the hardening exist (U-063, U-065).
+> - Test list T1: "the 10 `DefaultTrustedSocketFactorySniTest` cases" is now 14 (12 after U-063, plus the 2 U-064 added for a name the platform rejects). T2 (an eight-group IPv6 literal, "Missing") exists. T3 and T4 (host-name mismatch; untrusted and expired chain, "Missing") exist in `DefaultTrustedSocketFactoryHandshakeTest` since U-063, for both call shapes. T5 ("Missing") exists and now also covers a protocol floor: suggested wording, "`hardenSocket`, `protocolsToEnable`, `reorder`: blocked and ordered cipher suites; protocols limited to the allowed list from the platform's supported list. Exist (U-063, U-065)". T6 (the factory is called on both connection paths) is still missing.
+>
+> **New test row T11 (suggested):** "Pinned and default parity: the protocols (set and order), the cipher suites (order) and the server names of the two factories' sockets are equal, per shape and per provider (`PinnedCertificateSocketFactoryCreateSocketTest.createSocket_implicit_appliesDefaultFactoryProtocolAndCipherHandling` and `createSocket_layered_...`; `DefaultTrustedSocketFactoryJdkProviderTest.pinnedAndDefaultFactories_sameProtocolsCiphersAndServerNames_jdkProvider`). Exist; retarget."
+>
+> **New line for the move's checklist (suggested):** "`PinnedCertificateSocketFactory.createSocket` calls the default factory's `hardenSocket` and `setSniHost` (U-065, commit `12b584ab`). Retarget both calls and the import to the app-owned default factory in the same change. The shared step may become package-private once both classes share a package. The check in the Fix Order, `grep -rn "com.fsck.k9.mail.ssl.DefaultTrustedSocketFactory" app/src` returns 0, catches a leftover import if it is run."
+>
+> **The baseline the move must keep green is the tests as U-063, U-064 and U-065 left them, not the table above:** in `app/src/test/java/com/zegoggles/smssync/mail/`, `ssl/DefaultTrustedSocketFactoryHardeningTest`, `ssl/DefaultTrustedSocketFactoryJdkProviderTest`, `ssl/DefaultTrustedSocketFactoryHandshakeTest`, `ssl/DefaultTrustedSocketFactorySniTest`, `PinnedCertificateSocketFactoryCreateSocketTest`, `PinnedCertificateSocketFactoryExpiryTest` and `PinnedCertificateSocketFactoryTest` (732 tests at `12b584ab`, 2 skipped). Four of these classes reach `ALLOWED_PROTOCOLS`, `protocolsToEnable` and the three-argument `hardenSocket` by reflection, so a member missing after the move means the tests are retargeted, not that they are dropped. A failed behavioural assertion after the move is a regression, not a reason to edit the test.
+>
+> **What must hold after the move, besides what this record says:** the server-name behaviour of both producers (CR-013, statements S1 to S6) and the protocol floor and cipher-suite handling of both producers (CR-014, statements V1 to V5, C1 to C3, B1 to B3). A default factory re-implemented from upstream instead of moved from the vendored class could drop them while the moved tests stay green only if those tests are not retargeted; see CR-014, Interactions and Scope Concern E, for the loopback test (T6, one case more) that survives the swap.
+
 ## Finding
 
 ### Description

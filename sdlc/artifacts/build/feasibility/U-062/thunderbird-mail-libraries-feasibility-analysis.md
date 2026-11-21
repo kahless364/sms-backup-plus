@@ -2262,3 +2262,24 @@ Sprint 021 closed on 2026-11-20 with stories U-064 and U-065 done (fix commit `1
 | Close-out commit for sprint 021 | "Commit and push (Recommended)" | The close-out documents are committed and pushed | - |
 
 Recorder: Orchestrator.
+
+### Record 11 — 2026-11-21 (after sprint 021: three numbered answers)
+
+With the report that sprint 021 was complete, the orchestrator put three numbered decisions to the product owner. The answers were given by number.
+
+| # | Question put | Verbatim | Orchestrator's reading | Affects |
+|---|--------------|----------|------------------------|---------|
+| 1 | Contract statement for the TLS 1.2 floor and the cipher handling: raise one more change record now, to be applied with the others at the migration (recommended), or add a dated note saying the contract will not state them | "1 raise now" | A change record is raised now for stating, in CNTR-MODERNIZATION-001, the protocol floor and the cipher-suite handling of both producers. It is applied in the combined contract revision at the migration, with CR-007, CR-008, CR-009, CR-012 and CR-013. This gives the open part of BUG-020 AC-5 its carrier (Record 10) | BUG-020 AC-5, CNTR-MODERNIZATION-001 |
+| 2 | Cipher list clean-up: should a small story prune the weak suites (U-065 security finding F-1, Low); the orchestrator would do it before the migration's code move | "2 yes" | A story is created to prune the weak cipher suites from the lists the two factories share. Which suites go is decided in that story, with the product owner where a choice costs compatibility. It runs before the migration's code move (CR-009) | The default factory's cipher lists; the story's own tests |
+| 3 | What is next: the migration groundwork, a requirements pass applying the approved change records (minSdk 24, target 37, the retained libraries), then the design for the mail-library swap | "3 start there" | The requirements pass starts now | REQ-MODERNIZATION-015, -016, -017, -019, EPIC-MODERNIZATION-006; CR-005, CR-006, CR-010, CR-011 |
+
+Recorder: Orchestrator.
+
+### Record 12 — 2026-11-21 (the goal for the session, and standing permission to commit and push)
+
+| Item | Verbatim | Decision | Limits |
+|------|----------|----------|--------|
+| Goal set by the product owner for the working session | "get the app completed" | The orchestrator keeps working through the modernisation without stopping to ask what to do next: the requirements pass, the cipher clean-up, the toolchain and platform-level work, then the mail migration. Routine choices are the orchestrator's, made on the recommendation of the agent that owns the question and recorded where they are made | Decisions that only the product owner can make are still put to the product owner: anything that changes scope or a recorded decision, anything that costs compatibility for a device or server in use, anything done under the product owner's accounts outside this repository, and anything involving a password |
+| Asked: "For the rest of this goal, may I commit by explicit path and push to origin/sdlc/modernization-plan as I go, without asking each time?" | "Yes, commit and push (Recommended)" | Standing permission for this goal: story-scoped commits and close-out commits on branch `sdlc/modernization-plan`, pushed to the product owner's repository | No force-push, no other branch, no merge to `master`, as the option stated |
+
+Recorder: Orchestrator.
