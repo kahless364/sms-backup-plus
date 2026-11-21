@@ -13,6 +13,7 @@ integration_contracts: []
 dependencies:
   - U-067
   - U-070
+  - U-075
 change_records: []
 related_items:
   - BUG-024

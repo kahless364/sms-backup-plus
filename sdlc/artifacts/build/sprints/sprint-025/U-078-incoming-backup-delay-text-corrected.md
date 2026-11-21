@@ -1,6 +1,7 @@
 ---
 type: story
-status: ready
+status: planned
+sprint: '025'
 artifact_type: user-story
 priority: medium
 complexity: low
@@ -42,7 +43,7 @@ title: Correct the Incoming schedule help text and the README so that they no lo
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-025
-updated_at: '2026-11-21T18:09:48.406Z'
+updated_at: '2026-11-21T18:10:57.986Z'
 ---
 
 # U-078: Correct the Incoming Schedule Help Text and the README So That They No Longer Promise a Backup After the Configured Delay, Admit a Wait of Up to About 15 Minutes or Longer When the App Is Rarely Opened, and Let the Translations Fall Back to the Corrected English

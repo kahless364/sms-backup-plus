@@ -1,6 +1,7 @@
 ---
 type: story
-status: ready
+status: planned
+sprint: '025'
 artifact_type: user-story
 priority: medium
 complexity: low
@@ -44,7 +45,7 @@ title: Remove the SMS-received receiver that never gets the system broadcast (th
 pipeline: ''
 domain: modernization
 requirement_source: cr:CR-017
-updated_at: '2026-11-21T18:09:46.955Z'
+updated_at: '2026-11-21T18:10:57.277Z'
 ---
 
 # U-077: Remove the SMS-Received Receiver That Never Gets the System Broadcast, Keep RECEIVE_SMS and the Default-SMS Receiver, So That the Content Trigger Is the One Incoming Path in the Code as in the Contract
