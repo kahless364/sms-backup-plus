@@ -11,6 +11,7 @@ design_docs:
   - DES-MODERNIZATION-002
 related_stories:
   - U-062
+  - U-063
 tags:
   - change-record
   - cntr-modernization-001

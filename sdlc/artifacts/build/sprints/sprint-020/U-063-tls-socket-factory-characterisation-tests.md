@@ -1,6 +1,6 @@
 ---
 type: story
-status: review
+status: done
 sprint: '020'
 artifact_type: user-story
 priority: medium
@@ -20,8 +20,9 @@ title: Characterisation tests for the two TLS socket factories (default and pinn
 pipeline: ''
 domain: modernization
 requirement_source: cr:CR-009
-updated_at: '2026-11-20T23:43:45.499Z'
-current_build_phase: validation
+updated_at: '2026-11-21T00:20:36.787Z'
+resolution: done
+updated_date: 2026-11-21
 ---
 
 # U-063: Characterisation Tests for the Two TLS Socket Factories
@@ -328,6 +329,12 @@ Priority: medium. CR-009 severity is medium and nothing is wrong in production t
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
+Summary written by the orchestrator on 2026-11-20 from `review-code.md`, `review-security.md` and `qa-results.md` in `sdlc/artifacts/build/sprints/sprint-020/U-063/`. Those files are the record; this is a pointer. The story's files were committed as `5a5321d4` on 2026-11-20 with the product owner's permission ("Commit and push (Recommended)"), limited to the story's own paths, so QA could run the literal IC-2, IC-4 and IC-8.
+
+- **Code review: PASS.** 0 blockers. Three items fixed in cycle and confirmed by a diff-scoped re-check (a stronger precondition in the AC-15 test; a never-true condition removed from a leak guard; "As built" notes in this story). Open and deferred: W1, no test covers the `catch (IllegalArgumentException)` safety net in `setSniViaSSLParameters` on its own (mutation M-A1c leaves the suite green), so the CR-009 move could drop it unnoticed; W4, `compiled-pipeline.json` holds a user-profile path and is kept out of the commit.
+- **Security review: PASS.** 0 blockers. Production unchanged; no mutation reached an APK; the test stand-ins only narrow trust; no CA key or secret in the commit. Two items fixed in cycle (BUG-019 wording; the log's Runtime Claims line). Open and deferred: W-1 (Medium), nothing tests that the pinned factory rejects an expired enrolled certificate (SC-6), wanted before the CR-009 move; W-2 (Medium), BUG-019: recording the behaviour as a passing test is acceptable and medium is the right severity for now; measure what a device's platform enables, then what Gmail's IMAP endpoint accepts, and decide before the move; W-3 (Low), the pinned factory applies no cipher or protocol hardening and should have its own bug; W-4 to W-7 (Low), host-name matching rules, the trust-manager cache across hosts, anything below TLS 1.3 and session resumption, and the real platform trust path are not tested.
+- **QA: PASS**, 37 of 37 criteria (AC-1 to AC-24, IC-1 to IC-13): 20 met, 17 met with a recorded deviation, each judged justified and decided by the right party. QA ran the full gate on the committed tree (710 tests, 0 failures, 0 errors, 2 skipped), ran the literal IC-2, IC-4 and IC-8 (three IC-8 matches, all text that quotes the search pattern), audited the mutation log against its case files, and repeated two mutations itself with the same results. QA's findings: the times written in the implementation log's I7 section are later than the files they describe and should not be relied on; this story's Verification Steps 1, 4 and 8 and two Affected Code rows still carry the figures from before amendment A1 (the "As built" notes give the final ones: 28 new tests, 710 in total); the release APK's hash changes with every commit because the build embeds the git revision, so "byte-identical" holds only at one commit.
+- **Carry forward before the CR-009 move:** the two missing tests (pinned expiry; the SNI catch alone), each with its own mutation; a bug for the pinned factory's missing hardening; the BUG-019 decision; the contract wording SC-1, which no approved change record carries yet (contract-verification W1).
 
 ## Notes
 - Dependencies between stories: none that block it. It should land before the Part B TLS-move story. It does not depend on REQ-015 (minSdk 24); after CR-011 is applied, the two reflective SNI tests and the pre-API-24 branches may be deleted by that later story, and nothing here depends on them.
