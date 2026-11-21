@@ -1,0 +1,39 @@
+blobs at 1f8ebe3b (equal to the mutation log's saved blobs):
+2be4e4a21f6b0aa47cb9ad67d64270f6ba3ee8ca k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java
+1448bb7d3a9a4544fe1e4df0b526d83aa3befea3 app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java
+c5a37a932a5f0d0f517bc07726a7f8936f19e34c app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+64b8827a26bf50b847dc531b072da44df87c3f4c app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+f120808628f19100d95fbe8086e66cfd47aca22e app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+debug APK after the QA gate (assembleDebug UP-TO-DATE): sha256 d5b91acaa4c1fe3ae6f7a098ec70ae754a0c4352936d9b740685a05da809edfa size 6572602 (IC1-emulator.txt: d5b91acaa4c1fe3ae6f7a098ec70ae754a0c4352936d9b740685a05da809edfa, 6572602)
+git diff --name-only 9e983665 1f8ebe3b -- app/src/main k9mail-vendored:
+app/src/main/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactory.java
+k9mail-vendored/src/main/java/com/fsck/k9/mail/ssl/DefaultTrustedSocketFactory.java
+git diff --stat 9e983665 1f8ebe3b -- build.gradle app/build.gradle k9mail-vendored/build.gradle settings.gradle gradle: []
+git diff --name-only 9e983665 1f8ebe3b -- sdlc/artifacts/design sdlc/artifacts/build/change-records sdlc/artifacts/requirements: []
+git diff --name-only b9fd172f 9e983665 -- app k9mail-vendored: []
+getSupportedCipherSuites in main code: exit=1 (1 = none)
+old constant names: exit=1 (1 = none)
+@Ignore/Assume under mail tests: exit=1 (1 = none)
+test method names removed 9e983665->1f8ebe3b (renames):
+void createSocket_enabledCipherSuites_areProviderDefaultsMinusBlockedWithKnownFirst(
+void hardenSocket_withNullLists_stillAppliesTheProtocolFloorFromTheSocket(
+void pinnedFactory_createSocket_enabledCipherSuites_areProviderDefaultsMinusBlockedWithKnownFirst(
+added:
+void allowedCipherConstant_holdsOnlyTheAllowedNameForms(
+void ciphersToEnable_givenDefaultEnabledList_keepsOnlyAllowedSuitesInAllowedOrder(
+void createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes(
+void createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes_jdkProvider(
+void handshake_implicitTls_serverLimitedToEcdheCbcSha_isRefused(
+void handshake_implicitTls_serverLimitedToRsaKeyExchangeGcm_isRefused(
+void handshake_implicitTls_unrestrictedServer_negotiatesTls13WithAnAllowedSuite(
+void handshake_startTls_serverLimitedToEcdheCbcSha_isRefused(
+void handshake_startTls_serverLimitedToRsaKeyExchangeGcm_isRefused(
+void hardenSocket_withNullLists_appliesTheAllowedSuitesAndTheProtocolFloorFromTheSocket(
+void implicitTls_serverLimitedToEcdheCbcSha_handshakeRefused(
+void implicitTls_serverLimitedToRsaKeyExchangeGcm_handshakeRefused(
+void implicitTls_unrestrictedServer_negotiatesTls13WithAnAllowedSuite(
+void pinnedFactory_createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes(
+void pinnedFactory_createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes_jdkProvider(
+void startTls_serverLimitedToEcdheCbcSha_handshakeRefused(
+void startTls_serverLimitedToRsaKeyExchangeGcm_handshakeRefused(
+hygiene scan of the 79 files of 1f8ebe3b (e-mail, profile path, user, host names): no hit apart from the pre-existing upstream licence header of PinnedCertificateSocketFactory.java

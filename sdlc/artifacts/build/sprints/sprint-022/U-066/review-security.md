@@ -94,7 +94,7 @@ The temporary instrumentation must be removed before commit.
 story_id: "U-066"
 phase: "security-review"
 verdict: "PASS"
-artifact_path: "sdlc/artifacts/build/sprints/sprint-022/U-066/security-review.md"
+artifact_path: "sdlc/artifacts/build/sprints/sprint-022/U-066/review-security.md"
 story_status: "in-review"
 current_build_phase: "security-review"
 blockers: 0

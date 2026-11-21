@@ -2327,3 +2327,32 @@ What these do not cover, and is therefore still asked: creating new virtual devi
 | 11 | Bug BUG-022, when it is fixed | As its own small story, after story U-066 closes and before the toolchain story | Requirements Analyst and Solution Architect | Schedule it elsewhere |
 
 Recorder: Orchestrator.
+
+### Record 15 — 2026-11-21 (after sprint 022: rulings on the change records, BUG-023 and story U-067; items held for the product owner)
+
+Sprint 022 closed on 2026-11-21 with story U-066 done (commit `1f8ebe3b`). CR-015 and CR-016 were applied and marked implemented (commits with the subjects "CR-015 applied: ..." and "CR-016 applied: ..."). BUG-023 was raised from an emulator observation made during U-066's device check.
+
+**Further rulings by the orchestrator under Record 12** (continuing Records 13 and 14):
+
+| # | Question | Ruling | On whose recommendation | To reverse it |
+|---|----------|--------|-------------------------|---------------|
+| 12 | CR-015: is removing the content-trigger fallback for Android below 7.0 a behavioural break of the scheduler contract, and what version step applies | Not a break (the branch only logs and returns nothing, and no supported level reaches it once minSdk is 24); the contract goes to v3, marked non-breaking; the artifacts are amended before the code (the code change is story S1) | Solution Architect (the record's Suggested Approach) | A change record that restores the clause; none is expected, since no supported level has the case |
+| 13 | CR-015 and CR-016: texts the independent checks found wrong that the records had not covered (four in CR-015; the test-count rule's start and end points and two notes in CR-016) | Fixed now, each through an Amendment 1 of its record, then re-checked (both PASS) | Design Auditor (CR-015); Requirements Reviewer (CR-016) | Not applicable: corrections of text that was false or ambiguous |
+| 14 | CR-016: the test-count rule | A story records its start count with the commit it was taken at; the end count uses the same command with the story's last commit in place of `HEAD`, or the working-tree form before the commit; tests from changes that are not the story's are listed and not counted as the story's; no fixed baseline is stated in any requirement | Solution Architect and Requirements Reviewer | Amend REQ-MODERNIZATION-015 AC-13 |
+| 15 | BUG-023 (the content-trigger worker enqueues the incoming backup itself, without the scheduler's network constraint, backoff, encryption check and auto-backup check): how it is fixed and when | The code is made to match the contract sentence: the trigger path builds its request through the scheduler's `scheduleIncoming()`, so one code path builds every incoming request. Its own story, after the BUG-022 fix and before the BUG-021 fix and the runtime-library story; not built at the same time as the minSdk story. Severity medium, priority high. The contract example that gives the trigger registration a network constraint and backoff is corrected by a later change record | Solution Architect (the bug's Suggested Approach) | Overrule in BUG-023 before its fix story is planned |
+| 16 | BUG-023: the SMS receiver is not delivered the system broadcast (it is declared not exported, and the app never asks for the receive permission at run time), so the content trigger is the only automatic incoming path | Recorded as a defect of its own, not fixed by BUG-023's story. Until the product owner decides (item PO-C below) the receiver is left as it is | Solution Architect | The product owner's decision on PO-C |
+| 17 | Story U-067 (the BUG-022 fix), decision point DP-1: the comment in `BackupWorkerTest.kt` that says the cancellation is verified at the WorkManager level | Corrected in the story (comment only) | Requirements Analyst and Solution Architect | Rule it out before planning |
+| 18 | Story U-067, decision point DP-2: how a test reaches the backup loop | `backupCursors` is widened from private to internal and marked visible for testing, the pattern story U-053 used; the story may not fall back to "record why the site is not tested" | Requirements Analyst and Solution Architect | Choose the route through fake content providers instead (no production visibility change) |
+
+**Held for the product owner** (none blocks the work now in progress; each is asked when the work reaches it, or in the next batch of questions):
+
+| Item | Question | Recommendation on file | Blocks |
+|------|----------|------------------------|--------|
+| PO-A | Downloading an Android 7.0 (API 24) emulator image and the SDK command-line tools, and creating virtual devices for API 24 and API 37 (design DES-MODERNIZATION-014, open items PO-2 and PO-3) | Do it; the minSdk story proves what it can under Robolectric at SDK 24 without it | The device parts of the minSdk story and of the targetSdk 37 story |
+| PO-B | Opening (not merging) a pull request to `master` so that continuous integration runs (design open item PO-4) | Open one when the toolchain story is done | Nothing in the build; it is evidence only |
+| PO-C | The SMS receiver: remove it, or restore it (restoring means a new permission prompt) | Remove it, through a change record (BUG-023, item PO-3 of its Suggested Approach) | Nothing; the content trigger carries incoming messages |
+| PO-D | When auto backup is switched off, should a backup that is already waiting be cancelled (BUG-023, PO-1) | Yes, as a separate small change | Nothing |
+| PO-E | Should an incoming SMS start an automatic backup before login or before the first backup (BUG-023, PO-2) | Keep as it is | Nothing |
+| PO-F | Whether to raise a requirement to replace the deprecated `security-crypto` library (design open item PO-5) | Raise it after the runtime-library story | Nothing |
+
+Recorder: Orchestrator.

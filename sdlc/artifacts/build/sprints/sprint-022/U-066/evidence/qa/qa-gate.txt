@@ -1,0 +1,14 @@
+QA gate, story U-066, HEAD 1f8ebe3b. Command: ./gradlew -I <U-063 junit-xml.init.gradle> --console=plain :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification :app:assembleRelease (results folder deleted first; shell without MSYS_NO_PATHCONV)
+U063-DAEMON-JVM: java.version=25.0.5.1
+> Task :app:assembleDebug UP-TO-DATE
+> Task :app:testDebugUnitTest
+> Task :app:jacocoTestCoverageVerification
+> Task :app:assembleRelease
+BUILD SUCCESSFUL in 3m 57s
+exit=0
+junit totals (all 78 classes, from the gate run): files=78 tests=746 failures=0 errors=0 skipped=2
+skipped cases:
+com.zegoggles.smssync.AppTest#shouldGetVersionName SKIP
+com.zegoggles.smssync.preferences.AuthPreferencesTest#u012_robolectricSmoke_encryptedPrefsSecretStore_migrateFromPlaintext SKIP
+authoritative count at HEAD 1f8ebe3b: 746
+same count at parent 9e983665: 732

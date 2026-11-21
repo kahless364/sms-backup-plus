@@ -135,5 +135,5 @@ The seven files in `git status --short -- app k9mail-vendored` are exactly the p
 story_id: "U-066"
 phase: "code-review"
 verdict: "PASS"
-artifact_path: "sdlc/artifacts/build/sprints/sprint-022/U-066/code-review.md"
+artifact_path: "sdlc/artifacts/build/sprints/sprint-022/U-066/review-code.md"
 ---

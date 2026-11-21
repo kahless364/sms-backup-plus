@@ -1,10 +1,10 @@
 ---
-status: active
+status: completed
 artifact_type: sprint-plan
 execution_mode: parallel
 id: sprint-022
 sprint: '022'
-updated_at: '2026-11-21T07:06:11.675Z'
+updated_at: '2026-11-21T09:40:46.525Z'
 ---
 
 # Sprint Plan: Sprint 022
@@ -18,7 +18,7 @@ updated_at: '2026-11-21T07:06:11.675Z'
 
 | Story ID | Title | Platforms | Dev Agent | Model | Assigned To | Depends On | Status | Priority |
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
-| U-066 | Prune the weak cipher suites from the lists both TLS socket factories share, and close the failed-initialisation branch for cipher suites | - | developer | sonnet | (unassigned) | - | in-progress | medium |
+| U-066 | Prune the weak cipher suites from the lists both TLS socket factories share, and close the failed-initialisation branch for cipher suites | - | developer | sonnet | (unassigned) | - | done | medium |
 
 ## Execution Waves
 

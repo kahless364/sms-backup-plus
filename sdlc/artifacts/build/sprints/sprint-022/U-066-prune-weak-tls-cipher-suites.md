@@ -1,6 +1,6 @@
 ---
 type: story
-status: in-progress
+status: done
 sprint: '022'
 artifact_type: user-story
 priority: medium
@@ -23,8 +23,9 @@ title: Prune the weak cipher suites from the lists both TLS socket factories sha
 pipeline: ''
 domain: modernization
 requirement_source: improvement:u-065-security-f1-cipher-list-pruning
-updated_at: '2026-11-21T09:07:07.748Z'
-current_build_phase: review
+updated_at: '2026-11-21T09:40:46.446Z'
+resolution: done
+updated_date: 2026-11-21
 ---
 
 # U-066: Prune the Weak Cipher Suites From the Lists Both TLS Socket Factories Share, and Close the Failed-Initialisation Branch for Cipher Suites
@@ -342,6 +343,17 @@ Developer entries, 2026-11-21 (implementation; details and evidence in `sdlc/art
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
+
+Summarised by the orchestrator from the workspace `sdlc/artifacts/build/sprints/sprint-022/U-066/` on 2026-11-21. The fix commit is `1f8ebe3b`. Test count by the authoritative command: 732 at the start (`b9fd172f`; unchanged at `9e983665`), 746 at `1f8ebe3b`; 14 tests added, three renamed, none removed, 2 skipped as before.
+
+- **Plan checks.** Plan iteration 1 with Amendment A1: plan review PASS (with a check of the amendment), contract verification PASS, depth check FAIL at warning level only (it does not block).
+- **Code review: PASS** (`review-code.md`). No blocker and no warning. Six Low or Info observations, none to fix in this cycle: the empty-list behaviour differs by provider and is recorded, not asserted; a helper is duplicated in two test classes; the refusal tests assert "an SSL failure that is not a certificate rejection, and the server did not report OK" rather than the TLS alert; `reorder` now serves only the protocol step.
+- **Security review: PASS** (`review-security.md`). No Critical, High or Medium finding. Finding F-1 of the U-065 review is closed for every IMAP, SMTP and POP3 socket. Three Low findings, deferred with reasons: W-1, the certificate-enrollment fetch (`app/src/main/java/com/zegoggles/smssync/activity/fragments/PinCertificateEnrollmentFlow.java:346-349`) opens a TLS socket that is not hardened (it sends no credentials and the user confirms the certificate); W-2, on Conscrypt an empty suite list still completes at TLS 1.3 with its three TLS 1.3 suites, all of which are on the allowed list, so "empty list" does not mean "connection refused" on Android; W-3, the shared arrays are still mutable (U-065 F-4), to fix when the class moves into app ownership.
+- **Emulator check IC-1: passed** on the Android 16 emulator (`evidence/IC1-emulator.txt`). The first run had nothing to back up; one test SMS was then sent through the emulator console, as IC-1 allows, and the second run completed against Gmail with none of the four error kinds. It does not show which suite was negotiated. The security review recommends a stronger on-device observation (the enabled and negotiated suites of the app's own socket); no criterion requires it and QA recorded it as a recommendation.
+- **QA: PASS** (`qa-results.md`). 13 of 13 acceptance criteria and 3 of 3 integration criteria met, five with deviations stated and ruled before the build. QA's own gate run: 746 tests, 0 failures, 2 skipped; coverage check and release build passed. QA's two own mutations (a pruned suite added to the allowed list; the platform's order returned instead of the allowed list's) were both caught and restored.
+- **Side observation for BUG-023.** In the IC-1 run on a debuggable build, the test SMS started the content trigger and its delayed incoming backup; the log has no line from the SMS receiver or from `scheduleIncoming`. Recorded in the evidence file and used by BUG-023.
+- **File names.** The two review files were written as `code-review.md` and `security-review.md`, committed under those names in `1f8ebe3b`, and renamed by the orchestrator to `review-code.md` and `review-security.md` (the names the closing step checks) in the close-out commit.
+- **Carried forward.** CR-009 has a dated note on what this story changed (seams to retarget, not drop, at the migration). CR-014 Amendment 1 is applied with the combined revision of CNTR-MODERNIZATION-001 at the migration. W-1 and the stronger on-device observation are candidates for the backlog; a later cipher suite needs an entry in `ALLOWED_CIPHERS`, as a later TLS version needs one in `ALLOWED_PROTOCOLS`.
 
 ## Notes
 

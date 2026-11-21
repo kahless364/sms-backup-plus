@@ -1,0 +1,22 @@
+Q-1 (QA mutation) 2026-11-21T09:30:17Z: DefaultTrustedSocketFactory.java hash before 2be4e4a21f6b0aa47cb9ad67d64270f6ba3ee8ca; edit: line "TLS_RSA_WITH_AES_256_CBC_SHA", appended after the SCSV entry of ALLOWED_CIPHERS; run: --tests com.zegoggles.smssync.mail.ssl.* --tests com.zegoggles.smssync.mail.PinnedCertificateSocketFactory*
+exit=1
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#allowedCipherConstant_holdsOnlyTheAllowedNameForms FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#cipherConstants_matchRecordedBaseline FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#ciphersToEnable_givenDefaultEnabledList_keepsOnlyAllowedSuitesInAllowedOrder FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#hardenSocket_withNullLists_appliesTheAllowedSuitesAndTheProtocolFloorFromTheSocket FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#pinnedFactory_createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes FAIL com.google.common.truth.AssertionErrorWithFacts
+files=7 cases=82 pass=76 fail=6 error=0 skip=0
+restored 2026-11-21T09:32:22Z by git checkout -- <file>; hash after 2be4e4a21f6b0aa47cb9ad67d64270f6ba3ee8ca; git status --short -- app k9mail-vendored: empty
+
+Q-2 (QA mutation) 2026-11-21T09:32:30Z: hash before 2be4e4a21f6b0aa47cb9ad67d64270f6ba3ee8ca; edit: ciphersToEnable iterates the socket's enabled suites (platform order) and keeps those in ALLOWED_CIPHERS (lines 185-186); same run
+exit=1
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#ciphersToEnable_givenDefaultEnabledList_keepsOnlyAllowedSuitesInAllowedOrder FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#hardenSocket_withNullLists_appliesTheAllowedSuitesAndTheProtocolFloorFromTheSocket FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryHardeningTest#pinnedFactory_createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryJdkProviderTest#createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes_jdkProvider FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryJdkProviderTest#pinnedFactory_createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes_jdkProvider FAIL com.google.common.truth.AssertionErrorWithFacts
+com.zegoggles.smssync.mail.ssl.DefaultTrustedSocketFactoryJdkProviderTest#pinnedFactory_createSocket_implicit_setsDnsHostAsOnlyServerName_jdkProvider FAIL com.google.common.truth.AssertionErrorWithFacts
+files=7 cases=82 pass=75 fail=7 error=0 skip=0
+restored 2026-11-21T09:34:37Z by git checkout -- <file>; hash after 2be4e4a21f6b0aa47cb9ad67d64270f6ba3ee8ca; git status --short -- app k9mail-vendored: empty; git diff --quiet HEAD -- app k9mail-vendored: exit 0
