@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: in-progress
 sprint: '024'
 artifact_type: user-story
 priority: high
@@ -46,7 +46,7 @@ title: Make the content-trigger worker start the incoming backup through the sch
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-023
-updated_at: '2026-11-21T09:50:10.933Z'
+updated_at: '2026-11-21T11:26:21.726Z'
 ---
 
 # U-069: Make the Content-Trigger Worker Start the Incoming Backup Through the Scheduler's scheduleIncoming(), So It Obeys the Network, Encryption-Degraded, Auto-Backup and Delay Rules, and Give the Worker Its First Tests
