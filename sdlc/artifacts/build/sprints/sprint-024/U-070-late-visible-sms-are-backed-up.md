@@ -45,7 +45,8 @@ title: Back up an SMS that becomes visible to the app after later messages were 
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-021
-updated_at: '2026-11-21T10:22:34.386Z'
+updated_at: '2026-11-21T11:19:57.491Z'
+current_build_phase: implementation
 ---
 
 # U-070: Back Up an SMS That Becomes Visible to the App After Later Messages Were Backed Up, Exactly Once, With a 6-Hour Look-Back Below the Watermark and a Local Record of What Was Uploaded
@@ -279,6 +280,12 @@ The provider double is not the platform's provider: it models "hidden until rele
 - **Scope Concern 6 (two different messages with the same millisecond, address and text):** accepted as the story states it; consistent with REQ-MODERNIZATION-020 AC-19.
 - **Scope Concern 7 (size):** not split. If planning finds the story cannot be planned as one, the plan stops with verdict NEEDS_INFO and says where it would cut; the orchestrator decides.
 - **Order:** after U-067 (done before this sprint starts), U-068 and U-069 in the same sprint; line numbers are re-read at this story's start commit.
+
+**Rulings on the plan's two items (2026-11-21; decision appendix, Record 18).**
+
+- **Rows the converter rejects that lie above the watermark are recorded too: confirmed, inside ruling 25.** AC-20 of this story already counts such rows in the record's bound. The plan states the consequence as a named difference in its "behavior preserved" evidence (AC-23), beside the two deliberate changes: a run that finds only such rows no longer logs in to the server, and a row the contact-group rule excluded is not looked at again if the rule is changed later (today that already holds for every row below the watermark, and for a row above it as soon as a later message has been backed up). Uploads, headers and watermarks of every row that is uploaded today do not change; the tests that show that stay unedited. The sentence goes to the next requirements pass with ruling 25's candidate note.
+- **AC-22 (log lines carry counts only):** it applies to the log lines this story adds or changes. The privacy test checks lines at DEBUG level and above, as the plan has it. The two existing verbose lines that write an address in debug builds (`PersonLookup.java:76`, `MessageGenerator.java:311`) are not changed by this story; the orchestrator raises a separate low-severity bug for them.
+- **Accepted differences from the story's suggested mechanism** (none weakens a criterion): the record is one comma-separated value; restore prunes against the current watermark; only the fetch layer checks whether a watermark exists; when nothing is late the normal query's cursor is returned unchanged. The story's Affected Code wording "one entry per line" is superseded by the plan.
 
 Rulings carried in, recorded 2026-11-21 (see "Binding Rulings Carried In"): DP-1 to DP-5 by Record 14 row 10; order by Record 13 row 4 and Record 14 row 11. Nothing is left to rule except the Scope Concerns below that are marked as needing a ruling before planning.
 

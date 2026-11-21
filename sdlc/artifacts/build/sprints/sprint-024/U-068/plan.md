@@ -5,9 +5,9 @@ gate_id: "planning"
 checkpoint: "planning"
 verdict: "PASS"
 agent: "Solution Architect"
-timestamp: "2026-11-21T10:25:25Z"
-iteration: 1
-base_commit: "0d5755c471184e237c1707abed9463f8306880f6"
+timestamp: "2026-11-21T11:10:22Z"
+iteration: 2
+base_commit: "c12a2788b0d1cdd5267529eda30cc7895be60761"   # planning HEAD (iteration 2); every planning blob equals its value at 0d5755c4 (iteration 1)
 contracts_verified:
   - CNTR-MODERNIZATION-004
   - CNTR-MODERNIZATION-005
@@ -21,21 +21,78 @@ Model for structure, conventions and tools: `sdlc/artifacts/build/sprints/sprint
 and APK evidence recipes: `sdlc/artifacts/build/sprints/sprint-018/U-061/plan.md` (kept-name recipe, `norm()`)
 and `sdlc/artifacts/build/sprints/sprint-017/U-060/plan.md` (Step 0.6 inventory).
 
-**Planning state.** HEAD is `0d5755c4` on `sdlc/modernization-plan`, one commit after the briefed `0b7575ff`.
-`git diff --stat 0b7575ff 0d5755c4` lists only `sdlc/.skill-delegation-audit.log`, the story file (status
-`planned` → `in-progress`, `updated_at`) and the sprint-024 plan (status `active`, a dated orchestrator note). No
-file under `app`, `k9mail-vendored`, the build files, `CHANGES`, `DEVELOPMENT.md` or `.github` moved. The
-authoritative count at `0d5755c4` is 746, with 2 `@Ignore` annotations on code lines (`AppTest.java:13`,
-`AuthPreferencesTest.java:1079`). U-067 (sprint 023) is being built in this checkout while this plan is written,
-so **this plan fixes nothing that depends on the start commit**: the start commit, the start count, the start
-coverage and the lint figures are all measured in I0 at the commit that closes U-067, and every expectation below
-that depends on them is given as a formula with a decision row.
+**Planning state (iteration 2).** Iteration 1 was planned at `0d5755c4`. Iteration 2 is planned at HEAD
+`c12a2788` on `sdlc/modernization-plan`. The commits between them are four orchestrator document commits
+(`c9770c30`, `e972ab5c`, `fb707d7e`, `d73017de`) and U-067's code commit `c12a2788` (`BackupWorker.kt`,
+`RestoreWorker.kt`, worker tests). For all 19 paths of table 2.1, at `c12a2788`, `git status --short` is empty,
+`git diff --name-only 0d5755c4 c12a2788` lists none of them, and the HEAD blob, the working-tree hash and the
+planning blob are equal. U-067's QA is still running in the checkout and applies temporary mutations to the two
+worker files, which this plan does not edit.
+
+**The start commit is not fixed by this plan.** `<start>` is the commit that closes U-067's story (status
+`done`), read by the developer at I0 as `HEAD` before the first change. The start count `C0`, the coverage figures
+and the lint figures are measured there, and every expectation below that depends on them is a formula in `C0` or
+in the I0 measurements, with a decision row. No expectation depends on a fixed count: the authoritative count was
+746 at `0d5755c4` and 753 at `c12a2788`, and neither number is used by any step. There are 2 `@Ignore`
+annotations on code lines (`AppTest.java:13`, `AuthPreferencesTest.java:1079`).
 
 **Size.** 18 tracked files change: 3 build or documentation files at the root (`build.gradle`, `CHANGES`,
 `DEVELOPMENT.md`), `app/build.gradle`, `app/lint-baseline.xml`, 9 files under `app/src/main`, 2 test files,
 `sdlc/artifacts/engagement/code-location.md` and `.github/ISSUE_TEMPLATE/500_bug_report.yml`. One test file is
-new. 2 tests are added, 5 are retargeted and renamed, none is deleted. There are 6 mutation runs and about 20
-Gradle runs. 7 local commits, one per increment, plus fix commits only if a later gate fails.
+new. **3 tests are added** (the two of `BackupBroadcastReceiverTest` and C-1, ruling P-5), 5 are retargeted and
+renamed, none is deleted. There are **7 mutation runs** and about 23 Gradle runs (I0 2, I1 1, I2 4, I3 7, I4 1, I5 3, I6 4, I7 1). 7 local commits, one per
+increment, plus fix commits only if a later gate fails.
+
+## Iteration 2 (after the plan gates, 2026-11-21)
+
+Iteration 1's gates: plan-review FAIL (B-1 to B-6, O-1 to O-7), contract-verification PASS (O-1 to O-4),
+expert-depth-check PASS with two recommendations and an edge-case list (`plan-review.md`,
+`contract-verification.md`, `expert-depth-check.md` in this workspace). The orchestrator ruled P-1 to P-5 (story,
+Implementation Notes, "Rulings on the plan's scope concerns"). Each change below is made in place, where the
+developer reads it; the table only says where to look. Every blocker was re-verified in this session before it was
+fixed (column "Verified").
+
+| Finding | Verified | Change, and where |
+|---------|----------|-------------------|
+| Ruling P-1 (acknowledged) | story Implementation Notes | I3 steps 2 and 3 now proceed under the ruling (cited) and record the coordinates, size and SHA-512 of the jar **and** of the `.pom`, each checked against its `.sha512` file; D19 (a) to (d) rewritten (two failed downloads stop the story; nothing fetched by hand); 7 item 8, 8.2 P-1, R1, Verdict and the report notes no longer ask for an acknowledgement |
+| Ruling P-2, P-4 | story | D24, D28: "accepted as declared differences (ruling P-2/P-4); any unexplained difference stops the story"; 8.2 P-2, P-4 marked ruled |
+| Ruling P-3 | story | 8.2 P-3 marked ruled; I6 unchanged |
+| Ruling P-5, plan-review B-1 | `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml` (read-only): `SmsReceiver.java` `:98` ci 6, `:99` ci 6, `:102` ci 1 (`enable`, covered); `:105`, `:106`, `:109` ci 0 (`disable`); `compat` 16/73 | C-1 is required and lives in **I5, step 1a**, before the I5 code edits (placement and reasons: 6.1). 6.1 rewritten as exact edits C1.a, C1.b and mutation M-C1 (one Edit); 4.8 Order, recovery note and "No mutation runs after M-C1"; 4.9 row I5 gains `SmsReceiverTest.java`, `I5-c1-first-run.txt`, `mutation-log.md`, `mutations/M-C1-*`; 2.2 `compat` after I5 = **18/71 = 25.4 %, 3 spare lines**, formula with Δc1; D9, D35, D35b; counts `C0 + 3` from I5 on (I5, I7, 5.1, 5.3, Size, Verdict); section 7 items 4, 5, 8.2 P-5, section 11 Maintainability |
+| plan-review B-2 | `git archive HEAD gradlew` gives 260 CRLF line ends; with `-c core.autocrlf=false`, 0 | I6 step 2 uses `git -c core.autocrlf=false archive`; `I6-scratch.txt` records the CRLF count of the copy's `gradlew` (expected 0) before the first run there; row D39b; L3 no longer cites `grep -c $'\r$'` |
+| plan-review B-3 | I1 commits `build.gradle`, so `git diff $START -- build.gradle` is non-empty at I3 | I3 step 2: two checks, uncommitted against `HEAD` and the files I1 does not change against `$START`, each before and after the first SDK 24 run |
+| plan-review B-4 | no step wrote `I3-first-run.txt` | I3 step 3 writes it; CM step 2 checks that every listed file exists before `git add`; every commit list re-checked against its steps (I7's `gradle-version.txt` and every other name matched; I5's list gained C-1's files) |
+| plan-review B-5 | AC-4 (e) grep at the start: 6 lines; `-U0` gives 6 hunks for the test file; `grep -c '^[-+][^-+]'` misses `- **minSdkVersion**` lines | I0 step 4 "6 lines"; I3 step 4 uses default context, three hunks `@@ -31,7 +31,7 @@`, `@@ -293,9 +293,9 @@`, `@@ -369,18 +369,29 @@`; I7 step 2 uses `--numstat` (`1	1`) and `grep -E '^[-+]- '`. Every other line or hunk count in the plan re-derived: list in the reply and in "Re-derived values" below this table |
+| plan-review B-6 | four orchestrator document commits since `0d5755c4` | Constraint 11 takes U-067's constraint-12 wording; I7 step 5 has three scoped checks (all commits recorded; this story's own files via `--grep='^U-068 S1-'`; no code commit by anyone else); I7 step 7's order check filters by the subject; new row D53 |
+| plan-review O-1 | — | as ruling P-1 above |
+| plan-review O-2 | `git grep -n "USE_CREDENTIALS\|WRITE_EXTERNAL_STORAGE" -- app/src k9mail-vendored/src` at HEAD: the manifest lines and `TokenRefresher.java:97` | I4 step 4 adds the grep; expected after E4.4: only `TokenRefresher.java:97` |
+| plan-review O-3 | — | I6 step 7: on a failed `rm`, `./gradlew --stop` in the copy once, retry, else record and report (row D39c); 4.0 comment says "inside the repository's grandparent folder" |
+| plan-review O-4 | — | I7: the log entry is written in step 6 before the scan; step 7 is CM(7) only; the post-commit lines go to the hand-off message, not the log |
+| plan-review O-5 | the plan's texts contain `@Test` only as annotations | Section 10 items 13 and 14 |
+| plan-review O-6 | story IC-3: "the emulator is shut down afterwards" | Section 9 step 9 follows the story: shut down afterwards in every case |
+| plan-review O-7 | AC-8 grep at `0d5755c4`/`c12a2788`: 29 hits; cache also holds `-i7` jars for 14, 15, 16 | L5 says 29; L11 lists them; L3 relies on `git ls-files --eol` only |
+| contract-verification O-1 | CR-015 "Order", item 5 | Declined as a change: T1 and T2 stay in I3 with the tests they describe. Reason: CR-015 accepts "true by requirement, not yet by build" wording for this interval, and moving the comments to I5 would split one test edit over two commits. Stated in 3.4 |
+| contract-verification O-2 | CNTR-003 `:260` | Section 7 item 9 (for the next contract amendment); no edit |
+| contract-verification O-3 | CNTR-005 line citations | Section 7 item 9; no edit |
+| contract-verification O-4 | — | 2.4 row "Commits" and section 11 Reliability: a hand rollback goes newest-first (reverting I4 while keeping I5 is the one order the contract's non-breaking claim excludes) |
+| expert-depth-check criterion 3 | — | New 2.4 "Decisions and trade-offs": commits, guard deletion, baseline method, each gained / gives way / not chosen / why |
+| expert-depth-check criterion 4 | — | New 2.5 "What the floor changes in the toolchain (sources)": AGP manifest merger and `useLegacyPackaging`, AAPT2, D8 at API 24, R8's `SDK_INT` assumption (a `needs_check`, N11, confirmed from the R8 release notes or the debug bytecode diff, not stated as fact), lint `ObsoleteSdkInt` and `NewApi`, Robolectric's SDK jar resolution |
+| expert-depth-check edge cases | — | 2.5 and 2.6: a device below the floor (`INSTALL_FAILED_OLDER_SDK`, the installed build keeps running); multidex unaffected; `extractNativeLibs` argument rests on the measured `so=0` although `ndk.abiFilters` is set (D24); resource qualifiers come only from library resources; the transient `ObsoleteSdkInt` finding between I4 and I5; what each before/after comparison can and cannot show (2.6). D26 names `$-CC` companions as a known cause |
+
+**Re-derived values (B-5, "every count of lines or hunks").** Checked against the files at `c12a2788`, or against
+the edits applied by hand to the text:
+- I0 step 4: AC-7 grep 24 lines (5 imports; `BackupWorker.kt`'s Q line is now `:534` after U-067); AC-8 grep **29**
+  (was 31); AC-4 (e) **6** (was 5); AC-11 (f) 9; `maxSdkVersion` 2; `minSdk 21\|SDK 21` in `app/build.gradle` 2.
+- I0 step 5: 37 and 38. I1 step 2: one `-` and one `+` line (second character a space, so `[^-+]` matches).
+- I3 step 4: **3** hunks with default context (6 with `-U0`, no longer used). I3 step 3: `cases=4`.
+- I4 step 4: `app/build.gradle` 6 changed lines; comments-stripped diff only line 24; manifest `@@ -38,14 +37,0 @@`,
+  0 added lines; the new O-2 grep: 1 line.
+- I5: C-1 first run `cases=5`, 5 lines with `@Test` in `SmsReceiverTest.java`; AC-7 grep 14 lines, 12 without
+  imports; AC-8 1; `git diff -w -U0` of the role helper 5 `-` lines, 0 `+`; name-only 8 files; `git diff --stat HEAD -- app/src/test` 1 file.
+- I6: `0	121`; 26 entries.
+- I7: `DEVELOPMENT.md` **`1	1`** by `--numstat` and 2 lines by `grep -E '^[-+]- '` (was a `grep -c` that prints 0);
+  template grep 0 lines; CR-016 D-5: 2 lines per file, 1 and 1, 4 diff lines per file, 0 criterion or status lines;
+  sweep 7; AC-9 nine files; `app/build.gradle` floor-word count 0.
+- Counts: `C0 + 2` after I2, I3, I4; **`C0 + 3`** from I5 on.
 
 ## 0. Binding Inputs
 
@@ -53,21 +110,21 @@ Gradle runs. 7 local commits, one per increment, plus fix commits only if a late
 
 `verified` = read or run read-only in this planning session, with its location. `needs_check` = a developer
 step with a decision row for each outcome. Nothing material is left assumed without a row. Line numbers are at
-`0d5755c4`.
+`0d5755c4`; for every file this plan edits they are the same at `c12a2788` (equal blobs, iteration 2).
 
 | # | Claim | Status | Evidence |
 |---|-------|--------|----------|
-| L1 | HEAD `0d5755c4`; parent `0b7575ff`; that commit changes only three `sdlc` files; count 746; `@Ignore` on code lines 2; `git status --porcelain -- app k9mail-vendored build.gradle gradle settings.gradle gradle.properties gradlew gradlew.bat` empty | verified | `git rev-parse`, `git log`, `git diff --stat 0b7575ff 0d5755c4`, the CLAUDE.md count command, `git grep -hE '^\s*@Ignore(\s\|\(\|$)' HEAD -- 'app/src/test/**'` |
+| L1 | Iteration 1: HEAD `0d5755c4`; parent `0b7575ff`; that commit changes only three `sdlc` files. Iteration 2: HEAD `c12a2788` (U-067's code commit after four document commits); none of the 19 paths of table 2.1 moved (`git diff --name-only 0d5755c4 c12a2788`, `git status --short`, blobs). Counts (not used by any step): 746 and 753; `@Ignore` on code lines 2; `git status --porcelain -- app k9mail-vendored build.gradle gradle settings.gradle gradle.properties gradlew gradlew.bat` empty | verified | `git rev-parse`, `git log`, `git diff --stat 0b7575ff 0d5755c4`, the CLAUDE.md count command, `git grep -hE '^\s*@Ignore(\s\|\(\|$)' HEAD -- 'app/src/test/**'` |
 | L2 | Planning blobs of every file this plan edits (table 2.1) | verified | `git rev-parse HEAD:<path>` |
-| L3 | Line endings: the working tree is CRLF and the index LF (`core.autocrlf true`) for every edited file except `app/build.gradle` and `sdlc/artifacts/engagement/code-location.md` (LF both). `git hash-object` normalises, so working-tree hashes compare with index blobs | verified | `git ls-files --eol`; `grep -c $'\r$'` |
-| L4 | The AC-7 grep at HEAD prints 24 lines: 5 `import` lines (`App.java:35`, `MainActivity.java:19`, `ThemeActivity.java:3`, `CalendarAccessorPost40.java:3`, `SmsReceiver.java:3`) and 19 code lines, 7 at level 24 or lower (`Dialogs.java:172`, `MainActivity.java:425`, `SmsDefaultRoleHelper.kt:74`, `CalendarAccessorPost40.java:23`, `SmsReceiver.java:31`, `:50`, `WorkManagerScheduler.kt:224`) and 12 at 25 or higher (`App.java:246`, `:350`; `MainActivity.java:242`, `:517`; `SmsDefaultRoleHelper.kt:77`, `:111`, `:135`; `ThemeActivity.java:20`, `:26`; `SmsReceiver.java:47`; `BackupWorker.kt:533`; `RestoreWorker.kt:707`) | verified | `grep -rnE "SDK_INT\|VERSION_CODES\|TargetApi\|RequiresApi" app/src/main` (scope verified via grep) |
-| L5 | The AC-8 grep at HEAD has 31 hits; after the story only `compat/package-info.java:2` is to remain. Every other hit is removed by a planned edit (table 3.6) | verified | the AC-8 grep, run read-only |
+| L3 | Line endings: the working tree is CRLF and the index LF (`core.autocrlf true`) for every edited file except `app/build.gradle` and `sdlc/artifacts/engagement/code-location.md` (LF both). `git hash-object` normalises, so working-tree hashes compare with index blobs. `gradlew` is LF in index and working tree; `git archive` applies `core.autocrlf` and writes it CRLF unless `-c core.autocrlf=false` is given (I6). `grep -c $'\r$'` is not reliable in this Git Bash (it reports CRLF for LF files) and is not used as evidence | verified | `git ls-files --eol`; byte counts with Python on `git archive` output (260 CRLF with the default, 0 with `-c core.autocrlf=false`) |
+| L4 | The AC-7 grep at HEAD prints 24 lines: 5 `import` lines (`App.java:35`, `MainActivity.java:19`, `ThemeActivity.java:3`, `CalendarAccessorPost40.java:3`, `SmsReceiver.java:3`) and 19 code lines, 7 at level 24 or lower (`Dialogs.java:172`, `MainActivity.java:425`, `SmsDefaultRoleHelper.kt:74`, `CalendarAccessorPost40.java:23`, `SmsReceiver.java:31`, `:50`, `WorkManagerScheduler.kt:224`) and 12 at 25 or higher (`App.java:246`, `:350`; `MainActivity.java:242`, `:517`; `SmsDefaultRoleHelper.kt:77`, `:111`, `:135`; `ThemeActivity.java:20`, `:26`; `SmsReceiver.java:47`; `BackupWorker.kt:533`, `:534` at `c12a2788` after U-067; `RestoreWorker.kt:707`) | verified | `grep -rnE "SDK_INT\|VERSION_CODES\|TargetApi\|RequiresApi" app/src/main` (scope verified via grep) |
+| L5 | The AC-8 grep at HEAD has 29 hits (17 in `app/src/main/java`, 7 in the `service` test folder, 5 in the `compat` test folder); after the story only `compat/package-info.java:2` is to remain. Every other hit is removed by a planned edit (table 3.6) | verified | the AC-8 grep, run read-only |
 | L6 | Each removed import has no other use: `Dialogs.java` `Build` only at `:25`, `:172` (`AlertDialog.Builder` is another class); `CalendarAccessorPost40.java` `Build` `:10`, `:23` and `TargetApi` `:3`, `:23`; `SmsReceiver.java` `TargetApi` `:3`, `:31` (`Build` stays for `:47`); `MainActivity.java` `TargetApi` `:19`, `:425`; `WorkManagerScheduler.kt` `Build` `:20`, `:224` (the other matches are `Builder`) | verified | `grep -n` per file |
 | L7 | Manifest `:38-42` and `:43-51` are as the story says; `:37` is blank and `:52` opens the INTERNET comment. In the last recorded merged manifest each of the two permissions appears once (no library contributes them), and the `<application>` element carries `android:extractNativeLibs="true"` | verified | `app/src/main/AndroidManifest.xml` read in full; `sprint-018/U-061/evidence/after-merged-debug.xml:47-64`, `:127` |
 | L8 | `build.gradle:29-30`; `app/build.gradle:24`, `:153`, `:160`; 18 rules; `jacocoTestCoverageVerification` writes no report, so per-package figures need `:app:jacocoTestReport` (XML at `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml`, `:264-296`) | verified | both files read in full |
 | L9 | Latest recorded per-package figures (U-063, sprint 020): `receiver` 29/58, `compat` 16/73, `scheduler` **140/188** (74.5 %), `activity` 189/1011, `calendar` 37/50. The `scheduler` comment in `app/build.gradle:539` (102/164) is stale. U-064 to U-066 changed no file of these packages; U-067 changes only `service` | verified (by reading evidence) | `sprint-020/U-063/evidence/FIX-jacoco-packages.txt` |
 | L10 | `BackupBroadcastReceiver.java` has 11 executable lines (`:38`, `:43`, `:45`, `:46`, `:48`, `:51`, `:52`, `:54`, `:56`, `:58`, `:68`); `LOCAL_LOGV` is `DEBUG` = `BuildConfig.DEBUG` (not a compile-time constant), so `:43` has bytecode. The seam is `getScheduler(Context)` `:67-69`. `Preferences(Context)` uses `androidx.preference.PreferenceManager.getDefaultSharedPreferences` (`Preferences.java:22`, `:65-67`); key `third_party_integration` (`:93`), default `false` (`:177-178`) | verified | files read in full |
-| L11 | Robolectric: `robolectric.properties:8` `sdk=29`; the local Maven cache holds `android-all-instrumented` jars for 5.0.2 (SDK 21), 6.0.1 (SDK 23) and 10 (SDK 29), each `-i7`, and **none for 7.0 (SDK 24)**; `gradle/verification-metadata.xml` has no `android-all` entry at all; no `robolectric.offline` or `robolectric.dependency.*` setting exists in the build files, `gradle.properties` or `app/src/test/resources` | verified | listing of the cache folder; `grep -n "android-all" gradle/verification-metadata.xml` (no line); `grep` of the settings |
+| L11 | Robolectric: `robolectric.properties:8` `sdk=29`; the local Maven cache holds `android-all-instrumented` jars for 5.0.2 (SDK 21), 6.0.1 (SDK 23) and 10 (SDK 29), each `-i7` (also `-i7` jars for 14, 15 and 16, and older `-i6` ones), each with `.jar.sha512`, `.pom` and `.pom.sha512` beside it, and **none for 7.0 (SDK 24)**; `gradle/verification-metadata.xml` has no `android-all` entry at all; no `robolectric.offline` or `robolectric.dependency.*` setting exists in the build files, `gradle.properties` or `app/src/test/resources` | verified | listing of the cache folder; `grep -n "android-all" gradle/verification-metadata.xml` (no line); `grep` of the settings |
 | L12 | Lint baseline: 37 entries by `grep -c '^ *<issue *$'`, 38 by a plain `<issue` match (the root `<issues` tag); header `lint 8.7.3`. The 11 expected stale entries are at lines 169-178 (`Deprecated`, `BackupJobs.java:68`) and 213-321 (the 10 `ObsoleteSdkInt`), each block followed by one blank line (`:179`, `:223`, ... `:322`). Rule-ID totals: ObsoleteSdkInt 10, Range 6, RtlHardcoded 6, GradleDependency 5, NonConstantResourceId 3, one each of DataExtractionRules, Deprecated, ExportedReceiver, IgnoreWithoutReason, MonochromeLauncherIcon, RedundantLabel, SystemPermissionTypo | verified | file read; counted with `grep` and `awk` |
 | L13 | At AGP 9.0.1 (U-060): "Lint found 39 errors (and 22 errors filtered by baseline)", and "16 errors/warnings were listed in the baseline file ... but not found in the project". So the "not found" count is already above zero before this story; AGP 9.0.1 itself names `gradlew updateLintBaseline` | verified (by reading evidence) | `sprint-017/U-060/evidence/step8-ci-command.log:228-230`, `:304` |
 | L14 | SDK tools: build-tools 36.0.0 has `aapt2.exe` and `dexdump.exe`; platform-tools `adb.exe`; `emulator/emulator.exe`; no `cmdline-tools`; system images 29, 30, 33 to 37 (no 24); AVDs `Pixel_9_Pro`, `Pixel_10_Pro`, `Pixel_4`, `Pixel_4_2`, `Pixel_7`. The SDK folder is read from `local.properties` (`sdk.dir`) by `tools/sdk_dir.py` (section 4.0), tested read-only in the planner's session scratch folder | verified | listings; the helper run without printing the path |
@@ -87,6 +144,8 @@ step with a decision row for each outcome. Nothing material is left assumed with
 | N8 | The regenerated baseline lacks exactly the 11 expected entries' keys (id, file, message) | needs_check | I6 step 4; rows D41, D42 |
 | N9 | JaCoCo line attribution: S-7 removes 3 lines (`:224`, `:227`, `:229`; the literal concatenation at `:227-228` is one constant), S-4 removes 2 (`:50` covered, `:53` missed), S-6 removes 2 (`:74` covered, `:101` missed) | needs_check | I3 and I5 coverage records; rows D9, D35, D36 |
 | N10 | `Pixel_9_Pro` holds the configured app at versionCode 1602 with minSdk 21; `install -r` of the new debug build succeeds | needs_check | section 9; rows in 9 |
+| N11 | The R8 bundled with AGP 9.0.1 treats `Build.VERSION.SDK_INT` as at least the min-api and folds comparisons it decides (as if an `-assumevalues` range from min-api were present). Not stated as fact: the developer confirms it from the R8 release notes for that R8 version, or, if no note is found, records "not confirmed" | needs_check | I5 step 7 (2.6); no row depends on the outcome: the equivalence proof rests on the debug bytecode and the tests either way |
+| L21 | `SmsReceiver.enable` (`:98`, `:99`, `:102`) is already covered (ci 6, 6, 1) and `disable` (`:105`, `:106`, `:109`) is not (ci 0), in the last JaCoCo report in `app/build`; `compat` there is 16/73. Robolectric 4.15.1's `ShadowApplicationPackageManager` stores and returns a component's enabled state with no manifest check (plan-review, read from the jar with `javap`) | verified (L21 by reading the report read-only; the shadow fact by the reviewer) | `app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml`; plan-review `:49` |
 
 ## 2. Design (decided)
 
@@ -154,18 +213,19 @@ Let a package have `c` covered of `t` lines at I0. The gate passes when `c/t ≥
 | Package (floor) | I0 (expected, L9) | After I2 | After I3 | After I5 | Spare after I5 |
 |-----------------|-------------------|----------|----------|----------|----------------|
 | `receiver` (0.50) | 29/58 = 50.0 %, spare 0 | 29 + 10 = **39/58 = 67.2 %**, spare 10 (`:68` stays missed: the test overrides it) | unchanged | unchanged: no S1 site is in `receiver` | 10 |
-| `compat` (0.20) | 16/73 = 21.9 %, spare 1 | unchanged | unchanged (`:47-51` were already run by the LOLLIPOP tests and by `MainActivityRestoreTest` at Q; to be confirmed by the I3 line record) | `:50` (covered) and `:53` (missed) go: **15/71 = 21.1 %** | **0** (⌈14.2⌉ = 15) |
+| `compat` (0.20) | 16/73 = 21.9 %, spare 1 | unchanged | unchanged (`:47-51` were already run by the LOLLIPOP tests and by `MainActivityRestoreTest` at Q; `:50` ci 3 in the last report, L21) | `:50` (covered) and `:53` (missed) go: 15/71 = 21.1 % without C-1; C-1 covers `disable` (`:105`, `:106`, `:109`; `enable` is already covered, L21): **18/71 = 25.4 %** | **3** with C-1 (⌈0.20·71⌉ = 15); 0 without |
 | `scheduler` (0.60) | 140/188 = 74.5 % | unchanged | `:227` and `:229` lose coverage (only the SDK 23 test ran them): 138/188 = 73.4 % | `:224` (covered), `:227`, `:229` go: **137/185 = 74.1 %** | 26 |
 | `activity` (0.10) | 189/1011 | unchanged | unchanged | `SmsDefaultRoleHelper.kt:74` (covered) and `:101` (missed) go; `Dialogs.java:172` may or may not carry its own line entry: ≈188/1009 | ≈87 |
 | `calendar` (0.70) | 37/50 | unchanged | unchanged | unchanged (an annotation has no line) | 2 |
 
 Formulas used by the decision rows when I0 differs from L9: after I2, `receiver` = `(c0 + Δ)/t0`, where Δ is the
 number of `BackupBroadcastReceiver` lines covered after I2 minus before (expected 10); after I5, `compat` =
-`(c0' − 1)/(t0' − 2)` and `scheduler` = `(c3 − 1)/(t3 − 3)`, with `c0'`, `t0'`, `c3`, `t3` taken from the I3
-record. **Two corrections to the design** follow and go to the orchestrator (section 7): D8 item 4 says the
-`compat` ratio rises after S-4; it falls (21.9 % → 21.1 %), because S-4 also removes the covered `else if`
-line; and `compat` ends with zero spare lines (Scope Concern P-5). The `scheduler` margin is wide; the comment
-figure the story quotes (102/164) is stale (L9).
+`(c0' − 1 + Δc1)/(t0' − 2)`, where Δc1 is the number of `disable` lines covered after I5 that were missed before
+(expected 3), and `scheduler` = `(c3 − 1)/(t3 − 3)`, with `c0'`, `t0'`, `c3`, `t3` taken from the I3 record.
+**Two corrections to the design** follow, both accepted by the orchestrator (ruling P-5): D8 item 4 says the
+`compat` ratio rises after S-4; S-4 alone lowers it (21.9 % → 21.1 %, zero spare lines), because S-4 also removes
+the covered `else if` line; C-1 (ruling P-5) restores a margin of 3 lines. The `scheduler` margin is wide; the
+comment figure the story quotes (102/164) is stale (L9).
 
 ### 2.3 Why behaviour on every supported level is unchanged (site by site)
 
@@ -180,6 +240,69 @@ Let s be `Build.VERSION.SDK_INT`, with s ≥ 24 on every installable device afte
 | S-5 `@TargetApi` on `MainActivity.startRestore` | as S-2 | none | as S-2 | `MainActivityRestoreTest` (Q) | as S-2 |
 | S-6 `SmsDefaultRoleHelper.startRestore` | `s ≥ 19 ? body : restore()` | `body` | `s ≥ 19` is true; `body` is byte-identical apart from indentation (`git diff -w`, I5 step 5) | `MainActivityRestoreTest` at Q runs the `isSmsBackupDefaultSmsApp` and Q branches of `body` | the pre-Q branch of `body` (API 24 to 28) has no unit test: pre-existing gap, ruled (SC4), handed over |
 | S-7 `scheduleContentTrigger` | degraded → null; else `s < 24` → log, null; else enqueue | degraded → null; else enqueue | `s < 24` is false | the retargeted API 24 test, the three INV-4 tests at API 29, the U-054 degraded test | — |
+
+**A device below the new floor** (not one the owner uses, Record 5): the package manager refuses the update with
+`INSTALL_FAILED_OLDER_SDK`, and the build already installed keeps running with its data. The reverse is allowed:
+the previous APK (minSdk 21, same versionCode 1602) installs with `install -r` on the API 36 emulator, which is the
+device rollback of D19.
+
+### 2.4 Decisions and trade-offs (iteration 2; expert-depth-check criterion 3)
+
+| Decision | Gained | Gives way | Not chosen | Why |
+|----------|--------|-----------|------------|-----|
+| One local commit per increment (ruled, AC-16) | Each increment can be bisected and reverted on its own; a gate failure points at one increment (Humble and Farley, ch. 10) | Seven commits on a shared branch that the orchestrator also commits to; a D51 fix commit breaks "one increment, one commit"; **a hand rollback must go newest-first**: reverting I4 while keeping I5 would leave a floor of 21 with the branch deleted, the one order CNTR-MODERNIZATION-004 v3's non-breaking claim excludes (contract-verification O-4) | One squashed commit | It gives one review diff and one revert, but no attribution of a failure to an increment, and it would mix the floor (I4) with the deletions (I5), which CR-015 Amendment 1 note 4 keeps apart |
+| Delete the guards and annotations (bound by table S) | The AC-7 and AC-8 greps become exact; lint `ObsoleteSdkInt` entries and findings leave; readers no longer reason about unreachable branches | Nothing at runtime on a supported level (2.3); debug builds lose one integer compare per call; in release, R8 may already fold the checks (N11), so the release build may not change at all | (a) keep the guards; (b) turn `@TargetApi` into `@RequiresApi` or `@ChecksSdkIntAtLeast` | Both keep lint findings and the 21-versus-24 ambiguity alive in the code, and (a) contradicts REQ-015 AC-6 directly |
+| Lint prune by regenerating on a `git archive` copy, removals only (D17, ruling P-3) | The regenerated file is the oracle; the committed baseline only shrinks (a monotone ratchet); the working tree is never touched by the regeneration | A second Gradle configuration and two lint runs in the copy; one `local.properties` copy; STALE-OTHER entries kept on purpose | (a) committing the regenerated file; (b) regenerating in the real tree and restoring the file afterwards | (a) admits every NOT-ADDED finding (the 39 current errors) into the baseline, breaking the ratchet; (b) risks leaving the real file regenerated if a session is lost, and runs Gradle on a tree that also carries this story's evidence |
+
+### 2.5 What the floor changes in the toolchain (sources; iteration 2, expert-depth-check criterion 4)
+
+Sources are cited as the vendor documents name them; I did not re-read them in this session, so each line that
+the evidence must confirm is also a `needs_check` (N3, N4, N11) or is measured by a step.
+
+1. **AGP manifest merger and packaging.** `packaging.jniLibs.useLegacyPackaging` defaults to `false` when minSdk is
+   23 or higher (Android Gradle plugin DSL reference, `JniLibsPackaging`; Android Developers, "`<application>`
+   element", `android:extractNativeLibs`). The merged manifest then carries `extractNativeLibs="false"` or no
+   attribute (N3, D24). The "no effect" argument rests on the **measured** `so=0` of both APKs (EV-B), not on the
+   absence of native code in the build: `app/build.gradle:29` sets `ndk.abiFilters 'armeabi-v7a','arm64-v8a'`.
+   No other floor-derived manifest attribute is known: `uses-sdk` merging and vector-drawable handling were settled
+   at 21; any other would show in the merged-manifest diff and stop the story (D24).
+2. **AAPT2.** At link time AAPT2 collapses resource configurations whose version qualifier is at or below
+   `--min-sdk-version` (Android Developers, "AAPT2", link options). The app's own `res/` has only
+   `drawable-anydpi-v26`, above the floor, so any change comes from merged AndroidX and Material resources (N4,
+   D28).
+3. **D8 at min-api 24.** Default and static interface methods are kept native from API 24, so D8 no longer
+   synthesises `$-CC` companion classes for them; lambdas are still desugared (native only from 26) (Android
+   Developers, "Java 8+ language features and APIs"). No `coreLibraryDesugaring` is configured. **Multidex is
+   unaffected**: ART has loaded multiple dex files natively since API 21 and the build sets no `multiDexEnabled`;
+   only the number of `classes*.dex` files may change (D28).
+4. **R8.** Recent R8 versions assume `SDK_INT ≥ min-api` and fold comparisons that this decides. This is a
+   `needs_check` (N11): the developer confirms it from the R8 release notes of the R8 bundled with AGP 9.0.1, or
+   records "not confirmed". Either way the release-build comparisons are **regression checks only**: they cannot
+   show the equivalence of S-1, S-4, S-6 and S-7, because R8 may already have removed those checks from the
+   release dex at minSdk 21 (14 and 19) or at I4 (`< N`). The debug bytecode comparison (I5 step 7) and the tests
+   carry the equivalence (2.6).
+5. **Lint.** `ObsoleteSdkInt` flags `SDK_INT` comparisons, `@TargetApi`/`@RequiresApi` values and `-vNN` resource
+   folders at or below minSdk; `NewApi` can only lose findings when the floor rises (Android lint check reference).
+   **Transient finding:** between I4 and I5, `ObsoleteSdkInt` gains a finding at `WorkManagerScheduler.kt:224`
+   (`< N` becomes always false); I5 removes it. No lint run is planned at I4, so the I0-to-I6 comparison does not
+   show it, which is correct (the end state is what AC-10 judges).
+6. **Robolectric's SDK jar resolution.** Robolectric resolves its `android-all-instrumented` runtime jars at test
+   time with its own Maven fetcher into the local Maven repository, fetching each jar's `.sha512` and its `.pom`
+   and `.pom.sha512` alongside; the system properties `robolectric.offline` and `robolectric.dependency.dir` switch
+   to pre-fetched jars (Robolectric documentation, "Configuring Robolectric", dependency resolution). Neither
+   property is set here (L11), and setting one would be a build change AC-12 forbids. Gradle's dependency
+   verification is not involved (design D5, ruling P-1).
+
+### 2.6 What each before/after comparison can and cannot show
+
+| Comparison | Can show | Cannot show |
+|------------|----------|-------------|
+| Merged and packaged manifests (I0→I4, I4→I5, I0→I7) | Exactly what the floor and the two removals change in what the platform reads; I4→I5 must be empty | Runtime behaviour of any code path |
+| R8 kept names and `configuration.txt` | Drift in keep rules and in the names reflection depends on (the nine classes of U-060 C-2) | The equivalence of the removed branches (N11); synthetic classes that are not self-mapped |
+| APK entry lists, `.so` and dex counts | Floor effects on packaging (AAPT2, D8); that no native library appears | What the dex files contain |
+| Normalised `javap -c -p` of the debug classes (I4→I5) | That S-2, S-3, S-5 change no code, and that S-1, S-4, S-6, S-7 remove exactly the planned compare and branch (5.4) | Behaviour of code no test runs, beyond the identity of the remaining instructions |
+| Tests and mutations | That the surviving branches behave as before at 24, 29 and Q, and which test runs which branch (M-R1, M-R2) | The pre-Q branch of `SmsDefaultRoleHelper.startRestore` (no test; SC4) and any level other than 24, 29 and Q |
+| IC-3 on API 36 | Install over the configured app, platform `minSdk=24`, a clean start | Anything at API 24 (IC-4) |
 
 ## 3. Exact Changes
 
@@ -391,7 +514,10 @@ Bodies and assertions are byte-identical (AC-4 (a), (d)). The new comment has no
 ```
 The assertions are AC-4 (b)'s four (non-null, unique work, SMS URI, descendants) plus the returned tag, which ties
 the result to the unique name (stricter, not looser). The method-level `@Config(sdk = [24])` overrides the class's
-`[29]`. Nothing at `:296` lists the INV-4 API 29 tests (`:308`, `:332`, `:356`) or the U-054 test
+`[29]`. T1 and T2 describe the post-S1 position ("every supported level") while the I3 commit still has
+minSdk 21; they stay in I3 with the test they describe, because CR-015 "Order relative to the code" item 5 accepts
+"true by requirement, not yet by build" wording for this interval, and moving them to I5 would split one test edit
+over two commits (contract-verification O-1, considered and not taken). Nothing at `:296` lists the INV-4 API 29 tests (`:308`, `:332`, `:356`) or the U-054 test
 (`:540-551`, with its comment `:537-538`, BUG-023's); none of them is in an edited range.
 
 ### 3.5 S1-I4 — `app/build.gradle` (three edits) and `app/src/main/AndroidManifest.xml` (one edit)
@@ -627,11 +753,11 @@ INIT=$T/junit-xml.init.gradle
 R=app/build/test-results/testDebugUnitTest
 JX=app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
 S=app/src/main/java/com/zegoggles/smssync; TS=app/src/test/java/com/zegoggles/smssync
-PLAN_HEAD=0d5755c471184e237c1707abed9463f8306880f6
+PLAN_HEAD=c12a2788b0d1cdd5267529eda30cc7895be60761                        # iteration-2 planning HEAD; table 2.1 blobs equal here and at 0d5755c4
 SDK="$(python -I -X utf8 $TL/sdk_dir.py)"; BT="$SDK/build-tools/36.0.0"; AAPT2="$BT/aapt2"
 JDKBIN="$(ls -d "/c/Program Files/Java/"jdk-25* | tail -1)/bin"
 WORK=<a u068-work folder inside the developer's own session scratch folder>   # raw logs, pristine copies, the JaCoCo XML copies, commit messages
-SCR="$(cd ../.. && pwd)/u068-lint"                                        # I6 only: a new folder beside the repository's grandparent, short path (Windows path length)
+SCR="$(cd ../.. && pwd)/u068-lint"                                        # I6 only: a new folder inside the repository's grandparent folder, outside the repository; short path (Windows path length)
 START=<the commit recorded in I0 step 1>
 ```
 Shell state does not persist; each call sets what it needs. `SDK` can be set only after I0 step 2 has written
@@ -828,7 +954,7 @@ for both APKs; `I<k>-javap.txt`: `major version: 61` for the two app classes and
 
 **Commit procedure CM(k)** (the one ruled exception to "commit nothing"):
 1. `git diff --cached --quiet; echo "index-clean-exit=$?"` must print 0 (nobody else has staged anything). If not, stop (row D51).
-2. `git add -- <the explicit file list of the increment, section 4.9>` (every path written out; never `-A`, `.`, `-u` or a bare directory).
+2. `ls -- <the explicit file list of the increment, section 4.9> > /dev/null; echo "files-exist-exit=$?"` must print 0 (plan-review B-4: a pathspec that matches nothing aborts `git add`); if not, stop and find which step did not write its file. Then `git add -- <the same list>` (every path written out; never `-A`, `.`, `-u` or a bare directory).
 3. `git diff --cached --name-only | LC_ALL=C sort > $WORK/logs/I<k>-staged.txt` and `diff $WORK/logs/I<k>-staged.txt <(printf '%s\n' <the same list> | LC_ALL=C sort); echo "staged-diff-exit=$?"` → 0.
 4. Write the message with the Write tool to `$WORK/msg-I<k>.txt`: the subject of 4.9, a blank line, two to four lines of body (what changed, the must-hold result, "Plan: sdlc/artifacts/build/sprints/sprint-024/U-068/plan.md, S1-I<k>"), a blank line, and the attribution trailer the developer's environment prescribes for commits. Then `git commit -F "$WORK/msg-I<k>.txt"`. Never `--amend`, `-a`, `--no-verify`, `push`, `rebase`, `reset`.
 5. `git rev-parse HEAD` → recorded at the top of the next increment's log entry ("I<k> commit: <id>"); for I7, in the hand-off.
@@ -851,13 +977,16 @@ for both APKs; `I<k>-javap.txt`: `major version: 61` for the two app classes and
    grep -v '^#' gradle/gradle-daemon-jvm.properties
    "$JDKBIN/jps.exe" -l | grep -iE 'gradle' ; echo "jps-gradle-end"
    ```
-   Expected: `plan-head-ancestor-exit=0`; the commits after `$PLAN_HEAD` are U-067's and the orchestrator's;
-   `moved-files-end` preceded only by U-067's files (`BackupWorker.kt`, `RestoreWorker.kt`, test files under
-   `app/src/test/java/com/zegoggles/smssync/service/`) or nothing; nothing before `porcelain-end`; for each path of
-   table 2.1 the two hashes equal each other and equal the planning blob; CR-015 and CR-016 `status: implemented`;
-   U-066 and U-067 `status: done`; `cr-ancestor-exit=0`; the count `C0` (746 plus U-067's added tests; never
-   hard-code 746); the `@Ignore` lines (2 expected); `toolchainVersion=25`; no Gradle JVM listed by `jps`. Record
-   `START=$(git rev-parse HEAD)` and `C0` at the top of the log. **Rows:** D1 to D5.
+   Expected: `plan-head-ancestor-exit=0`; the commits after `$PLAN_HEAD` (U-067's code commit `c12a2788` is
+   `$PLAN_HEAD` itself) are document commits and, at most, U-067 fix or close commits; `moved-files-end` preceded
+   by nothing, or only by U-067's files (`BackupWorker.kt`, `RestoreWorker.kt`, test files under
+   `app/src/test/java/com/zegoggles/smssync/service/`); nothing before `porcelain-end` (U-067's QA mutations of the
+   two worker files must be gone: SC-1); for each path of table 2.1 the two hashes equal each other and equal the
+   planning blob; CR-015 and CR-016 `status: implemented`; U-066 and U-067 `status: done` (`<start>` is the commit
+   that closes U-067's story); `cr-ancestor-exit=0`; the count `C0` as the command prints it (no expected number:
+   nothing in this plan depends on a fixed count); the `@Ignore` lines (2 expected); `toolchainVersion=25`; no
+   Gradle JVM listed by `jps`. Record `START=$(git rev-parse HEAD)` and `C0` at the top of the log. **Rows:** D1 to
+   D5.
 2. Create `$WORK/logs`, `$WORK/pristine`, `$E`, `$M`, `$TL`; write the five helper tools (4.0) with the Write tool;
    `./gradlew --version > $WORK/logs/I0-gradle-version.log 2>&1` sanitised to `$E/I0-gradle-version.txt`
    (expected "Daemon JVM: Compatible with Java 25 ... (from gradle/gradle-daemon-jvm.properties)").
@@ -865,7 +994,9 @@ for both APKs; `I<k>-javap.txt`: `major version: 61` for the two app classes and
    `I0-junit-totals.txt` `tests=C0 failures=0 errors=0 skipped=2` (`skipped` is "the start" for AC-13 (c));
    per-package figures (2.2) recorded as "I0". **Rows:** D6 to D9, D12, D13.
 4. **Greps at `<start>`** into `$E/I0-greps.txt`: the AC-7 grep (24 lines expected, classified 5 / 7 / 12 in the
-   file as in L4, U-067 may have moved `BackupWorker.kt` by one line); the AC-8 grep; the AC-4 (e) grep (5 lines);
+   file as in L4; U-067 moved `BackupWorker.kt`'s Q line to `:534`); the AC-8 grep (29 lines); the AC-4 (e) grep
+   (6 lines: `SmsReceiverTest.java:24` (the comment naming LOLLIPOP), `:27`, `:32`, `:37`, `:42`, and
+   `WorkManagerSchedulerTest.kt:378`);
    the AC-11 (f) sweep (9 lines, as the story lists); `grep -n "maxSdkVersion" app/src/main/AndroidManifest.xml`
    (2 lines); `grep -n "minSdk 21\|SDK 21" app/build.gradle` (2 lines: `:153`, `:160`).
 5. **Lint baseline count** into `$E/I0-lint-baseline-count.txt`: `grep -c '^ *<issue *$' app/lint-baseline.xml`
@@ -909,9 +1040,13 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
 ### I3 — The five tests retargeted, minSdk still 21 (AC-4)
 
 1. Pre-check as I2 step 1.
-2. **SDK 24 jar (N2).** Before any run, `ls <local Maven cache>/org/robolectric/android-all-instrumented/ | grep '^7\.'` into `$E/I3-sdk24-jar.txt` (path written as `<m2>`; expected: nothing). Read `git diff --quiet $START -- gradle/verification-metadata.xml app/build.gradle build.gradle gradle.properties; echo "build-files-clean-exit=$?"` (0). The jar is fetched by Robolectric's own resolver during the first SDK 24 run, from Maven Central, outside Gradle's dependency verification, with no build-file, `robolectric.properties` or verification-metadata change. That is the posture design D5 records ("S1 adds SDK 24's jar", `:922`) and the story's Verification Step 5 and Technical Context restate. Gradle does not fetch this jar at all, so "only if the verification metadata already covers it" cannot be met by any jar Robolectric uses (L11: no `android-all` entry exists for SDK 21, 23 or 29 either). **The developer proceeds only if the orchestrator's implementation delegation acknowledges Scope Concern P-1; otherwise stop at this step and report** (row D19).
-3. Apply 3.3. TR(`I3-first`, `com.zegoggles.smssync.compat.SmsReceiverTest`) — one class, one fork, so the download happens once. Expected: `exit=0`, four PASS lines with the new names. Then append to `$E/I3-sdk24-jar.txt`: the folder name now present (expected `7.0.0_r1-robolectric-r1-i7`), the jar's size, `sha512sum` of the jar, and the content of the `.jar.sha512` file beside it (the two must match). **Rows:** D19, D20.
-4. Apply 3.4 (T1 to T3). `git diff -U0 HEAD -- $TS/service/WorkManagerSchedulerTest.kt | grep '^@@'` → three hunks, at `:34`, `:296` and `:371` (old side). TR(`I3-targeted`, `...compat.SmsReceiverTest`, `com.zegoggles.smssync.service.WorkManagerSchedulerTest`); `junit_cases.py $R SmsReceiverTest WorkManagerSchedulerTest > $E/I3-targeted.txt`. Expected: `exit=0`; `WorkManagerSchedulerTest#inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger PASS`; every other case of the two classes PASS; class case counts unchanged from `I2-cases.txt`. **Rows:** D20, D21.
+2. **SDK 24 jar (N2), under ruling P-1 ("acknowledged", story Implementation Notes, "Rulings on the plan's scope concerns").** Robolectric fetches its `android-all-instrumented` jar for Android 7.0 itself, from Maven Central, during the first SDK 24 run; Gradle's verification metadata covers no such jar today or after; design D5 accepts the download for S1; no build file or verification-metadata entry changes. Before any run, write to `$E/I3-sdk24-jar.txt` (the cache folder written as `<m2>/org/robolectric/android-all-instrumented`): `ls <m2>/org/robolectric/android-all-instrumented/ | grep '^7\.'` (expected: nothing), and the two build-file checks of plan-review B-3:
+   ```bash
+   git diff --quiet HEAD -- gradle/verification-metadata.xml app/build.gradle build.gradle gradle.properties app/src/test/resources/robolectric.properties; echo "build-files-uncommitted-exit=$?"   # 0
+   git diff --quiet $START -- gradle/verification-metadata.xml app/build.gradle gradle.properties app/src/test/resources/robolectric.properties; echo "build-files-vs-start-exit=$?"   # 0 (build.gradle is left out: I1 changed and committed it)
+   ```
+3. Apply 3.3. TR(`I3-first`, `com.zegoggles.smssync.compat.SmsReceiverTest`) — one class, one fork, so the download happens once. Then `python -I -X utf8 $T/junit_cases.py $R SmsReceiverTest > $E/I3-first-run.txt`. Expected: `exit=0`, four PASS lines with the new names, `cases=4`. Then append to `$E/I3-sdk24-jar.txt`: the coordinates `org.robolectric:android-all-instrumented:<version>` with the folder name now present (expected version `7.0.0_r1-robolectric-r1-i7`); for each of the jar and the `.pom`: its name, its size (`stat -c %s`), its `sha512sum`, the content of its `.sha512` file beside it, and `match` or `MISMATCH`; the names and sizes of the `.jar.sha512` and `.pom.sha512` files; then the two build-file checks of step 2 again (both 0). The SHA-512 check shows the transfer is intact, not who published the file. **Rows:** D19, D20.
+4. Apply 3.4 (T1 to T3). `git diff HEAD -- $TS/service/WorkManagerSchedulerTest.kt | grep '^@@'` (default context, plan-review B-5) → exactly three hunks: `@@ -31,7 +31,7 @@`, `@@ -293,9 +293,9 @@` and `@@ -369,18 +369,29 @@` (each may be followed by a function-name suffix after the second `@@`). TR(`I3-targeted`, `...compat.SmsReceiverTest`, `com.zegoggles.smssync.service.WorkManagerSchedulerTest`); `junit_cases.py $R SmsReceiverTest WorkManagerSchedulerTest > $E/I3-targeted.txt`. Expected: `exit=0`; `WorkManagerSchedulerTest#inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger PASS`; every other case of the two classes PASS; class case counts unchanged from `I2-cases.txt`. **Rows:** D20, D21.
 5. Gate G3. EV-T(3). Expected: `tests=C0+2` (count unchanged by I3); `scheduler` covered falls by the lines only the SDK 23 test ran (2 expected, N9) and stays ≥ 0.60; `compat` as I2 (or as recorded). **Must hold (S1-I3):** "Green on 4.15.1; count unchanged". **Rows:** D9, D23.
 6. Mutations M-R1, M-R2, M-W1, M-W2 (4.8). After them the production clean check as I2 step 4.
 7. `$E/I3-checks.txt`: `grep -rn "LOLLIPOP\|sdk = \[\?2[0-3]" app/src/test; echo "ac4e-exit=$?"` (1: no match);
@@ -936,6 +1071,7 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
    git diff -U0 HEAD -- app/src/main/AndroidManifest.xml | grep '^@@'                                  # @@ -38,14 +37,0 @@
    git diff HEAD -- app/src/main/AndroidManifest.xml | grep -c '^+[^+]'                                # 0
    grep -n "minSdkVersion" k9mail-vendored/build.gradle                                                 # 54: minSdkVersion 21
+   git grep -n "USE_CREDENTIALS\|WRITE_EXTERNAL_STORAGE" -- app/src k9mail-vendored/src                 # only TokenRefresher.java:97 (a comment; AC-6, plan-review O-2)
    ```
 5. `$E/I4-manifest-diffs.txt`: `diff $E/I0-merged-debug.xml $E/I4-merged-debug.xml`, the same for release, and
    `diff <(norm $E/I0-manifest-debug.txt) <(norm $E/I4-manifest-debug.txt)` and release. Expected merged diff, both
@@ -949,7 +1085,7 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
    `SmsBroadcastReceiver` element identical to I0 (`git diff $START -- app/src/main/AndroidManifest.xml` shows no
    hunk at or after the old `:146`). **Must hold (S1-I4):** "Merged-manifest diff shows only
    `minSdkVersion="24"` and the two removals" (with D24 as the declared, explained exception). **Rows:** D24, D25.
-6. `$E/I4-apk-diffs.txt`: `diff $E/I0-kept-names.txt $E/I4-kept-names.txt` (empty); `diff $E/I0-configuration.txt $E/I4-configuration.txt` (empty); `diff $E/I0-apk.txt $E/I4-apk.txt` (only size, sha256 and possibly mapping lines); the entry lists:
+6. `$E/I4-apk-diffs.txt`: `diff $E/I0-kept-names.txt $E/I4-kept-names.txt` (empty); `diff $E/I0-configuration.txt $E/I4-configuration.txt` (empty); `diff $E/I0-apk.txt $E/I4-apk.txt` (only size, sha256, the mapping line count and possibly `entries=` and `dex=`, D28; `so=0` both times); the entry lists:
    `diff $E/I0-apk-entries-debug.txt $E/I4-apk-entries-debug.txt` and release; then the qualifier-normalised
    comparison `diff <(sed -E 's#-v(1[0-9]|2[0-4])/#/#' $E/I0-apk-entries-debug.txt | LC_ALL=C sort -u) <(sed -E 's#-v(1[0-9]|2[0-4])/#/#' $E/I4-apk-entries-debug.txt | LC_ALL=C sort -u)`. **Rows:** D26 to D29.
 7. **Bytecode "before" copies for I5** (no Gradle): copy into `$WORK/classes-I4/` the class files of 5.4 (Java from the javac folder, Kotlin from the built_in_kotlinc folder).
@@ -958,23 +1094,24 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
 ### I5 — The seven dead sites and the stale text (AC-7, AC-8, AC-9)
 
 1. Pre-check: `git status --porcelain -- app` empty.
+1a. **Test C-1 first (ruling P-5; 6.1), while `app/src/main` still equals HEAD (the I4 commit).** `git diff --quiet HEAD -- app/src/main; echo "main-clean-exit=$?"` (0). Apply C1.a and C1.b. TR(`I5-c1-first`, `com.zegoggles.smssync.compat.SmsReceiverTest`), then `python -I -X utf8 $T/junit_cases.py $R SmsReceiverTest > $E/I5-c1-first-run.txt`. Expected: `exit=0`, five PASS lines (the four retargeted names and `testEnableThenDisable_togglesReceiverComponent`), `cases=5`; `grep -c "@Test" $TS/compat/SmsReceiverTest.java` is 5. Then run M-C1 by 4.8 (production still equals HEAD, so the protocol's precondition and recovery hold). Only then go to step 2. **Rows:** D35b, D17.
 2. Apply E5.1 to E5.18 (3.6).
-3. Gate G4. EV-T(5). EV-B(5). Expected: `exit=0`; `tests=C0+2 failures=0 errors=0 skipped=2`; the U-054 test, the three INV-4 API 29 tests, the API 24 test, the four `SmsReceiverTest` cases and the five `MainActivityRestoreTest` cases PASS (AC-7 (c), AC-4 (f)); coverage per 2.2 (`compat` 15/71 expected; `scheduler` ≥ 0.60; class inventory equal to I0 package by package: `python -I -c` comparison of the two JSON files' `classes` fields, written to `$E/I5-checks.txt`). **AC-4 (g)**: in `I5-jacoco-lines.txt` the `SmsReceiver.java` line `RoleManager roleManager = ...` and the line `return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));` both have `ci>0`. The only tests configured at a level from 24 to 28 are the two `N` cases and the API 24 scheduler test, which never calls `SmsReceiver` (census of `sdk =` values in `app/src/test` at `0d5755c4`: `LOLLIPOP` 4, `Q` 5, `[23]` 1, `[29]` 9, `{29}` 1, all others at the default 29), so `ci>0` on the package line is the `N` tests' doing; M-R1 and M-R2 (I3) show which pair runs which branch. **Must hold (S1-I5):** "AC-6 grep passes; coverage floors hold (scheduler measured)". **Rows:** D32 to D38.
+3. Gate G4. EV-T(5). EV-B(5). Expected: `exit=0`; `tests=C0+3 failures=0 errors=0 skipped=2` (C-1 included); the U-054 test, the three INV-4 API 29 tests, the API 24 test, the four `SmsReceiverTest` cases and the five `MainActivityRestoreTest` cases PASS (AC-7 (c), AC-4 (f)); coverage per 2.2 (`compat` 18/71 expected, with `ci>0` on `SmsReceiver.disable`'s three lines in `I5-jacoco-lines.txt`; `scheduler` ≥ 0.60; class inventory equal to I0 package by package: `python -I -c` comparison of the two JSON files' `classes` fields, written to `$E/I5-checks.txt`). **AC-4 (g)**: in `I5-jacoco-lines.txt` the `SmsReceiver.java` line `RoleManager roleManager = ...` and the line `return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));` both have `ci>0`. The only tests configured at a level from 24 to 28 are the two `N` cases and the API 24 scheduler test, which never calls `SmsReceiver` (census of `sdk =` values in `app/src/test` at `0d5755c4`: `LOLLIPOP` 4, `Q` 5, `[23]` 1, `[29]` 9, `{29}` 1, all others at the default 29), so `ci>0` on the package line is the `N` tests' doing; M-R1 and M-R2 (I3) show which pair runs which branch. **Must hold (S1-I5):** "AC-6 grep passes; coverage floors hold (scheduler measured)". **Rows:** D32 to D38.
 4. `$E/I5-greps.txt`: the AC-7 grep (14 lines, 3.6; compare by file and text); `grep -rnE ... app/src/main | grep -v ':import ' | wc -l` (12); the AC-8 grep (one line, 3.6); for each edited file, a search for the removed import's simple name: `grep -n "TargetApi" $S/calendar/CalendarAccessorPost40.java $S/compat/SmsReceiver.java $S/activity/MainActivity.java` (no line), `grep -nw "Build" $S/activity/Dialogs.java $S/calendar/CalendarAccessorPost40.java $S/scheduler/WorkManagerScheduler.kt` (no line; `Builder` does not match `-w Build`) (AC-7 (b)); the IC-1 caller list: `git grep -n "isSmsBackupDefaultSmsApp(\|SmsDefaultRoleHelper.startRestore(\|scheduleContentTrigger()" -- app/src` with each line accounted for in the log (callers `MainActivity.java` the two `isSmsBackupDefaultSmsApp` calls and `startRestore` delegation, `SmsDefaultRoleHelper.kt` two calls, `SmsReceiver.onReceive`, `App.java` `rescheduleJobs`, the test classes; all compile unchanged).
-5. `$E/I5-checks.txt` also: `git diff --name-only HEAD -- app/src/main | LC_ALL=C sort` (the eight files of 3.6; with I4's manifest that makes the nine of AC-9); `git diff -w -U0 HEAD -- $S/activity/SmsDefaultRoleHelper.kt | grep -E '^[-+][^-+]'` → five `-` lines whose trimmed texts are, as a multiset, `if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {`, `} else {`, `// Pre-KitKat: no SMS default permission required.`, `delegate.startViewModelRestore()`, `}`, and no `+` line; `git diff HEAD --stat -- $S/receiver/SmsBroadcastReceiver.java $S/receiver/BackupBroadcastReceiver.java $S/worker/BackupTriggerWorker.kt $S/service/BackupWorker.kt $S/service/RestoreWorker.kt k9mail-vendored app/src/test/resources/robolectric.properties` (empty).
+5. `$E/I5-checks.txt` also: `git diff --name-only HEAD -- app/src/main | LC_ALL=C sort` (the eight files of 3.6; with I4's manifest that makes the nine of AC-9); `git diff -w -U0 HEAD -- $S/activity/SmsDefaultRoleHelper.kt | grep -E '^[-+][^-+]'` → five `-` lines whose trimmed texts are, as a multiset, `if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {`, `} else {`, `// Pre-KitKat: no SMS default permission required.`, `delegate.startViewModelRestore()`, `}`, and no `+` line; `git diff HEAD --stat -- $S/receiver/SmsBroadcastReceiver.java $S/receiver/BackupBroadcastReceiver.java $S/worker/BackupTriggerWorker.kt $S/service/BackupWorker.kt $S/service/RestoreWorker.kt k9mail-vendored app/src/test/resources/robolectric.properties` (empty); `git diff --stat HEAD -- app/src/test` (one file, `SmsReceiverTest.java`, C-1); the working-tree count `git grep --untracked -h "@Test" -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"` (C0 + 3, said so).
 6. `$E/I5-build-diffs.txt`: merged and packaged manifests, kept names, configuration and APK entry lists against I4 (expected: manifests identical; kept names identical; configuration identical; APK entry lists identical or differing only in `classes*.dex` count, row D28).
-7. **Bytecode comparison** (`$E/I5-bytecode.txt`), for each class of 5.4: `diff <(jp $WORK/classes-I4/<C>) <(jp <current C>)` where `jp() { "$JDKBIN/javap.exe" -c -p "$1" | sed -E 's/#[0-9]+(,[0-9]+)?//g; s/^Compiled from.*//'; }` (constant-pool indices removed, because removing an annotation renumbers the pool). Expected per 5.4. **Row:** D37.
+7. **Bytecode comparison** (`$E/I5-bytecode.txt`), for each class of 5.4: `diff <(jp $WORK/classes-I4/<C>) <(jp <current C>)` where `jp() { "$JDKBIN/javap.exe" -c -p "$1" | sed -E 's/#[0-9]+(,[0-9]+)?//g; s/^Compiled from.*//'; }` (constant-pool indices removed, because removing an annotation renumbers the pool). Expected per 5.4. This debug comparison, with the tests, is the equivalence evidence; the release comparisons of step 6 are regression checks only (2.5 item 4, 2.6). Also record N11 here: the R8 release-note line for the R8 bundled with AGP 9.0.1 that states the `SDK_INT ≥ min-api` assumption (quoted with its R8 version), or "not confirmed". **Row:** D37.
 8. Log (with the site table 2.3 by reference); CM(5).
 
 ### I6 — Lint baseline pruned (AC-10)
 
 1. Pre-check: `git status --porcelain -- app` empty; `test -e "$SCR"; echo "scr-exists-exit=$?"` → 1 (row D39).
-2. **Scratch copy, no build outputs, outside the repository:** `mkdir "$SCR" && git archive HEAD | tar -x -C "$SCR" && cp local.properties "$SCR/"`. `git archive` writes the committed tree of the I5 commit only (no `build/` folder, no untracked file, no `.git`). Record in `$E/I6-scratch.txt`: the archived commit id, `find "$SCR" -type f | wc -l` against `git ls-tree -r HEAD --name-only | wc -l` (+1 for `local.properties`), `find "$SCR" -maxdepth 2 -name build -type d | wc -l` (0), and `git -C . status --porcelain -- app` (empty: the working tree is untouched). The scratch folder is written as "the scratch copy" in evidence.
+2. **Scratch copy, no build outputs, outside the repository:** `mkdir "$SCR" && git -c core.autocrlf=false archive HEAD | tar -x -C "$SCR" && cp local.properties "$SCR/"`. `git archive` writes the committed tree of the I5 commit only (no `build/` folder, no untracked file, no `.git`); `-c core.autocrlf=false` keeps the index's LF endings, because with this checkout's `core.autocrlf=true` a plain `git archive` writes `gradlew` with CRLF and it cannot start (plan-review B-2). Line endings do not affect lint's matching or `baseline_diff.py`, which parses XML. Record in `$E/I6-scratch.txt`, **before the first Gradle run in the copy**: `python -I -c "import sys;print(open(sys.argv[1],'rb').read().count(b'\r\n'))" "$SCR/gradlew"` (expected `0`; row D39b); the archived commit id, `find "$SCR" -type f | wc -l` against `git ls-tree -r HEAD --name-only | wc -l` (+1 for `local.properties`), `find "$SCR" -maxdepth 2 -name build -type d | wc -l` (0), and `git -C . status --porcelain -- app` (empty: the working tree is untouched). The scratch folder is written as "the scratch copy" in evidence.
 3. In the scratch copy, foreground, tool timeout 600000: `(cd "$SCR" && ./gradlew --console=plain :app:lintDebug) > $WORK/logs/I6-scratch-lint.log 2>&1; echo "exit=$?" >> ...` → LF → `$E/I6-scratch-lint.txt`: "not found" count `N5` (the I5 tree with the 37-entry baseline) and the error count; `lint_ids.py` on the scratch report → `$E/I6-scratch-lint-ids.txt`. Then `(cd "$SCR" && ./gradlew --console=plain :app:tasks --all) | grep -i "lintbaseline"` (expect `updateLintBaseline`) and `(cd "$SCR" && ./gradlew --console=plain :app:updateLintBaseline) > $WORK/logs/I6-regenerate.log 2>&1; echo "exit=$?" >> ...` → LF → `$E/I6-regenerate.txt`; `grep -c '^ *<issue *$' "$SCR/app/lint-baseline.xml"` and its header line. **Rows:** D40.
 4. `python -I -X utf8 $TL/baseline_diff.py app/lint-baseline.xml "$SCR/app/lint-baseline.xml" app > $WORK/logs/I6-baseline-diff.log` → sanitise → `$E/I6-baseline-diff.txt`. Sanitise the regenerated file itself into `$E/I6-regenerated-baseline.xml` (if `sanitize.py` refuses it, keep it in the work folder and say so). Expected: `REMOVE=11`, each `site-gone` or `file-gone`, exactly the entries of L12; `KEEP` + `STALE-OTHER` = 26; each `STALE-OTHER` explained in the log entry by entry (expected candidates: the five `GradleDependency` entries if lint 9.0.1 no longer reports that check, U-060 recorded none; any entry whose message wording changed between lint 8.7.3 and 9.0.1); `NOT-ADDED` listed, never applied. **Rows:** D41, D42.
 5. Apply 3.7 for exactly the REMOVE set. `$E/I6-checks.txt`: `git diff --numstat -- app/lint-baseline.xml` (`0	121`); `git diff -U0 -- app/lint-baseline.xml | grep -c '^+[^+]'` (0); `grep -c '^ *<issue *$' app/lint-baseline.xml` (26); `git diff --quiet -- app/lint.xml; echo "lint-xml-exit=$?"` (0); `git diff -- app/lint-baseline.xml | grep -E '^-.*(id=|file=|line=)'` (the 11 removed ids, files and lines, matching `I6-baseline-diff.txt`). **Row:** D43.
 6. **Lint in the real tree** (L, `I6-lint`) → LF → `$E/I6-lint.txt`; `lint_ids.py` → `$E/I6-lint-ids.txt`. Expected: "not found" `N6 = N5 − 11`, or 0 (AC-10 (d)). `$E/I6-lint-ids-compare.txt`: the rule-ID tables of I0 and I6 side by side; every rule ID whose count changed is explained (expected: `ObsoleteSdkInt` errors fall, because S1 removed their sites; `UseRequiresApi` falls from the four `@TargetApi` uses to one, `ThemeActivity`; `UnusedAttribute` may fall if its one finding is an attribute of API 23 or 24); any rule ID that is new after the story is named (row D44). The pre-existing red result is recorded, not fixed and not gated (D17).
-7. Remove the scratch copy: `rm -rf -- "$SCR"`; `test -e "$SCR"; echo "scr-removed-exit=$?"` (1). It is never committed.
+7. Remove the scratch copy: `rm -rf -- "$SCR"`; `test -e "$SCR"; echo "scr-removed-exit=$?"` (1). If the removal fails (a Gradle or Kotlin daemon may still hold files there), run `(cd "$SCR" && ./gradlew --stop)` once, retry the `rm`, and if it still fails record it and report (row D39c); never leave the copy silently. It is never committed.
 8. **Must hold (S1-I6):** "Entry count before and after, with each removed entry; `app/lint.xml` untouched". Log (the 37-versus-38 note; every removed entry with id, file, line and message; every STALE-OTHER with its reason); CM(6).
 
 ### I7 — Documents, the CR-016 checks, final gates and hand-off (AC-11, AC-12 to AC-15)
@@ -984,7 +1121,9 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
    ```bash
    sed -n 1,5p CHANGES
    grep -n "minSdk" sdlc/artifacts/engagement/code-location.md                        # 28: | minSdk | 24 (Android 7.0) |
-   grep -n "minSdkVersion" DEVELOPMENT.md; git diff -U0 -- DEVELOPMENT.md | grep -c '^[-+][^-+]'   # 58: ...24; 2
+   grep -n "minSdkVersion" DEVELOPMENT.md                                              # 58:- **minSdkVersion**: 24
+   git diff --numstat -- DEVELOPMENT.md                                                # 1	1	DEVELOPMENT.md
+   git diff -U0 -- DEVELOPMENT.md | grep -E '^[-+]- '                                  # -- **minSdkVersion**: 21 and +- **minSdkVersion**: 24 (plan-review B-5)
    grep -n "Marshmallow\|Lollipop" .github/ISSUE_TEMPLATE/500_bug_report.yml; echo "template-exit=$?"   # 1
    # CR-016 D-5, checks 1 to 3 (AC-11 (d)):
    grep -n "CR-016" sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-001-restore-play-store-eligibility.md sdlc/artifacts/requirements/modernization/REQ-MODERNIZATION-006-dead-code-and-minsdk-cleanup.md
@@ -994,9 +1133,9 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
    # AC-11 (f) sweep:
    git grep -niE "minSdk(Version)?[^0-9]{0,6}21|API (level )?21" -- . ':!sdlc'
    ```
-   Expected (L17): two `grep -n` lines per file (the `change_records` item and the note); 1 and 1; the diff lines are
-   `- change_records: []`, `+ change_records:`, `+   - CR-016`, `+ > Amended 2026-11-21 by CR-016...` per file and
-   the count is 0. The sweep lists **7** lines: `CHANGES:3` ("API 21 to 23", intended), `WindowInsetsUtil.java:48`,
+   Expected (L17): two `grep -n` lines per file (the `change_records` item and the note); 1 and 1; the diff lines are,
+   per file, exactly four: `-change_records: []`, `+change_records:`, `+  - CR-016`, `+> Amended 2026-11-21 by
+   CR-016...` (8 in all); the count is 0. The sweep lists **7** lines: `CHANGES:3` ("API 21 to 23", intended), `WindowInsetsUtil.java:48`,
    `:84`, `WindowInsetsUtilTest.java:31`, `:116`, `k9mail-vendored/build.gradle:54`,
    `DefaultTrustedSocketFactory.java:153`; each with its disposition in the log. **Rows:** D45, D46.
 3. Gate G4c (clean). EV-T(7). EV-B(7). `./gradlew --version` → `$E/I7-gradle-version.txt`. **Rows:** D47, D48.
@@ -1007,16 +1146,23 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
    ```bash
    git diff --stat $START -- $S/receiver/SmsBroadcastReceiver.java $S/receiver/BackupBroadcastReceiver.java $S/worker/BackupTriggerWorker.kt $S/service/BackupWorker.kt $S/service/RestoreWorker.kt k9mail-vendored app/src/test/resources/robolectric.properties   # empty (AC-9)
    git diff -U0 $START -- app/src/main/AndroidManifest.xml | grep '^@@'                                  # @@ -38,14 +37,0 @@ only
-   git diff --name-only $START -- app/src/main | LC_ALL=C sort                                          # the nine files of AC-9
+   git diff --name-only $START -- app/src/main | LC_ALL=C sort                                          # the nine files of AC-9 (no other story changes code during this run: check (iii) below)
    git diff --stat $START -- gradle/verification-metadata.xml gradle/wrapper gradle/gradle-daemon-jvm.properties settings.gradle gradle.properties gradlew gradlew.bat k9mail-vendored/build.gradle app/lint.xml app/proguard-rules.pro .github/workflows   # empty (AC-12)
    git diff -U0 $START -- build.gradle | grep -E '^[-+][^-+]'                                           # the E1 pair only
    git diff -U0 $START -- app/build.gradle | grep -E '^[-+][^-+]'                                       # the three E4 pairs only
    git diff -U0 $START -- app/build.gradle | grep -cE '^[-+].*(minimum|value|limit|counter|includes|excludes)'   # 0 (no floor changed)
-   { git diff --name-only $START; git ls-files --others --exclude-standard -- app CHANGES DEVELOPMENT.md .github build.gradle sdlc/artifacts/engagement $W; } | LC_ALL=C sort -u   # within the AC-12 allowed list
-   git grep --untracked -h "@Test" -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"   # C0 + 2 (working tree, AC-14 alternative form, said so)
+   # Scoped to this story (plan-review B-6; U-067 plan I8 A1). The orchestrator may commit documents while the developer runs:
+   git log --reverse --format='%h %s' $START..HEAD                                     # (i) every commit, recorded; others are not this story's
+   { git log --format= --name-only --grep='^U-068 S1-' $START..HEAD; git diff --name-only HEAD; git ls-files --others --exclude-standard -- app CHANGES DEVELOPMENT.md .github build.gradle sdlc/artifacts/engagement $W; } | sed '/^$/d' | LC_ALL=C sort -u   # (ii) this story's own files: within the AC-12 allowed list
+   git log --format='%h %s' --invert-grep --grep='^U-068 S1-' $START..HEAD -- app k9mail-vendored build.gradle settings.gradle gradle gradle.properties gradlew gradlew.bat CHANGES DEVELOPMENT.md .github sdlc/artifacts/engagement; echo "foreign-code-commits-end"   # (iii) nothing before the marker (row D53)
+   git grep --untracked -h "@Test" -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"   # C0 + 3 (working tree, AC-14 alternative form, said so)
    git grep -nE '^\s*@Ignore(\s|\(|$)' -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt'              # the same 2 lines as I0
    ```
-6. **Hygiene scan** (last, after every file of this increment is final; as U-066 I11, workspace `$W`, excluding
+6. **Log, then the hygiene scan** (plan-review O-4: the log is final before the scan, so the scan covers it).
+   First write the I7 log entry: the counts (5.3), the "must hold" of S1-I7 ("AC-9 and AC-10 evidence": the three
+   D-5 checks and the `CHANGES` entry, location `CHANGES`), the hand-off items (section 7) and the last line
+   "Hygiene scan: step I7.6, result in `evidence/I7-scan.txt`". Write `$E/I7-scan.txt`'s name into the log now; the
+   file itself is written by the scan below. Then the scan (as U-066 I11, workspace `$W`, excluding
    `compiled-pipeline.json`), one call:
    ```bash
    P='@[a-z0-9-]+\.[a-z]{2,}|Users[/\\]|App''Data'
@@ -1035,10 +1181,13 @@ in later logs; the JDK evidence is `./gradlew --version`, I0 and I7).
    cat $L/I7-pattern-files.log $L/I7-user-name-files.log $L/I7-host-name-files.log
    ```
    Expected: every scan `exit=1 files=0`. Sanitise into `$E/I7-scan.txt`. (The code diff contains no copyright
-   header: no edited hunk touches a header line.) **Row:** D49.
-7. Log: the counts (5.3), the "must hold" of S1-I7 ("AC-9 and AC-10 evidence": the three D-5 checks and the
-   `CHANGES` entry, location `CHANGES`), the hand-off items (section 7) and the last line "Hygiene scan: step I7.6,
-   result in `evidence/I7-scan.txt`". CM(7). After the commit: `git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"` (C0 + 2, at the last commit) and `git log --oneline $START..HEAD` (seven commits, I1 to I7 in order, plus any fix commit) go into the hand-off message; the APK path, size and SHA-256 come from `I7-apk.txt`.
+   header: no edited hunk touches a header line.) A hit: fix the file, re-run the scan; no file under `$W` is edited
+   after a clean scan except by CM(7). **Row:** D49.
+7. CM(7), nothing else. After the commit, into the **hand-off message** (not into any file):
+   `git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"` (C0 + 3, at the
+   last commit); the AC-16 order check `git log --reverse --format='%h %s' --grep='^U-068 S1-' $START..HEAD`
+   (I1 to I7 in order, plus any fix commit), with every other commit in `$START..HEAD` listed by id and subject as
+   not this story's (row D53); the APK path, size and SHA-256 from `I7-apk.txt`.
 
 ### I8 — Device checks (the orchestrator's; section 9)
 
@@ -1049,7 +1198,8 @@ copying the pristine file, hash and clean check, `restored` line). Repository-re
 HEAD blob of each mutated file. Recovery note: "If a session is lost while an entry says `APPLYING` without a
 `restored` line, nothing else runs until the file's `git hash-object` has been compared with `git rev-parse
 HEAD:<file>` and, if it differs, the file has been restored from its pristine copy or with
-`git restore --source=HEAD --worktree -- <file>` (safe here: in I2 and I3 no production file differs from HEAD)."
+`git restore --source=HEAD --worktree -- <file>` (safe here: in I2, in I3, and in I5 before E5.1, no production
+file differs from HEAD)."
 
 For each entry, one at a time: (1) `git diff --quiet HEAD -- app/src/main` exit 0 and the file's hash = HEAD blob;
 `cp <file> $WORK/pristine/` once per file; (2) write-ahead `### <id> APPLYING <date -u>` with file, blob, edit,
@@ -1068,14 +1218,15 @@ Failure types: **A** = an `AssertionError` or subclass (Truth's, Mockito's `Want
 | M-B2 | I2 | same | `            getScheduler(context).scheduleImmediate();` → `            if (false) getScheduler(context).scheduleImmediate();` (call removed) | same | `onReceive_integrationOn_schedulesImmediateOnce` — "Wanted but not invoked: scheduler.scheduleImmediate()" (A). Passing: the "off" test |
 | M-R1 | I3 | `$S/compat/SmsReceiver.java` | `            RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);` → `            if (true) throw new IllegalStateException("U-068 M-R1"); RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);` | `...compat.SmsReceiverTest` | `testOnReceive_q`, `testIsSmsBackupDefaultSmsApp_q_usesRoleManager` — X "U-068 M-R1". Passing: the two `_belowQ` cases (they never reach the role branch) |
 | M-R2 | I3 | same | `            return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));` → `            if (true) throw new IllegalStateException("U-068 M-R2"); return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));` | same | `testOnReceive_belowQ`, `testIsSmsBackupDefaultSmsApp_belowQ_usesDefaultSmsPackage` — X "U-068 M-R2". Passing: the two `_q` cases |
+| M-C1 | I5 (step 1a, before E5.1) | `$S/compat/SmsReceiver.java` | `            COMPONENT_ENABLED_STATE_DISABLED,` (12 spaces; inside `disable`, `:107` at `<start>`; unique) → `            COMPONENT_ENABLED_STATE_ENABLED,` | `...compat.SmsReceiverTest` | `testEnableThenDisable_togglesReceiverComponent` — Truth "expected: 2 ... but was: 1" on the second assertion (A). Passing: the four retargeted cases |
 | M-W1 | I3 | `$S/scheduler/WorkManagerScheduler.kt` | `            .addContentUriTrigger(Consts.SMS_PROVIDER, true)` → `            .addContentUriTrigger(Consts.SMS_PROVIDER, false)` | `...service.WorkManagerSchedulerTest` | `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` and `inv4_contentTrigger_api29_smsUriPresent_withDescendants` — "expected to be true" on `isTriggeredForDescendants` (A). Passing: every other case (the call-log tests compare URIs only) |
 | M-W2 | I3 | same | `        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {` → `        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {` (the dead branch moved onto the floor) | same | `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` — "expected not to be null" (A). Passing: every API 29 case and the U-054 case. This is the mutant that only the boundary test can see |
 
 `\|` is Java's `||`, escaped for this table. Each edit compiles: `if (true)`/`if (false)` are the conditional-
 compilation forms javac accepts without a warning, so `-Werror` is not triggered. Order: M-B1, M-B2 (I2); M-R1,
-M-R2, M-W1, M-W2 (I3). No mutation runs after I3: from I4 on the production tree changes in every increment, and
-the I5 proof is the case analysis of 2.3 with the tests and the bytecode comparison (row D17 governs a result that
-does not match).
+M-R2, M-W1, M-W2 (I3); M-C1 (I5, step 1a, before E5.1). No mutation runs after M-C1: once E5.1 is applied the
+production tree differs from HEAD, and the I5 proof is the case analysis of 2.3 with the tests and the bytecode
+comparison (row D17 governs a result that does not match). Seven mutation runs in all.
 
 ### 4.9 Commits (exact file lists and subjects)
 
@@ -1087,7 +1238,7 @@ Evidence names are those produced by the steps; `$W` = `sdlc/artifacts/build/spr
 | I2 | `U-068 S1-I2: unit test for the BACKUP broadcast receiver's opt-in guard` | `app/src/test/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiverTest.java`; `$W/implementation-log.md`; `$W/evidence/I2-{first-run.txt,gates.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-lines.txt,checks.txt}`; `$W/evidence/mutation-log.md`; `$W/evidence/mutations/{M-B1-cases.txt,M-B1-message.txt,M-B2-cases.txt,M-B2-message.txt}` |
 | I3 | `U-068 S1-I3: retarget the five tests below SDK 24 to API 24 and Q` | `app/src/test/java/com/zegoggles/smssync/compat/SmsReceiverTest.java`; `app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt`; `$W/implementation-log.md`; `$W/evidence/I3-{sdk24-jar.txt,first-run.txt,targeted.txt,gates.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-lines.txt,checks.txt}`; `$W/evidence/mutation-log.md`; `$W/evidence/mutations/{M-R1,M-R2,M-W1,M-W2}-{cases,message}.txt` (eight files) |
 | I4 | `U-068 S1-I4: minSdk 24; drop the two permissions capped below API 24` | `app/build.gradle`; `app/src/main/AndroidManifest.xml`; `$W/implementation-log.md`; `$W/evidence/I4-{gates.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-lines.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,configuration.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,checks.txt,manifest-diffs.txt,apk-diffs.txt}` |
-| I5 | `U-068 S1-I5: remove the code branches the minSdk 24 floor makes dead` | the eight files of 3.6 (`App.java`, `activity/Dialogs.java`, `activity/MainActivity.java`, `activity/SmsDefaultRoleHelper.kt`, `calendar/CalendarAccessorPost40.java`, `compat/SmsReceiver.java`, `scheduler/BackupScheduler.java`, `scheduler/WorkManagerScheduler.kt`, each under `app/src/main/java/com/zegoggles/smssync/`); `$W/implementation-log.md`; `$W/evidence/I5-{gates.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-lines.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,configuration.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,greps.txt,checks.txt,build-diffs.txt,bytecode.txt}` |
+| I5 | `U-068 S1-I5: remove the code branches the minSdk 24 floor makes dead` | the eight files of 3.6 (`App.java`, `activity/Dialogs.java`, `activity/MainActivity.java`, `activity/SmsDefaultRoleHelper.kt`, `calendar/CalendarAccessorPost40.java`, `compat/SmsReceiver.java`, `scheduler/BackupScheduler.java`, `scheduler/WorkManagerScheduler.kt`, each under `app/src/main/java/com/zegoggles/smssync/`); `app/src/test/java/com/zegoggles/smssync/compat/SmsReceiverTest.java` (C-1); `$W/implementation-log.md`; `$W/evidence/mutation-log.md`; `$W/evidence/mutations/{M-C1-cases.txt,M-C1-message.txt}`; `$W/evidence/I5-{c1-first-run.txt,gates.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-lines.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,configuration.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,greps.txt,checks.txt,build-diffs.txt,bytecode.txt}` |
 | I6 | `U-068 S1-I6: prune the lint baseline entries made stale` | `app/lint-baseline.xml`; `$W/implementation-log.md`; `$W/evidence/I6-{scratch.txt,scratch-lint.txt,scratch-lint-ids.txt,regenerate.txt,baseline-diff.txt,regenerated-baseline.xml,checks.txt,lint.txt,lint-ids.txt,lint-ids-compare.txt}` (without `regenerated-baseline.xml` if D41's note applies) |
 | I7 | `U-068 S1-I7: CHANGES, developer and engagement docs, bug-report template for minSdk 24` | `CHANGES`; `DEVELOPMENT.md`; `sdlc/artifacts/engagement/code-location.md`; `.github/ISSUE_TEMPLATE/500_bug_report.yml`; `$W/implementation-log.md`; `$W/evidence/I7-{docs.txt,gates.txt,junit-totals.txt,cases.txt,jacoco-packages.txt,jacoco-inventory.json,jacoco-lines.txt,merged-debug.xml,merged-release.xml,manifest-debug.txt,manifest-release.txt,kept-names.txt,configuration.txt,apk-entries-debug.txt,apk-entries-release.txt,apk.txt,javap.txt,gradle-version.txt,build-diffs.txt,final-checks.txt,scan.txt}` |
 | fix | `U-068 S1-I<k> fix: <what>` | only the files the fix touches, plus the log and its evidence; made when a later gate fails because of an earlier, already committed increment (row D51). No commit is amended, rebased, reset or force-pushed |
@@ -1108,6 +1259,7 @@ checkout's other orchestrator files are never staged by the developer.
 | `testIsSmsBackupDefaultSmsApp_belowQ_usesDefaultSmsPackage` | same | retargeted | `N` | package branch → `false` | M-R2; I5 line record | I3 |
 | `testIsSmsBackupDefaultSmsApp_q_usesRoleManager` | same | retargeted | `Q` | role branch → `false` (role not held) | M-R1; I5 line record | I3 |
 | `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` | `service.WorkManagerSchedulerTest` | retargeted | `[24]` | INV-4 at the floor: job returned with tag `CONTENT_TRIGGER`, unique work enqueued, SMS URI trigger, descendants | M-W2 (boundary), M-W1 | I3 |
+| `testEnableThenDisable_togglesReceiverComponent` (C-1, ruling P-5) | `compat.SmsReceiverTest` | new | default (29) | `SmsReceiver.enable` then `disable` set the component state to ENABLED then DISABLED; covers `disable`'s three lines | M-C1 | I5 (step 1a) |
 | INV-4 at 29 (`:308`, `:332`, `:356`), U-054 (`:541`), `MainActivityRestoreTest` (five, Q), `SmsBroadcastReceiverTest` (four) | existing | unchanged | as they are | the surviving behaviour (2.3) | — | run in every gate |
 
 ### 5.2 Rename record (AC-4, AC-14 "listed by name")
@@ -1125,11 +1277,16 @@ checkout's other orchestrator files are never staged by the developer.
 - Start: `C0` = the authoritative command at `<start>` (I0 step 1), with the commit id. It includes U-067's tests,
   which land before `<start>`; they are not this story's and need no listing (none lands between `<start>` and the
   end, because the sprint is serial; if one did, row D48).
-- Added by this story: the two tests of 5.1. Deleted: none. Retargeted: the five of 5.2.
-- End: `C0 + 2`, taken over the working tree before the I7 commit (`git grep --untracked`, said so) and with the I7
+- Added by this story: three tests, by name: `onReceive_integrationOn_schedulesImmediateOnce` and
+  `onReceive_integrationOff_neverSchedules` (I2), and `testEnableThenDisable_togglesReceiverComponent` (C-1, I5;
+  ruling P-5: AC-14's "two added" reads "three added"). Deleted: none. Retargeted: the five of 5.2.
+- Running count: `C0 + 2` after I2, I3 and I4; `C0 + 3` from I5 on.
+- End: `C0 + 3`, taken over the working tree before the I7 commit (`git grep --untracked`, said so) and with the I7
   commit in place of `HEAD` after it (hand-off).
-- Gradle total: `tests` in `I7-junit-totals.txt` = `C0 + 2`; failures 0; errors 0; skipped = the I0 value (2) and
+- Gradle total: `tests` in `I7-junit-totals.txt` = `C0 + 3`; failures 0; errors 0; skipped = the I0 value (2) and
   never above 2. Any difference is recorded and explained (row D48).
+- Commits by others between `<start>` and the end touch documents only (I7 step 5 (iii)); they add or delete no
+  test. If one did, row D48 lists it with its commit id, not as this story's.
 
 ### 5.4 Bytecode expectations for I5 step 7 (normalised `javap -c -p`)
 
@@ -1154,7 +1311,7 @@ checkout's other orchestrator files are never staged by the developer.
 | D6 | G-I0 fails | Stop: the baseline is not trustworthy. Report with the sanitised log |
 | D7 | I0 totals: failures or errors above 0, or skipped above 2 | Stop. If only `tests` differs from `C0`, record and explain (a test counted twice or a `@Test` in a comment); continue only if the explanation is a fact shown in the evidence |
 | D8 | `receiver` at I0 is not 29/58 | Use the formula of 2.2 with the measured `c0`, `t0`; the I2 requirement stays "strictly above 0.50" |
-| D9 | `scheduler` or `compat` at I0 or I3 differs from 2.2 | Recompute the I3 and I5 predictions with the formulas; if the predicted I5 `compat` is below 0.20, apply contingency C-1 (section 6.1) in I5 before its gate; if the predicted `scheduler` is below 0.60, stop and report before I5 (tests must be added under a ruling; the floor is never edited) |
+| D9 | `scheduler` or `compat` at I0 or I3 differs from 2.2 | Recompute the I3 and I5 predictions with the formulas (C-1 included for `compat`); if the predicted I5 `compat` with C-1 is below 0.20, or the predicted `scheduler` is below 0.60, stop and report before I5 (tests are added only under a ruling; the floor is never edited) |
 | D10 | No lint report readable by `lint_ids.py` | Try the other report kind; if none exists, stop and report (A22 cannot be closed). If lint exits 0, record it as unexpected and continue |
 | D11 | Baseline count at I0 is not 37 | Record; recompute I6 expectations from the entry list (the REMOVE rule does not depend on the number) |
 | D12 | `aapt2` or `dexdump` is missing from build-tools 36.0.0 | Use the highest build-tools folder present (36.1.0), the same one for every increment, and record it |
@@ -1164,27 +1321,30 @@ checkout's other orchestrator files are never staged by the developer.
 | D16 | A new receiver test fails on its first run | Read the failure. A fixture problem (context, preferences) is fixed in the test only, keeping the two names, the preconditions, `times(1)` and `verifyNoInteractions`. If production behaves otherwise than CNTR-MODERNIZATION-005 says (for example it schedules with the setting off), stop and report a defect; never adjust the test to the behaviour |
 | D17 | A mutation result does not match its row | An expected failing case passes: the test does not guard what it claims; stop and report (plan defect). An extra case fails: record it with its message and explain; stop if it cannot be explained. The mutant does not compile: restore, record "invalid mutant", report |
 | D18 | `receiver` after I2 not above 0.50, or Δ ≠ 10 | Read `I2-jacoco-lines.txt`; record which lines; stop if not above 0.50 |
-| D19 | SDK 24 jar (I3 step 2-3) | (a) Orchestrator has acknowledged P-1 and the first run downloads the jar with a matching `.sha512`: record and continue. (b) Download fails: re-run the same TR once and record both. Fails again: stop, report INT-004; never skip, `@Ignore` or `Assume`. (c) P-1 not acknowledged, or any route needs `robolectric.offline`, `robolectric.dependency.*`, a build-file, `robolectric.properties` or verification-metadata change: stop and report (AC-12). (d) The jar is already cached: record its folder name and `.sha512` match; continue |
+| D19 | SDK 24 jar (I3 steps 2-3; ruling P-1, acknowledged) | (a) The first run downloads the jar and its `.pom`, each matching its `.sha512`: record (coordinates, sizes, SHA-512s, checksum files) and continue. (b) The download fails: re-run the same TR once and record both. **Two failed downloads stop the story** (ruling P-1): report INT-004; never skip, `@Ignore` or `Assume`, and **nothing is fetched by hand**. (c) A SHA-512 does not match its `.sha512` file: stop and report; do not delete or re-fetch by hand. (d) Any route needs `robolectric.offline`, `robolectric.dependency.*`, a build-file, `robolectric.properties` or verification-metadata change, or either build-file check of I3 step 2 is not 0 after the run: stop and report (AC-12). (e) The jar is already cached: record its folder name, sizes and `.sha512` matches; continue |
 | D20 | Robolectric refuses SDK 24 or fails for a reason other than the download | Stop and report: design constraint C15 ("4.15.1 runs SDK 21 to 35") does not hold here |
 | D21 | The API 24 test fails because `scheduleContentTrigger()` returns null or enqueues no SMS trigger at 24 | Stop and report: that is a behaviour fault at the floor (INV-4), not a test problem |
 | D22 | A retargeted `SmsReceiverTest` case fails at `N` or `Q` | Read the failure. A Robolectric shadow difference at that level (for example `getDefaultSmsPackage` or `RoleManager` not shadowed): stop and report; never change an assertion, a level or a name to make it pass |
 | D23 | `scheduler` at I3 below 0.60 | Stop and report; tests are added only under a ruling; the floor is never edited |
-| D24 | Merged-manifest diff has one difference beyond AC-6's prediction: `android:extractNativeLibs` `"true"` → `"false"` (or the attribute gone) | Declared in advance (N3, Scope Concern P-2): AGP derives it from the floor; with `.so` count 0 there is nothing to extract, so no runtime effect. Record it in both diffs and the log; do not change any build file to suppress it. Any other difference: stop and report |
+| D24 | Merged-manifest diff has one difference beyond AC-6's prediction: `android:extractNativeLibs` `"true"` → `"false"` (or the attribute gone) | Declared in advance (N3, 2.5 item 1) and **accepted as a declared difference by ruling P-2**: AGP derives it from the floor; the measured `.so` count is 0 in both APKs (although `ndk.abiFilters` is set), so there is nothing to extract and no runtime effect. Record it in both diffs and the log with that explanation; do not change any build file to suppress it. Any difference the floor does not explain: stop and report (ruling P-2) |
 | D25 | Packaged-manifest diff (normalised) differs from the merged one in kind | Stop and report |
-| D26 | Kept-name set differs from the previous increment | Stop and report (a reflection-sensitive class lost its name) |
+| D26 | Kept-name set differs from the previous increment | A name that is only a D8/R8 synthetic (for example a `$-CC` interface companion, which D8 stops creating at min-api 24, 2.5 item 3): record and explain; expected not to occur, because companions are not self-mapped. Any other name, in particular one of the nine of U-060 C-2: stop and report |
 | D27 | `configuration.txt` differs | Lines that differ only in a path token after sanitising: record. Anything else: stop and report |
-| D28 | APK entry lists differ | Allowed and explained (N4, Scope Concern P-4): `res/` entries whose qualifier-normalised list (4.0 I4 step 6) is equal, or whose difference is only removed duplicates of a normalised path; a changed number of `classes*.dex` (D8 at min-api 24 desugars less). Any other added or removed entry: stop and report |
+| D28 | APK entry lists differ | **Accepted as declared differences by ruling P-4**, each recorded and explained (N4, 2.5 items 2 and 3): `res/` entries of library resources whose qualifier-normalised list (I4 step 6) is equal, or whose difference is only removed duplicates of a normalised path (the app's own `res/` has only `-v26`); a changed number of `classes*.dex` (D8 at min-api 24 keeps interface default and static methods native; multidex itself is unchanged). Any other added or removed entry: stop and report (ruling P-4) |
 | D29 | `.so` count changes | Stop and report |
 | D30 | `lintVitalRelease` (inside `assembleRelease`) fails at I4 | Stop and report: a fatal lint finding caused by the floor; S1 never suppresses it |
 | D31 | Any test fails at I4 | Stop and report (nothing in I4 should change test behaviour) |
 | D32 | AC-7 grep after I5 is not the 14 lines of 3.6 | A site of table S still there: complete the edit. A line not in this plan (for example from U-067): stop and report (scope) |
 | D33 | AC-8 grep after I5 has a hit other than `package-info.java:2` | In a file and range this plan rewords: fix the text. Elsewhere: stop and report |
 | D34 | A compile error after an import removal | The plan's L6 is wrong for that file: restore that import only, record, report in the log; QA decides |
-| D35 | `compat` after I5 below 0.20 | Apply contingency C-1 (6.1) before the I5 commit, re-run G4, list the test by name (count `C0 + 3`) |
+| D35 | `compat` after I5 (C-1 included) below 0.20, or `disable`'s lines not covered | Stop and report (AC-15); never edit the floor |
+| D35b | C-1's first run fails (I5 step 1a), for example because Robolectric rejects the component (the AGP 9 unit-test manifest carries none of the app's components; the reviewer read `ShadowApplicationPackageManager` as storing the state with no manifest check) | Stop and report before step 2; never change the assertions to fit; the orchestrator rules on another test |
 | D36 | `scheduler` after I5 below 0.60 | Stop and report (AC-15) |
 | D37 | A normalised `javap` difference outside 5.4 | Stop and report |
 | D38 | AC-4 (g): either `SmsReceiver` branch line has `ci=0` after I5 | Stop and report |
 | D39 | `$SCR` already exists | Stop; never delete a folder this story did not create |
+| D39b | The copy's `gradlew` has CRLF line ends (I6 step 2) | Remove the copy, re-create it with `git -c core.autocrlf=false archive`, re-check; if still not 0, stop and report |
+| D39c | `rm -rf "$SCR"` fails | `(cd "$SCR" && ./gradlew --stop)` once, retry; still failing: record it in the log and report; never leave the copy silently |
 | D40 | `updateLintBaseline` is not listed | Method B: `rm "$SCR/app/lint-baseline.xml"` then `(cd "$SCR" && ./gradlew --console=plain :app:lintDebug)`; lint writes the missing baseline and fails the build ("Created baseline file"); record both |
 | D41 | REMOVE ≠ the 11 of L12 | An expected entry is KEEP or STALE-OTHER: stop and report (its site was not removed, or lint matches it otherwise). An extra REMOVE: include it only if it is `site-gone` or `file-gone`, explain it in the log, and adjust 3.7's line count. A `site-present` REMOVE: do not remove it; stop and report. If `KEEP` is near 0, the regenerated file's path form differs; stop and report. If `sanitize.py` refuses the regenerated file, keep it in the work folder and commit only the tool output |
 | D42 | `N6` ≠ `N5 − |REMOVE|` and ≠ 0 | Stop and report with both lint logs |
@@ -1198,10 +1358,32 @@ checkout's other orchestrator files are never staged by the developer.
 | D50 | "bash.exe … not found" or a process killed without a visible reason | Stop and report (endpoint security); do not work around it |
 | D51 | A gate fails after the increment that caused it is committed, or the index was not clean | Make a further commit `U-068 S1-I<k> fix: ...` with explicit paths; never amend, rebase, reset, revert or force-push without the orchestrator. An unclean index before staging: stop and report |
 | D52 | The tool moves a Gradle run to the background | Wait for its completion notice; never poll; start nothing else meanwhile |
+| D53 | A commit in `$START..HEAD` whose subject does not start with `U-068 S1-` | It touches only documents (no path of I7 step 5 (iii)): record its id and subject; not a stop. It touches code or build paths: stop and report. A changed or new path outside this story's paths that the developer notices is recorded with its path only and is never a reason to stop (U-067 plan, constraint 12) |
 
-### 6.1 Contingency C-1 (only under D9 or D35)
+### 6.1 Test C-1 (ruling P-5: always applied, in I5 step 1a)
 
-Add to `SmsReceiverTest` (after the four tests), count +1, named in the log and the hand-off:
+**Placement: I5, step 1a, before the I5 code edits.** Reasons:
+1. Ruling P-5 adds C-1 "in the increment the plan assigns it", and the plan assigned it to I5.
+2. I5 is where S-4 removes the covered `compat` line. Adding C-1 first in that increment keeps "headroom before
+   risk" inside the commit that spends the headroom, and the I5 gate is the first gate that needs it.
+3. I3's design "must hold" is "count unchanged" (DES-014 S1-I3). Adding C-1 there would break that check, and I3's
+   AC-4 scope is the five retargets. I4 is the floor and the manifest; a test there would mix concerns.
+4. In step 1a, `app/src/main` still equals HEAD (the I4 commit), so M-C1 meets 4.8's precondition, and its recovery
+   command cannot wipe the E5 edits, because none has been made yet.
+
+AC-16's order is unchanged: one commit per increment, I1 to I7. The I5 commit carries the eight production files
+plus `SmsReceiverTest.java` and the C-1 evidence (4.9).
+
+**C1.a** (`$TS/compat/SmsReceiverTest.java`, as left by 3.3). `old_string` is the two lines
+`import android.content.Intent;` and `import android.os.Build;`. `new_string` is the five lines
+`import android.content.ComponentName;`, `import android.content.Context;`, `import android.content.Intent;`,
+`import android.content.pm.PackageManager;`, `import android.os.Build;`. The old text is unique.
+
+**C1.b.** `old_string` is the last test of 3.3, three lines:
+`    public void testIsSmsBackupDefaultSmsApp_q_usesRoleManager() {`, its assertion line
+`        assertThat(SmsReceiver.isSmsBackupDefaultSmsApp(RuntimeEnvironment.application)).isFalse();`, and `    }`.
+`new_string` is the same three lines, then a blank line, then this method exactly as printed. The old text is
+unique. The file then has 5 lines containing `@Test`.
 ```java
     @Test
     public void testEnableThenDisable_togglesReceiverComponent() {
@@ -1215,12 +1397,17 @@ Add to `SmsReceiverTest` (after the four tests), count +1, named in the log and 
                 .isEqualTo(PackageManager.COMPONENT_ENABLED_STATE_DISABLED);
     }
 ```
-with the imports `android.content.ComponentName`, `android.content.Context`, `android.content.pm.PackageManager`. It
-runs `SmsReceiver.enable` and `disable` (`:97-109` at `0d5755c4`, about six lines). Its mutation (each
-`setComponentEnabledSetting` state swapped) is run and logged as M-C1. If Robolectric rejects the component (the
-AGP 9 unit-test manifest carries none of the app's components, U-060), C-1 cannot be used: stop and report, and
-the orchestrator rules on another test. Used only if a row sends the developer here; otherwise this section is not
-applied.
+**Coverage.** C-1 runs `SmsReceiver.enable` and `disable` (`:97-109` at `<start>`). `enable`'s three lines
+(`:98`, `:99`, `:102`) are already covered through `SmsDefaultRoleHelper.kt:114`, so C-1 adds `disable`'s three
+lines (`:105`, `:106`, `:109`): `compat` after I5 is 18/71 = 25.4 %, with 3 spare lines (2.2, L21). Robolectric
+4.15.1's `ShadowApplicationPackageManager` keeps and returns a component's enabled state with no manifest check, as
+the reviewer read from the jar with `javap`; if Robolectric nevertheless rejects the component, row D35b applies.
+
+**M-C1** (one Edit; row in 4.8). File `$S/compat/SmsReceiver.java`. `old_string`
+`            COMPONENT_ENABLED_STATE_DISABLED,` (12 spaces, inside `disable`, `:107` at `<start>`; unique: the import at
+`:22` has no indentation and ends with `;`) → `new_string` `            COMPONENT_ENABLED_STATE_ENABLED,`. Class run
+`com.zegoggles.smssync.compat.SmsReceiverTest`. Expected failing: `testEnableThenDisable_togglesReceiverComponent`,
+Truth "expected: 2 ... but was: 1" on its second assertion (type A). Passing: the four retargeted cases.
 
 ## 7. Items for the Orchestrator (hand-over)
 
@@ -1230,19 +1417,20 @@ applied.
    (`:57-61` at `0d5755c4`, `:54-58` after I7). For a follow-up item.
 2. **Pre-existing test gap for the backlog (SC4):** the pre-Q branch of `SmsDefaultRoleHelper.startRestore` (API 24
    to 28: `getDefaultSmsPackage`, `setSmsDefaultPackage`, the dialog and the toast) has no unit test; every
-   `MainActivityRestoreTest` case runs at Q. Contingency C-1 does not cover it.
+   `MainActivityRestoreTest` case runs at Q. Test C-1 does not cover it.
 3. **37 versus 38 (SC2):** the story's count (37) and command stand; the log states the difference; no design note.
-4. **Design corrections for a dated note, if the orchestrator wants one** (this story edits no design): D8 item 4
-   says the `compat` ratio rises after S-4; it falls from 21.9 % to 21.1 % (S-4 also removes the covered `else if`
-   line), and `compat` is left with **zero spare lines** (needs 15 of 71, has 15). The `scheduler` figure in
-   `app/build.gradle:539` (102/164) and quoted in the story is stale; the last recorded value is 140/188 (L9).
-   D4b's line numbers for the vendored guards moved with U-066 (the story records the new ones).
+4. **Design corrections for a dated note, if the orchestrator wants one** (this story edits no design; both
+   accepted by ruling P-5): D8 item 4 says the `compat` ratio rises after S-4; S-4 alone lowers it from 21.9 % to
+   21.1 % (it also removes the covered `else if` line), leaving 0 spare lines; with C-1 `compat` ends at 18/71,
+   **3 spare lines (0 without C-1)**. The `scheduler` figure in `app/build.gradle:539` (102/164) and quoted in the
+   story is stale; the last recorded value is 140/188 (L9). D4b's line numbers for the vendored guards moved with
+   U-066 (the story records the new ones).
 5. **For S2 (toolchain):** after S1 no test is configured below API 24 (`grep` of AC-4 (e)), so Robolectric 4.16 or
    later is no longer blocked by test levels; the `app/build.gradle:160` comment says so. The `compat` package has
-   zero spare lines, so S2-I7 (Robolectric 4.18.1) must expect that any lost `compat` line fails the gate; the
-   `receiver` package has 10 spare lines after I2. The SDK 24 `android-all` jar is in the local Maven cache after
-   I3 (its name and SHA-512 are in `I3-sdk24-jar.txt`); S2-I7 resolves new names. The `extractNativeLibs` outcome
-   (D24) is recorded for S2's manifest diff baseline.
+   3 spare lines (0 without C-1) and `receiver` 10 after I2, the margins S2-I7 (Robolectric 4.18.1) starts from.
+   The SDK 24 `android-all` jar is in the local Maven cache after I3 (coordinates, sizes and SHA-512s in
+   `I3-sdk24-jar.txt`); S2-I7 resolves new names. The `extractNativeLibs` outcome (D24) is recorded for S2's
+   manifest diff baseline; N11's outcome (R8 and `SDK_INT`) is recorded in `I5-bytecode.txt`.
 6. **For U-069 (BUG-023):** `WorkManagerScheduler.kt` loses 7 lines at the old `:224-230` and one import, so every
    line after `:20` moves; the sentences U-069 AC-13 (b) relies on (old `:61`, `:212-213`) are byte-identical; the
    comment at `WorkManagerSchedulerTest.kt:537-538` is untouched; the retargeted test
@@ -1250,8 +1438,11 @@ applied.
 7. **For S3:** the lint baseline keeps every entry that is stale for reasons other than the floor (STALE-OTHER, for
    example `GradleDependency`); S3's regenerate (D17 option (a)) is where they go. The rule-ID table of I0 closes
    design assumption A22.
-8. **Scope Concerns of this plan** (section 8.2): P-1 needs an acknowledgement before I3; P-2 to P-5 are for
-   information or an optional ruling.
+8. **Scope Concerns of this plan** (section 8.2): P-1 to P-5 are ruled (story Implementation Notes, "Rulings on the
+   plan's scope concerns"); nothing is open.
+9. **For the next contract amendments** (contract-verification O-2, O-3; no edit by this story):
+   CNTR-MODERNIZATION-003 `:260` still says "minSdk 21 platform" (history); CNTR-MODERNIZATION-005 cites the
+   receiver's manifest registration by line, and E4.4 moves those lines up by 14; re-cite by element name.
 
 ## 8. Contracts Verified, Scope Concerns, Risks, Out of Scope
 
@@ -1291,29 +1482,25 @@ No new component boundary is introduced; no CNTR is missing or in draft. Contrac
 
 ### 8.2 Scope Concerns of this plan
 
-- **P-1 (acknowledgement needed before I3): the SDK 24 `android-all` jar is downloaded outside Gradle's
-  dependency verification.** The brief asks that Gradle fetch the jar only if the verification metadata already
-  covers it. Gradle does not fetch it: Robolectric's own resolver does, at test time, and no `android-all` jar has
-  been in `gradle/verification-metadata.xml` at `0d5755c4`, not even the SDK 21, 23 and 29 jars the suite uses today (L11). Design D5 records this posture and accepts it for S1
-  ("S1 adds SDK 24's jar", `:922`); the story's Technical Context and Verification Step 5 restate it. No build-file,
-  `robolectric.properties` or metadata change is needed, so AC-12 holds. The plan follows the approved design and
-  makes the download conditional on the orchestrator's acknowledgement (row D19 (c)); without it the story cannot
-  run its retargeted tests and stops at I3. Integrity evidence: the jar's SHA-512 against the `.sha512` file the
-  resolver fetched (I3 step 3); this checks transfer, not origin.
-- **P-2 (information): the merged manifest may change `android:extractNativeLibs`** (N3, D24), a difference AC-6's
-  literal "only" does not list. The story's Scope Concern 10 asks that any other difference be explained; this one
-  is pre-declared, with `.so` count 0 as the proof of no effect. Suppressing it would need a build-file change
-  that AC-12 forbids.
-- **P-3 (information): the lint prune removes only entries made stale by the floor or naming deleted files** (the
-  11), and keeps any entry that is stale for another reason (STALE-OTHER), each explained. This reads D17's "apply
-  only the removals" as "apply nothing but removals", and AC-10 (c)'s "any other difference is explained entry by
-  entry", consistent with REQ-015 AC-8 ("every entry made stale by the minSdk raise"). If the orchestrator wants
-  every STALE-OTHER entry removed too, that is a ruling; it changes 3.7's count, not the method.
-- **P-4 (information): AC-13 (e)'s "only by what the removed code and permissions explain"** does not name the floor
-  itself, which may rename or drop `res/` entries (AAPT2 version-qualifier collapse, N4) and change the number of
-  dex files; D28 allows and explains only those.
-- **P-5 (optional ruling): `compat` ends with zero spare lines** (2.2). The gate holds. Recommendation: accept and
-  hand over to S2 (item 7.5). Alternative: authorise contingency C-1 now as a planned third test (count `C0 + 3`).
+All five are ruled (story Implementation Notes, "Rulings on the plan's scope concerns", 2026-11-21).
+
+- **P-1, ruled "acknowledged": the SDK 24 `android-all-instrumented` jar is fetched by Robolectric's own resolver,
+  outside Gradle's dependency verification.** Gradle's verification metadata covers no such jar, today or after
+  (none of the SDK 21, 23 and 29 jars the suite uses is in it, L11); design D5 accepts the download for S1
+  ("S1 adds SDK 24's jar", `:922`); no build file or metadata entry changes, so AC-12 holds. The developer records
+  the coordinates, sizes and SHA-512s of the jar and its `.pom` and the `.sha512` files they were checked against
+  (I3 step 3); two failed downloads stop the story and nothing is fetched by hand (D19). The SHA-512 check shows
+  transfer integrity, not origin.
+- **P-2, ruled: the merged manifest may change `android:extractNativeLibs`** (N3, D24), accepted as a declared
+  difference with its explanation (measured `so=0`); suppressing it would need a build-file change that AC-12
+  forbids. An unexplained difference stops the story.
+- **P-3, ruled "as planned": the lint prune removes only the 11 entries the floor makes stale** (or that name
+  deleted files) and keeps any entry stale for another reason (STALE-OTHER), each explained.
+- **P-4, ruled: floor-caused APK differences** (AAPT2 qualifier collapse in library resources, the `classes*.dex`
+  count) are accepted as declared differences, each recorded and explained (D28); an unexplained one stops the
+  story.
+- **P-5, ruled: C-1 is authorised and required.** It is added in I5 step 1a (6.1); the story adds three tests and
+  the count from I5 on is `C0 + 3`; `compat` ends at 18/71 with 3 spare lines.
 
 The story's own Scope Concerns: 1, 2, 3, 4 and 7 are ruled and applied (section 0); 5 (the vendored `>= N` guard
 stays, D4b) and 6 (no publishing words; the `CHANGES` entry has none) need nothing; 8 (stricter API 24 assertions)
@@ -1323,7 +1510,7 @@ is applied in T3; 9 (criteria count) needs nothing; 10 (operational) is D19, I6 
 
 | # | Risk | Likelihood / impact | Mitigation |
 |---|------|---------------------|------------|
-| R1 | The SDK 24 jar cannot be downloaded, or the orchestrator does not acknowledge P-1 | Low / blocks I3 | D19; retry once; never skip a test |
+| R1 | The SDK 24 jar cannot be downloaded (ruling P-1: two failures stop the story) | Low / blocks I3 | D19; retry once; never skip a test; nothing fetched by hand |
 | R2 | Robolectric 4.15.1 misbehaves at SDK 24 on JDK 25 (WorkManager harness, SQLite) | Low / blocks I3 | D20, D21; the first SDK 24 run is one class |
 | R3 | `compat` falls below 0.20 if the I0 figures differ from L9 | Low / gate red | 2.2 formulas; D9, D35; C-1 pre-written |
 | R4 | A merged-manifest or APK difference nobody predicted | Low-medium / blocks I4 | Full EV-B at I0, I4, I5, I7; D24 to D29 classify, everything else stops |
@@ -1383,7 +1570,8 @@ output stays in the orchestrator's work folder outside the repository. `ADB="$SD
    containing `IllegalArgumentException` or `SecurityException` (count).
 8. Verdict: pass only with `Status: ok`, a pid that is the same before and after the log read, and all three counts
    0. Otherwise "fail" with the matching lines (redacted), or "not run" as above.
-9. Shut the emulator down if this step started it: `"$ADB" -s <serial> emu kill`.
+9. Shut the emulator down afterwards, as the story's IC-3 says (plan-review O-6): `"$ADB" -s <serial> emu kill`
+   (only the `Pixel_9_Pro` serial identified in step 1).
 10. Record `evidence/IC3-emulator.txt` through `sanitize.py` (it refuses e-mail-like text): clock time, AVD name,
     SDK level, `dumpsys` lines before and after, install result, `am start -W` output, the pids, the three counts,
     the APK SHA-256 compared with the hand-off, the verdict. Never copy raw logcat or a screenshot into the
@@ -1428,22 +1616,35 @@ permission prompts recorded before any account is configured.
    No `@Ignore` or `Assume`; no assertion loosened; no JaCoCo `minimum`, `includes` or `excludes` changed; no
    floor lowered.
 10. No device, emulator or adb command (section 9 is the orchestrator's). `Pixel_10_Pro` is never touched.
-11. Leave other work in the checkout alone: `sdlc/.skill-delegation-audit.log`, `sdlc/.skill-context.json`, the
-    story files, the sprint plans, this plan and the plan-gate files, every design, contract, requirement and change
-    record. Edit neither the story nor any record; section 7 is the orchestrator's list.
+11. Do not touch the other work in the checkout (plan-review B-6; U-067 plan, constraint 12). That is:
+    - `sdlc/.skill-*` (the delegation audit log, `sdlc/.skill-context.json`);
+    - `sdlc/artifacts/build/sprints/sprint-024/**` except this story's own files in `$W` (the implementation log and
+      `evidence/`); in `$W`, this plan, the plan-gate reports and `compiled-pipeline.json` are not the developer's;
+    - `sdlc/artifacts/stories/**` and the decision appendix
+      (`sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`);
+    - any design, requirement, contract or change record; the story file.
+
+    The orchestrator may commit documents (never code) while you run, and planners and reviewers of other stories
+    write under other sprint folders. Changes outside this story's paths (`app`, `k9mail-vendored`, the build files,
+    `CHANGES`, `DEVELOPMENT.md`, `.github`, `sdlc/artifacts/engagement`, `$W`) are recorded if noticed and are never
+    a reason to stop (I7 step 5, D53). Edit neither the story nor any record; section 7 is the orchestrator's list.
 12. No e-mail address, host name, user name or user-profile path in any file written to the repository.
+13. No test text may contain the string `@Test` except the annotations (the authoritative count counts lines that
+    contain it; every test text in this plan complies).
+14. No new file under `app/` (outside the ignored build output `app/build/`) other than
+    `app/src/test/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiverTest.java`.
 
 ## 11. Quality Attribute Coverage (ISO/IEC 25010)
 
 | Attribute | How this story serves it |
 |-----------|--------------------------|
 | Functional suitability | Behaviour on every level ≥ 24 is unchanged (2.3, site by site); INV-4 is asserted at the new floor with stricter assertions; CNTR-005's opt-in guard gets both branches asserted; correctness of documentation: every statement about supported levels in the edited files becomes true |
-| Performance efficiency | No runtime path gains work; S-1, S-4, S-6, S-7 each remove one integer comparison per call. Build: about 20 Gradle runs; tests add 2 cases and one SDK 24 sandbox (one more `android-all` jar in memory per fork that runs an SDK 24 test, `maxParallelForks = 4`) |
+| Performance efficiency | No runtime path gains work; S-1, S-4, S-6, S-7 each remove one integer comparison per call. Build: about 23 Gradle runs; tests add 3 cases and one SDK 24 sandbox (one more `android-all` jar in memory per fork that runs an SDK 24 test, `maxParallelForks = 4`) |
 | Compatibility | Co-existence and interoperability: the manifest loses two permissions no installable device applies (D4a); the app installs over the configured app (`install -r`, versionCode 1602, IC-3); the vendored module's minSdk 21 merges under the app's 24 (D4b). Accepted cost: Android 5.0 to 6.0 can no longer install updates; no device in use is affected (Record 5) |
 | Usability | Not applicable to this story's scope (no UI change; the `CHANGES` entry is the user-facing note) |
-| Reliability | Fault tolerance unchanged (the U-054 degraded path still returns null and is still tested); recoverability: one commit per increment, `git revert` newest-first, reinstall the previous APK with `install -r` (D19) |
-| Security | Least privilege improves slightly: two permission declarations (`USE_CREDENTIALS`, `WRITE_EXTERNAL_STORAGE`) leave the manifest. Supply chain: one Robolectric test jar enters the local cache outside Gradle verification, as D5 accepts (P-1), with its SHA-512 recorded; no verification-metadata change |
-| Maintainability | Analysability: seven dead branches and their imports leave, stale comments are corrected, ten stale lint entries and one for a deleted file leave the baseline (a monotone ratchet); testability: the receiver seam is exercised; modifiability: the toolchain stories S2 and S4 are unblocked (Robolectric 4.18 and WorkManager 2.12 need 24). The `compat` margin shrinks to zero spare lines (P-5) |
+| Reliability | Fault tolerance unchanged (the U-054 degraded path still returns null and is still tested); recoverability: one commit per increment, `git revert` newest-first (a hand rollback too: reverting I4 while keeping I5 is excluded, 2.4), reinstall the previous APK with `install -r` (D19); a device below the floor keeps its installed build (`INSTALL_FAILED_OLDER_SDK` on update, 2.3) |
+| Security | Least privilege improves slightly: two permission declarations (`USE_CREDENTIALS`, `WRITE_EXTERNAL_STORAGE`) leave the manifest. Supply chain: one Robolectric test jar and its POM enter the local cache outside Gradle verification, as D5 accepts (ruling P-1), with sizes and SHA-512s recorded against their checksum files; no verification-metadata change |
+| Maintainability | Analysability: seven dead branches and their imports leave, stale comments are corrected, ten stale lint entries and one for a deleted file leave the baseline (a monotone ratchet); testability: the receiver seam is exercised; modifiability: the toolchain stories S2 and S4 are unblocked (Robolectric 4.18 and WorkManager 2.12 need 24). The `compat` margin ends at 3 spare lines (0 without C-1, ruling P-5) |
 | Portability | Installability: minSdk 24 is read by the platform (IC-3 `dumpsys`); adaptability across levels 24 to 36 rests on Robolectric at 24, 29 and Q and one real level (36); API 24 itself is not run on a device (IC-4) |
 
 ## 12. Artifacts Consulted
@@ -1475,23 +1676,25 @@ permission prompts recorded before any account is configured.
 
 ## Verdict
 
-**PASS.** The story can be built as written at the start commit that closes U-067. Every fact the plan relies on
-was read at `0d5755c4` (L1 to L20); every fact that needs Gradle, Robolectric, AGP, lint or a device is a
-`needs_check` with its step and decision rows (N1 to N10, D1 to D52). Each acceptance and integration criterion
-has its step and evidence (section 13). The plan:
+**PASS (iteration 2).** The story can be built as written, with the orchestrator's rulings P-1 to P-5, at the start
+commit that closes U-067's story. Every fact the plan relies on was read at `0d5755c4` and re-verified at
+`c12a2788` for every edited file (L1 to L21); every fact that needs Gradle, Robolectric, AGP, R8, lint or a device
+is a `needs_check` with its step and decision rows (N1 to N11, D1 to D53). Each acceptance and integration
+criterion has its step and evidence (section 13). All six blockers of the plan-review are fixed after being
+re-verified, and every observation and recommendation of the three gates is taken up (Iteration 2 table). The plan:
 - keeps the ruled order (I1 before any change, I2 headroom before risk, I3 before I4, I4 before I5) and makes
-  one local commit per increment with explicit paths;
-- gives every edit as exact text, keeps the two sentences U-069 relies on byte-identical, and never writes the old
-  test names that the AC-8 grep would catch;
-- proves the new and retargeted tests by six mutations, including the boundary mutant M-W2, and proves the
-  dead-code removal by a site-by-site case analysis, the existing tests and a normalised bytecode comparison;
-- re-derives the coverage arithmetic from recorded figures and corrects two design statements (the `compat` ratio
-  falls and ends with zero spare lines; the `scheduler` figure quoted is stale), with formulas for whatever I0
-  measures;
+  one local commit per increment with explicit paths, checked to exist before staging;
+- gives every edit as exact text, including C-1 (C1.a, C1.b), keeps the two sentences U-069 relies on
+  byte-identical, and never writes the old test names that the AC-8 grep would catch;
+- proves the new and retargeted tests by seven mutations, including the boundary mutant M-W2 and M-C1, and proves
+  the dead-code removal by a site-by-site case analysis, the existing tests and a normalised debug bytecode
+  comparison, stating that the release comparisons are regression checks only (2.5, 2.6);
+- re-derives the coverage arithmetic from recorded figures (`compat` 18/71 with C-1, 3 spare lines) and every
+  expected count of lines or hunks;
+- scopes its end-of-story checks to this story's commits and paths while the orchestrator commits documents;
 - builds against CNTR-MODERNIZATION-004 v3 and cites every point CR-015 asks of S1 (8.1).
 
-One acknowledgement is needed before I3 (P-1, the jar the approved design already accepts); P-2 to P-5 are for
-information or an optional ruling. None changes the story's scope.
+Nothing is open for the orchestrator before implementation. No finding needed a change of the story's scope.
 
 ## 13. Criterion-to-Step Map
 
@@ -1509,9 +1712,9 @@ information or an optional ruling. None changes the story's scope.
 | AC-11 | I7 step 2 | `I7-docs.txt` |
 | AC-12 | I4 step 4, I7 step 5 | `I4-checks.txt`, `I7-final-checks.txt` |
 | AC-13 | every gate; I7 steps 3-4 | `I<k>-gates.txt`, `I<k>-junit-totals.txt`, `I7-build-diffs.txt`, `I0/I7-gradle-version.txt` |
-| AC-14 | I0 step 1, I2 step 5, I7 steps 5, 7 | `I0-start.txt`, `I2-checks.txt`, `I7-final-checks.txt`, hand-off |
-| AC-15 | I0, I2, I3, I5, I7 | `I<k>-jacoco-packages.txt`, `-inventory.json`, `-lines.txt` |
-| AC-16 | CM(1)-CM(7) | `git log --oneline $START..HEAD`; the log's "I<k> commit" lines and "must hold" results |
+| AC-14 (three added, ruling P-5) | I0 step 1, I2 step 5, I5 steps 1a and 5, I7 steps 5, 7 | `I0-start.txt`, `I2-checks.txt`, `I5-c1-first-run.txt`, `I5-checks.txt`, `I7-final-checks.txt`, hand-off |
+| AC-15 | I0, I2, I3, I5, I7 | `I<k>-jacoco-packages.txt`, `-inventory.json`, `-lines.txt` (`compat` 18/71 with C-1) |
+| AC-16 | CM(1)-CM(7) | `git log --reverse --format='%h %s' --grep='^U-068 S1-' $START..HEAD` (hand-off); the log's "I<k> commit" lines and "must hold" results |
 | IC-3, IC-4 | Section 9 (orchestrator) | `IC3-emulator.txt`, `IC4-not-run.txt` |
 
 ## Phase Completion Report
@@ -1523,5 +1726,5 @@ artifact_path: "sdlc/artifacts/build/sprints/sprint-024/U-068/plan.md"
 story_status: "in-progress"
 current_build_phase: "planning"
 errors: []
-notes: "P-1 (SDK 24 android-all jar fetched by Robolectric outside Gradle verification, as design D5 accepts) needs the orchestrator's acknowledgement before S1-I3; P-2 to P-5 are information or an optional ruling."
+notes: "Iteration 2: B-1 to B-6, plan-review O-1 to O-7, contract-verification O-1 to O-4 and the depth check's recommendations and edge cases taken up (contract-verification O-1 considered and not taken, with the reason). C-1 is in I5 step 1a; the story adds three tests (count C0 + 3 from I5). P-1 to P-5 ruled; nothing open."
 ---
