@@ -1,6 +1,6 @@
 ---
 type: story
-status: review
+status: done
 sprint: '021'
 artifact_type: user-story
 priority: medium
@@ -20,8 +20,9 @@ title: Close two gaps in the TLS baseline tests - pinned expiry check and the SN
 pipeline: ''
 domain: modernization
 requirement_source: cr:CR-009
-updated_at: '2026-11-21T03:15:21.247Z'
-current_build_phase: validation
+updated_at: '2026-11-21T03:35:10.152Z'
+resolution: done
+updated_date: 2026-11-21
 ---
 
 # U-064: Close Two Gaps in the TLS Baseline Tests (Pinned Expiry Check and the SNI Safety Net)
@@ -196,6 +197,14 @@ Risks: (1) a chosen SNI name turns out to be accepted on the running JDK, which 
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
+
+Summarised by the orchestrator from the workspace `sdlc/artifacts/build/sprints/sprint-021/U-064/` on 2026-11-20. Counts are in IC-4.
+
+- **Plan checks.** Iteration 1: plan review FAIL on one blocker (the evidence-hygiene scan wrote its output into the folder it scanned), contract verification PASS, depth check FAIL (warning only). Iteration 2: all three PASS.
+- **Code review: PASS.** 0 blockers. W1 (the workspace's `compiled-pipeline.json` holds a user-profile path) resolved in cycle: the file is kept out of version control. Five notes, deferred with reasons (N1 to N5: a redundant assertion, message wording, a fully qualified name kept to honour the additions-only rule, log wording).
+- **Security review: PASS.** It confirms that AC-1 closes finding W-1 of the U-063 security review for the realistic regression (the validity check deleted or bypassed). Open, deferred with reasons: F-1 (Low), a check of the end date only would not be noticed, because the not-yet-valid case was left out by the product owner's decision DP-1; F-2 to F-5 (Info).
+- **QA: PASS.** 15 of 15 criteria met; IC-8 and IC-12 met with a wording deviation each (one line in the code review quotes the search pattern with a placeholder; the story repeats the counts in two notes, all copies agreeing). QA re-applied mutation M-N1, saw the named test fail, and proved the restore by hash.
+- **For the next story (U-065) and the later move (CR-009).** The AC-2 test depends on the public static `setSniViaSSLParameters` and on the guard method read by reflection: a move or rename needs a declared retarget, never an edit to make the test pass. If the pinned factory gets its own server-name handling, its safety net needs its own test and mutation. JUnit XML is switched off in the build; totals must come from a run with the read-only init script under `sdlc/artifacts/build/sprints/sprint-020/U-063/evidence/tools/`, or the files on disk belong to an earlier run.
 
 ## Notes
 - Dependencies: none that block it. It should land before the Part B TLS-move story (CR-009). It needs nothing from BUG-019 or BUG-020.
