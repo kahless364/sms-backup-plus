@@ -1,0 +1,123 @@
+{
+  "execution_plan": {
+    "version": "1.0.0",
+    "pipeline": "sprint-execution",
+    "instance_id": "sprint-024",
+    "plan_type": "sprint-execution",
+    "variation": null,
+    "variation_rationale": null,
+    "steps": [
+      {
+        "step_id": "U-068",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-024/U-068/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-068/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-068/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-068/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-068/qa-results.md"
+        ],
+        "gate": {
+          "name": "wave-gate",
+          "verdict_type": "audit_gate",
+          "max_iterations": 1
+        },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": [],
+        "parallel_group": "wave-1"
+      },
+      {
+        "step_id": "U-069",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-024/U-069/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-069/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-069/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-069/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-069/qa-results.md"
+        ],
+        "gate": {
+          "name": "wave-gate",
+          "verdict_type": "audit_gate",
+          "max_iterations": 1
+        },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": ["U-068"],
+        "parallel_group": "wave-2"
+      },
+      {
+        "step_id": "U-070",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-024/U-070/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-070/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-070/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-070/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-070/qa-results.md"
+        ],
+        "gate": {
+          "name": "wave-gate",
+          "verdict_type": "audit_gate",
+          "max_iterations": 1
+        },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": ["U-069"],
+        "parallel_group": "wave-3"
+      }
+    ],
+    "checkpoints": [
+      {
+        "checkpoint_id": "wave-1-complete",
+        "after_steps": ["U-068"],
+        "gates": [
+          {
+            "gate_id": "wave-1-gate",
+            "agent": "deterministic",
+            "severity": "blocking"
+          }
+        ]
+      },
+      {
+        "checkpoint_id": "wave-2-complete",
+        "after_steps": ["U-069"],
+        "gates": [
+          {
+            "gate_id": "wave-2-gate",
+            "agent": "deterministic",
+            "severity": "blocking"
+          }
+        ]
+      },
+      {
+        "checkpoint_id": "wave-3-complete",
+        "after_steps": ["U-070"],
+        "gates": [
+          {
+            "gate_id": "wave-3-gate",
+            "agent": "deterministic",
+            "severity": "blocking"
+          }
+        ]
+      }
+    ],
+    "overrides_applied": {
+      "agent_overrides": {},
+      "gate_additions": [],
+      "pipeline_override": null
+    },
+    "metadata": {
+      "created_by": "sprint-manager",
+      "created_at": "2026-11-21T10:30:00Z",
+      "context_summary": "Sprint sprint-024 with 3 stories across 3 waves (strictly serial); starts after sprint 023 is completed",
+      "plan_revision": 1,
+      "re_consultation_reason": null,
+      "file_overlap_flags": []
+    }
+  }
+}

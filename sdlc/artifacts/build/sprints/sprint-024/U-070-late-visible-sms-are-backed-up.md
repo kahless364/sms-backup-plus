@@ -1,6 +1,7 @@
 ---
 type: story
-status: ready
+status: planned
+sprint: '024'
 artifact_type: user-story
 priority: high
 complexity: high
