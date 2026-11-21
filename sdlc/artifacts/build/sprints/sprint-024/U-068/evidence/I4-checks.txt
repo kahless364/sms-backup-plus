@@ -1,0 +1,42 @@
+== grep minSdkVersion|compileSdkVersion|targetSdkVersion|versionCode app/build.gradle
+21:    compileSdkVersion 35
+24:        minSdkVersion 24
+25:        targetSdkVersion 35
+26:        versionCode 1602
+== grep 'minSdk 21|SDK 21' app/build.gradle
+sdk21-exit=1
+== app/build.gradle with // comments stripped, HEAD vs working tree (only line 24 expected)
+24c24
+<         minSdkVersion 21
+---
+>         minSdkVersion 24
+warning: in the working copy of 'app/build.gradle', LF will be replaced by CRLF the next time Git touches it
+== changed lines in app/build.gradle (6 expected): 6
+== maxSdkVersion in the manifest
+maxsdk-exit=1
+== manifest hunk headers (expect @@ -38,14 +37,0 @@)
+@@ -38,14 +37,0 @@
+== added manifest lines (0 expected): 0
+== k9mail-vendored minSdkVersion (54: 21 expected)
+54:        minSdkVersion 21
+== USE_CREDENTIALS|WRITE_EXTERNAL_STORAGE in app/src and k9mail-vendored/src (only TokenRefresher.java:97 expected)
+app/src/main/java/com/zegoggles/smssync/auth/TokenRefresher.java:97:            // USE_CREDENTIALS permission should be enough according to docs
+== git diff --stat HEAD (the two files expected)
+warning: in the working copy of 'app/build.gradle', LF will be replaced by CRLF the next time Git touches it
+ app/build.gradle                 |  6 +++---
+ app/src/main/AndroidManifest.xml | 14 --------------
+ 2 files changed, 3 insertions(+), 17 deletions(-)
+
+== invariants in the I4 manifests (AC-6)
+SystemForegroundService with foregroundServiceType (packaged debug / release):
+109:            A: http://schemas.android.com/apk/res/android:name(0x01010003)="androidx.work.impl.foreground.SystemForegroundService" (Raw: "androidx.work.impl.foreground.SystemForegroundService")
+113-            A: http://schemas.android.com/apk/res/android:foregroundServiceType(0x01010599)=0x00000001
+108:            A: http://schemas.android.com/apk/res/android:name(0x01010003)="androidx.work.impl.foreground.SystemForegroundService" (Raw: "androidx.work.impl.foreground.SystemForegroundService")
+112-            A: http://schemas.android.com/apk/res/android:foregroundServiceType(0x01010599)=0x00000001
+InitializationProvider mentions in merged and packaged manifests (0 expected): 0
+BackupBroadcastReceiver in the packaged debug manifest:
+137:            A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.zegoggles.smssync.receiver.BackupBroadcastReceiver" (Raw: "com.zegoggles.smssync.receiver.BackupBroadcastReceiver")
+139-            A: http://schemas.android.com/apk/res/android:exported(0x01010010)=true
+142-                    A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.zegoggles.smssync.BACKUP" (Raw: "com.zegoggles.smssync.BACKUP")
+SmsBroadcastReceiver element identical to I0 (the I0-vs-I4 diffs above have no hunk in it): @@ -35,20 +35,6 @@
+(the single hunk @@ -35,20 +35,6 @@ is the 14-line deletion with default context; no hunk at or after the old :146, so the SmsBroadcastReceiver entry is untouched; the packaged-manifest diffs show no difference in it either)

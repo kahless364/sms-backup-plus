@@ -1,0 +1,99 @@
+== kept names: I0 vs I4
+diff-exit=0
+== configuration.txt: I0 vs I4
+diff-exit=0
+== apk summary: I0 vs I4
+1,3c1,3
+< debug/app-debug entries=542 so=0 dex=17 size=6468819 sha256=85015e4f3542318c0360167d0db941de628ac53ffeceb1e8c7d157a35b9d1c26
+< release/app-release-unsigned entries=525 so=0 dex=1 size=1994797 sha256=53299699b88366135de4c79f7afd4741c4dbc21811b3be70b467b812722f14f3
+< mapping-lines=95470 kept-names=48
+---
+> debug/app-debug entries=536 so=0 dex=23 size=6408587 sha256=910b25e8ac414049c29c1eaed6daa72832ab4153f0df564642930718ba603d43
+> release/app-release-unsigned entries=516 so=0 dex=1 size=1937824 sha256=b8f54b775ec5836129292a3051c4ff07682106c726849dbad6bb7ac7563bda6e
+> mapping-lines=91897 kept-names=48
+diff-exit=1
+== apk entries, debug: I0 vs I4
+3,5d2
+< META-INF/CERT.RSA
+< META-INF/CERT.SF
+< META-INF/MANIFEST.MF
+78a76,77
+> classes18.dex
+> classes19.dex
+79a79,82
+> classes20.dex
+> classes21.dex
+> classes22.dex
+> classes23.dex
+126d128
+< res/color-v21/abc_btn_colored_borderless_text_material.xml
+138d139
+< res/color/abc_btn_colored_text_material.xml
+148,153d148
+< res/color/abc_tint_btn_checkable.xml
+< res/color/abc_tint_default.xml
+< res/color/abc_tint_edittext.xml
+< res/color/abc_tint_seek_thumb.xml
+< res/color/abc_tint_spinner.xml
+< res/color/abc_tint_switch_track.xml
+478d472
+< res/layout-v22/abc_alert_dialog_button_bar_material.xml
+diff-exit=1
+== apk entries, release: I0 vs I4
+62,63c62,63
+< META-INF/services/r4.b0
+< META-INF/services/w4.t
+---
+> META-INF/services/q4.b0
+> META-INF/services/v4.t
+330d329
+< res/color-v21/abc_btn_colored_borderless_text_material.xml
+342d340
+< res/color/abc_btn_colored_text_material.xml
+352,357d349
+< res/color/abc_tint_btn_checkable.xml
+< res/color/abc_tint_default.xml
+< res/color/abc_tint_edittext.xml
+< res/color/abc_tint_seek_thumb.xml
+< res/color/abc_tint_spinner.xml
+< res/color/abc_tint_switch_track.xml
+482d473
+< res/u01.xml
+diff-exit=1
+== apk entries, debug, qualifier-normalised (-v10..-v24 removed): I0 vs I4
+3,5d2
+< META-INF/CERT.RSA
+< META-INF/CERT.SF
+< META-INF/MANIFEST.MF
+78a76,77
+> classes18.dex
+> classes19.dex
+79a79,82
+> classes20.dex
+> classes21.dex
+> classes22.dex
+> classes23.dex
+diff-exit=1
+== apk entries, release, qualifier-normalised: I0 vs I4
+62,63c62,63
+< META-INF/services/r4.b0
+< META-INF/services/w4.t
+---
+> META-INF/services/q4.b0
+> META-INF/services/v4.t
+474d473
+< res/u01.xml
+diff-exit=1
+== javap majors: I0 vs I4
+diff-exit=0
+
+== explanations of the differences above (I0 vs I4)
+declared in the plan (rows D24, D28; rulings P-2, P-4):
+ - extractNativeLibs true -> false in the merged and the packaged manifests, both variants (D24; so=0 in both APKs before and after, so nothing to extract).
+ - classes*.dex of the debug APK 17 -> 23 (D28: D8 at min-api 24; the release APK stays at 1 dex).
+ - res/ entries: 9 removed from each APK. Debug: res/color-v21/abc_btn_colored_borderless_text_material.xml, res/color/abc_btn_colored_text_material.xml, six res/color/abc_tint_*.xml, res/layout-v22/abc_alert_dialog_button_bar_material.xml; every one of them is equal to a path that remains after the qualifier-normalised comparison, i.e. AAPT2 dropped base-folder duplicates of -v21/-v22/-v23 variants that the floor guarantees (N4, D28).
+differences the plan did not name, each explained by the floor (recorded for the orchestrator):
+ (a) debug APK: META-INF/CERT.RSA, CERT.SF, MANIFEST.MF are gone. AGP stops writing the v1 (JAR) signature when minSdk is 24 or higher. Evidence (apksigner verify -v of the I4 debug APK): Verifies; v1 scheme false; v2 scheme true. The release APK is unsigned in both runs, so it has no such entries.
+ (b) release APK: META-INF/services/r4.b0 -> q4.b0 and w4.t -> v4.t. These are the two kotlinx.coroutines service interfaces (CoroutineExceptionHandler, MainDispatcherFactory) under their R8-obfuscated names; the R8 output changed with the min-api (mapping.txt 95470 -> 91897 lines), so obfuscated names shifted. Kept-name set and configuration.txt are identical (diff-exit=0).
+ (c) release APK: res/u01.xml is gone. Release resource paths are shortened by AGP; the count of removed res entries is 9 in both APKs (debug 9 named above; release 9 = color-v21 x1, color x7, u01 x1), and u01.xml is the shortened path of the same collapsed layout-v22 duplicate (the one removed from the debug APK).
+no .so file in either APK (so=0 both times); class-file majors unchanged (61, 61, 52); kept names and configuration.txt identical.

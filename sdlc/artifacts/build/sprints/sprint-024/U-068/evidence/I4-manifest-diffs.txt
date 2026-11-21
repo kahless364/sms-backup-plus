@@ -1,0 +1,90 @@
+== merged manifest, debug: I0 vs I4
+9c9
+<         android:minSdkVersion="21"
+---
+>         android:minSdkVersion="24"
+48,64d47
+<     <!-- Allows the app to request authentication tokens. Removed in Android 6 -->
+<     <!-- android.permission-group.ACCOUNTS -->
+<     <uses-permission
+<         android:name="android.permission.USE_CREDENTIALS"
+<         android:maxSdkVersion="22" />
+< 
+<     <!--
+<          Allows the app to write to the SD card.
+<          Beginning with Android 4.4 (API level 19), it's no longer necessary for your app to request the
+<          WRITE_EXTERNAL_STORAGE permission when your app wants to write to its own application-specific directories
+<          on external storage
+<     -->
+<     <!-- android.permission-group.STORAGE -->
+<     <uses-permission
+<         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+<         android:maxSdkVersion="18" />
+< 
+127c110
+<         android:extractNativeLibs="true"
+---
+>         android:extractNativeLibs="false"
+diff-exit=1
+== merged manifest, release: I0 vs I4
+9c9
+<         android:minSdkVersion="21"
+---
+>         android:minSdkVersion="24"
+48,64d47
+<     <!-- Allows the app to request authentication tokens. Removed in Android 6 -->
+<     <!-- android.permission-group.ACCOUNTS -->
+<     <uses-permission
+<         android:name="android.permission.USE_CREDENTIALS"
+<         android:maxSdkVersion="22" />
+< 
+<     <!--
+<          Allows the app to write to the SD card.
+<          Beginning with Android 4.4 (API level 19), it's no longer necessary for your app to request the
+<          WRITE_EXTERNAL_STORAGE permission when your app wants to write to its own application-specific directories
+<          on external storage
+<     -->
+<     <!-- android.permission-group.STORAGE -->
+<     <uses-permission
+<         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+<         android:maxSdkVersion="18" />
+< 
+126c109
+<         android:extractNativeLibs="true"
+---
+>         android:extractNativeLibs="false"
+diff-exit=1
+== packaged manifest, debug (normalised): I0 vs I4
+12c12
+<         A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=21
+---
+>         A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=24
+39,44d38
+<         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.USE_CREDENTIALS" (Raw: "android.permission.USE_CREDENTIALS")
+<         A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=22
+<       E: uses-permission
+<         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.WRITE_EXTERNAL_STORAGE" (Raw: "android.permission.WRITE_EXTERNAL_STORAGE")
+<         A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=18
+<       E: uses-permission
+81c75
+<         A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=true
+---
+>         A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=false
+diff-exit=1
+== packaged manifest, release (normalised): I0 vs I4
+12c12
+<         A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=21
+---
+>         A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=24
+39,44d38
+<         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.USE_CREDENTIALS" (Raw: "android.permission.USE_CREDENTIALS")
+<         A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=22
+<       E: uses-permission
+<         A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.WRITE_EXTERNAL_STORAGE" (Raw: "android.permission.WRITE_EXTERNAL_STORAGE")
+<         A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=18
+<       E: uses-permission
+80c74
+<         A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=true
+---
+>         A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=false
+diff-exit=1

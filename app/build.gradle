@@ -21,7 +21,7 @@ android {
     compileSdkVersion 35
     defaultConfig {
         applicationId 'com.zegoggles.smssync'
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 35
         versionCode 1602
         versionName '1.6.0-BETA2'
@@ -150,14 +150,14 @@ dependencies {
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
 
     // U-014: WorkManager adapter (CNTR-MODERNIZATION-004, INV-1..4)
-    // 2.9.1 is compatible with compileSdk 35 + minSdk 21 (AGP/SDK uplift from U-003).
+    // 2.9.1 is compatible with compileSdk 35 + minSdk 24 (AGP/SDK uplift from U-003; minSdk 24 from U-068).
     // work-testing is testImplementation only (WorkManagerTestInitHelper + SynchronousExecutor).
     implementation 'androidx.work:work-runtime-ktx:2.9.1'
     testImplementation 'androidx.work:work-testing:2.9.1'
 
     // U-005: Toolchain uplift (AC-1 through AC-4 / REQ-MODERNIZATION-003 AC-7)
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.robolectric:robolectric:4.15.1' // U-060: ASM 9.8 reads Java 25 class files; 4.16+ drops SDK 21/22
+    testImplementation 'org.robolectric:robolectric:4.15.1' // U-060: ASM 9.8 reads Java 25 class files. U-068: no test is configured below the minSdk of 24.
     testImplementation "com.google.truth:truth:1.4.4"
     // mockito-all (fat-jar, 2015) replaced with mockito-core 5.x (AC-3)
     testImplementation 'org.mockito:mockito-core:5.18.0' // U-060: bundles ByteBuddy 1.17.5 (Java 25)
