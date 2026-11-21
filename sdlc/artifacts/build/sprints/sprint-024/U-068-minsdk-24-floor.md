@@ -48,7 +48,8 @@ pipeline: ''
 domain: modernization
 requirement_source: authored
 alignment_audit: passed
-updated_at: '2026-11-21T10:00:41.382Z'
+updated_at: '2026-11-21T10:39:02.174Z'
+current_build_phase: implementation
 ---
 
 # U-068: Raise minSdk to 24 and Remove What the Floor Makes Dead
@@ -286,6 +287,13 @@ Risks: (1) `receiver` and `scheduler` coverage at their floors (AC-3, AC-15); (2
 - **Scope Concern 7 (order with the BUG-023 fix):** this story runs before story U-069 in the same sprint, never at the same time. U-067 (the BUG-022 fix) is done before this story starts; "empty diff for both workers" (AC-9) is measured from this story's start commit.
 - **AC-16 (one commit per increment):** the developer makes the per-increment commits locally, each with explicit paths (never `git add -A`, never `git commit -a`), on `sdlc/modernization-plan`, with the plan's commit subjects, and does not push. The orchestrator pushes after the reviews. This is a ruled exception to the standing "the developer commits nothing" constraint, for this story only, under the product owner's standing permission for story-scoped commits (Record 12). If the reviews find something to fix, the fix is a further commit; no commit is amended or rewritten.
 - **Start condition:** U-066 is done (commit `1f8ebe3b`); CR-015 and CR-016 are implemented.
+
+**Rulings on the plan's scope concerns (2026-11-21).**
+
+- **P-1 (the Robolectric runtime for SDK 24): acknowledged.** The first test run at SDK 24 lets Robolectric fetch its `android-all-instrumented` jar for Android 7.0 from Maven Central through Robolectric's own resolver, the same way the three runtime jars the suite uses today reached this machine. Gradle's verification metadata covers no such jar, today or after, and design decision D5 accepts this download for S1. No build file and no verification-metadata entry changes. The developer records the jar's coordinates, its size and SHA-512, and the checksum file it was checked against, as the plan's decision row D19 says. If the download fails twice the story stops and reports; no test is skipped and nothing is fetched by hand.
+- **P-2 and P-4 (differences the floor itself causes in the merged manifest and the packaged APK, such as `android:extractNativeLibs` and renamed or dropped `res/` entries):** accepted as declared differences, each recorded and explained in the evidence; QA judges AC-6 and AC-13 (e) with them stated. Any difference that is not explained by the floor stops the story.
+- **P-3 (baseline entries stale for other reasons):** kept and explained one by one, as the plan has it. Only the eleven entries the floor makes stale are removed.
+- **P-5 (`compat` coverage ends with no line to spare):** the plan's pre-written contingency test C-1 is authorised and is added in this story, in the increment the plan assigns it, so that the package keeps a margin for the toolchain story. The story then adds three tests, not two; AC-14's "two added" reads "three added" by this ruling, and the count rule is otherwise unchanged. The plan's corrections of two figures are accepted: `compat` falls from 16/73 to 15/71 before C-1 (design D8 says it rises), and the `scheduler` margin is the measured one, not the comment's.
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->

@@ -2378,3 +2378,30 @@ The three stories were written on 2026-11-21: U-068 (minSdk 24, story S1 of desi
 Order of the next work, as ruled in Records 14 and 15: sprint 023 is story U-067 alone (the fix for BUG-022); sprint 024 is U-068, then U-069, then U-070, one at a time.
 
 Recorder: Orchestrator.
+
+### Record 17 — 2026-11-21 (rulings on the scope concerns of stories U-071, U-072 and U-073, before their planning)
+
+The three stories are stories S2 (toolchain and test tooling), S3 (compileSdk 37) and S4 (runtime libraries) of design DES-MODERNIZATION-014, written on 2026-11-21. The rulings are also written in each story's Implementation Notes.
+
+**Further rulings by the orchestrator under Record 12** (continuing Records 13 to 16):
+
+| # | Story | Question | Ruling | On whose recommendation | To reverse it |
+|---|-------|----------|--------|-------------------------|---------------|
+| 28 | U-071, U-072, U-073 | Order | After sprint 024 (U-068, U-069, U-070): U-071, then U-072, then U-073, one at a time | Requirements Analyst; the design's own drawing | Reorder before planning |
+| 29 | U-071, U-072, U-073 | One commit per increment, as the design asks | As ruling 22: the developer commits each increment locally by explicit path and does not push or amend; the orchestrator pushes after the reviews | Design DES-MODERNIZATION-014 (D2, D19) | The orchestrator commits each increment instead |
+| 30 | U-071 | How the versions are re-read on the planning date | The orchestrator supplies a refreshed research file made from the vendors' own pages; the plan resolves the rows from it. Nobody fetches pages by hand; the build's own downloads are its normal path | Requirements Analyst (raised it as a start condition) | The planner is given a way to read the pages itself |
+| 31 | U-071, U-073 | Device and continuous-integration criteria that need the product owner | The stories do not wait. Each such criterion is recorded "not run: needs the product owner's decision" with what is and is not claimed, and QA judges it "not applicable until decided". The part of each device criterion inside the standing authorisation for the configured Android 16 emulator is run by the orchestrator | Requirements Analyst | The product owner decides the held items; the checks are then run |
+| 32 | U-072 | Two stale lines after the raise (`code-location.md`, `DEVELOPMENT.md` line 56) | Corrected in the story, one line each | Requirements Analyst | Leave them for a follow-up |
+| 33 | U-072 | The Robolectric probe at SDK 37, which the design puts on a scratch branch | Run on a scratch copy outside the repository instead; the checkout is left untouched | Requirements Analyst (raised the risk) | Use a branch when nobody else works in the checkout |
+| 34 | U-073 | Do the coroutines and WorkManager steps re-run story U-067's six mutations | Yes, not only its tests | Solution Architect (U-067's plan) | Tests only, as the design's stop rule words it |
+| 35 | U-073 | Extra evidence and text beyond the design: the unit-test classpath diff; a mutation for the new lifecycle test; the stale "2.9.1" comments | All three are added (the manifest comment only if the merged manifest is proven unchanged) | Requirements Analyst | Drop any of them before planning |
+| 36 | U-073 | Design inconsistencies (the new test's name; the order of the increments) | The S4 section's name and the S4 table's order are followed | Requirements Analyst | A dated note on the design that says otherwise |
+
+**Held for the product owner, in addition to Record 15** (none blocks the work now in progress):
+
+| Item | Question | Recommendation on file | Blocks |
+|------|----------|------------------------|--------|
+| PO-G | The design's item PO-3: on the configured Android 16 emulator, may the checks go beyond what is already allowed: the default-SMS-role hand-over that a restore needs, changing the app's third-party-integration setting and putting it back, a manual backup that appends to folders other than the SMS folder, and a step whose rollback could need the app's data cleared (which would mean the owner entering the password again) | Allow it, once the rollback cost of the WorkManager raise is known (story U-073 establishes it) | The device parts of U-071 (backup and restore) and U-073 (role flow, restore) |
+| PO-H | Starting the Android 11 emulator (`Pixel_4_2`) for an optional run of the toolchain story | Allow it | Nothing; the run is optional |
+
+Recorder: Orchestrator.

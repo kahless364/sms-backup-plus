@@ -1,6 +1,6 @@
 ---
 type: story
-status: planned
+status: in-progress
 sprint: '024'
 artifact_type: user-story
 priority: high
@@ -45,7 +45,7 @@ title: Back up an SMS that becomes visible to the app after later messages were 
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-021
-updated_at: '2026-11-21T09:57:12.074Z'
+updated_at: '2026-11-21T10:22:34.386Z'
 ---
 
 # U-070: Back Up an SMS That Becomes Visible to the App After Later Messages Were Backed Up, Exactly Once, With a 6-Hour Look-Back Below the Watermark and a Local Record of What Was Uploaded

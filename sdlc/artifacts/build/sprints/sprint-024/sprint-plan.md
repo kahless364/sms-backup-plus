@@ -25,7 +25,7 @@ Sprint 024 does not start until sprint 023 is completed (U-067, the fix for BUG-
 |----------|-------|-----------|-----------|-------|-------------|------------|--------|----------|
 | U-068 | Raise minSdk to 24 and remove what the floor makes dead (code branches, two manifest permissions, retargeted tests, stale lint baseline entries, stale text) | - | developer | sonnet | (unassigned) | U-066 (done) | in-progress | high |
 | U-069 | Make the content-trigger worker start the incoming backup through the scheduler's scheduleIncoming(), and give the worker its first tests | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-068 | planned | high |
-| U-070 | Back up an SMS that becomes visible after later messages were backed up, exactly once, with a 6-hour look-back and a local upload record | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-069 | planned | high |
+| U-070 | Back up an SMS that becomes visible after later messages were backed up, exactly once, with a 6-hour look-back and a local upload record | - | developer | sonnet | (unassigned) | U-067 (sprint 023), U-069 | in-progress | high |
 
 ## Execution Waves
 
