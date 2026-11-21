@@ -2302,3 +2302,28 @@ These are not product-owner decisions. Record 12 left routine choices to the orc
 Still for the product owner, to be asked when the work reaches them (design DES-MODERNIZATION-014, open items PO-2 to PO-5): downloading an Android 7.0 (API 24) emulator image and creating two new virtual devices; entering the mail account's app password on them; opening, without merging, a pull request to `master` so that CI runs; whether to raise a requirement to replace the deprecated `security-crypto` library.
 
 Recorder: Orchestrator.
+
+### Record 14 — 2026-11-21 (the product owner's standing instructions for device work, written down; two further rulings)
+
+The audit of design DES-MODERNIZATION-014 found that the design relies on instructions and rulings that were given in the working sessions and are not written in the repository. They are recorded here by the orchestrator.
+
+**Standing instructions from the product owner** (given earlier in the engagement, during the device checks of sprints 017 and 018; they have applied to every device run since):
+
+| # | Instruction | Wording | Source |
+|---|-------------|---------|--------|
+| 1 | SMS on the emulator, and the SMS folder in the mail account | "its safe to add or delete any of the sms messages on the emulator and to add or remove the sms folder from the gmail inbox" | The product owner's words, as carried in the orchestrator's session notes |
+| 2 | The emulator `Pixel_10_Pro` is never started and never touched | Recorded as an instruction; the product owner's exact words are not available to the recorder | The orchestrator's session notes |
+| 3 | Passwords | The product owner sets and enters every password personally; no agent handles one | The orchestrator's session notes |
+| 4 | System settings on an emulator are the product owner's to change | Agents do not change them | The orchestrator's session notes |
+
+What these do not cover, and is therefore still asked: creating new virtual devices, downloading system images or SDK tools, and backups from a device that has not been configured by the product owner (design DES-MODERNIZATION-014, open items PO-2 and PO-3).
+
+**Further rulings by the orchestrator under Record 12** (continuing Record 13):
+
+| # | Question | Ruling | On whose recommendation | To reverse it |
+|---|----------|--------|-------------------------|---------------|
+| 9 | Three change records that design DES-MODERNIZATION-014 names as preconditions (it calls them P-1, P-2, P-3): the scheduler contract and its design still describe the code branch below Android 7.0 that the minSdk story deletes; requirement wording that the work has overtaken (a test-count baseline of 697, a coverage sentence that contradicts the configured floors, a literal API level 35) | They are mandatory, not optional: P-1 and P-2 are raised and applied before the minSdk story is planned, P-3 before the runtime-library story | Design Auditor (findings SF-4, SF-7, SF-8) | Not applicable: without them the stories' criteria cannot be met as written |
+| 10 | Bug BUG-021's decision points (how late a message may become visible and still be backed up; SMS only; a message hidden when Skip was chosen; duplicates against losses; where the completeness rule lives) | The bug's recommended defaults apply: a bounded look-back of 6 hours; SMS only; a message hidden at Skip time and released later is backed up; a duplicate is preferred to a loss but the fix introduces none; the rule is a new requirement, REQ-MODERNIZATION-020 | Requirements Analyst (the bug) and Solution Architect (its Suggested Approach) | Overrule any default in BUG-021; the fix story's plan follows |
+| 11 | Bug BUG-022, when it is fixed | As its own small story, after story U-066 closes and before the toolchain story | Requirements Analyst and Solution Architect | Schedule it elsewhere |
+
+Recorder: Orchestrator.

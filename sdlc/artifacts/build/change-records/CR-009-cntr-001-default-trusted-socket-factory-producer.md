@@ -61,6 +61,14 @@ Sibling records against the same contract: CR-007 (P-3, the `createSocket` excep
 >
 > **What must hold after the move, besides what this record says:** the server-name behaviour of both producers (CR-013, statements S1 to S6) and the protocol floor and cipher-suite handling of both producers (CR-014, statements V1 to V5, C1 to C3, B1 to B3). A default factory re-implemented from upstream instead of moved from the vendored class could drop them while the moved tests stay green only if those tests are not retargeted; see CR-014, Interactions and Scope Concern E, for the loopback test (T6, one case more) that survives the swap.
 
+> **Note: what story U-066 changed (added 2026-11-21, after commit 1f8ebe3b).**
+> (a) T5 now reads: "`hardenSocket`, `protocolsToEnable`, `ciphersToEnable`, `reorder`: allowed cipher suites taken from the platform's default-enabled set, in the allowed list's order; protocols limited to `ALLOWED_PROTOCOLS` from the supported set. Exist (U-063, U-065, U-066)." This replaces the 2026-11-21 suggestion "blocked and ordered cipher suites".
+> (b) The baseline the move must keep green is the tests as U-063 to U-066 left them (746 tests at 1f8ebe3b, 2 skipped). `DefaultTrustedSocketFactoryHardeningTest` now also reaches `ALLOWED_CIPHERS` and `ciphersToEnable` by reflection (the JDK-provider test class keeps its own baseline copy of the list instead). `ORDERED_KNOWN_CIPHERS` and `BLACKLISTED_CIPHERS` no longer exist.
+> (c) U-066 renamed three Hardening tests: `createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes`, `pinnedFactory_createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes` and `hardenSocket_withNullLists_appliesTheAllowedSuitesAndTheProtocolFloorFromTheSocket`. It added exact-list tests on both providers, the name-form check `allowedCipherConstant_holdsOnlyTheAllowedNameForms`, and handshake refusals for pruned suites. Retarget them; do not drop them.
+> (d) In the note's last paragraph, "C1 to C3" reads "C1 to C4" (CR-014 Amendment 1).
+>
+> Seams to retarget at the move, not drop: `ALLOWED_CIPHERS`, `ciphersToEnable`, the three-argument `hardenSocket`, `ENABLED_CIPHERS` and `ENABLED_PROTOCOLS` in the three guards. F-4 (private or unmodifiable arrays) applies there.
+
 ## Finding
 
 ### Description
