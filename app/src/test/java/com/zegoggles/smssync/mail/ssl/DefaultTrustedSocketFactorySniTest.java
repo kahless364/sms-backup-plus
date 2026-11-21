@@ -302,6 +302,93 @@ public class DefaultTrustedSocketFactorySniTest {
     }
 
     // -----------------------------------------------------------------------
+    // U-064 (AC-2, AC-3): the safety net for a host name that SNIHostName rejects
+    //
+    // What these two tests can prove: a host name that passes the IP/blank guard
+    // (isIpOrBlankHostname) but that the JDK's SNIHostName rejects (an underscore, a
+    // trailing dot, a leading hyphen) neither throws from setSniViaSSLParameters nor from
+    // createSocket, and no server name is set for it. Only the catch of
+    // IllegalArgumentException in setSniViaSSLParameters provides this (fix for BUG-015).
+    // The IP-literal and blank tests above protect the guard; these protect the catch.
+    // Both are provider-independent: the first uses a Mockito SSLSocket and reflection,
+    // the second an unconnected socket (no network, no name resolution).
+    //
+    // What they cannot prove: which names Android's own SNIHostName rejects (the desktop
+    // JDK's rules apply here); what a device sends on the wire for such a name.
+    //
+    // Mutations that must break them (U-064 mutation log):
+    //   M-N2, the try/catch replaced by its two body lines with the guard kept: the
+    //        IllegalArgumentException then escapes, and both tests fail for every name.
+    //   AC-2 assertion (i) also breaks when the guard is widened to cover these names,
+    //        which forces a decision about where the protection now lives.
+    //
+    // The comment on the IPv4 test above says SNIHostName rejects IP literals; it does
+    // so for IPv6 but not for IPv4, which only the guard stops (U-063 mutation M-A1g).
+    // That comment is left as it is (U-064 scope concern SC-1).
+    //
+    // After the CR-009 move: a missing field, method or class means this test's seam
+    // needs retargeting to the moved class; a failed behavioural assertion is a
+    // regression, and the test is never edited to pass.
+    // -----------------------------------------------------------------------
+
+    /**
+     * AC-2: for each name that passes the guard and that SNIHostName rejects, the guard
+     * answers false, setSniViaSSLParameters throws nothing, and setSSLParameters is never
+     * called. All names are tried before the no-throw assertion, so a failure lists every
+     * name for which an exception escaped.
+     */
+    @Test
+    public void setSniViaSSLParameters_nameRejectedBySniHostName_doesNotThrowAndSkipsSNI() throws Exception {
+        String[] names = {"bad_host.example", "host.example.", "-x.example"};
+        java.lang.reflect.Method guard = DefaultTrustedSocketFactory.class
+                .getDeclaredMethod("isIpOrBlankHostname", String.class);
+        guard.setAccessible(true);
+        List<String> escaped = new java.util.ArrayList<>();
+
+        for (String name : names) {
+            com.google.common.truth.Truth.assertWithMessage(
+                    "isIpOrBlankHostname(\"" + name + "\") must be false, so the name reaches SNIHostName")
+                    .that((Boolean) guard.invoke(null, name)).isFalse();
+
+            SSLSocket mockSocket = mock(SSLSocket.class);
+            when(mockSocket.getSSLParameters()).thenReturn(new SSLParameters());
+            try {
+                DefaultTrustedSocketFactory.setSniViaSSLParameters(mockSocket, name);
+            } catch (RuntimeException e) {
+                escaped.add(name + " -> " + e);
+                continue;
+            }
+            try {
+                verify(mockSocket, never()).setSSLParameters(org.mockito.ArgumentMatchers.any());
+            } catch (AssertionError e) {
+                throw new AssertionError("setSSLParameters was called for \"" + name
+                        + "\", so SNIHostName accepted it here", e);
+            }
+        }
+
+        com.google.common.truth.Truth.assertWithMessage(
+                "setSniViaSSLParameters must not throw for a name SNIHostName rejects; names tried: "
+                + java.util.Arrays.toString(names) + "; escaped")
+                .that(escaped).isEmpty();
+    }
+
+    /**
+     * AC-3: createSocket for a name that SNIHostName rejects returns an SSLSocket and
+     * throws nothing. The socket is never connected.
+     */
+    @Test
+    public void createSocket_nameRejectedBySniHostName_doesNotThrow() throws Exception {
+        java.net.Socket socket = new DefaultTrustedSocketFactory(
+                org.robolectric.RuntimeEnvironment.getApplication())
+                .createSocket(null, "bad_host.example", 993, null);
+        try {
+            assertThat(socket).isInstanceOf(SSLSocket.class);
+        } finally {
+            socket.close();
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Helper: call the private setHostnameViaReflection via reflection for testing
     // -----------------------------------------------------------------------
 

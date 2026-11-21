@@ -1,0 +1,6 @@
+bad_host.example | guard=false | SNIHostName IAE: Contains non-LDH ASCII characters
+host.example. | guard=false | SNIHostName IAE: Server name value of host_name cannot have the trailing dot
+-x.example | guard=false | SNIHostName IAE: Has leading or trailing hyphen
+imap.right.test | guard=false | SNIHostName ACCEPTED
+192.168.1.10 | guard=true | SNIHostName ACCEPTED
+java.version=25.0.5.1

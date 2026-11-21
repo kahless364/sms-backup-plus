@@ -1,0 +1,31 @@
+# working-tree authoritative count
+713
+# HEAD count
+710
+# git status --porcelain
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+ M sdlc/.skill-delegation-audit.log
+ M sdlc/artifacts/build/change-records/CR-013-cntr-001-state-sni-behaviour.md
+ M sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md
+RM sdlc/artifacts/stories/U-064-tls-baseline-gap-tests-pinned-expiry-and-sni-catch.md -> sdlc/artifacts/build/sprints/sprint-021/U-064-tls-baseline-gap-tests-pinned-expiry-and-sni-catch.md
+ M sdlc/artifacts/stories/BUG-019-factory-enables-tls10-and-tls11.md
+ M sdlc/artifacts/stories/BUG-020-pinned-factory-no-tls-hardening.md
+?? app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryExpiryTest.java
+?? sdlc/.skill-context.json
+?? sdlc/artifacts/build/sprints/sprint-021/U-064/
+?? sdlc/artifacts/build/sprints/sprint-021/U-065-tls12-floor-both-factories-and-pinned-factory-parity.md
+?? sdlc/artifacts/build/sprints/sprint-021/execution-plan.json
+?? sdlc/artifacts/build/sprints/sprint-021/sprint-plan.md
+# git status --porcelain -- app/src/test
+ M app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+?? app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryExpiryTest.java
+# diff stat prod/build (expect empty)
+stat-end
+vm-exit=0
+# numstat SNI
+87	0	app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactorySniTest.java
+# untracked under app/src/test
+app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryExpiryTest.java
+# blobs
+8a0fbb64fb171624591fbebafb818555f28efd58
+d543927166b3c5e1da0aaa8ab584072a43bf7521

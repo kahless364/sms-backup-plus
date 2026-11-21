@@ -1,6 +1,7 @@
 ---
 type: story
-status: ready
+status: review
+sprint: '021'
 artifact_type: user-story
 priority: medium
 complexity: low
@@ -19,7 +20,8 @@ title: Close two gaps in the TLS baseline tests - pinned expiry check and the SN
 pipeline: ''
 domain: modernization
 requirement_source: cr:CR-009
-updated_at: '2026-11-21T00:36:48.256Z'
+updated_at: '2026-11-21T03:15:21.247Z'
+current_build_phase: validation
 ---
 
 # U-064: Close Two Gaps in the TLS Baseline Tests (Pinned Expiry Check and the SNI Safety Net)
@@ -187,6 +189,8 @@ Risks: (1) a chosen SNI name turns out to be accepted on the running JDK, which 
 
 ## Implementation Notes
 **Product owner decision on DP-1, 2026-11-20** (recorded by the orchestrator; asked whether to leave out the "not yet valid" certificate case): "leave out". The story has three tests (710 to 713); no new fixture certificate is generated.
+
+**As built (developer):** the three tests are in place and both mutations were detected and restored. Details, evidence and the criterion table: `sdlc/artifacts/build/sprints/sprint-021/U-064/implementation-log.md`. Counts: see IC-4 and `sdlc/artifacts/build/sprints/sprint-021/U-064/evidence/I6-junit-totals.txt`.
 
 <!-- Added by agents during build. Record: the first-step results; before and after counts (IC-4); the mutation log location (IC-7); any bug id (IC-11); the DP-1 outcome. -->
 

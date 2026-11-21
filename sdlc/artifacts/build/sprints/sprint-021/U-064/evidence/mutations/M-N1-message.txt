@@ -1,0 +1,1 @@
+message="java.lang.AssertionError: the handshake must be rejected, but it completed"

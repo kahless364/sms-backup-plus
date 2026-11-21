@@ -1,0 +1,7 @@
+pattern-scan exit=1 files=0
+user-name-scan exit=1 files=0
+host-name-scan exit=1 files=0
+story-pattern-lines=83 
+story-ic8-line=83
+story-user-name-count=0
+story-host-name-count=0

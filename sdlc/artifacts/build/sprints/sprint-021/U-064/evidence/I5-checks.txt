@@ -1,0 +1,8 @@
+diff12-exit=0
+diff13-exit=0
+ic6-grep-exit=1
+ic9-grep-exit=1
+--- repo-wide IC-6 form
+app/src/test/java/com/zegoggles/smssync/mail/transport/K9MailTransportCreateOpenTest.java:265:                        // call Thread.sleep(0) which will see the interrupted flag and throw.
+app/src/test/java/com/zegoggles/smssync/mail/transport/K9MailTransportCreateOpenTest.java:267:                        return 0L; // zero so Thread.sleep returns immediately after interrupt check
+ic6-wide-exit=0
