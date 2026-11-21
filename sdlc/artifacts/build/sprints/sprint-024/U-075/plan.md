@@ -5,12 +5,14 @@ gate_id: "planning"
 checkpoint: "planning"
 verdict: "PASS"
 agent: "Solution Architect"
-timestamp: "2026-11-21T17:12:29Z"
-iteration: 1
-base_commit: "3770b9a4fb832053e7df6b05bff704bc25dab76e"   # PLAN_HEAD; code read at fd70325a (identical under app/); the start commit is read at I0 (the commit that closes U-070)
+timestamp: "2026-11-21T18:01:03Z"
+iteration: 2
+base_commit: "acc50c94c1c635685164518731ab1b217dca76f2"   # PLAN_HEAD of iteration 2 (documents only since fd70325a; iteration 1: 3770b9a4); code read at fd70325a and the two post-U-070 blobs; the start commit is read at I0 (the commit that closes U-070)
 contracts_verified:
   - CNTR-MODERNIZATION-004
-risks_identified: 14
+  - CNTR-MODERNIZATION-005
+  - CNTR-MODERNIZATION-006
+risks_identified: 15
 ---
 
 # Implementation Plan: U-075 — Automatic Backups Run as Ordinary Background Work; the Foreground Is Asked Only for Work the User Started, and a Refusal Is Absorbed (BUG-029, Ruling 60)
@@ -63,6 +65,49 @@ Hamcrest 1.3, Truth 1.4.4, Guava 33.0.0 with `failureaccess` 1.0.2, and **stubs*
 from the signatures read at `fd70325a` and from U-070's fixture text (its plan 4.1). All exit 0. The stubs are mine, not
 Gradle's: the first real compile is the developer's I2 run (row D12).
 
+## Iteration 2 (after the plan gates, 2026-11-21)
+
+Iteration 1's gates: plan-review **FAIL** (B-1 to B-6, O-1 to O-9), contract-verification **FAIL** (B-1 is the
+orchestrator's; observations O-1 to O-8), expert-depth-check **PASS** with two "should" recommendations (the three reports
+in this workspace, read in full). Binding since then: the rulings on SC-1 to SC-9 in the story's Implementation Notes
+(Record 23), the orchestrator's ruling on contract O-6 / row D23, and ruling 69 (self-test every command that can be
+tested without Gradle, a device or the working tree under `app/`; section 14). `PLAN_HEAD` is now `acc50c94`; `git diff
+--stat 3770b9a4 acc50c94 -- app` is empty. The design, the exact edits (3.1 to 3.3), T1, the red/green split, P-1's
+facts and all twelve failing sets stand as plan-review verified them. Nothing is declined without a reason.
+
+| Finding | Change, and where |
+|---------|-------------------|
+| plan-review **B-1** (`ui_bounds.py` blob) | Every embedded file's blob is now derived **from the plan text itself**: a scratch script takes the first fenced block after each file's marker line, writes it LF and hashes it (`git hash-object --no-filters` and a SHA-1 of `blob <n>\0` agree); section 14.1 gives method and values. Iteration 1's `c7f765f0…` was the hash of a scratch copy whose text had drifted from the printed text. `ui_bounds.py` also changed (O-6 below) and has the new blob of 3.5; T2 changed (O-3); the other six values are unchanged |
+| plan-review **B-2** (section 9 against SC-1, SC-2, SC-3, SC-9) | Section 9 rewritten: (i) passes on the confirmed-append line `BackupWorker: watermark advanced for SMS to <date>` and `backup complete, backedUp=` (SC-9; no mailbox check); no outcome rests on a screenshot or UI dump, and none is taken into the repository: the notification evidence is `notif_check.py` over `dumpsys notification` (SC-1; screenshots dropped altogether); (v) is "Not run: needs a system setting" (SC-3); (vi) is the orchestrator's, selects `Pixel_API_24` by serial and `emu avd name` after `Pixel_9_Pro` is stopped, records install-time verification, and records "not run: needs the owner to enter the app password" when the missing-credentials dialog prevents the run (`MainActivity.java:391-402`; iteration 1's "MailException — retrying" sentence was wrong and is deleted) (SC-2). Section 10 item 7 no longer asks for rulings |
+| plan-review **B-3** ((iv) on no observed run) | (iv) is assessed only over the off-screen runs observed ((i)'s INCOMING if it met the off-screen rule, (ii)'s REGULAR if it started); with none: "(iv) not run: no off-screen run observed". `ac12_run.py` refuses an empty process-id list, so no count is taken from a log that was not read (self-test 14.7) |
+| plan-review **B-4** (`/sdcard` path) | `MSYS_NO_PATHCONV=1` on each of the three `adb` commands with a device path, on that command only; tested: without it Git Bash turns `/sdcard/u075-ui.xml` into `C:/Program Files/Git/sdcard/u075-ui.xml`, with it the path is passed unchanged, and no other section 9 argument is rewritten (14.6). `exec-out uiautomator dump /dev/tty` was considered and not used (it appends a status line to the XML; `ui_bounds.py` then prints `xml=unreadable`, 14.2) |
+| plan-review **B-5** (waits above the ceiling) | No `timeout` above 540 s; the 15-minute windows of (i) and (ii) are two waits of 450 s anchored at the same `-T`; the boot wait is 540 s, repeated once; the captures that follow a start are chained to each wait (section 9, shell rules; `timeout` exit 124 and `&&` behaviour tested in 14.8) |
+| plan-review **B-6** (rows missing) | New rows D32 (final-check hashes or porcelain differ after G-F: G-F void, restore, report), D33 (tracked tests changed, `@Ignore`, counts), D34 (JDK, a running Gradle JVM, the Daemon JVM line), D35 (I1/I4 porcelain, `main-clean-exit`, `oldtext_check.py fixed` at I4); each cited in its step's **Rows:** line |
+| plan-review O-1 (cut-off run inside I5) | D29: inside an I5 entry, protocol steps 5 and 6 (restore, clean check, `restored` line) come first, then the stop |
+| plan-review O-2 (no clean check before G-F) | New I6 step 0: the 4.8 clean check and no open `APPLYING` entry |
+| plan-review O-3 (AC-2 privacy for the restore) | R2 also asserts that no log entry carries `SmsFixture.OWNER`. T2's blob changes to `e69175c6…` (174 lines); recompiled against the stubs (exit 0); red/green split and every failing set unchanged (no injection writes the account name) |
+| plan-review O-4 (file count) | 4.9 recounted from the list: 53 with the three new tools |
+| plan-review O-5 (`grep -A14`) | I0 step 3 reads whole entries with `awk` up to the next `### ` and translates U-070's B/S ids through its plan's table 4.8 (tested on U-069's committed log, 14.10) |
+| plan-review O-6 (button label in capitals) | `ui_bounds.py` compares the label without regard to case and handles unreadable XML (14.2) |
+| plan-review O-7 (snapshot load) | (ii) starts the emulator with `-no-snapshot-load -no-snapshot-save`, and "no bootup line" is recorded "(ii) not run" |
+| plan-review O-8 (second inconclusive (iii)) | Recorded "(iii) not run: notification not captured", never a pass |
+| plan-review O-9 (fixtures at SDK 24) | Taken as stated: rows D11 (c), (d) cover it; noted in 8.3 R2 |
+| contract-verification **B-1** (DES-014 row 16-1; the orchestrator's) | 8.1 corrects the story's claim; section 10 item 9 carries **X-3**, the close-out edit of CR-017 Amendment 2 (E-7), for the orchestrator |
+| Orchestrator's ruling on contract O-6 / D23 | I0 step 2 records each uncommitted path by others under `sdlc/artifacts/design`, `sdlc/artifacts/requirements`, `sdlc/artifacts/build/change-records` with its `sha256sum`; I6 step 5 shows each unchanged, or committed in between with the orchestrator's subject; D23 rewritten; tested in a scratch repository (14.17) |
+| contract-verification O-1 (user cancel of a refused manual run) | Read in 2.9.1: `Processor.stopAndCancelWork` adds the id to the cancelled set, calls `cleanUpWorkerUnsafe` (which removes it from the foreground map) and interrupts it, so a user's cancel still stops a refused run (new L27; 2.5 item 4) |
+| contract-verification O-2 (the warning names the class) | Section 9 gives the two exact greps (the app's `W SMSBackup+` warning = refused and continued; the `E WM-WorkerWrapper` line = the defect), tested on today's real log (14.7); hand-over item 10 for U-071 IC-4 and U-073 |
+| contract-verification O-3 to O-5, O-7 | The orchestrator's (CNTR-005 wording, REQ-016 wording, U-072's REQ-017 row, U-074's dependency); listed in section 10 item 9; nothing in the plan changes |
+| contract-verification O-8 (IC-1 wording) | Already explicit (I3 step 3: the four comment lines and the one call); unchanged |
+| depth-check **should 1** (release dex) | I6 step 4 maps the two class names through `mapping.txt` and runs the dex reference listing over the **release** dex as well; D25 extended to the release build (pipeline tested on the D8 output with a mapping file, 14.9); L22 says what the release check measures |
+| depth-check **should 2** (platform consequences, device evidence) | 2.6 item 3 replaced (ordinary-job stops, Android 11's limit, the unbounded run size, the interim BUG-024 ERROR line, Doze and lost constraints); item 8 corrected (the second refusal point is already in 2.9.1, new L29); items 10 (no `getForegroundInfo` override needed; the Android 15 `BOOT_COMPLETED` rule is moot) and 11 (default-SMS role, not read); R10 revised; section 12 Reliability; section 9: the `POST_NOTIFICATIONS` precondition, the process, service and job state at the INCOMING start, the "stopped by the system" outcome, `Unable to start foreground service` in the counts, "What it does not prove" extended; hand-over item 6 extended |
+| depth-check, "which scheduler started the work" | Partly declined, with the reason: WorkManager's "onStartJob for" and "Starting work for" are debug lines and the app's WorkManager configuration logs from INFO (`App.java:162-165`; L29), so they never reach logcat; the scheduler dump's lines for the app are recorded instead and no outcome depends on them |
+| depth-check "could" items | Taken: the F13 sentence (2.1 (b)), "not reached: <reason line>" in (ii), the default-SMS role note (2.6 item 11). Declined: a retry case in F1 and a cancellation-on-the-pending-future variant of F12. Reason: the order "helper before the backoff check" is fixed by the edit text and the hunk check of I3, and the pending-future cancel branch is WorkManager's own code read in L5 that ends in line 48's rethrow; adding tests now would reopen the twelve failing sets plan-review verified, for no criterion |
+| Ruling 69 | New section 14: every command and tool that can run without Gradle, a device or `app/` was run on input written in scratch, with the real log lines of today's observation where formats matter. Found and fixed while testing: on today's **unfixed** build a refused INCOMING run writes no start line, so (i) and (ii) now count `defect` above 0 as a fail before any "held by quota" outcome; `ls` on this machine is aliased to `ls -F` and appends `/` to directory names, so the cache listing uses `command ls -1`; `sha256sum` marks paths with `*`, so paths are cut with `sed -E 's/^[0-9a-f]{64} \*?//'`; Python writes CRLF to a redirected stdout, so tool output is read field-wise and `\r` is stripped where a value is passed on |
+
+Totals after iteration 2: **18 tests**, **12 mutation runs** (8 counted), **16 Gradle runs**, one session; six evidence
+tools in 3.5 (`oldtext_check.py` and `dex_refs.py` for the developer; `ui_bounds.py`, `notif_check.py`, `dt_secs.py` and
+`ac12_run.py` for the orchestrator), all written by the developer at I0 so that they are committed with the story.
+
 ## 0. Binding Inputs
 
 | Source | What binds this plan |
@@ -103,11 +148,15 @@ Gradle's: the first real compile is the developer's I2 run (row D12).
 | L19 | The helper compiles; the only class that names `ForegroundServiceStartNotAllowedException` is `ForegroundRefusal` (3 constant-pool hits; 0 in `WorkerForegroundKt` and its continuation class). Its catch type is `java.lang.IllegalStateException` (API 1). Line table: `WorkerForegroundKt` lines 39, 44 to 51, 53 (10 lines); `ForegroundRefusal` lines 62 and 64 (2 lines). Dexed with build-tools 36.0.0 D8 at `--min-api 24`: `dexdump -d` lists only `Lcom/zegoggles/smssync/service/ForegroundRefusal;` as naming the type. WorkManager 2.9.1 itself names it in `androidx/work/impl/foreground/SystemForegroundService$Api31Impl` | verified | scratch compile; `javap -v -l`; D8 and `dexdump` from build-tools 36.0.0 (not AGP's own D8) |
 | L20 | The text simulation (`fd70325a` + U-070 P6/P7 + this plan's E-B1, E-B2, E-R1): every old text once at the simulated start; after the edits `git diff --no-index --numstat` `10 6` (BackupWorker) and `5 5` (RestoreWorker); `-U0` hunks `@@ -119,5 +119,10 @@`, `@@ -142 +146,0 @@` and `@@ -144,5 +144,5 @@`; `doWork()` spans `:118-176` after the edit; post-U-070 BackupWorker 649 lines, after U-075 653; RestoreWorker 791 both. Simulated blobs after U-075: `3f2f0c7678fab5a7ddf5d36581f2df32cd19a643` and `9be01b15210508393e750136ff127cc7eed3a968`. U-071's anchor M-1 (`currentCoroutineContext().ensureActive()`, 16 spaces) at post-U-070 `:339`, after U-075 `:343`; U-070's anchors M-L11, M-L20, M-L22 once each before and after | verified (simulation) | scratch script; `git diff --no-index`; `git hash-object --no-filters` |
 | L21 | `oldtext_check.py` (3.5) gives `mismatches=0` in `start` mode on the simulated start tree (with a CRLF copy of BackupWorker.kt, the U-070 fixture text, `RestoreWorkerCheckpointTest.kt` and `app/proguard-rules.pro` at `fd70325a`) and in `fixed` mode on the simulated fixed tree | verified (run) | scratch tree |
-| L22 | Release: `app/proguard-rules.pro:57` `-dontoptimize` (no inlining, no class merging); no `-assumenosideeffects` rule under `app/` (`git grep` prints nothing); the helper is called directly, never by reflection or name; WorkManager's consumer rules keep the workers (U-069 L9). So no keep rule is needed | verified | `git grep`; U-069 L9 |
+| L22 | Release: `app/proguard-rules.pro:57` `-dontoptimize` (no inlining, no class merging); no `-assumenosideeffects` rule under `app/` (`git grep` prints nothing); the helper is called directly, never by reflection or name; WorkManager's consumer rules keep the workers (U-069 L9). So no keep rule is needed. No `-dontobfuscate` under `app/`, so release class names are renamed; what `-dontoptimize` does in AGP 9's R8 is expected, not read: the release dex check of I6 step 4 measures it (iteration 2) | verified (the file); measured at I6 (the effect) | `git grep`; U-069 L9 |
 | L23 | JaCoCo: Rule 1 `com.zegoggles.smssync.service*`, LINE, `minimum = 0.70` (`app/build.gradle:358-365`); measured `service` 674/822 = 82.0 % at U-069's I0, I4, I6 (`sprint-024/U-069/evidence/I0-jacoco-packages.txt:16`, `I6-…:16`). U-070 adds lines to `service`; its figure is measured at I0 here | verified | file read; evidence read |
 | L24 | `app/build.gradle:21`, `:24-25`: compileSdk 35, minSdk 24, targetSdk 35; `:155-156` work 2.9.1; `:160` Robolectric 4.15.1; `:161` Truth 1.4.4; `:135` preference 1.1.0; root `build.gradle:29-30` `reports.html.required = false`, `reports.junitXml.required = true`; `gradle/gradle-daemon-jvm.properties` `toolchainVersion=25` | verified | files read |
 | L25 | Guava's nullness annotations type `Futures.immediateVoidFuture()` as `ListenableFuture<Void?>`, which does not override `ListenableFuture<Void>`; so the counting updater delegates to `TestForegroundUpdater` (compile result in the scratch folder) | verified | scratch compile |
 | L26 | Committed tools reused read-only: `sprint-020/U-063/evidence/tools/{sanitize.py,junit_totals.py,junit_cases.py,jacoco_pkgs.py}`, `sprint-024/U-069/evidence/tools/jacoco_classes.py`, `sprint-024/U-068/evidence/tools/sdk_dir.py` | verified | `git ls-tree fd70325a`; docstrings read |
+| L27 | (Iteration 2, contract O-1.) WorkManager 2.9.1 `Processor.stopAndCancelWork(id, reason)` logs "Processor cancelling", adds the id to `mCancelledIds`, calls `cleanUpWorkerUnsafe(id)` (which removes the work from `mForegroundWorkMap`) and then `interrupt(id, wrapper, reason)`. So a user's cancel (CNTR-004 Rule 7, `cancelUniqueWork`) stops a foreground-mapped run, a refused one included; only `stopWork` (a system stop) ignores foreground-mapped work (L10) | verified | `javap -c -p -constants` on `Processor` |
+| L28 | (Iteration 2, depth check.) `CoroutineWorker.getForegroundInfo` default (`getForegroundInfo$suspendImpl`) throws with the text "Not implemented"; no request uses `setExpedited` (`git grep -n setExpedited fd70325a -- app/src/main` prints nothing, exit 1); WorkManager calls `getForegroundInfoAsync` below API 31 only for expedited work (BUG-029 L8). `Defaults.MAX_ITEMS_PER_SYNC = -1` (`Defaults.java:23`): an automatic run is not bounded in size | verified | `javap`; `git grep` |
+| L29 | (Iteration 2.) `androidx/work/impl/foreground/SystemForegroundService$Api31Impl.startForeground` in **2.9.1** calls `Service.startForeground(int, Notification, int)` and logs "Unable to start foreground service" at warning on a refusal or `SecurityException` (two handlers): WorkManager's own second refusal point exists already in 2.9.1 (iteration 1's 2.6 item 8 attributed it to 2.12.0, wrongly). The app's WorkManager `Configuration` sets no minimum logging level (`App.java:162-165`), so WorkManager logs from INFO: its debug lines "onStartJob for", "onStopJob for" (`SystemJobService`) and "Starting work for" (`GreedyScheduler`) do not reach logcat, while "Moving WorkSpec … to the foreground" and "Worker result …" (INFO) do, as today's log shows | verified | `javap -c -p -constants` on the three classes; `App.java` read |
+| L30 | (Iteration 2, ruling 69.) Every embedded file was extracted from the plan text and hashed; every tool and every parsing, grep, hash and compare line of sections 4 and 9 that can run without Gradle, a device or `app/` was run on scratch input; the results are section 14 | verified (run) | section 14 |
 | N1 | The two test files compile on Gradle's real unit-test classpath (with the real app classes and U-070's fixtures as built) | needs_check | I2; row D12 |
 | N2 | Robolectric runs the SDK 35 classes offline: no download, the app starts in the sandbox, U-070's fixtures work at 35 (the control F2 and the characterisation tests pass) | needs_check | I2; rows D10, D26 |
 | N3 | The API 24 class loads and runs at SDK 24 (it names no class above API 24; L19-style check of the test classes in the scratch compile: `BackupWorkerForegroundApi24Test`, `ForegroundCallLog`, the updaters, `ForegroundTestLog` and `BackupWorkerForegroundTestKt` name none of the five exceptions) | needs_check | I2; row D11 |
@@ -183,12 +232,15 @@ The helper (`service/WorkerForeground.kt`, full text in 3.3; the line numbers be
 BUG-016 class of defect) and a cancellation (U-074's subject). M-F2 is the injection that shows the tests catch exactly
 that widening.
 
-**How the API 24 to 30 safety is proven.** (a) Bytecode: the helper's class has no reference to the API-31 class (L19, and
-the developer's dex check in I6 for the real debug APK). (b) JVM: test F13 runs the helper at SDK 24, where the class does
-not exist in the sandbox (L11), and an `IllegalStateException` must arrive as itself. (c) M-X1 removes the `SDK_INT` test and
-records whether F13 then fails with `NoClassDefFoundError` (informational: whether Robolectric's sandbox resolves a missing
-`android.*` class through its parent class loader was not read). (d) ART: optional device step (vi) on the `Pixel_API_24`
-emulator (section 9; SC-2), a launch and a manual backup, the only proof on ART itself.
+**How the API 24 to 30 safety is proven** (SC-2). (a) Bytecode: the helper's class has no reference to the API-31 class
+(L19), checked again by the developer in the real debug **and release** dex (I6 step 4; R8 runs only in the release
+build). (b) JVM: test F13 runs the helper at SDK 24, where the class does not exist in the sandbox (L11), and an
+`IllegalStateException` must arrive as itself. F13 proves only that the helper loads and rethrows on a HotSpot JVM in a
+sandbox without the class; it is not evidence about ART's verifier. (c) M-X1 removes the `SDK_INT` test and records whether
+F13 then fails with `NoClassDefFoundError` (informational: whether Robolectric's sandbox resolves a missing `android.*` class
+through its parent class loader was not read). (d) ART: device step (vi) on the `Pixel_API_24` emulator (section 9), run by
+the orchestrator: install-time verification is always read; the helper itself runs there only if the app has login
+information, otherwise the step is recorded "not run: needs the owner to enter the app password".
 
 ### 2.2 Alternatives considered (not chosen)
 
@@ -271,7 +323,8 @@ Read in WorkManager 2.9.1 (L5, L6, L9, L10), `MainViewModel.kt` and `StatusPrefe
    The restore path is the same (`MainViewModel.kt:222-239`, `:285-305`).
 4. **WorkManager keeps the work in its foreground map until it ends.** `Processor.startForeground` moved it there before the
    start was attempted, so a JobScheduler stop is ignored ("Ignored stopWork…", L10) and the `ProcessorForegroundLck` wake
-   lock is held until the map is empty (BUG-029 L3). This now concerns only a refused manual backup, Skip or restore.
+   lock is held until the map is empty (BUG-029 L3). This now concerns only a refused manual backup, Skip or restore. A
+   user's cancel still stops such a run: `stopAndCancelWork` removes it from the foreground map and interrupts it (L27).
 5. **Not verified** (stays as BUG-029 Not verified 5): what the platform does with the process when JobScheduler stops the
    job while such a run goes on (freezing, a kill), and how 2.9.1 recovers a `RUNNING` work spec after a process death. The
    watermark (BUG-010) and the restore checkpoint (U-016) make either case lossless.
@@ -284,9 +337,18 @@ The developer copies this reading into the implementation log for the story's Im
    main user-started beneficiary).
 2. A manual backup or restore at attempt 4 or more: the helper runs first (and may warn), then the backoff cap returns
    `failure("backoff_cap_exceeded")`, as today.
-3. An automatic backup on any Android version no longer enters the foreground; on a busy system it is subject to the job
-   time limit (BUG-029 L5); a stopped run is rescheduled and continues above the watermark (L10 of the bug). Android 11
-   devices change in the same way (story, "Existing Behavior to Preserve").
+3. An automatic backup on any Android version no longer enters the foreground, so it runs as an ordinary job and the
+   system's stops are honoured (BUG-029 L6): the job time limit (on Android 12 and later when the system is busy, BUG-029
+   L5, read; on Android 11 and earlier at 10 minutes whatever the load, recalled, not verified: on the owner's Android 11
+   phone a long automatic run changes from foreground to ordinary work and is now cut at 10 minutes), Doze or another
+   device-state change, a lost network constraint, and on Android 16 the job runtime quota (recalled, not verified). Before
+   this story the foreground map ignored such stops (L10). With `MAX_ITEMS_PER_SYNC` at its default `-1` (L28) an automatic
+   run after a long gap is not bounded in size. A stopped run is rescheduled and continues above the watermark (BUG-010),
+   so nothing confirmed is lost. **Until U-074** the stop reaches `doWork`'s broad catch (`BackupWorker.kt:168-171`): one
+   ERROR line "BackupWorker: unrecoverable error" with the job's `CancellationException`, and a `Result.failure` that
+   WorkManager ignores for interrupted work; section 9 reads that pair as "stopped by the system", not as a fail, and tells
+   it from a real error by the next line (`ac12_run.py`'s `unrecoverable-cancel`, 14.7). When a job **starts** (Doze
+   windows, standby bucket, quota) is decided by JobScheduler before `doWork` and does not change.
 4. Cancellation while `setForeground` is suspended: kotlinx cancels the continuation; the helper rethrows (line 48).
 5. A refusal that arrives after the job was cancelled (a race): the helper returns `false` and the run reaches the next
    cooperative check; that is U-074's subject (hand-over item 2).
@@ -294,9 +356,18 @@ The developer copies this reading into the implementation log for the story's Im
    exceptions) propagates and fails the run loudly, as today.
 7. Android 15's six-hour `dataSync` budget used up: whether the next start throws the refusal is BUG-029 Not verified 4; if
    it does, the run continues without the notification, which is the right outcome.
-8. WorkManager 2.12.0 (U-073) has a second refusal point inside `SystemForegroundService.Api31Impl` that only logs
-   (BUG-029 Notes); the worker is then not told and continues, as with the caught case but without the warning.
+8. WorkManager 2.9.1 already has (and 2.12.0 keeps) a second refusal point inside
+   `SystemForegroundService$Api31Impl.startForeground`, which catches the refusal and `SecurityException` and logs only
+   "Unable to start foreground service" (L29). If it is ever reached, the worker is not told and continues, as with the
+   caught case but without the app's warning; section 9 counts that line (`svc-refusal`).
 9. The warning is written at most once per run (one call per run).
+10. `getForegroundInfo()` is not overridden and needs no override: no request is expedited, WorkManager calls it below API
+    31 only for expedited work, and 2.9.1's default throws "Not implemented" (L28). A later story that expedites a request
+    must add it (hand-over item 6). Android 15's rule that a `BOOT_COMPLETED` receiver may not start a `dataSync` service is
+    moot here: the boot backup is `REGULAR` and never asks, and WorkManager starts its service from a job, not from the
+    receiver (BUG-029 Not verified 3).
+11. Whether holding the default-SMS role exempts a restore from the background-start rule was not read; the helper is
+    correct either way.
 
 ### 2.7 Interactions (exact)
 
@@ -980,8 +1051,9 @@ internal fun assertForegroundErrorPropagates(
 }
 ```
 
-**T2** `$TS/service/RestoreWorkerForegroundTest.kt` — blob `c513ea18f97c5164096b3fd1db2ccd0698d467c6` (172 lines, 5 lines
-containing `@Test`, LF); under F-34 blob `7b5687be517431be3efdfee32a3741452254fdb2`.
+**T2** `$TS/service/RestoreWorkerForegroundTest.kt` — blob `e69175c646a728c0e4e4cf9bc3b7f08239ff4e31` (174 lines, 5 lines
+containing `@Test`, LF; iteration 2: R2's account-name check, plan-review O-3); under F-34 blob
+`9207950d18c7be23f0c178e001640b503aaa04e0`.
 
 ```kotlin
 package com.zegoggles.smssync.service
@@ -1073,6 +1145,8 @@ class RestoreWorkerForegroundTest {
         assertWithMessage("the starting line").that(
             ForegroundTestLog.hasDebugLine("RestoreWorker.doWork: starting restore, attempt=0")).isTrue()
         ForegroundTestLog.assertRefusalLoggedOnce(ForegroundTestLog.RESTORE_PREFIX, "ForegroundServiceStartNotAllowedException")
+        assertWithMessage("log entries carrying the configured account name").that(
+            ShadowLog.getLogs().filter { (it.msg ?: "").contains(SmsFixture.OWNER) }).isEmpty()
     }
 
     @Test
@@ -1284,19 +1358,24 @@ for name in sorted(counts):
 print(f'TOTAL classes={len(counts)}')
 ```
 
-`ui_bounds.py` (for the orchestrator, section 9) — blob `c7f765f0af1f0696a7ef86944cbd9251137c5c8c` (smoke-tested on a
-synthetic dump):
+`ui_bounds.py` (for the orchestrator, section 9) — blob `d034222c4d13a79ead881a9948e3e491201b988d` (iteration 2: unreadable XML handled, the label
+compared without regard to case, plan-review O-6; self-test 14.2):
 ```python
 """U-075 device step (iii): the centre of the app's backup button, from a uiautomator dump.
 usage: python -I -X utf8 ui_bounds.py <dump.xml>
-Prints 'X Y enabled=<true|false> label-is-Backup=<True|False>' for the one node whose resource-id is
-com.zegoggles.smssync:id/sync_button, and exit 0; otherwise one line 'nodes=<n>' or 'bounds=unreadable' and exit 1.
-It never prints text from the dump, which can contain the account's address."""
+Prints 'X Y enabled=<true|false> label-is-backup=<True|False>' for the one node whose resource-id is
+com.zegoggles.smssync:id/sync_button, and exit 0 (the label is compared without regard to case). Otherwise one line
+'xml=unreadable', 'nodes=<n>' or 'bounds=unreadable' and exit 1. It never prints text from the dump, which can
+contain the account's address."""
 import re
 import sys
 import xml.etree.ElementTree as ET
-nodes = [n for n in ET.parse(sys.argv[1]).getroot().iter('node')
-         if n.get('resource-id') == 'com.zegoggles.smssync:id/sync_button']
+try:
+    root = ET.parse(sys.argv[1]).getroot()
+except (ET.ParseError, OSError):
+    print('xml=unreadable')
+    sys.exit(1)
+nodes = [n for n in root.iter('node') if n.get('resource-id') == 'com.zegoggles.smssync:id/sync_button']
 if len(nodes) != 1:
     print(f'nodes={len(nodes)}')
     sys.exit(1)
@@ -1306,8 +1385,139 @@ if not m:
     sys.exit(1)
 x1, y1, x2, y2 = map(int, m.groups())
 print(f"{(x1 + x2) // 2} {(y1 + y2) // 2} enabled={nodes[0].get('enabled')} "
-      f"label-is-Backup={nodes[0].get('text') == 'Backup'}")
+      f"label-is-backup={(nodes[0].get('text') or '').strip().lower() == 'backup'}")
 ```
+
+`notif_check.py` (for the orchestrator, section 9; new in iteration 2, SC-1) — blob `0a7a889c505ac18f5e056cc49e4ea17e50390815` (self-test 14.3):
+```python
+"""U-075 device steps (iii) and (i): the app's records in a 'dumpsys notification --noredact' dump.
+usage: python -I -X utf8 notif_check.py <dump.txt>
+A record starts at a line containing 'NotificationRecord(' and ends before the next such line; it is the app's when
+that line contains 'pkg=com.zegoggles.smssync '. Prints one line and exits 0:
+'dump=ok records=<n> id1=<n> id1-channel=<True|False> id1-title-backing-up=<True|False>'
+(id1: the app's records with id=1; id1-channel: one of them names channel=sms_backup_plus; id1-title-backing-up: one
+of them carries 'android.title=String (Backing up)'). Prints 'dump=unreadable' and exits 1 when the file is empty or
+has neither 'Notification Manager state' nor 'NotificationRecord(' in it. Prints no other text from the dump."""
+import re
+import sys
+try:
+    text = open(sys.argv[1], encoding='utf-8', errors='replace').read()
+except OSError:
+    text = ''
+if not text.strip() or ('Notification Manager state' not in text and 'NotificationRecord(' not in text):
+    print('dump=unreadable')
+    sys.exit(1)
+blocks, current = [], None
+for line in text.splitlines():
+    if 'NotificationRecord(' in line:
+        current = [line]
+        blocks.append(current)
+    elif current is not None:
+        current.append(line)
+app = [b for b in blocks if 'pkg=com.zegoggles.smssync ' in b[0]]
+id1 = [b for b in app if re.search(r'\bid=1\b', b[0])]
+channel = any('channel=sms_backup_plus' in '\n'.join(b) for b in id1)
+title = any('android.title=String (Backing up)' in '\n'.join(b) for b in id1)
+print(f'dump=ok records={len(app)} id1={len(id1)} id1-channel={channel} id1-title-backing-up={title}')
+```
+The record format (`NotificationRecord(0x…: pkg=<package> user=… id=<n> …`, `Notification(channel=<id> …`, extras
+`android.title=String (<text>)`) is recalled from AOSP's `NotificationRecord.dump`, not read on this emulator: a different
+format makes the tool print `records=0`, which in (iii) is a false stop only, and in (i) is guarded by the sanity marker
+and by (iii) having parsed a record of the same dump format first (section 9, (i) Pass).
+
+`dt_secs.py` (for the orchestrator, section 9; new in iteration 2) — blob `75b37f0d80268bda4b982d5e414880e1788c8fbd` (self-test 14.4):
+```python
+"""U-075 device step (i): seconds from device time A to device time B ('MM-DD HH:MM:SS.mmm', logcat's form).
+usage: python -I -X utf8 dt_secs.py '<A>' '<B>'
+Prints 'seconds=<B-A with 3 decimals>' and exits 0; prints 'time=unreadable' and exits 1 if either value has another
+form. Both times are taken in the same year; a step that crosses New Year is read by hand."""
+import re
+import sys
+from datetime import datetime
+form = re.compile(r'^\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$')
+if len(sys.argv) != 3 or not all(form.match(v.strip()) for v in sys.argv[1:3]):
+    print('time=unreadable')
+    sys.exit(1)
+a, b = (datetime.strptime('2000-' + v.strip(), '%Y-%m-%d %H:%M:%S.%f') for v in sys.argv[1:3])
+print(f'seconds={(b - a).total_seconds():.3f}')
+```
+`ac12_run.py` (for the orchestrator, section 9; new in iteration 2, plan-review B-3, contract-verification O-2, depth
+check) — blob `6dc06eeed6d56463b3b9708621092a8e80a04500` (self-test 14.7, on today's real app log and on lines written in its format):
+```python
+"""U-075 device check (AC-12): read one backup run of a given type from a 'logcat -v threadtime' file.
+usage: python -I -X utf8 ac12_run.py <logcat.txt> <TYPE> --pids <pid>[,<pid>...] [--after '<MM-DD HH:MM:SS.mmm>']
+Only lines of the given process ids are read. The run is the first 'BackupWorker.doWork: starting backup, type=<TYPE>'
+line (at or after --after); its result is the first later 'Worker result <R> for Work [ id=<id>, tags={ ... } ]' line
+whose tags hold the worker's class name and <TYPE>. Prints one line of key=value fields and exits 0; exits 1 with
+'pids=missing' when no process id is given. Fields: start, tid, id, result, moved (WM-Processor 'Moving WorkSpec (<id>)
+to the foreground' lines anywhere), watermark ('watermark advanced for SMS' lines of the run's thread between start and
+result), backedUp, nothing, unrecoverable and unrecoverable-cancel (an 'unrecoverable error' line whose next line of
+the same thread names a CancellationException), and over the whole file: refused-warn (the app's own warning that it
+continued without the foreground), defect (a WM-WorkerWrapper error line naming ForegroundServiceStartNotAllowedException)
+and svc-refusal ('Unable to start foreground service'). It prints no message text."""
+import re
+import sys
+args = sys.argv[1:]
+def opt(name):
+    if name in args:
+        i = args.index(name)
+        value = args[i + 1] if i + 1 < len(args) else ''
+        del args[i:i + 2]
+        return value
+    return None
+pids = {p for p in (opt('--pids') or '').split(',') if p.strip().isdigit()}
+after = opt('--after') or ''
+if not pids or len(args) != 2:
+    print('pids=missing' if not pids else 'usage=wrong')
+    sys.exit(1)
+path, kind = args
+line_re = re.compile(r'^(\d\d-\d\d \d\d:\d\d:\d\d\.\d{3})\s+(\d+)\s+(\d+)\s+([VDIWEF])\s+(.*?): (.*)$')
+rows = []
+for raw in open(path, encoding='utf-8', errors='replace'):
+    m = line_re.match(raw.rstrip('\r\n'))
+    if m and m.group(2) in pids:
+        rows.append(m.groups())
+start = next((i for i, r in enumerate(rows) if r[4] == 'SMSBackup+' and r[3] == 'D' and r[0] >= after
+              and r[5].startswith(f'BackupWorker.doWork: starting backup, type={kind}, attempt=')), None)
+f = {'type': kind, 'start': 'none', 'tid': 'none', 'id': 'none', 'result': 'none', 'moved': 0, 'watermark': 0,
+     'backedUp': 'none', 'nothing': 0, 'unrecoverable': 0, 'unrecoverable-cancel': 0}
+result_re = re.compile(r'^Worker result (\w+) for Work \[ id=([0-9a-f-]+), tags=\{ (.*) \} \]$')
+if start is not None:
+    f['start'], f['tid'] = rows[start][0].replace(' ', '_'), rows[start][2]
+    end = len(rows)
+    for i in range(start + 1, len(rows)):
+        m = result_re.match(rows[i][5]) if rows[i][4] == 'WM-WorkerWrapper' else None
+        if m and {'com.zegoggles.smssync.service.BackupWorker', kind} <= set(t.strip() for t in m.group(3).split(',')):
+            f['result'], f['id'], end = m.group(1), m.group(2), i
+            break
+    run = [r for r in rows[start:end + 1] if r[2] == f['tid'] and r[4] == 'SMSBackup+']
+    for j, r in enumerate(run):
+        if r[5].startswith('BackupWorker: watermark advanced for SMS to '):
+            f['watermark'] += 1
+        if r[5].startswith('BackupWorker: backup complete, backedUp='):
+            f['backedUp'] = r[5].split('=', 1)[1].strip()
+        if r[5] == 'BackupWorker: nothing to backup':
+            f['nothing'] += 1
+        if r[5] == 'BackupWorker: unrecoverable error':
+            f['unrecoverable'] += 1
+            if j + 1 < len(run) and 'CancellationException' in run[j + 1][5]:
+                f['unrecoverable-cancel'] += 1
+    if f['id'] != 'none':
+        f['moved'] = sum(1 for r in rows if r[4] == 'WM-Processor' and r[5] == f"Moving WorkSpec ({f['id']}) to the foreground")
+f['refused-warn'] = sum(1 for r in rows if r[4] == 'SMSBackup+' and r[3] == 'W'
+                        and 'foreground start not allowed; continuing without the foreground' in r[5])
+f['defect'] = sum(1 for r in rows if r[4] == 'WM-WorkerWrapper' and r[3] == 'E'
+                  and 'ForegroundServiceStartNotAllowedException' in r[5])
+f['svc-refusal'] = sum(1 for r in rows if 'Unable to start foreground service' in r[5])
+print(' '.join(f'{k}={v}' for k, v in f.items()))
+```
+Known limits (self-test 14.7): the window of a run is the start line's thread between its start and its result, which
+is how `BackupWorker` logs (one coroutine thread per run in today's log); a run without a result line (a system stop) is
+read to the end of the file.
+
+The four orchestrator tools print to the console; Python on this machine writes CRLF to a redirected stdout, so every
+consumer in section 9 reads their output with `read -r` into the first fields only, `grep` or `grep -o`, and strips
+`\r` where a value is passed on (`tr -d '\r'`), never by byte comparison (self-test 14.5).
 (`sync_button` is the status screen's backup button, `status.xml:78`, label `ui_sync_button_label_idle` = "Backup",
 `strings.xml:11`, found by `StatusPreference.java:139`.)
 
@@ -1374,8 +1584,12 @@ At I6 also `python -I -X utf8 $T/junit_cases.py $R BackupWorkerForeground Restor
 
 ### I0 — Start state and baseline (no tracked file changes)
 
-1. Create `$WORK/logs`, `$WORK/pristine`, `$E`, `$M`, `$TL`; write `oldtext_check.py`, `dex_refs.py`, `ui_bounds.py` (3.5)
-   with the Write tool; `git hash-object` of each → `8d1158ec…`, `4f72cc2f…`, `c7f765f0…` (row D13).
+1. Create `$WORK/logs`, `$WORK/pristine`, `$E`, `$M`, `$TL`; write the six tools of 3.5 with the Write tool;
+   `git hash-object $TL/oldtext_check.py $TL/dex_refs.py $TL/ui_bounds.py $TL/notif_check.py $TL/dt_secs.py $TL/ac12_run.py`
+   → `8d1158ecda4c0e9bde9962b46132dc33829c1324`, `4f72cc2f8c27e869e0c41a25afc0d58376b5f1e7`,
+   `d034222c4d13a79ead881a9948e3e491201b988d`, `0a7a889c505ac18f5e056cc49e4ea17e50390815`,
+   `75b37f0d80268bda4b982d5e414880e1788c8fbd`, `6dc06eeed6d56463b3b9708621092a8e80a04500` (each derived from the plan text,
+   14.1; row D13).
 2. **Start state** (one call into `$WORK/logs/I0-start.log`, sanitised to `$E/I0-start.txt`), each command echoed first:
    ```bash
    date -u +%Y-%m-%dT%H:%M:%SZ; git rev-parse HEAD; git rev-parse --abbrev-ref HEAD
@@ -1392,8 +1606,9 @@ At I6 also `python -I -X utf8 $T/junit_cases.py $R BackupWorkerForeground Restor
    git grep -h "@Test" HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
    git grep -nE '^\s*@Ignore(\s|\(|$)' HEAD -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt'
    grep -v '^#' gradle/gradle-daemon-jvm.properties
-   ls "$AAI" > $WORK/logs/aai-before.txt; cat $WORK/logs/aai-before.txt; sha256sum $WORK/logs/aai-before.txt
-   "$(ls -d "/c/Program Files/Java/"jdk-25* | tail -1)/bin/jps.exe" -l | grep -iE 'gradle'; echo "jps-gradle-end"
+   command ls -1 "$AAI" > $WORK/logs/aai-before.txt; cat $WORK/logs/aai-before.txt; grep -cE '^(7\.0\.0_r1-robolectric-r1-i7|14-robolectric-10818077-i7|15-robolectric-12650502-i7)/?$' $WORK/logs/aai-before.txt
+   "$(command ls -d "/c/Program Files/Java/"jdk-25* | tail -1)/bin/jps.exe" -l | grep -iE 'gradle'; echo "jps-gradle-end"
+   git status --porcelain --untracked-files=all -- sdlc/artifacts/design sdlc/artifacts/requirements sdlc/artifacts/build/change-records | cut -c4- | while read -r p; do sha256sum "$p"; done > $WORK/logs/others-I0.txt; cat $WORK/logs/others-I0.txt
    ```
    Expected: `plan-head-ancestor-exit=0`; the `-- app` log shows U-070's code commits only; both stories `status: done`;
    nothing before `porcelain-end`; for each worker the two hashes are equal; the blobs are expected to be `ba667c43…` and
@@ -1405,18 +1620,22 @@ At I6 also `python -I -X utf8 $T/junit_cases.py $R BackupWorkerForeground Restor
    `C0` as printed with the commit id (821 expected if only U-070 landed after `fd70325a`; any other value is recorded
    and explained, not a stop, row D22); the `@Ignore` lines (two at `fd70325a`: `AppTest.java:13`,
    `AuthPreferencesTest.java:1079`); `toolchainVersion=25`; the cache listing contains `7.0.0_r1-robolectric-r1-i7`,
-   `14-robolectric-10818077-i7` and `15-robolectric-12650502-i7` (row D9); no Gradle JVM before `jps-gradle-end`. Record
-   `START=$(git rev-parse HEAD)` and `C0` at the top of the log. **Rows:** D1 to D9, D30.
+   `14-robolectric-10818077-i7` and `15-robolectric-12650502-i7`, the count `3` (`ls` on this machine is aliased to
+   `ls -F`, hence `command ls -1` and the optional `/`; row D9); no Gradle JVM before `jps-gradle-end` (row D34);
+   `others-I0.txt`: one `sha256sum` line per uncommitted path of someone else under the three document folders, or none
+   (the orchestrator's ruling on contract O-6: recorded, not a stop; CR-017 is expected committed before `<start>`).
+   Record `START=$(git rev-parse HEAD)` and `C0` at the top of the log. **Rows:** D1 to D9, D23, D30, D34.
 3. **U-070's recorded mutation sets** into `$WORK/logs/I0-u070.log`, sanitised to `$E/I0-u070-mutations.txt`:
-   `grep -n -A14 -E '^### M-L(11|20|22) ' sdlc/artifacts/build/sprints/sprint-024/U-070/evidence/mutation-log.md`. Read each
-   entry's failed set. Planned values (U-070 plan I8): M-L11 fails `ac9_appendFails_nothingSaved_rowsUploadedByTheNextBackup`,
+   `for id in M-L11 M-L20 M-L22; do awk -v id="$id" '$0 ~ "^### " id " " {on=1; print; next} /^### / {on=0} on' sdlc/artifacts/build/sprints/sprint-024/U-070/evidence/mutation-log.md; done`
+   (whole entries, up to the next `### ` heading; plan-review O-5; tested on U-069's log, 14.10). Read each entry's failed
+   set and translate U-070's ids (B10, S3, …) to test names through U-070's plan table 4.8. Planned values (U-070 plan I8): M-L11 fails `ac9_appendFails_nothingSaved_rowsUploadedByTheNextBackup`,
    `ac9_cancelledDuringTheAppend_nothingSaved_rowsUploadedByTheNextBackup`, `ac10_deathAfterTheServerConfirmed_onlyThatMessageTwice_oneCommitPerRowCarriesBoth`
    (`LateVisibleSmsBackupTest`); M-L20 fails `ac15_recordOnlyWritesKeepTheFirstRun_emptyFirstRunWritesTheSentinel`,
    `ac21_rowsTheConverterRejects_recordedAsExamined_lateSmsNotStarved_noLogin`; M-L22 fails
    `ac12_skipWithoutSms_leavesTheSmsWatermarkAndRecordUntouched` (`LateVisibleSmsSkipResetRestoreTest`). **The recorded sets
    govern** (story AC-11: "exactly the failing set U-070 recorded"); a difference from the planned values is recorded. Row D20.
 4. `./gradlew --version > $WORK/logs/I0-gradle-version.log 2>&1`, sanitised to `$E/I0-gradle-version.txt` (the Daemon JVM
-   line cites `gradle/gradle-daemon-jvm.properties`, Java 25).
+   line cites `gradle/gradle-daemon-jvm.properties`, Java 25). **Row:** D34.
 5. **Gate G0** (expect it in the background, 4.0), then EV(0). Expected `exit=0` as the log's last line; `failures=0 errors=0`;
    `tests=T0`, `skipped=S0` (recorded); the `com.zegoggles.smssync.service` line of `I0-jacoco-packages.txt` recorded as
    `C_s/T_s` (no expected number; 674/822 at `fd70325a`, U-070 adds lines). **Rows:** D7, D8, D29.
@@ -1428,9 +1647,9 @@ At I6 also `python -I -X utf8 $T/junit_cases.py $R BackupWorkerForeground Restor
 
 1. Write `$BFTF` and `$RFTF` (3.4) with the Write tool.
 2. Checks into `$WORK/logs/I1-checks.log`, sanitised to `$E/I1-checks.txt`: `git hash-object $BFTF $RFTF` →
-   `3e3ea62b56e25158bb73f993f8a5f2f44b3825b6`, `c513ea18f97c5164096b3fd1db2ccd0698d467c6`; `grep -c "@Test" $BFTF $RFTF` → 13, 5;
+   `3e3ea62b56e25158bb73f993f8a5f2f44b3825b6`, `e69175c646a728c0e4e4cf9bc3b7f08239ff4e31`; `grep -c "@Test" $BFTF $RFTF` → 13, 5;
    `git status --porcelain --untracked-files=all -- app` → exactly `?? $BFTF` and `?? $RFTF`;
-   `git diff --quiet HEAD -- app/src/main; echo "main-clean-exit=$?"` → 0. **Row:** D13.
+   `git diff --quiet HEAD -- app/src/main; echo "main-clean-exit=$?"` → 0. **Rows:** D13, D35.
 
 ### I2 — Characterisation and red run on the unchanged workers (P-1 probe)
 
@@ -1438,8 +1657,8 @@ At I6 also `python -I -X utf8 $T/junit_cases.py $R BackupWorkerForeground Restor
 2. `python -I -X utf8 $T/junit_cases.py $R BackupWorkerForeground RestoreWorkerForeground > $E/I2-red-cases.txt`;
    `for c in $BFT $B24 $RFT; do grep -o 'message="[^"]*"' $R/TEST-$c.xml; done > $WORK/logs/I2-red-msg.log; python -I -X utf8 $T/sanitize.py $WORK/logs/I2-red-msg.log $E/I2-red-messages.txt`.
    Expected: the table of 5.2, `cases=18 pass=11 fail=7 error=0`. **Rows:** D10, D11.
-3. `ls "$AAI" > $WORK/logs/aai-I2.txt; sha256sum $WORK/logs/aai-before.txt $WORK/logs/aai-I2.txt` → equal hashes (no
-   download). Row D26.
+3. `command ls -1 "$AAI" > $WORK/logs/aai-I2.txt; git diff --no-index --quiet $WORK/logs/aai-before.txt $WORK/logs/aai-I2.txt; echo "aai-equal-exit=$?"`
+   → `aai-equal-exit=0` (no download; both files are written by the shell). Row D26.
 4. Append to the implementation log the red output (failing tests, their failure types and first message lines) for the
    story's Implementation Notes ("Red at Start"), and P-1's outcome (refusal level 35, or 34 under F-34).
 
@@ -1475,7 +1694,7 @@ At I6 also `python -I -X utf8 $T/junit_cases.py $R BackupWorkerForeground Restor
 No measurement gate here (coordinator's fact 1): the full suite and coverage are read once more at I6, before which the
 mutation runs only use the three new classes and U-070's NEW5 classes. A coverage fall found at I6 is still a stop (D16).
 1. `git status --porcelain --untracked-files=all -- app` is exactly the five paths of I6 step 5; `oldtext_check.py fixed`
-   still `mismatches=0`.
+   still `mismatches=0`. **Row:** D35.
 2. Pristine copies and hashes into `$WORK/logs/I4-pristine.log`, sanitised to `$E/I4-pristine.txt`:
    `cp $BW $RW $WF $WORK/pristine/`; `sha256sum $BW $RW $WF` (`SB`, `SR`, `SF`); `git hash-object -w $BW $RW $WF` (`HB`,
    `HR`, `HF`; written to the object store for recovery); `git diff HEAD -- app/src/main | git hash-object --stdin`
@@ -1487,13 +1706,19 @@ The twelve entries in table order, one at a time. After the last: every entry ha
 
 ### I6 — Final gate, release checks and the final checks
 
+0. **Clean check before the gate** (plan-review O-2): the 4.8 clean check (`sha256sum $BW $RW $WF` = `SB SR SF`,
+   `PROD_DIFF` unchanged, porcelain of `app/src/main` exactly the three paths) and
+   `grep -cE '^### [^ ]+ APPLYING ' $E/mutation-log.md` equal to `grep -cE '^(- )?restored: ' $E/mutation-log.md` (12 and
+   12; the header's recovery note also contains the word "APPLYING" and `restored:` lines may be list items, hence the
+   anchored forms, tested on U-069's committed log, 14.10). **Rows:** D17, D32.
 1. **Gate G-F** (with `clean`; expect it in the background, 4.0), then EV(6). Expected `exit=0` as the log's last line;
    `tests = T0 + 18`, failures 0, errors 0, skipped not above `S0`; in `I6-service-classes.txt`
    `CLASS com.zegoggles.smssync.service.WorkerForegroundKt covered=10 missed=0` and
    `CLASS com.zegoggles.smssync.service.ForegroundRefusal covered=2 missed=0` (L19; other totals with `missed=0` are row
    D16 (b)); the `com.zegoggles.smssync.service` ratio not below `C_s/T_s` (expected about +13 covered and +13 total
    lines: the helper's 12 and one net executable line in `doWork`); every floor passes. **Rows:** D16, D21, D29.
-2. `ls "$AAI" > $WORK/logs/aai-I6.txt; sha256sum $WORK/logs/aai-before.txt $WORK/logs/aai-I6.txt` → equal. Row D26.
+2. `command ls -1 "$AAI" > $WORK/logs/aai-I6.txt; git diff --no-index --quiet $WORK/logs/aai-before.txt $WORK/logs/aai-I6.txt; echo "aai-equal-exit=$?"`
+   → `aai-equal-exit=0`. Row D26.
 3. **Count (AC-10)**: `git grep --untracked -h "@Test" -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"`
    (working-tree form, stated as such) → `C0 + 18`. Row D22.
 4. **Release and dex checks** into `$WORK/logs/I6-release.log`, sanitised to `$E/I6-release.txt`:
@@ -1502,12 +1727,20 @@ The twelve entries in table order, one at a time. After the last: every entry ha
    grep -n -E '^com\.zegoggles\.smssync\.service\.(WorkerForegroundKt|ForegroundRefusal) -> ' app/build/outputs/mapping/release/mapping.txt
    for v in debug release; do rm -rf "$WORK/dex-$v"; mkdir -p "$WORK/dex-$v"; unzip -o -q app/build/outputs/apk/$v/*.apk 'classes*.dex' -d "$WORK/dex-$v"; done
    for d in "$WORK"/dex-debug/classes*.dex; do echo "== debug $(basename "$d")"; "$BT/dexdump.exe" -d "$d" | python -I -X utf8 $TL/dex_refs.py 'Landroid/app/ForegroundServiceStartNotAllowedException;'; done
+   MAP=app/build/outputs/mapping/release/mapping.txt
+   FR=$(grep -E '^com\.zegoggles\.smssync\.service\.ForegroundRefusal -> ' $MAP | sed -E 's/.* -> (.*):$/\1/' | tr -d '\r'); WK=$(grep -E '^com\.zegoggles\.smssync\.service\.WorkerForegroundKt -> ' $MAP | sed -E 's/.* -> (.*):$/\1/' | tr -d '\r')
+   FRD="L${FR//.//};"; WKD="L${WK//.//};"; echo "release names: ForegroundRefusal=$FRD WorkerForegroundKt=$WKD"
+   for d in "$WORK"/dex-release/classes*.dex; do "$BT/dexdump.exe" -d "$d" | python -I -X utf8 $TL/dex_refs.py 'Landroid/app/ForegroundServiceStartNotAllowedException;'; done > "$WORK/logs/release-refs.txt"; cat "$WORK/logs/release-refs.txt"
+   echo "holder-lines=$(grep -cF "CLASS $FRD " "$WORK/logs/release-refs.txt") caller-lines=$(grep -cF "CLASS $WKD " "$WORK/logs/release-refs.txt")"
    ```
    Expected: APK names `app-release-unsigned.apk` (or `app-release.apk`) and `app-debug.apk`; two mapping lines (the names
    right of `->` are recorded, renamed or not: no keep rule is needed, L22); in the debug dex files the classes under
    `Lcom/zegoggles/` that name the type are exactly `Lcom/zegoggles/smssync/service/ForegroundRefusal;` (or a synthetic
    class whose name begins with it, from D8's API outlining); library classes such as
-   `Landroidx/work/impl/foreground/SystemForegroundService$Api31Impl;` are recorded as library. **Rows:** D24, D25.
+   `Landroidx/work/impl/foreground/SystemForegroundService$Api31Impl;` are recorded as library. In the **release** dex
+   (R8 runs only there; obfuscation is on, so names come from `mapping.txt`; depth check, should 1): `holder-lines=1` and
+   `caller-lines=0`, and every other `CLASS` line is a library class or a synthetic class R8 derived from the holder
+   (pipeline tested on the D8 output with a mapping file, 14.9). **Rows:** D24, D25.
 5. **Final checks** into `$WORK/logs/I6-final.log`, sanitised to `$E/I6-final-checks.txt`, each echoed:
    ```bash
    python -I -X utf8 $TL/oldtext_check.py fixed; echo "oldtext-exit=$?"
@@ -1515,8 +1748,11 @@ The twelve entries in table order, one at a time. After the last: every entry ha
    git status --porcelain --untracked-files=all -- app
    git diff --name-only $START -- app/src/main
    git diff --quiet $START -- app/src/test; echo "test-tracked-unchanged-exit=$?"
-   git diff --name-only $START -- build.gradle app/build.gradle k9mail-vendored/build.gradle settings.gradle gradle sdlc/artifacts/design sdlc/artifacts/build/change-records
+   git diff --name-only $START -- build.gradle app/build.gradle k9mail-vendored/build.gradle settings.gradle gradle
    git log --oneline $START..HEAD -- app k9mail-vendored build.gradle settings.gradle gradle
+   git status --porcelain --untracked-files=all -- sdlc/artifacts/design sdlc/artifacts/requirements sdlc/artifacts/build/change-records | cut -c4- | while read -r p; do sha256sum "$p"; done > $WORK/logs/others-I6.txt
+   grep -vxF -f $WORK/logs/others-I0.txt $WORK/logs/others-I6.txt; echo "docs-new-or-changed-exit=$?"
+   git log --format='%h %s' $START..HEAD -- sdlc/artifacts/design sdlc/artifacts/requirements sdlc/artifacts/build/change-records
    git grep -n --untracked "setForeground(" -- app/src/main
    git grep -n --untracked "setForegroundOrContinue" -- app/src/main
    git grep -n assumenosideeffects -- app; echo "assumenosideeffects-exit=$?"
@@ -1526,9 +1762,12 @@ The twelve entries in table order, one at a time. After the last: every entry ha
    Expected: `mismatches=0`; the blobs and hashes equal `HB`, `HR`, `HF` and `SB`, `SR`, `SF`; porcelain exactly ` M $BW`,
    ` M $RW`, `?? $WF`, `?? $BFTF`, `?? $RFTF`; `git diff --name-only $START -- app/src/main` lists `$BW` and `$RW` (the new
    `$WF` is untracked until the orchestrator's commit; with that commit in place of the working tree it lists the three
-   files, hand-over item 1); `test-tracked-unchanged-exit=0` (added files only, AC-8); the build/design/change-record list is
-   empty (row D23); no code commit after `$START` (row D23); the two `git grep` outputs as in I3 step 3; `assumenosideeffects-exit=1`;
-   `ignore-exit=1`; 13 and 5. **Rows:** D23, D30, D31.
+   files, hand-over item 1); `test-tracked-unchanged-exit=0` (added files only, AC-8); the build-file list is empty and no
+   code commit after `$START` (row D23); `docs-new-or-changed-exit=1` with no line (every uncommitted document path of I6
+   was already uncommitted with the same hash at I0; a path committed in between appears in the `git log` lines with the
+   orchestrator's subject, which is recorded; the orchestrator's ruling on contract O-6, tested in 14.17); the two `git
+   grep` outputs as in I3 step 3; `assumenosideeffects-exit=1`; `ignore-exit=1`; 13 and 5. **Rows:** D23, D30, D31, D32,
+   D33.
 
 ### I7 — Implementation log, hygiene scan, hand-off
 
@@ -1602,7 +1841,7 @@ M-F7 `        if (false) setForegroundOrContinue(createRestoreForegroundInfo(), 
 `$W` = `sdlc/artifacts/build/sprints/sprint-024/U-075`.
 - Code: `$S/service/BackupWorker.kt`, `$S/service/RestoreWorker.kt`, `$S/service/WorkerForeground.kt`,
   `$TS/service/BackupWorkerForegroundTest.kt`, `$TS/service/RestoreWorkerForegroundTest.kt`.
-- Log: `$W/implementation-log.md`. Tools: `$W/evidence/tools/{oldtext_check.py,dex_refs.py,ui_bounds.py}`.
+- Log: `$W/implementation-log.md`. Tools: `$W/evidence/tools/{oldtext_check.py,dex_refs.py,ui_bounds.py,notif_check.py,dt_secs.py,ac12_run.py}`.
 - I0: `$W/evidence/I0-{start.txt,u070-mutations.txt,gradle-version.txt,gates.txt,junit-totals.txt,jacoco-packages.txt,service-classes.txt}`.
 - I1: `$W/evidence/I1-checks.txt`. I2: `$W/evidence/I2-{red-cases.txt,red-messages.txt}`. I3: `$W/evidence/I3-{checks.txt,green-cases.txt}`.
 - I4: `$W/evidence/I4-pristine.txt`.
@@ -1611,8 +1850,8 @@ M-F7 `        if (false) setForegroundOrContinue(createRestoreForegroundInfo(), 
 - I7: `$W/evidence/I7-scan.txt`.
 - AC-12 (orchestrator, section 9): `$W/evidence/AC12-emulator.txt` and `$W/evidence/AC12-{iii,i,ii}-log.txt`.
 
-5 code files and 51 workspace files from the developer (1 log, 3 tools, 7 + 1 + 2 + 2 + 1 + 25 + 7 + 1 evidence files, the
-mutation log counted in the 25). Never staged for this story: the story file, the sprint plan, other stories' workspaces
+5 code files and 53 workspace files from the developer (1 log, 6 tools, 7 + 1 + 2 + 2 + 1 + 25 + 7 + 1 = 46 evidence files,
+the mutation log counted in the 25; plan-review O-4 recounted). Never staged for this story: the story file, the sprint plan, other stories' workspaces
 (U-070's, U-071's), `compiled-pipeline.json`, `sdlc/.skill-context.json`, any design, contract or change record (CR-017 is
 the orchestrator's own work in progress).
 
@@ -1629,7 +1868,8 @@ below (never while a Gradle run is in flight):
 
 **Resume checks** (no Gradle): `git rev-parse HEAD` and `git log --oneline $START..HEAD` (a code commit by anyone is row
 D23); `git status --porcelain --untracked-files=all -- app` as the stopping point leaves it; after I4: `sha256sum` of the
-three files = `SB SR SF` and `PROD_DIFF` unchanged; `mutation-log.md` has no `APPLYING` entry without `restored`; rebuild
+three files = `SB SR SF` and `PROD_DIFF` unchanged; `mutation-log.md` has no `APPLYING` entry without `restored` (the two
+anchored counts of I6 step 0 are equal); rebuild
 `$WORK/pristine/` in the new session's work folder from `HB`, `HR`, `HF` as the recovery note says and compare by
 `sha256sum` (never `cmp`). The hand-over block in the implementation log gives: `Session <n> ends at <date -u>`, the last
 finished step, the next step, `START`, `C0`, `T0`, `S0`, `SB SR SF`, `HB HR HF`, `PROD_DIFF`.
@@ -1712,7 +1952,7 @@ SDK 35 are P-1's probe: the sandbox, U-070's fixtures (F2, F8) and the type exce
 | D7 | G0 fails, or failures or errors above 0 | Stop and report (start condition 2) |
 | D8 | `S0` above 2 | Record as pre-existing; AC-9 compares with `S0` |
 | D9 | The cache listing lacks the 35, 34 or 24 i7 jar | Without 24: stop (F13 cannot run offline). Without 35 but with 34: apply F-34 at I1 and say so. Without both: stop and report (no level of 31 or more offline, P-1) |
-| D10 | I2: the SDK 35 classes do not run as 5.2 says | (a) A message names a missing SDK jar, a download ("Failed to fetch maven artifact", a URL), or the cache listing changed: stop and report; never allow a download. (b) Every case of `$BFT` and `$RFT` errors with the same exception from the sandbox or the application's start-up (not from the test body) while `$B24` passes, or only F2 and F8 fail inside U-070's fixtures: apply F-34 (two Edits; blobs `0145ee38…`, `7b5687be…`), run I2 once more. If SDK 34 shows the same: stop and report (31 to 33 are not cached; the orchestrator decides, the story's last P-1 rule) |
+| D10 | I2: the SDK 35 classes do not run as 5.2 says | (a) A message names a missing SDK jar, a download ("Failed to fetch maven artifact", a URL), or the cache listing changed: stop and report; never allow a download. (b) Every case of `$BFT` and `$RFT` errors with the same exception from the sandbox or the application's start-up (not from the test body) while `$B24` passes, or only F2 and F8 fail inside U-070's fixtures: apply F-34 (two Edits; blobs `0145ee38…`, `9207950d…`), run I2 once more. If SDK 34 shows the same: stop and report (31 to 33 are not cached; the orchestrator decides, the story's last P-1 rule) |
 | D11 | The red run differs from 5.2 in another way | (a) A listed FAIL passes: stop (the test does not detect the defect). (b) A listed PASS fails: stop and report with the message. If it is F2 failing at "a log entry with tag … carries a fixture value", an existing line writes a fixture value: report its tag and which value class (body, address, account, folder) without copying the value; the orchestrator rules (ruling 39 precedent). (c) F13 errors with `NoClassDefFoundError` or `VerifyError` at class load: stop and report (N3). (d) A failure of another type (for example `ContactsProviderDouble: unexpected query`): stop and report |
 | D12 | A test file does not compile | Stop and report the compiler message (the files were compiled against stubs only); the developer does not change the test |
 | D13 | A tool or test blob differs from the plan after the Write | Compare with 3.4/3.5 and correct until the blob matches; never run a variant |
@@ -1725,15 +1965,19 @@ SDK 35 are P-1's probe: the sandbox, U-070's fixtures (F2, F8) and the type exce
 | D20 | U-070's re-runs | The set observed over NEW5 must equal U-070's recorded set (I0 step 3) and FG3 must all pass. A different NEW5 set: stop and report. An FG3 failure: record and explain; stop if unexplained. U-070's built anchor text differs from its plan: use the text in its mutation log and record it |
 | D21 | G-F fails | Stop and report |
 | D22 | End count not `C0 + 18`, Gradle tests not `T0 + 18`, or skipped above `S0` | Record and explain; a test added by another change after `<start>`: list it with its commit id, not as this story's |
-| D23 | The build/design/change-record list is not empty, or a commit after `$START` | A file under `sdlc/artifacts/design` or `sdlc/artifacts/build/change-records` changed by the orchestrator (for example CR-017, which is uncommitted in the working tree at planning): record its path and, if committed, the commit; not a stop, never touch it. A build file, or a commit touching `app`, `k9mail-vendored`, `build.gradle`, `settings.gradle` or `gradle`: stop and report |
+| D23 | A build file listed, or a commit after `$START` touching `app`, `k9mail-vendored`, `build.gradle`, `settings.gradle` or `gradle`; or `docs-new-or-changed-exit` is 0 (a document path under `sdlc/artifacts/design`, `requirements` or `build/change-records` that is new or changed since I0 and uncommitted) | Build file or code commit: stop and report. Documents (the orchestrator's ruling on contract O-6): a path already uncommitted at I0 with the same hash at I6, or committed in between (its commit in the `git log` lines with the orchestrator's subject), is recorded and is not a stop; a path new or changed since I0 and still uncommitted: stop and report its path (it may be another agent's edit; the developer never touches it and the orchestrator decides). The developer edits no document in these folders |
 | D24 | The release APK or the mapping lines are not as I6 step 4 says | Another APK name: use it and record it. A mapping line missing: stop and report (the class would be absent from the release build) |
-| D25 | In the debug dex a class under `Lcom/zegoggles/` other than `ForegroundRefusal` (or a synthetic class named after it) names the refusal's type | Record the class and report it in the hand-off; not a stop (the `SDK_INT` test still guards execution, P3); the orchestrator then runs device step (vi) |
+| D25 | In the **debug** dex a class under `Lcom/zegoggles/` other than `ForegroundRefusal` (or a synthetic class named after it) names the refusal's type; or in the **release** dex `caller-lines` is above 0, `holder-lines` is not 1, or another app class names the type (R8 merged, inlined or outlined the holder) | Record the class and report it in the hand-off; not a stop (the `SDK_INT` test still guards execution, P3). The orchestrator then runs device step (vi) on the build concerned (for a release finding with a release APK, or records why it cannot) |
 | D26 | A cache listing differs from `aai-before.txt` | Stop and report (something was downloaded) |
 | D27 | The hygiene scan has a line | Fix the file through `sanitize.py`, re-scan; never hand off with a hit |
 | D28 | "bash.exe … not found", or a process killed without a visible reason | Stop and report (endpoint security); do not work around it |
-| D29 | The tool moves a Gradle run to the background (expected for G0 and G-F); or a Gradle log's last line is not `exit=<n>` | Background: wait for its completion notice; never poll; start nothing else, Gradle above all, meanwhile. A log without `exit=`: the run was cut off; stop and report (never rerun on a guess, never kill a daemon) |
+| D29 | The tool moves a Gradle run to the background (expected for G0 and G-F); or a Gradle log's last line is not `exit=<n>` | Background: wait for its completion notice; never poll; start nothing else, Gradle above all, meanwhile. A log without `exit=`: the run was cut off. **Inside an I5 entry** (plan-review O-1) first finish protocol steps 5 and 6 (restore from the pristine copy, clean check, `restored` line), then stop and report. Everywhere: never rerun on a guess, never kill a daemon |
 | D30 | A `setForeground(` or `setForegroundOrContinue` grep differs from I0 step 2 or I3 step 3 | Same texts at other line numbers: record. Another call of `setForeground(` in `app/src/main`, or a fourth `setForegroundOrContinue` line: stop and report |
 | D31 | `assumenosideeffects` prints a line | Stop and report (AC-2: the warning would not survive release builds) |
+| D32 | I6 step 0 or step 5: a hash of `$BW`, `$RW`, `$WF` differs from `SB SR SF` / `HB HR HF`, `PROD_DIFF` differs, an `APPLYING` entry has no `restored` line, or the porcelain is not the five paths | Stop. G-F (if it ran) is void: the tested tree is not the gated one. Apply the recovery note of 4.8 to restore `SB SR SF`, record what was found, report; never hand off (AC-11: a mutation is never present at a gate) |
+| D33 | I6 step 5: `test-tracked-unchanged-exit` is not 0 (an existing test changed), `ignore-exit` is not 1 (`@Ignore` or `Assume` in a new test), or the `@Test` counts are not 13 and 5 | Stop and report (AC-8, AC-9); do not edit to fit |
+| D34 | I0: `toolchainVersion` is not 25, `./gradlew --version` does not name the criteria file and Java 25, a Gradle JVM is listed before `jps-gradle-end`, or the `@Ignore` lines differ from the two of `fd70325a` | Stop before any Gradle call and report. A running Gradle JVM: start nothing (another build may run in this checkout; D29's rule). A wrong JDK: AC-9's start condition. Other `@Ignore` lines: record them as pre-existing and report (not this story's) |
+| D35 | I1 step 2 or I4 step 1: the porcelain is not the stated paths, `main-clean-exit` is not 0, or `oldtext_check.py fixed` is not `mismatches=0` at I4 | Stop and report; do not edit (a change by someone else, or a step not applied as written) |
 
 ## 8. Contracts, Standards, Risks, Scope Concerns
 
@@ -1745,6 +1989,14 @@ SDK 35 are P-1's probe: the sandbox, U-070's fixtures (F2, F8) and the type exce
   no scheduling; a refused promotion no longer fails the run, which meets the non-retryable-failure rule better. CR-017
   (working tree, `:247-249`) records that Rule 8, DES-MODERNIZATION-005 `:54`/`:129-131` and REQ-016 `:49-53` stay true
   after U-075. No contract change is needed; `integration_contracts: []` in the story is consistent with that.
+- **DES-MODERNIZATION-014** row 16-1 (Android 16 behaviour-change table; HEAD `:1275`): "long work runs as a dataSync
+  foreground service". **Correction (iteration 2, contract-verification B-1 and the orchestrator's ruling):** the story's
+  claim (Integration Contract References) and CR-017 E-3's that no contract or design text states that automatic backups
+  run in the foreground are not true: this cell does, and it becomes false when this story is built. It is corrected by
+  CR-017 Amendment 2 (edit E-7), with the close-out edit X-3 that the orchestrator applies when this story closes (section
+  10 item 9). This story still edits no design text (AC-8). CNTR-MODERNIZATION-005 `:213` ("notification/state channels")
+  stays true through the state channel, and CNTR-MODERNIZATION-006 is silent on the foreground (contract-verification
+  statement table rows 7 and 8); both added to `contracts_verified`.
 - **DES-MODERNIZATION-005** (approved; `:54` "owns worker lifecycle plus foreground promotion", `:129-131` "where a
   user-visible notification is required it uses `setForeground`"; at `:55`, `:130-132` in the working tree): both hold.
   The bug's optional clarification is the orchestrator's (hand-over item 4).
@@ -1752,10 +2004,16 @@ SDK 35 are P-1's probe: the sandbox, U-070's fixtures (F2, F8) and the type exce
   behavior"): AC-8. **REQ-MODERNIZATION-015 AC-13 / CR-016**: 5.3. No REQ with `type: standard` exists (U-069 plan 12, `git
   grep`; not re-run).
 
-### 8.2 Scope Concerns (for the orchestrator; recommended rulings)
+### 8.2 Scope Concerns (ruled: Record 23, the story's Implementation Notes; the plan follows the rulings)
 
-| # | Concern | Recommended ruling |
-|---|---------|--------------------|
+Iteration 1's recommendations are kept below for the record; the ruled text governs, and section 9 follows it (SC-1:
+no screenshot or UI dump in the evidence, no outcome on one; SC-2: the orchestrator's run on `Pixel_API_24` where it can
+be done without an account and a password, else "not run: needs the owner to enter the app password"; SC-3: "not run:
+needs a system setting"; SC-4 to SC-8: accepted as recommended; SC-9: no mailbox check, the confirmed-append line is the
+evidence).
+
+| # | Concern | Recommended ruling (iteration 1) |
+|---|---------|----------------------------------|
 | SC-1 | AC-12 asks for the screenshots in the story's evidence folder, but the status screen shows the owner's e-mail address and a shade screenshot may show part of it | Screenshots and UI dumps stay in the orchestrator's work folder outside the repository; the evidence records each screenshot's SHA-256, what it shows, and the sanitised `dumpsys notification` lines for the package (section 9) |
 | SC-2 | The class-loading proof on ART 7.0 is not in AC-12 | Allow optional step (vi) on `Pixel_API_24` (install, launch, one manual backup, logcat for `VerifyError`/`NoClassDefFoundError`); informational; required only under row D25 |
 | SC-3 | AC-12 (v) needs airplane mode, a device setting the same criterion forbids changing | Not run unless the owner approves it explicitly; AC-7 rests on 2.5 and F4/F5 |
@@ -1771,7 +2029,7 @@ SDK 35 are P-1's probe: the sandbox, U-070's fixtures (F2, F8) and the type exce
 | # | Risk | Likelihood / impact | Mitigation |
 |---|------|--------------------|------------|
 | R1 | Test files do not compile on the real classpath (stubs used) | Low / medium | Scratch compile with the real library jars; D12 stops for an amendment |
-| R2 | Robolectric at 35 behaves differently for the app (start-up, providers) | Low-medium / medium | I2 probe (F2, F8, R1); F-34; D10 |
+| R2 | Robolectric at 35 behaves differently for the app (start-up, providers); U-070's fixtures run at SDK 24 for the first time in F13 (plan-review O-9) | Low-medium / medium | I2 probe (F2, F8, R1, F13); F-34; D10, D11 (c), (d) |
 | R3 | U-070 built its fixtures or anchors differently from its plan | Medium / low | `oldtext_check.py start` (`FX-*`); D4 amendment |
 | R4 | A download by Robolectric | Low / high (policy) | Local jars verified (L13); cache listing compared (D26) |
 | R5 | ART on API 24-30 meets the API-31 type | Very low / high | Holder class (L19); F13; M-X1; dex check; optional (vi) |
@@ -1779,10 +2037,11 @@ SDK 35 are P-1's probe: the sandbox, U-070's fixtures (F2, F8) and the type exce
 | R7 | Stack-trace recovery copies the exception | Medium / none | The helper and the tests use class, not identity (P1) |
 | R8 | `service` coverage falls | Very low / medium | All 12 new lines covered by design; D16 stops |
 | R9 | A refused manual run is not stoppable by the system (L10) | Rare / low | Accepted trade (ruling 60); BUG-029 Not verified 5 stays |
-| R10 | Automatic backups now meet the job time limit on a busy system | Low / low | Watermark makes a stop lossless; rescheduled (BUG-029 L5, L10) |
+| R10 | Automatic backups now meet the system's stops as ordinary jobs: the time limit (on Android 11 and earlier at 10 minutes whatever the load, recalled), Doze, a lost constraint, quota; run size not bounded (`MAX_ITEMS_PER_SYNC = -1`) | Medium on Android 11 for large runs / low | Watermark; reschedule; the next run continues above the watermark; U-074 removes the interim ERROR line (2.6 item 3) |
 | R11 | Device step (i) starts within a platform grace period after Home | Medium / low (a false pass) | The 58 s rule and the top-activity check (section 9) |
 | R12 | Device step (ii) held by job quota | High / none | "Not reached", not a pass (story) |
 | R13 | `TestForegroundUpdater` changes in work-testing 2.12.0 | Low / low | Hand-over item 6 to U-073 |
+| R15 | A `dumpsys` output format on the emulator differs from the recalled one (`dumpsys notification` records, process and service lines) | Medium / low (a false stop or a "not determined") | `notif_check.py` refuses a dump without its marker; (i)'s "no record" counts only when (iii) parsed a record in the same session; process and service lines are recorded raw and decide no pass on their own; tools tested on constructed samples (14.3, 14.19) |
 | R14 | A full gate passes the foreground limit and is cut off or overlapped by a second Gradle | High (moved) / medium | Two full gates only; `exit=` written by the command itself; wait for the notice; D29 |
 
 ### 8.4 Out of scope (each ruled or recorded)
@@ -1792,121 +2051,196 @@ prompt (PO-L), a notification for automatic backups (PO-K), any scheduling, mani
 
 ## 9. AC-12 — Emulator Check (for the orchestrator; the developer does not run it)
 
-**Preconditions.** The developer's hand-off names `app/build/outputs/apk/debug/app-debug.apk` with its size and SHA-256
-(from G-F), and no mutation entry lacks `restored`. Conditions (story AC-12; Record 14 instructions as in U-069's check):
-only `Pixel_9_Pro` is used, `Pixel_10_Pro` is never started or touched; nothing but the app's own state changes (its use,
-test SMS through the emulator console, opening and leaving the app); no device setting, permission, battery exemption or
-standby-bucket change (`am get-standby-bucket` and `dumpsys` are read-only and allowed); the app is never uninstalled and
-its data never cleared; nobody but the owner handles a password. Raw logs, screenshots and UI dumps stay in the
-orchestrator's work folder `OW` outside the repository (SC-1). `ADB="$SDK/platform-tools/adb"`. `MSYS_NO_PATHCONV=1` only
-on the adb lines with a `/sdcard` path; never for Gradle. Device time:
-`dt() { "$ADB" -s $SER shell "date '+%m-%d %H:%M:%S.000'" | tr -d '\r'; }`. A foreground wait on the device:
-`"$ADB" -s $SER shell sleep <n>`. Every `logcat` wait is a foreground call with a tool timeout above its own `timeout`.
+Iteration 2: rewritten to the rulings in the story's Implementation Notes (Record 23, SC-1 to SC-9) and to plan-review
+B-2 to B-5, O-7, O-8, contract-verification O-2 and the depth check's section 9 recommendations. Every parsing step uses
+a tool of 3.5 that was run on sample input (section 14).
 
-1. **Device.** `"$ADB" devices -l`. No device: ask the owner to start `Pixel_9_Pro`. More than one: stop and ask which
-   serial is `Pixel_9_Pro`. One emulator: `"$ADB" -s <serial> emu avd name`; its first line must be `Pixel_9_Pro`, else stop.
-   A physical device or anything else: send nothing, ask. `SER=<serial>`; every later command uses `-s $SER`.
-2. `shell getprop ro.build.version.sdk` → `36`; `shell dumpsys package com.zegoggles.smssync | grep -E "versionCode|lastUpdateTime"`.
-3. `sha256sum app/build/outputs/apk/debug/app-debug.apk` equals the hand-off; `install -r <apk>` → `Success`. Any other
-   result: stop, "not run". Repeat the `dumpsys` line.
-4. **Set-up, read only.** `shell dumpsys deviceidle whitelist | grep -c com.zegoggles.smssync` → `0`;
-   `shell am get-standby-bucket com.zegoggles.smssync` (record). Auto backup, the 1-minute incoming delay and the regular
-   schedule are read from the log lines of the steps (`enqueued INCOMING with delay=60s`), not from the settings screen.
+**Preconditions.** The developer's hand-off names `app/build/outputs/apk/debug/app-debug.apk` with its size and SHA-256
+(from G-F), and no mutation entry lacks `restored`. Conditions: only the AVDs `Pixel_9_Pro` and, for (vi), `Pixel_API_24`
+are used; `Pixel_10_Pro` is never started or touched; nothing but the app's own state changes (installing it, opening and
+leaving it, test SMS through the emulator console, a cold start of the emulator); no device setting, permission, battery
+exemption or standby-bucket change (`dumpsys`, `getprop` and `am get-standby-bucket` are read-only and allowed); the app
+is never uninstalled and its data never cleared; nobody but the owner handles a password. **Evidence (SC-1):** no
+screenshot and no UI dump is taken into the repository, and no outcome rests on one; the evidence is the app's log lines
+and the sanitised notification lines of `dumpsys notification`, read by the tools of 3.5. Raw files stay in the
+orchestrator's work folder `OW` outside the repository; the UI dump is deleted from `OW` at the end.
+
+**Shell rules.** `ADB="$SDK/platform-tools/adb"`; `TL=sdlc/artifacts/build/sprints/sprint-024/U-075/evidence/tools`;
+`T=sdlc/artifacts/build/sprints/sprint-020/U-063/evidence/tools`. **`MSYS_NO_PATHCONV=1` is put on each `adb` command that
+carries a device path (`/sdcard/…`), on that command only, and never on Gradle**; without it Git Bash rewrites the path
+into a Windows path before `adb` sees it (self-test 14.6). No other command below has a device path. **No `timeout`
+value exceeds 540 s** and every call is a foreground tool call with timeout 600000 ms; a window longer than 540 s is two
+waits of 450 s anchored at the same `-T "<device time>"`, so the second wait also finds a match the first one missed by
+a second (`-T` prints the buffer from that time, `-m 1` stops at the first match). Device time:
+`"$ADB" -s $SER shell "date '+%m-%d %H:%M:%S.000'" | tr -d '\r'` (written below as `$(dt)`, typed out in each call);
+a wait on the device: `"$ADB" -s $SER shell sleep <n>`. App process ids for the log tools, after each log dump `<raw>`:
+`PIDS=$({ grep -oE 'Start proc [0-9]+:com\.zegoggles\.smssync/' "<raw>" | grep -oE '[0-9]+'; "$ADB" -s $SER shell pidof com.zegoggles.smssync | tr -d '\r' | tr ' ' '\n'; } | grep -E '^[0-9]+$' | sort -u | paste -sd,)`
+(`ac12_run.py` refuses an empty list: no step can pass on a log it did not read).
+
+1. **Device, by AVD name.** `"$ADB" devices | grep -E '^emulator-[0-9]+[[:space:]]+device$' | cut -f1 | while read -r s; do echo "$s $("$ADB" -s "$s" emu avd name | head -1 | tr -d '\r')"; done`.
+   `SER` is the one serial whose name is `Pixel_9_Pro` (for (vi): `Pixel_API_24`). None: ask the owner to start that
+   AVD. A line `Pixel_10_Pro`: never send anything to that serial. A physical device or two serials with the wanted
+   name: send nothing, ask the owner. Every later command uses `-s $SER` only.
+2. `"$ADB" -s $SER shell getprop ro.build.version.sdk` → `36`;
+   `"$ADB" -s $SER shell dumpsys package com.zegoggles.smssync | grep -E "versionCode|lastUpdateTime|android\.permission\.POST_NOTIFICATIONS: granted="`.
+3. `sha256sum app/build/outputs/apk/debug/app-debug.apk` equals the hand-off; `"$ADB" -s $SER install -r app/build/outputs/apk/debug/app-debug.apk`
+   → `Success`. Any other result: stop, "not run". Repeat step 2's line.
+4. **Set-up, read only.** `"$ADB" -s $SER shell dumpsys deviceidle whitelist | grep -c com.zegoggles.smssync` → `0`;
+   `"$ADB" -s $SER shell am get-standby-bucket com.zegoggles.smssync` (recorded). `POST_NOTIFICATIONS: granted=true` from
+   step 2 is the precondition for (iii)'s notification condition; with `granted=false` (iii) uses the service record
+   instead (below), and the record says so. Auto backup on, the 1-minute incoming delay and the regular schedule are read
+   from the log lines of the steps (`enqueued INCOMING with delay=60s`), not from the settings screen.
 
 **(iii) Manual backup, on screen** (first).
-1. `D3=$(dt)`; `shell am start -n com.zegoggles.smssync/.activity.MainActivity`; `shell sleep 3`.
-2. One test SMS so the run has work: `emu sms send 5550100 "U-075 iii"`; wait for the trigger:
-   `timeout 120 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'BackupTriggerWorker\.doWork: content-URI trigger fired'` (exit 0
-   expected within about 11 s, today's figure; 124: record and continue).
+1. `D3=$(dt)`; `"$ADB" -s $SER shell am start -n com.zegoggles.smssync/.activity.MainActivity`; `"$ADB" -s $SER shell sleep 3`.
+2. One test SMS so that the run has work: `"$ADB" -s $SER emu sms send 5550100 "U-075 iii"`; then
+   `timeout 120 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'BackupTriggerWorker\.doWork: content-URI trigger fired' > "$OW/iii-trigger.txt"; echo "exit=$?"`
+   (exit 0 expected within about 11 s; 124 is recorded and the step continues).
 3. Button: `MSYS_NO_PATHCONV=1 "$ADB" -s $SER shell uiautomator dump /sdcard/u075-ui.xml`;
-   `"$ADB" -s $SER exec-out cat /sdcard/u075-ui.xml > "$OW/u075-ui.xml"`;
+   `MSYS_NO_PATHCONV=1 "$ADB" -s $SER exec-out cat /sdcard/u075-ui.xml > "$OW/u075-ui.xml"`;
    `MSYS_NO_PATHCONV=1 "$ADB" -s $SER shell rm /sdcard/u075-ui.xml`;
-   `python -I -X utf8 $TL/ui_bounds.py "$OW/u075-ui.xml"` → `X Y enabled=true label-is-Backup=True`. Anything else: stop,
-   "(iii) not run: button not found" (no coordinate is guessed). The dump stays in `OW` and is deleted at the end.
-4. Tap and capture in one command line:
-   `"$ADB" -s $SER shell input tap X Y && timeout 30 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'BackupWorker\.doWork: starting backup, type=MANUAL' && "$ADB" -s $SER shell cmd statusbar expand-notifications && "$ADB" -s $SER exec-out screencap -p > "$OW/iii-shade.png" && "$ADB" -s $SER shell dumpsys notification --noredact > "$OW/iii-notification.txt"; "$ADB" -s $SER shell cmd statusbar collapse`.
-5. `timeout 300 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'Worker result [A-Z]+ for Work .*MANUAL'`; then wait for the
-   trigger's delayed INCOMING (it runs with the app still on screen):
-   `timeout 240 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'Worker result [A-Z]+ for Work .*INCOMING'`.
-6. `logcat -d -v threadtime -T "$D3" > "$OW/iii-logcat.txt"`; `shell pidof com.zegoggles.smssync`.
-- **Pass**: for the work whose "Worker result … MANUAL" line gives its id: "Moving WorkSpec (<id>) to the foreground";
-  "BackupWorker.doWork: starting backup, type=MANUAL, attempt=0"; "Worker result SUCCESS"; no line with
-  "foreground start not allowed"; and the notification record for `com.zegoggles.smssync` with `id=1` on channel
-  `sms_backup_plus` (title "Backing up", SC-8) in `iii-notification.txt`, or visible in the screenshot. Also recorded: the
-  INCOMING run of step 5 has no "Moving WorkSpec" line for its id (automatic types never ask, even on screen).
-- **Not conclusive**: the foreground and SUCCESS lines are there but the notification was not captured (the run ended
-  first): repeat steps 1 to 6 once.
-- **Fail**: no "Moving WorkSpec" line for the MANUAL work, a "foreground start not allowed" line for it, or a result other
-  than SUCCESS.
+   `python -I -X utf8 $TL/ui_bounds.py "$OW/u075-ui.xml" > "$OW/ui.txt"; echo "exit=$?"; read -r X Y REST < "$OW/ui.txt"; echo "X=$X Y=$Y"; grep -c 'enabled=true label-is-backup=True' "$OW/ui.txt"`
+   → `exit=0`, two integers, `1`. Anything else: "(iii) not run: button not found" (no coordinate is guessed).
+   (`exec-out uiautomator dump /dev/tty` was not used: it appends a status line to the XML.)
+4. Tap, wait for the start, then read the notification and the service at once, in one command line:
+   `"$ADB" -s $SER shell input tap $X $Y && timeout 60 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'BackupWorker\.doWork: starting backup, type=MANUAL' > "$OW/iii-start.txt" && "$ADB" -s $SER shell dumpsys notification --noredact > "$OW/iii-notification.txt" && "$ADB" -s $SER shell dumpsys activity services com.zegoggles.smssync > "$OW/iii-services.txt"; echo "exit=$?"`.
+   A start wait of 124: a dialog (missing credentials, first sync, confirmation; `MainActivity.java:391-402`) or no tap;
+   record "(iii) not run: no MANUAL start within 60 s of the tap"; press nothing in a dialog.
+5. `timeout 300 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'Worker result [A-Z]+ for Work .*MANUAL' > "$OW/iii-result.txt"; echo "exit=$?"`;
+   then the trigger's delayed INCOMING, which runs with the app still on screen:
+   `timeout 240 "$ADB" -s $SER logcat -T "$D3" -m 1 -e 'Worker result [A-Z]+ for Work .*INCOMING' > "$OW/iii-incoming.txt"; echo "exit=$?"`.
+6. `"$ADB" -s $SER logcat -d -v threadtime -T "$D3" > "$OW/iii-logcat.txt"`; `PIDS` from it;
+   `python -I -X utf8 $TL/ac12_run.py "$OW/iii-logcat.txt" MANUAL --pids "$PIDS" > "$OW/iii-run.txt"`;
+   `python -I -X utf8 $TL/ac12_run.py "$OW/iii-logcat.txt" INCOMING --pids "$PIDS" --after "$D3" > "$OW/iii-run-incoming.txt"`;
+   `python -I -X utf8 $TL/notif_check.py "$OW/iii-notification.txt" > "$OW/iii-notif.txt"`;
+   `grep -E "SystemForegroundService|isForeground=|foregroundId=" "$OW/iii-services.txt" > "$OW/iii-service-lines.txt"`.
+- **Pass:** `iii-run.txt` has `start` not `none`, `result=SUCCESS`, `moved=1` (or more), `refused-warn=0`, `defect=0`;
+  and either `iii-notif.txt` = `dump=ok records=… id1=1 id1-channel=True id1-title-backing-up=True` (title "Backing up",
+  SC-8), or, when `POST_NOTIFICATIONS` is not granted, `iii-service-lines.txt` holds `isForeground=true` and
+  `foregroundId=1` for `SystemForegroundService` (the service-record format is recalled, not read on this emulator).
+  Recorded besides: `iii-run-incoming.txt` `moved=0` (an automatic run does not ask, even on screen).
+- **Not conclusive:** the run line passes but the notification was not captured (`id1=0`: the run ended before the
+  dump). Repeat steps 1 to 6 once; a second "not conclusive" is recorded "(iii) not run: notification not captured"
+  (plan-review O-8), never a pass.
+- **Fail:** `moved=0` for the MANUAL work, `refused-warn` or `defect` above 0, or a result other than SUCCESS.
 
 **(i) Incoming backup, off screen.**
-1. `D1=$(dt)`; `shell am start -n com.zegoggles.smssync/.activity.MainActivity`; `shell sleep 3`;
-   `shell input keyevent KEYCODE_HOME`; `HOME_T=$(dt)`;
-   `shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity"` (the launcher, not the app).
-2. `emu sms send 5550100 "U-075 test"`; `SMS_T=$(dt)`.
-3. `timeout 900 "$ADB" -s $SER logcat -T "$D1" -m 1 -e 'BackupWorker\.doWork: starting backup, type=INCOMING' && "$ADB" -s $SER shell cmd statusbar expand-notifications && "$ADB" -s $SER exec-out screencap -p > "$OW/i-shade.png" && "$ADB" -s $SER shell dumpsys notification --noredact > "$OW/i-notification.txt"; "$ADB" -s $SER shell cmd statusbar collapse`
-   (the shade is the system's, the app stays off screen); then `shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity"`.
-4. `timeout 300 "$ADB" -s $SER logcat -T "$D1" -m 1 -e 'Worker result [A-Z]+ for Work .*INCOMING'`;
-   `logcat -d -v threadtime -T "$D1" > "$OW/i-logcat.txt"`.
-5. If step 3 ended with exit 124 (no start within 15 minutes): `shell dumpsys jobscheduler > "$OW/i-jobs.txt"` and read the
-   app's job lines (`WITHIN_QUOTA` unsatisfied). Record "(i) not run: held by the system's job quota" with that line, then
-   repeat (i) once from step 1.
-- **Off-screen rule.** The step counts only if the INCOMING start line is **at least 58 s after `HOME_T`** (the interval of
-  today's observed refusal; a shorter interval may fall inside a platform grace period after leaving the screen, which was
-  not read, BUG-029 Not verified 2) and the top activity read in steps 1 and 3 is not the app's. Expected: the trigger
-  about 11 s after the SMS plus the 60 s delay, so about 70 s or more after Home. A start under 58 s after Home: "not
+1. `D1=$(dt)`; `"$ADB" -s $SER shell am start -n com.zegoggles.smssync/.activity.MainActivity`; `"$ADB" -s $SER shell sleep 3`;
+   `"$ADB" -s $SER shell input keyevent KEYCODE_HOME`; `HOME_T=$(dt)`;
+   `"$ADB" -s $SER shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" > "$OW/i-top-home.txt"`
+   (the launcher, not `com.zegoggles.smssync`).
+2. `"$ADB" -s $SER emu sms send 5550100 "U-075 test"`; `SMS_T=$(dt)`.
+3. Wait for the start, then record the process at once (two waits of at most 450 s, the second only after `exit=124`):
+   `timeout 450 "$ADB" -s $SER logcat -T "$D1" -m 1 -e 'BackupWorker\.doWork: starting backup, type=INCOMING' > "$OW/i-start.txt" && { "$ADB" -s $SER shell dumpsys activity processes com.zegoggles.smssync > "$OW/i-proc.txt"; "$ADB" -s $SER shell dumpsys activity services com.zegoggles.smssync > "$OW/i-services.txt"; "$ADB" -s $SER shell dumpsys notification --noredact > "$OW/i-notification.txt"; "$ADB" -s $SER shell dumpsys jobscheduler > "$OW/i-jobs-at-start.txt"; "$ADB" -s $SER shell dumpsys activity activities | grep -E "topResumedActivity|mResumedActivity" > "$OW/i-top-start.txt"; }; echo "exit=$?"`.
+4. `timeout 300 "$ADB" -s $SER logcat -T "$D1" -m 1 -e 'Worker result [A-Z]+ for Work .*INCOMING' > "$OW/i-result.txt"; echo "exit=$?"`.
+5. Both start waits ended 124 (no start within 15 minutes of `D1`): first run step 6. **A refused run of an unfixed build
+   writes no start line** (BUG-029; today's log, self-test 14.7: `start=none`, `defect=2`), so `defect` above 0 in
+   `i-run.txt` is a **fail** here, before any other reading. Otherwise `"$ADB" -s $SER shell dumpsys jobscheduler > "$OW/i-jobs.txt"`:
+   the app's job lines with `WITHIN_QUOTA` unsatisfied give "(i) not run: held by the system's job quota"; another
+   reason gives "(i) not reached: <the reason line>". Repeat (i) once from step 1.
+6. `"$ADB" -s $SER logcat -d -v threadtime -T "$D1" > "$OW/i-logcat.txt"`; `PIDS` from it;
+   `python -I -X utf8 $TL/ac12_run.py "$OW/i-logcat.txt" INCOMING --pids "$PIDS" --after "$HOME_T" > "$OW/i-run.txt"`;
+   `ST=$(grep -oE 'start=[^ ]+' "$OW/i-run.txt" | cut -d= -f2 | tr '_' ' ' | tr -d '\r'); python -I -X utf8 $TL/dt_secs.py "$HOME_T" "$ST" > "$OW/i-secs.txt"; echo "exit=$?"`
+   (with `start=none` the tool prints `time=unreadable` and the step has no start);
+   `python -I -X utf8 $TL/notif_check.py "$OW/i-notification.txt" > "$OW/i-notif.txt"`;
+   `grep -E "procState|ProcState|curAdj|setAdj" "$OW/i-proc.txt" > "$OW/i-proc-lines.txt"`;
+   `grep -E "SystemForegroundService|isForeground=|foregroundId=" "$OW/i-services.txt" > "$OW/i-service-lines.txt"`;
+   `grep -E "com\.zegoggles\.smssync" "$OW/i-jobs-at-start.txt" > "$OW/i-job-lines.txt"`.
+- **Off-screen rule.** The step counts only if `i-secs.txt` gives at least `seconds=58.000` (the interval of today's
+  observed refusal; a shorter one may fall inside a platform grace period after leaving the screen, BUG-029 Not verified
+  2), `i-top-home.txt` and `i-top-start.txt` do not name `com.zegoggles.smssync`, and `i-proc-lines.txt` does not name
+  `TOP` (the format of the process lines is recalled, not read; they are recorded as the process state at the start).
+  Expected: the trigger about 11 s after the SMS plus the 60 s delay, so about 70 s or more after Home. Shorter: "not
   conclusive: started within 58 s of Home"; repeat once.
-- **Pass**: for the INCOMING work (its id from the result line) whose start is later than `HOME_T` by the rule above: no
-  "Moving WorkSpec (<id>) to the foreground"; "BackupWorker: backup complete, backedUp=1" (the same line at `<start>`: U-070
-  does not change it; a higher count when other SMS were pending is recorded); "Worker result SUCCESS"; no "foreground start
-  not allowed" line; no notification record with `id=1` for the package in `i-notification.txt` (and none in the
-  screenshot); the test SMS in the mail account's SMS folder (SC-9).
-- **Fail**: a "Moving WorkSpec" line for that id, `ForegroundServiceStartNotAllowedException`, "Worker result FAILURE", or
-  `BackupWorker: unrecoverable error`.
+- **Pass:** `i-run.txt` has `start` not `none`, `result=SUCCESS`, `moved=0`, `watermark=1` or more (the confirmed-append
+  line `BackupWorker: watermark advanced for SMS to <date>` between that work's start and its result, SC-9), `backedUp=1`
+  (more if other SMS were pending; recorded), `refused-warn=0`, `defect=0`, `svc-refusal=0`; `i-notif.txt` =
+  `dump=ok records=… id1=0 …` (no record with id 1 for the app), with `iii-notif.txt` of the same session having parsed a
+  record of the app (so the dump format is the one the tool reads); `i-service-lines.txt` has no `isForeground=true`.
+- **Stopped by the system** (not a pass, not a fail): `unrecoverable-cancel=1` or more and `result=none`. Until U-074 a
+  system stop of an ordinary job reaches `doWork`'s broad catch, which writes "BackupWorker: unrecoverable error" with
+  the job's `CancellationException` and returns a result WorkManager ignores (2.6 item 3). Recorded with the lines;
+  repeat (i) once.
+- **Fail:** `moved` above 0, `refused-warn` above 0 (an automatic run asked), `defect` above 0, `result=FAILURE`, or
+  `unrecoverable` above `unrecoverable-cancel` (an error that is not a cancellation).
+- Which scheduler started the work: WorkManager's own lines for it ("onStartJob for", "Starting work for") are debug
+  lines, and the app's WorkManager configuration logs from INFO (`App.java:162-165`, no `setMinimumLoggingLevel`; L29), so
+  they are not in the log. `i-job-lines.txt` (the app's lines in the scheduler dump at the start) is recorded instead;
+  the record says "JobScheduler" if it shows the app's `SystemJobService` job as running, else "not determined". No
+  outcome depends on it.
 
 **(ii) Boot backup, the app never opened.**
-1. `"$ADB" -s $SER emu kill`; start the emulator in the background (the tool's background mode, not `&`):
-   `"$SDK/emulator/emulator" -avd Pixel_9_Pro -no-snapshot-save`. Repeat step 1 of the preconditions (the serial may
-   change).
-2. `timeout 600 "$ADB" -s $SER wait-for-device shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 2; done'`;
-   `BOOT_T=$(dt)`. Do not open the app, do not touch the screen.
-3. `timeout 900 "$ADB" -s $SER logcat -m 1 -e 'Worker result [A-Z]+ for Work .*REGULAR'` (the log since boot).
-4. `logcat -d -v threadtime > "$OW/ii-logcat.txt"`; if step 3 ended with 124: `shell dumpsys jobscheduler > "$OW/ii-jobs.txt"`
-   and `shell am get-standby-bucket com.zegoggles.smssync` (read only).
-- **Pass**: "enqueued bootup REGULAR with 60s delay", then within 15 minutes of `BOOT_T` the REGULAR work starts and ends
-  "Worker result SUCCESS" with no "Moving WorkSpec" line and no refusal for its id.
-- **Not reached**: no start in the window and the job lines show `WITHIN_QUOTA` unsatisfied (expected: today's cold boot
-  left the app in bucket 50 with its jobs held until the app was opened). Recorded with that line; neither pass nor fail;
-  the QA record states that the boot case rests on (i) and AC-3.
-- **Fail**: a refusal or "Worker result FAILURE" for the boot backup.
+1. `"$ADB" -s $SER emu kill`; start the emulator with the tool's background mode (never `&`):
+   `"$SDK/emulator/emulator" -avd Pixel_9_Pro -no-snapshot-load -no-snapshot-save`. Select `SER` again (step 1 of the
+   preconditions; the serial may change).
+2. `timeout 540 "$ADB" -s $SER wait-for-device shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 2; done'; echo "exit=$?"`
+   (124: repeat once); `BOOT_T=$(dt)`. Do not open the app, do not touch the screen.
+3. `timeout 120 "$ADB" -s $SER logcat -m 1 -e 'scheduleBootup: enqueued bootup REGULAR with 60s delay' > "$OW/ii-bootup.txt"; echo "exit=$?"`
+   (the log since boot). 124: "(ii) not run: no bootup line (a resumed snapshot or auto backup off)" (plan-review O-7).
+4. Two waits of at most 450 s for the start, as in (i) step 3 without `-T` and with `type=REGULAR`, the dumps into
+   `ii-proc.txt`, `ii-services.txt`, `ii-jobs-at-start.txt`; then
+   `timeout 300 "$ADB" -s $SER logcat -m 1 -e 'Worker result [A-Z]+ for Work .*REGULAR' > "$OW/ii-result.txt"; echo "exit=$?"`.
+5. `"$ADB" -s $SER logcat -d -v threadtime > "$OW/ii-logcat.txt"`; `PIDS` from it;
+   `python -I -X utf8 $TL/ac12_run.py "$OW/ii-logcat.txt" REGULAR --pids "$PIDS" > "$OW/ii-run.txt"`;
+   `ST=$(grep -oE 'start=[^ ]+' "$OW/ii-run.txt" | cut -d= -f2 | tr '_' ' ' | tr -d '\r'); python -I -X utf8 $TL/dt_secs.py "$BOOT_T" "$ST" > "$OW/ii-secs.txt"; echo "exit=$?"`. No start: `"$ADB" -s $SER shell dumpsys jobscheduler > "$OW/ii-jobs.txt"`
+   and `"$ADB" -s $SER shell am get-standby-bucket com.zegoggles.smssync`.
+- **Pass:** the bootup line; a start at most 900 s after `BOOT_T`; `result=SUCCESS`, `moved=0`, `refused-warn=0`,
+  `defect=0`, `svc-refusal=0`.
+- **Fail first:** with no start, `defect` above 0 in `ii-run.txt` (a refused REGULAR run of an unfixed build writes no start
+  line; today's Run 1) or a `Worker result FAILURE … REGULAR` line in `ii-result.txt` is a fail, before "not reached".
+- **Not reached:** no start in the window and the app's job lines show `WITHIN_QUOTA` unsatisfied: "not reached: held
+  by the system's job quota (BUG-025)", with that line (expected: today's cold boot left the app in bucket 50 with its jobs
+  held until it was opened). Another reason: "not reached: <the reason line>". Neither is a pass or a fail; the QA record
+  states that the boot case rests on (i) and AC-3.
+- **Stopped by the system:** as in (i). **Fail:** as in (i), for the REGULAR work.
 
-**(iv) No refusal off screen.** Over `i-logcat.txt` and `ii-logcat.txt`, lines of the app's processes only (pids from
-`Start proc <pid>:com.zegoggles.smssync` lines and `pidof`): `ForegroundServiceStartNotAllowedException` → 0 and
-`foreground start not allowed` → 0. **Pass** at 0; **fail** otherwise.
+**(iv) No refusal off screen.** Assessed only over the off-screen runs that were observed: (i)'s INCOMING run if it met
+the off-screen rule, and (ii)'s REGULAR run if it started (plan-review B-3). **Pass:** at least one such run, and in each
+of their `ac12_run.py` lines `refused-warn=0`, `defect=0`, `svc-refusal=0` (the last is WorkManager's own refusal point
+in `SystemForegroundService$Api31Impl`, L29). With none: "(iv) not run: no off-screen run observed". A count above 0:
+**fail**.
 
-**(v) Optional.** Not run (SC-3) unless the owner approves the airplane-mode change; if approved, as the story says.
+**Telling the two refusal lines apart** (contract-verification O-2; also for U-071's IC-4 and U-073's device checks):
+- refused and continued, the app's own warning: `grep -E ' W SMSBackup\+: (BackupWorker|RestoreWorker): foreground start not allowed; continuing without the foreground \(ForegroundServiceStartNotAllowedException\)' <log>`;
+- the defect (a refusal that escaped a worker, as in BUG-029): `grep -E ' E WM-WorkerWrapper: .*ForegroundServiceStartNotAllowedException' <log>`.
+A bare search for the class name matches both. `ac12_run.py`'s `refused-warn` and `defect` count exactly these two
+(self-test 14.7).
 
-**(vi) Optional, API 24 (SC-2).** On `Pixel_API_24` only if the owner agrees: install the same debug APK with `install -r`,
-open the app, press Backup by the (iii) procedure, and read `logcat -d` for "Moving WorkSpec", "starting backup,
-type=MANUAL", the result line, and `VerifyError|NoClassDefFoundError|Rejecting re-init|failed verification` from the app's
-process. **Pass**: the start and result lines and no such error. A missing mail account gives "MailException — retrying",
-which still passes the class-loading question.
+**(v)** Not run: needs a system setting (SC-3).
 
-**Record.** `$E/AC12-emulator.txt`, written in `OW` first and copied through
-`python -I -X utf8 sdlc/artifacts/build/sprints/sprint-020/U-063/evidence/tools/sanitize.py <in> <out>` (it refuses
-e-mail-like text): UTC clock time; AVD name and SDK; the APK SHA-256 against the hand-off; install result and package lines
-before and after; that the test SMS were sent and when (device time); `HOME_T`, the INCOMING start time and the interval;
-the top-activity lines; the matching lines of each step (app process only); the notification lines (record header for
-`com.zegoggles.smssync` and the `android.title` line, or "no record with id=1"); each screenshot's SHA-256 and what it
-shows; the job lines for a held step; the counts of (iv); each step's outcome. The log extracts `AC12-{iii,i,ii}-log.txt`
-are `sanitize.py <raw> <out> --grep 'SMSBackup\+|WM-WorkerWrapper|WM-Processor|WM-SystemFgDispatcher|ForegroundServiceStartNotAllowedException'`
-over the raw files after keeping only the app's pid lines. The UI dump is deleted from `OW` at the end. Nothing raw
-enters the repository.
+**(vi) API 24 (SC-2).** After (ii): `"$ADB" -s $SER emu kill` (the `Pixel_9_Pro` serial); start `Pixel_API_24` in the
+background (`"$SDK/emulator/emulator" -avd Pixel_API_24 -no-snapshot-save`); select its serial by name (step 1);
+`getprop ro.build.version.sdk` → `24`; `D6=$(dt)`; `install -r` the same APK (a first install if the app is not there:
+the app's own state). Then:
+1. Install-time verification: `"$ADB" -s $SER logcat -d -v threadtime -T "$D6" > "$OW/vi-install.txt"`;
+   `grep -E "ForegroundRefusal|WorkerForegroundKt|VerifyError|failed verification" "$OW/vi-install.txt"` (recorded; a hard
+   verification failure naming `WorkerForegroundKt` is a fail; a soft one naming only `ForegroundRefusal` is recorded,
+   P3).
+2. Open the app and press Backup by (iii) steps 3 and 4 with `type=MANUAL`. The helper runs only if the app has login
+   information (`MainActivity.java:391-402`: otherwise the missing-credentials dialog opens and no worker runs). No
+   start within 60 s: "(vi) not run: needs the owner to enter the app password"; not a failure; the proof stays the unit
+   test F13 and the dex checks (SC-2). A start: read the log as in (iii) step 6 for the result and for
+   `VerifyError|NoClassDefFoundError` from the app's process; **pass** with neither.
+3. `"$ADB" -s $SER emu kill` for `Pixel_API_24` at the end.
+
+**Record.** `$E/AC12-emulator.txt`, written in `OW` first and copied through `python -I -X utf8 $T/sanitize.py <in> <out>`
+(it refuses e-mail-like text): UTC clock time; AVD names and SDK levels; the APK SHA-256 against the hand-off; the
+install results and package lines; `POST_NOTIFICATIONS`; that the test SMS were sent and when (device time); `HOME_T`,
+the INCOMING start and `i-secs.txt`; the top-activity, process, service and job lines; each step's `ac12_run.py` and
+`notif_check.py` line; the job lines of a held step; (iv)'s assessment; each step's outcome. The log extracts
+`$E/AC12-{iii,i,ii}-log.txt` are `python -I -X utf8 $T/sanitize.py <raw> <out> --grep 'SMSBackup\+|WM-WorkerWrapper|WM-Processor|WM-SystemFgDispatcher|WM-SystemFgService|WM-SystemJobService|WM-GreedyScheduler|ForegroundServiceStartNotAllowedException|Unable to start foreground service'`
+over the raw files after keeping only the lines of `PIDS` (`grep -E "^[0-9]{2}-[0-9]{2} [0-9:.]+ +(${PIDS//,/|}) "`).
+The notification extract is `grep -E 'NotificationRecord\(.*pkg=com\.zegoggles\.smssync |android\.title=String \(Backing up\)'`
+over each dump, through `sanitize.py`. Nothing raw enters the repository.
 
 **What it proves:** on Android 16 a manual backup started on screen still runs in the foreground with today's
 notification; an incoming backup that starts off screen runs as ordinary background work and succeeds; no automatic run
-asks for the foreground. **What it does not prove:** a refused manual run on a device (v), Android 12 to 15, a physical
-device, the owner's phones, the boot backup when it is held by quota.
+asks for the foreground. **What it does not prove:** a refused manual run on a device ((v) not run); Android 11 to 15,
+in particular the Android 11 change of automatic runs from foreground to ordinary jobs (2.6 item 3); a physical device and
+the owner's phones, including OEM background restrictions that can hold or stop jobs whatever this fix does; the stop of
+a long automatic run (time limit, Doze, quota), which no step provokes; the boot backup when it is held by quota; that a
+user's cancel stops a refused manual run on a device (read in 2.9.1, L27, not observed); a run on ART below API 31 if
+(vi) cannot start the helper.
 
 ## 10. Items for the Orchestrator (hand-over)
 
@@ -1922,10 +2256,21 @@ device, the owner's phones, the boot backup when it is held by quota.
    already records that the current text stays true.
 5. **Close-out corrections:** SC-8 ("Backing up"); SC-5 (P-1's middle fallback is not available offline).
 6. **U-073 (H-3):** WorkManager ignores scheduler stops for foreground-mapped work even after a refused start (now only
-   user-started runs); and the new tests use work-testing's `TestForegroundUpdater` and `setForegroundUpdater` (P2), to be
-   confirmed in 2.12.0's work-testing.
-7. **Rulings asked:** SC-1, SC-2, SC-3, SC-9 before the device check; SC-4, SC-6, SC-7 before the reviews.
+   user-started runs); the new tests use work-testing's `TestForegroundUpdater` and `setForegroundUpdater` (P2), to be
+   confirmed in 2.12.0's work-testing; 2.9.1's `SystemForegroundService` has no `onTimeout` (Android 15's six-hour
+   `dataSync` budget; recalled that 2.10+ handles it), which after this story concerns only long user-started runs. For
+   any later story: a request made expedited needs a `getForegroundInfo()` override, or the run fails below API 31
+   (2.6 item 10, L28).
+7. **Rulings:** SC-1 to SC-9 are ruled (Record 23); section 9 follows them. Nothing is asked.
 8. **Ruling 61** ends when AC-12 has run: from then a device step may start a backup off screen.
+9. **Documents (contract-verification):** X-3, the close-out edit of CR-017 Amendment 2 (E-7, DES-MODERNIZATION-014 row
+   16-1), applied by the orchestrator when this story closes (B-1). The observations that are the orchestrator's: O-3
+   (CNTR-005 `:213` wording, optional), O-4 (REQ-016 `:49-51` wording, optional), O-5 (U-072: REQ-017 AC-4's
+   background-start row cites BUG-029/U-075 as applicable and fixed), O-7 (U-074's `dependencies` gain U-075).
+10. **Later device checks (U-071 IC-4, U-073, the scheduler story):** a search for `ForegroundServiceStartNotAllowedException`
+    now also matches the app's own warning. Use the two greps of section 9 ("Telling the two refusal lines apart"): the
+    `W SMSBackup+ … continuing without the foreground` line is "refused and continued" (a finding only during an on-screen
+    manual run), the `E WM-WorkerWrapper … ForegroundServiceStartNotAllowedException` line is the defect.
 
 ## 11. Constraints for the Developer (binding)
 
@@ -1958,7 +2303,7 @@ device, the owner's phones, the boot backup when it is held by quota.
 | Performance Efficiency | Time behaviour: one tag scan moved earlier; no new I/O. Resource use: automatic runs no longer hold a foreground service, its wake lock or Android 15's six-hour `dataSync` budget (BUG-029 L3, L9) |
 | Compatibility | Co-existence: WorkManager's public updater seam, no constructor or signature change (IC-1); the manifest override stays for user-started runs. Interoperability with WorkManager 2.12.0 per BUG-029 L1-L4 (U-073) |
 | Usability | Automatic backups run silently, as before the scheduler migration (PO-K default); a manual backup still shows "Backing up"; a refused manual run shows progress on the status screen without the notification (2.5) |
-| Reliability | Fault tolerance: an environmental refusal degrades to background work instead of failing; defects stay loud. Recoverability: a stopped automatic run is rescheduled and resumes above the watermark. Availability of automatic backup on Android 12+ off screen is restored |
+| Reliability | Fault tolerance: an environmental refusal degrades to background work instead of failing; defects stay loud. Recoverability: a stopped automatic run is rescheduled and resumes above the watermark; the cost is that automatic runs are now stoppable by the time limit (10 minutes on Android 11, recalled), Doze, lost constraints and quota, with no size bound on a run, and until U-074 such a stop writes one misleading ERROR line (2.6 item 3). Availability of automatic backup on Android 12+ off screen is restored. A user's cancel still stops a refused manual run (L27) |
 | Security | No new permission or exported component; the warning carries no message content, address, account or folder (AC-2, tested over every log entry); `Log.w` survives release (no `-assumenosideeffects`) |
 | Maintainability | Modifiability: one helper, two call sites (IC-1); the API-31 reference isolated in one two-line class. Testability: 18 tests through the library's own seam; every test but the control detected by an injection. Analysability: one warning line with a fixed prefix |
 | Portability | Adaptability: identical behaviour of automatic backups from API 24 to 36; the API-31 class is never loaded below 31 (L19, F13, dex check). Installability: no manifest or build change |
@@ -1986,6 +2331,52 @@ device, the owner's phones, the boot backup when it is held by quota.
 | Scratch compile and dex | `kotlin-compiler-embeddable` 2.3.21 with its runtime jars; build-tools 36.0.0 `d8.jar`, `dexdump`; the SDK's `android-35/android.jar` | L19, N1, mutant compile |
 | Evidence tools | U-063 `sanitize.py`, `junit_cases.py`, `junit_totals.py`, `jacoco_pkgs.py`; U-069 `jacoco_classes.py`, `oldtext_check.py` (form); U-068 `sdk_dir.py` | Reused; docstrings read |
 | Standards and templates | plugin cache `templates/build-artifacts/build-plan.md`, `knowledge/standards/phase-completion-report.md` (1.9.0) | Frontmatter, report format |
+| Iteration 2: gate reports | `sdlc/artifacts/build/sprints/sprint-024/U-075/plan-review.md`, `contract-verification.md`, `expert-depth-check.md` | Read in full; the Iteration 2 table |
+| Iteration 2: rulings | the story's Implementation Notes, "Rulings on the plan's scope concerns" (Record 23, SC-1 to SC-9); the coordinator's message (ruling on contract O-6 / D23; ruling 69) | Section 9, D23, section 14 |
+| Iteration 2: real log formats | `sdlc/artifacts/build/research/evidence/2026-11-21-background-backup-app-log.txt` (full); `sdlc/artifacts/build/sprints/sprint-024/U-069/evidence/IC3-emulator.txt`; `sdlc/artifacts/build/sprints/sprint-024/U-069/evidence/mutation-log.md`, `I6-jacoco-packages.txt` | Inputs of section 14 |
+| Iteration 2: code and library | `activity/MainActivity.java` (`:388-404`, `:505-522`), `App.java` (`:162-168`), `preferences/Defaults.java` (grep) at `fd70325a`; WorkManager 2.9.1 `Processor.stopAndCancelWork`, `CoroutineWorker.getForegroundInfo`, `SystemForegroundService$Api31Impl`, `SystemJobService`, `GreedyScheduler` (`javap`) | L27 to L29 |
+
+## 14. Self-Test of the Plan's Commands (ruling 69)
+
+Run on 2026-11-21 in this session's scratch folder, outside the repository, with no Gradle, no device and no read of the
+working tree under `app/`. **Every tool tested is the copy extracted from this plan file** (14.1), not a scratch original.
+Inputs marked "constructed" were written in the format recalled for that output (they test the parsing, not the
+format); inputs marked "real" are today's committed log lines and evidence. Python here writes CRLF to a redirected
+stdout (14.5); `ls` is aliased to `ls -F` (appends `/` to directories); `sha256sum` prints `*` before the path; each is
+handled where it matters. In the table, `\|` is the shell's `|` escaped for Markdown; the commands themselves are those
+of sections 4 and 9.
+
+| # | Command as it stands in the plan | Input | Expected | Observed |
+|---|----------------------------------|-------|----------|----------|
+| 14.1 | Blob of every embedded file: the first fenced block after its marker line, lines joined with LF plus a final LF, `git hash-object --no-filters` (and SHA-1 of `blob <n>\0<data>`) | `plan.md` as written | 3.3 `0782f85f…`; T1 `3e3ea62b…` (517 lines, 13 `@Test`); T2 `e69175c6…` (174, 5); `oldtext_check.py` `8d1158ec…`; `dex_refs.py` `4f72cc2f…`; `ui_bounds.py` `d034222c…`; `notif_check.py` `0a7a889c…`; `dt_secs.py` `75b37f0d…`; `ac12_run.py` `6dc06eee…`; F-34 variants `0145ee38…`, `9207950d…` (one line changed each) | All equal; the two hash methods agree; a second extraction after the last edit is byte-equal (`git diff --no-index --quiet` exit 0 for all nine). Iteration 1's `c7f765f0…` (B-1) came from a scratch copy that differed from the printed text |
+| 14.1b | Scratch compile of the extracted helper and both test files (Kotlin 2.3.21, stubs of the app classes) | extracted files | exit 0 | exit 0 (T2's new assertion compiles) |
+| 14.2 | `python -I -X utf8 $TL/ui_bounds.py "$OW/u075-ui.xml" > "$OW/ui.txt"; echo "exit=$?"; read -r X Y REST < "$OW/ui.txt"; …; grep -c 'enabled=true label-is-backup=True' "$OW/ui.txt"` | constructed dumps: label `Backup` with a second node holding an address; `BACKUP`; no button; two buttons; empty file; XML followed by uiautomator's `/dev/tty` status line | `290 965 enabled=true label-is-backup=True` exit 0 (twice: case-insensitive); `nodes=0`, `nodes=2`, `xml=unreadable`, `xml=unreadable` exit 1; no dump text printed | As expected; `read -r` gives `X=290 Y=965` despite CRLF; the grep count is 1; the address is not printed |
+| 14.3 | `python -I -X utf8 $TL/notif_check.py "$OW/i-notification.txt"` | constructed dumps: app record id 1 plus another package's id-1 record with the same title; another package only; empty; `Can't find service: notification`; the app record with CRLF; `pkg=com.zegoggles.smssync.other` | `records=1 id1=1 id1-channel=True id1-title-backing-up=True`; `records=0 id1=0`; `dump=unreadable` exit 1 (twice); as the first with CRLF; `records=0` (the prefix does not count) | As expected; a missing file also gives `dump=unreadable` exit 1. The other package's record is not counted |
+| 14.4 | `python -I -X utf8 $TL/dt_secs.py "$HOME_T" "$ST"` | `11-21 09:46:38.000` → `11-21 09:47:36.068` (today's Home press and refusal); `none`; empty; a month boundary | `seconds=58.068`; `time=unreadable` exit 1 (twice); `seconds=70.500` | As expected |
+| 14.5 | any tool `> file` | `dt_secs.py` output | bytes end in `\r\n` | `\r\n` (so outputs are read field-wise, `grep`, or with `tr -d '\r'`; no byte comparison of Python output anywhere) |
+| 14.6 | `adb` arguments under Git Bash; `MSYS_NO_PATHCONV=1` on the command only | `python.exe` printing its `argv` (a native Windows program like `adb.exe`) with the plan's argument lists | `/sdcard/u075-ui.xml` rewritten without the variable, unchanged with it; no other argument rewritten | Without: `C:/Program Files/Git/sdcard/u075-ui.xml` (dump and `exec-out cat`); with: `/sdcard/u075-ui.xml`; the boot-wait loop, the `date` format, the `-T`/`-e` arguments, `am start -n com.zegoggles.smssync/.activity.MainActivity` and `emu sms send` pass unchanged; the variable is unset afterwards in the shell |
+| 14.7 | `python -I -X utf8 $TL/ac12_run.py <logcat> <TYPE> --pids "$PIDS" [--after "$HOME_T"]` | **real** log, pids 3309 and 3332; constructed logs in the same format (pass; pass with CRLF; asked for the foreground; stopped by the system; real error; empty) | Run 2 REGULAR: `result=SUCCESS moved=1 watermark=1 backedUp=1`; Run 1 INCOMING: `moved=1 nothing=1`; the refused INCOMING after Home: `start=none defect=2`; Run 1 REGULAR alone: `start=none defect=2`; constructed: `moved=0 watermark=1 backedUp=1 refused-warn=0` (twice); `moved=1 refused-warn=1`; `result=none unrecoverable=1 unrecoverable-cancel=1`; `result=FAILURE unrecoverable=1 unrecoverable-cancel=0`; `start=none`; another process's warning not counted; empty `--pids` or none: `pids=missing` exit 1 | All as expected. This test found the rule change of iteration 2: an unfixed build's refused run has no start line, so `defect` decides first ((i) step 5, (ii) "Fail first") |
+| 14.7b | `PIDS=$({ grep -oE 'Start proc [0-9]+:com\.zegoggles\.smssync/' "<raw>" \| grep -oE '[0-9]+'; … pidof … \| tr -d '\r' \| tr ' ' '\n'; } \| grep -E '^[0-9]+$' \| sort -u \| paste -sd,)` and the extract filter `grep -E "^[0-9]{2}-[0-9]{2} [0-9:.]+ +(${PIDS//,/\|}) "` | constructed `Start proc 4401:com.zegoggles.smssync/u0a190 …` line plus a CRLF `pidof` reply; empty log and empty reply; the real log | `4401`; empty (and `ac12_run.py` then refuses); 7 lines of 4401; 52 app lines of the real log | As expected |
+| 14.7c | `ST=$(grep -oE 'start=[^ ]+' "$OW/i-run.txt" \| cut -d= -f2 \| tr '_' ' ' \| tr -d '\r')` | `ac12_run.py` output (CRLF) | `11-21 10:02:11.050`, then `dt_secs.py` gives a number | `ST=[11-21 10:02:11.050]`, `seconds=71.050` |
+| 14.8 | `timeout <n> … && <capture>; echo "exit=$?"` | a 5 s sleep under `timeout 2`; a quick command under `timeout 5` | `exit=124` and the chained capture skipped; the capture runs on success | As expected |
+| 14.9 | I6 step 4's release pipeline: `FR=$(grep -E '^com\.zegoggles\.smssync\.service\.ForegroundRefusal -> ' $MAP \| sed -E 's/.* -> (.*):$/\1/' \| tr -d '\r')`, the same for `WK`, `FRD="L${FR//.//};"`, `dex_refs.py` over the dex files, `grep -cF "CLASS $FRD "` | constructed mapping (renamed names and a `WorkerForegroundKtX` decoy); an identity mapping with the D8 dex of the helper (build-tools 36.0.0, min-api 24) | `FR=a.b.c WK=a.b.d`, descriptors `La/b/c;`, `La/b/d;` (decoy not matched); `holder-lines=1 caller-lines=0`, one app class | As expected |
+| 14.10 | I0 step 3's `awk -v id="$id" '$0 ~ "^### " id " " {on=1; print; next} /^### / {on=0} on' <mutation-log.md>`; I6 step 0's `grep -cE '^### [^ ]+ APPLYING '` and `grep -cE '^(- )?restored: '` | **real** U-069 `mutation-log.md`; the same with an open entry appended | whole entries (M-T1: 8 lines with its failing line; the last entry to the end of the file); 12 and 12; unequal with the open entry | As expected. The first form planned for I6 step 0 (`grep -c "APPLYING"` against `^restored: `) gave 13 and 0, a false stop, and was replaced |
+| 14.11 | `command ls -1 "$AAI" > …; grep -cE '^(7\.0\.0_r1-robolectric-r1-i7\|14-robolectric-10818077-i7\|15-robolectric-12650502-i7)/?$' …`; `git diff --no-index --quiet` of two listings | the real local Maven cache folder (read only) | `3`; equal listings exit 0 | `3` and exit 0. Plain `ls` printed `…-i7/` (the alias), which the iteration-1 form did not allow for |
+| 14.12 | `grep -E '^com\.zegoggles\.smssync\.service ' I<k>-jacoco-packages.txt` | **real** U-069 `I6-jacoco-packages.txt` | `com.zegoggles.smssync.service 674/822 82.0%` | As expected (dotted names, coordinator's fact 2) |
+| 14.13 | I6 step 5 in a scratch git repository: the simulated start tree committed as `<start>`, then the fixed workers, the extracted helper and tests | scratch repository | `mismatches=0`; blobs `3f2f0c76…`, `9be01b15…`, `0782f85f…`; porcelain ` M` ×2, `??` ×3; `--name-only` the two workers; `test-tracked-unchanged-exit=0`; `setForeground(` 3 lines here (the two KDoc lines and `WorkerForeground.kt:45`; the real tree adds the manifest and `MainActivity` comments); `setForegroundOrContinue` 3 lines; `ignore-exit=1`; 13 and 5 | As expected; with an existing test edited, `test-tracked-unchanged-exit=1` (D33) |
+| 14.14 | `python -I -X utf8 $TL/oldtext_check.py start` / `fixed` | the simulated start tree (CRLF `BackupWorker.kt`, U-070's fixture text) and fixed tree | `mismatches=0` both | As expected |
+| 14.15 | `<dexdump> -d <dex> \| python -I -X utf8 $TL/dex_refs.py 'Landroid/app/ForegroundServiceStartNotAllowedException;'` | the D8 dex of the helper | one class, `Lcom/zegoggles/smssync/service/ForegroundRefusal;` | As expected |
+| 14.16 | Hygiene of the plan: `grep -n -i -E` for the user and host names, profile paths and e-mail-like tokens; control characters | `plan.md` | no line; no CR, no control character except the four tabs of the `--numstat` example | As expected (a backslash loss in one scripted edit was found by this check and repaired) |
+| 14.17 | I0's and I6's document-folder record: `git status --porcelain --untracked-files=all -- <three folders> \| cut -c4- \| while read -r p; do sha256sum "$p"; done`, then `grep -vxF -f others-I0.txt others-I6.txt; echo "docs-new-or-changed-exit=$?"` | the real repository (read only: no line today); a scratch repository with five cases | real: empty list; A none/none, B unchanged, C committed by the orchestrator in between: exit 1 (no line); D changed again, E a new untracked document: the path printed, exit 0 | As expected; the commit subject appears in the `git log --format='%h %s'` line; an empty pattern file still gives exit 1 on an empty list |
+| 14.18 | `"$ADB" devices \| grep -E '^emulator-[0-9]+[[:space:]]+device$' \| cut -f1` | constructed CRLF listing with two emulators, an offline one and a physical device | `emulator-5554`, `emulator-5556` | As expected (no CR in the serials) |
+| 14.19 | `grep -E "android\.permission\.POST_NOTIFICATIONS: granted="`; `grep -E "SystemForegroundService\|isForeground=\|foregroundId="`; `grep -E "topResumedActivity\|mResumedActivity" … \| grep -c com.zegoggles.smssync`; `grep -c WITHIN_QUOTA`; `grep -E "com\.zegoggles\.smssync"` on the scheduler dump | constructed (CRLF) package, service, activity and scheduler dumps in the recalled formats | the granted line; the service record and `isForeground=true foregroundId=1`; `0`; `1`; the job line | As expected; the formats themselves are not verified (R15) |
+| 14.20 | The two refusal greps of section 9 | **real** log; constructed lines | real log: warning 0, defect 4 (two lines per refusal), bare class name 4; constructed: warnings counted, defect 0 | As expected |
+
+Not testable here, and why: every Gradle step (build, tests, JaCoCo, the APK dex and mapping of the real build), every
+`adb` and emulator step against a device, and the real formats of `dumpsys notification`, `dumpsys activity processes`
+and `services`, `dumpsys jobscheduler` and `uiautomator dump` on this emulator (constructed samples only; their stop
+routes are rows D11 and the "not determined" and "not conclusive" outcomes of section 9). A later finding in those that
+can only cause a false stop is handled by the stop-and-amend route.
 
 ## Verdict
 
@@ -1994,23 +2385,26 @@ device, the owner's phones, the boot backup when it is held by quota.
 - The design is ruling 60's: the type first, the foreground only for `MANUAL`, `SKIP` and restores, one helper that
   rethrows a cancellation first, absorbs only `ForegroundServiceStartNotAllowedException` from API 31 and rethrows the
   rest. The API-31 reference is isolated in a two-line holder class behind the `SDK_INT` test, shown by bytecode and dex
-  output to be the only place the type is named (L19).
+  output to be the only place the type is named (L19), and checked again in the real debug and release dex (I6).
 - **P-1 is settled offline:** Robolectric 4.15.1 knows SDK 35 and 34, both pre-instrumented jars are cached with matching
-  SHA-512 and contain the five exception classes, JDK 25 is allowed; no jar for 31 to 33 exists, so the story's middle
-  fallback is not available and the stop rule is explicit (D9, D10).
+  SHA-512 and contain the five exception classes, JDK 25 is allowed; no jar for 31 to 33 exists (SC-5, ruled).
 - **P-2 is settled:** a refused user-started run continues, its result is applied, it shows no notification, its progress
-  reaches the status screen, and WorkManager keeps it in the foreground map until it ends; the stop condition does not
-  occur (2.5).
+  reaches the status screen, WorkManager keeps it in the foreground map until it ends, and a user's cancel still stops it
+  (2.5, L27); the stop condition does not occur.
 - **Item 3:** the throwing updater is the story's binding form; two more tests drive WorkManager's own unwrapping branches
-  (already-failed and pending future), so the tests throw every shape production delivers (2.4).
-- Every edit is exact text in a region U-070 does not edit, checked once at the real start by `oldtext_check.py` (tested on
-  the simulated trees); every expected count, hunk and blob was derived by running the commands on the simulation.
-- 18 tests (11 green and 7 red at Start, all green after), 12 mutation runs with complete failing sets (8 counted, every
-  test but the control detected), 16 Gradle runs (two full gates, at Start and at the end), one session.
+  (already-failed and pending future).
+- **Iteration 2** fixes plan-review B-1 to B-6 and takes up O-1 to O-9, follows the SC rulings (Record 23) in section 9,
+  carries contract-verification's X-3 and the ruling on D23, takes up both depth-check recommendations (one sub-item
+  declined with its reason), and adds section 14: every command that can run without Gradle, a device or `app/` was run
+  on the plan's own text and on sample or real input; three defects in commands and one gap in a pass rule were found that
+  way and fixed.
+- 18 tests (7 red at Start, all green after), 12 mutation runs with complete failing sets (8 counted), 16 Gradle runs (two
+  full gates), one session.
 
-Open for the orchestrator, none blocking the build: SC-1 to SC-9 (rulings recommended). Not verified: the real test
-compile (N1), Robolectric at 35 at run time (N2, N3), JaCoCo's line totals (N4), AGP's own D8/R8 output (N5), ART's
-handling below API 31 (P3), work-testing 2.12.0 (P2), and BUG-029 Not verified 5.
+Nothing is open for the orchestrator before the build (SC-1 to SC-9 ruled). Not verified: the real test compile (N1),
+Robolectric at 35 and 24 at run time (N2, N3), JaCoCo's line totals (N4), AGP's own D8/R8 output (N5), ART's handling below
+API 31 (P3), work-testing 2.12.0 (P2), the emulator's `dumpsys` formats (R15), the platform job limits marked "recalled"
+in 2.6 item 3, and BUG-029 Not verified 5.
 
 ## Phase Completion Report
 ---
@@ -2021,5 +2415,5 @@ artifact_path: "sdlc/artifacts/build/sprints/sprint-024/U-075/plan.md"
 story_status: "in-progress"
 current_build_phase: "planning"
 errors: []
-notes: "Iteration 1. Design per ruling 60: inferBackupType first; setForegroundOrContinue (new service/WorkerForeground.kt, no collision with U-074's WorkerCancellation.kt) only for MANUAL/SKIP and every restore; catch IllegalStateException, rethrow CancellationException first, continue only on ForegroundServiceStartNotAllowedException behind SDK_INT >= S via a private @RequiresApi(31) holder object (bytecode and D8 dex show the API-31 type only there), one Log.w without throwable or personal data, else rethrow. P-1: Robolectric 4.15.1 knows SDK 21-35; i7 jars for 34 and 35 cached with matching SHA-512 and the five exception classes; JDK 25 allowed; no i7 jar for 31-33, so the story's middle fallback is unavailable offline; refusal level 35, fallback 34 (F-34), else stop. P-2: refused user-started run continues, result applied, no notification, progress reaches the status screen, foreground map kept until it ends; stop condition not met. 18 tests (13 + 5; 7 red at Start), 12 mutation runs (M-F1a..M-F7 counted, M-X1 informational, U-070 M-L11/M-L20/M-L22 re-run), 16 Gradle runs (two full gates, expected in the background, about 10 min each; 14 targeted runs excluding SmsBackupRecordSizeTest), one session. Coordinator's facts taken in: U-070 session-1 blobs ba667c43/dc84c4f5 equal the plan's simulation; start count expected 821, still recorded at I0. Helper, three mutants and both test files compiled with cached Kotlin 2.3.21 (tests against stubs of app classes); every anchor, count, hunk and blob derived on a simulation of fd70325a + U-070 P6/P7. Scope concerns SC-1..SC-9 (screenshots outside the repository; optional Pixel_API_24 step; airplane-mode step not run; known-contact fixture for ruling 39's line; no 31-33 fallback; stricter tests; shared helpers; 'Backing up' title; mailbox check). CR-017 design/contract edits are uncommitted in the working tree (orchestrator's); row D23 covers them."
+notes: "Iteration 2. plan-review B-1 (every embedded blob re-derived from the plan text; ui_bounds.py now d034222c after the O-6 change; T2 e69175c6 after O-3), B-2 (section 9 rewritten to the SC rulings of Record 23: no screenshot or UI dump, notification evidence by notif_check.py over dumpsys, (i) passes on the watermark and backup-complete lines, (v) not run, (vi) on Pixel_API_24 selected by emu avd name with install-time verification and 'not run: needs the owner to enter the app password'), B-3 ((iv) only over observed off-screen runs), B-4 (MSYS_NO_PATHCONV=1 on the three /sdcard commands, tested), B-5 (no timeout above 540 s; 450 s anchored double waits), B-6 (rows D32 to D35) fixed; O-1 to O-9 taken up. Contract: DES-014 row 16-1 correction recorded (X-3 for the orchestrator); D23 per the orchestrator's ruling (others' uncommitted document paths recorded by sha256 at I0, compared at I6). Depth check: release dex through mapping.txt; 2.6 items 3, 8, 10, 11; process, service and job state at the INCOMING start; 'stopped by the system' outcome; scheduler identification partly declined (WorkManager logs from INFO, App.java:162-165). New tools notif_check.py, dt_secs.py, ac12_run.py. Ruling 69: section 14, 20 self-tests on the plan's own text, real logs and constructed samples; found and fixed: the refused-run-without-start rule, the ls -F alias in the cache listing, the APPLYING/restored count, a backslash loss in an edit. 18 tests, 12 mutation runs (8 counted), 16 Gradle runs, one session; design, edits, T1 and the failing sets unchanged."
 ---

@@ -4,23 +4,187 @@ story_id: "U-075"
 gate: plan-review
 gate_id: "plan-review"
 checkpoint: plan-gate
-verdict: FAIL
-iteration: 1
+verdict: PASS
+iteration: 2
 agent: "Solution Architect (separate instance, plan-review)"
-timestamp: "2026-11-21T17:41:58Z"
+timestamp: "2026-11-21T18:25:52Z"
 artifact_reviewed: "sdlc/artifacts/build/sprints/sprint-024/U-075/plan.md"
-base_commit: "acc50c94c1c635685164518731ab1b217dca76f2"
-blockers: 6
-observations: 9
+base_commit: "f731e70cc676094de5afa83fe6d7bfd24be10583"
+blockers: 0
+observations: 5
+superseded_iterations:
+  - iteration: 1
+    verdict: FAIL
+    timestamp: "2026-11-21T17:41:58Z"
+    base_commit: "acc50c94c1c635685164518731ab1b217dca76f2"
+    blockers: 6
+    observations: 9
 ---
 
 # Gate Report: gate-result — U-075
 
 ## Gate: plan-review @ plan-gate
 
-Verdict: FAIL
+Verdict: PASS (iteration 2)
 
-## Summary
+## Iteration 2 — Summary
+
+**Scope.** Ruling 73 (Record 23) sets what I re-checked:
+- my blockers B-1 to B-6;
+- the planner's self-test table (section 14);
+- everything iteration 2 added or rewrote, reviewed in full: section 9, the four orchestrator tools, rows D32 to D35, the release-dex check and the changed restore test file.
+
+For the parts stated as unchanged, I checked the claim by hash and by comparing the text with iteration 1 (committed in `acc50c94`), rather than re-deriving everything. The rules were as before:
+- no read of `app/` or `app/build` in the working tree;
+- no Gradle, build, test, device or network command;
+- no `diff` or `cmp`;
+- scratch work only outside the repository.
+
+`HEAD` is `f731e70c`, and `git diff --stat acc50c94 HEAD -- app` is empty.
+
+**Result: all six blockers are closed, and I found no new blocker.** The five observations below can only cause a false stop or are matters of precision. Under ruling 73 they go to the plan's stop-and-amend route.
+
+**The unchanged parts, checked:**
+- **Production edits.** E-B1, E-B2 and E-R1, extracted by marker from the iteration-2 text, each occur once in `ba667c43…` and `dc84c4f5…`. The results are the same blobs as in iteration 1: `3f2f0c7678fab5a7ddf5d36581f2df32cd19a643` and `9be01b15210508393e750136ff127cc7eed3a968`.
+- **The helper and the backup test file.** `WorkerForeground.kt` is `0782f85f…` and T1 is `3e3ea62b…`, as before.
+- **Unchanged tables.** The rows of the mutation table (`| M-… |`) and the section 5.2 red-run text are byte-identical to iteration 1 (equal SHA-256 of the extracted lines). Of the `| F… |`/`| R… |` lines, only the risk-table rows R2 and R10 changed, and R15 is new. The test table 5.1 is unchanged.
+
+## Iteration 2 — Blockers re-checked
+
+**B-1 (blobs): closed.** I took the first fenced block after each file's marker line, wrote it LF, and hashed it with `git hash-object --no-filters` and with a SHA-1 of `blob <n>\0<data>`. The two methods agree. All nine files equal the plan's values:
+
+| File | Blob | Lines |
+|------|------|-------|
+| `WorkerForeground.kt` | `0782f85f…` | 65 |
+| T1 `BackupWorkerForegroundTest.kt` | `3e3ea62b…` | 517, 13 `@Test` |
+| T2 `RestoreWorkerForegroundTest.kt` | `e69175c6…` | 174, 5 `@Test` |
+| `oldtext_check.py` | `8d1158ec…` | 92 |
+| `dex_refs.py` | `4f72cc2f…` | 19 |
+| `ui_bounds.py` | `d034222c…` | 25 |
+| `notif_check.py` | `0a7a889c…` | 29 |
+| `dt_secs.py` | `75b37f0d…` | 13 |
+| `ac12_run.py` | `6dc06eee…` | 66 |
+
+The F-34 variants (one `@Config` line each) are `0145ee38…` and `9207950d…`, as stated. No stale iteration-1 value (`c7f765f0`, `c513ea18`, `7b5687be`) remains anywhere in the plan. I0 step 1 and I1 step 2 carry the new values.
+
+**B-2 (section 9 against SC-1, SC-2, SC-3, SC-9): closed.**
+- **SC-9.** (i) passes on `watermark=1` or more, that is, the line `BackupWorker: watermark advanced for SMS to <date>` on the run's thread between its start and its result (post-U-070 `BackupWorker.kt:439`, written only after `appendMessages` returned). There is no mailbox check.
+- **SC-1.** Screenshots are dropped. The UI dump stays in `OW` and is deleted at the end. No outcome rests on either. The notification evidence is `notif_check.py` over `dumpsys notification`, and the extract goes through `sanitize.py`.
+- **SC-3.** (v) is "Not run: needs a system setting".
+- **SC-2.** (vi) is now the orchestrator's:
+  - `Pixel_9_Pro` is stopped with `emu kill` first;
+  - `Pixel_API_24` is selected by `emu avd name`; `Pixel_10_Pro` is never sent anything;
+  - install-time verification lines are recorded;
+  - a run passes only if it starts, with no `VerifyError` or `NoClassDefFoundError`.
+
+  On the missing-credentials dialog, the plan now matches `MainActivity.java:391-402` at `fd70325a`. `performAction` opens `MISSING_CREDENTIALS` when `isLoginInformationSet()` is false, and `FIRST_SYNC` (or the confirmation) otherwise, so no worker runs. The plan records "no start within 60 s" as "(vi) not run: needs the owner to enter the app password", not a failure, and presses nothing in a dialog. A start line implies the helper has already run, because E-B1 puts the helper before the "starting backup" line. So a (vi) pass does observe the class loading it is about. Iteration 1's "MailException — retrying" sentence is gone.
+
+**B-3 (no pass without the observed run): closed.** I read every outcome rule of section 9 for a path to "pass" without the run it is about:
+- **(iii)** needs `start` not `none`, `result=SUCCESS` and `moved≥1` for the MANUAL run found after `-T $D3`. A second inconclusive result is "not run".
+- **(i)** needs a start at least 58 s after `HOME_T` (`dt_secs.py`), the top-activity and process lines not naming the app, `result=SUCCESS`, `moved=0`, `watermark≥1` and `backedUp`. Its "no id 1 notification" condition counts only when `iii-notif.txt` parsed one of the app's records in the same session, so an unparseable format cannot produce "no record".
+- **(ii)** needs the `bootup` line and a start at most 900 s after `BOOT_T`.
+- **The planner's case.** An unfixed build's refused run writes no start line. It is now caught by `defect>0`, which is checked first in (i) step 5 and in (ii) "Fail first". I confirmed it on the real log: INCOMING `--after '11-21 09:46:38.000'` gives `start=none … defect=4`.
+- **(iv)** is assessed only over observed off-screen runs and is "not run" with none.
+- **`ac12_run.py`** refuses an empty `--pids` (`pids=missing`, exit 1). The `PIDS` derivation gives an empty list for an empty log and reply, and `4401` for a constructed `Start proc` line plus a CRLF `pidof` reply.
+
+**B-4 (device paths): closed.** All three `adb` commands with `/sdcard` in section 9 carry `MSYS_NO_PATHCONV=1` on that command only: the dump, the `exec-out cat` and the `rm`. No other command in section 9 has a device path (`grep` of the section). It is never set for Gradle.
+
+**B-5 (waits): closed.**
+- The `timeout` values in section 9 are 60, 120 (twice), 240, 300 (three times), 450 and 540 s. None exceeds 540 s, and every call is a foreground call at 600,000 ms.
+- **(i) cannot miss a start.** The two 450 s waits carry the same `-T "$D1"`, and logcat replays the buffer from that time, so the second wait finds a start that fell between the two calls.
+- **No double-count.** The second wait runs only after `exit=124`, and `-m 1` ends each wait at its first match. The waits only gate the captures; every outcome is read once from the single `logcat -d` dump in step 6, through `ac12_run.py`.
+- **(ii)'s waits** have no `-T` after a cold boot. They replay the whole buffer, so they cannot miss either.
+- **The (ii) window still covers 900 s.** After the boot wait and the 120 s `bootup` wait, the two 450 s waits start at most about 120 s after `BOOT_T`. The 900 s rule is applied by `dt_secs.py` against `BOOT_T`.
+
+**B-6 (rows): closed.** Each new row covers the cases I listed:
+- **D32:** hashes, `PROD_DIFF`, an open `APPLYING` entry, porcelain at I6 step 0 or 5. G-F is void; restore; report.
+- **D33:** `test-tracked-unchanged-exit`, `ignore-exit`, the 13/5 counts. On the extracted tests `grep -nE '@Ignore|Assume'` gives exit 1, and the counts are 13 and 5.
+- **D34:** toolchain, `--version`, a running Gradle JVM, `@Ignore` lines.
+- **D35:** I1 and I4 porcelain, `main-clean-exit`, `oldtext_check.py fixed` at I4.
+
+Citations: D34 in I0 steps 2 and 4; D35 in I1 step 2 and I4 step 1; D32 in I6 steps 0 and 5; D33 in I6 step 5. My iteration-1 observations are also taken in:
+- O-1 is in D29;
+- O-2 is the new I6 step 0. On U-069's committed log its anchored counts are 12 and 12, while the bare `APPLYING` count is 13 (the header's recovery note), which is why the plan anchors them.
+- O-5: the `awk` entry reader returns the whole M-T1 entry (8 lines) on that log.
+
+## Iteration 2 — New and rewritten parts
+
+- **The changed restore test (T2, `e69175c6…`).** It differs from iteration 1 by two added lines only, at the end of R2 `restore_foregroundRefused_continues`:
+  `assertWithMessage("log entries carrying the configured account name").that(ShadowLog.getLogs().filter { (it.msg ?: "").contains(SmsFixture.OWNER) }).isEmpty()`.
+  - **It compiles.** `ShadowLog.getLogs()` is a `List<LogItem>` with a public `msg` field (verified with `javap` in iteration 1), `SmsFixture.OWNER` is U-070's `internal const`, and Truth's `that(Iterable)` gives `isEmpty()`.
+  - **The failing set is still complete.** R2 is still red at Start (the refusal escapes `doWork` before this line) and green after. The restore path logs only the starting line, the warning (prefix and class name) and "RestoreWorker: MailException — retrying" (the account name is not in a message). No injection writes the account name, so R2's failing set is unchanged: M-F1b, M-F6 and M-F7 fail it at earlier assertions.
+- **`ui_bounds.py`.** I tested it on dumps of my own: `BACKUP` next to an address node, `Cancel`, a disabled button, unreadable bounds, and XML followed by the `/dev/tty` status line. The outputs are: `290 965 enabled=true label-is-backup=True` (the grep count is 1 and `read -r` gives integers despite CRLF); `label-is-backup=False`; `enabled=false`; `bounds=unreadable` exit 1; `xml=unreadable` exit 1. No dump text is printed.
+- **`notif_check.py`.** I tested it on my own dumps in AOSP's `NotificationRecord(0x…: pkg=… user=… id=… …)` form:
+  - the app's id 1 record next to another package's id 1 record that has the same channel and title: `records=1 id1=1 …True True` (the other package is not counted);
+  - the app with `id=10` only: `id1=0`;
+  - CRLF: as LF;
+  - the app with id 2 "Restoring": `id1=0`;
+  - an empty file or a missing file: `dump=unreadable` exit 1;
+  - a header only: `records=0`.
+
+  The one case that could falsely read as "no record" is a different real format. (i) guards against it by requiring (iii)'s parse in the same session.
+- **`dt_secs.py`.** Today's pair gives `seconds=58.068`; `none` gives `time=unreadable` exit 1; a midnight crossing gives `70.500`; equal times give `0.000`.
+- **`ac12_run.py` on the real log** (`sdlc/artifacts/build/research/evidence/2026-11-21-background-backup-app-log.txt`, pids 3309 and 3332; the extract filter keeps 52 of its 55 lines):
+  - REGULAR: `result=SUCCESS moved=1 watermark=1 backedUp=1`;
+  - first INCOMING: `result=SUCCESS moved=1 nothing=1`;
+  - MANUAL: `start=none`;
+  - INCOMING after the Home press: `start=none`.
+
+  `defect=4` on the whole file, which agrees with 14.20. 14.7's `defect=2` is per run.
+
+  The two refusal greps of section 9 give `warn=0` and `defect=4`, and the bare class name gives 4. That matches 14.20.
+- **The release-dex pipeline of I6 step 4.** I ran it on a constructed mapping (`ForegroundRefusal -> a.b`, `WorkerForegroundKt -> a.ba`, a decoy `WorkerForegroundKtX -> a.bb`) and a constructed dexdump listing:
+  - the descriptors are `La/b;` and `La/ba;` (the decoy is not matched), and the result is `holder-lines=1 caller-lines=0`;
+  - with the caller made to name the type, `caller-lines=1`;
+  - with an empty mapping, the descriptor is `L;` and `holder-lines=0`, which fails the expected value and leads to D24's "mapping line missing: stop".
+
+  The trailing space in `grep -cF "CLASS $FRD "` keeps `La/b;` and `La/ba;` apart.
+- **Self-test table (section 14).** I reproduced rows 14.1, 14.2, 14.3, 14.4, 14.7, 14.7b, 14.9, 14.10 and 14.20 myself (nine of twenty) with matching results. I did not re-run 14.1b (the compile), 14.6, 14.8, 14.11 to 14.19.
+
+## Iteration 2 — Observations (ruling 73: false stops or precision; stop-and-amend route)
+
+**O-1. (iv) counts three line forms, not the story's literal "any line containing the class name".** `refused-warn`, `defect` and `svc-refusal` are counted over the app's lines. I found no app-process path that writes the class name outside them:
+- the helper's warning;
+- WorkerWrapper's error and its stack lines, which carry the same tag and level;
+- `SystemForegroundService$Api31Impl`'s "Unable to start foreground service", whose stack lines follow the counted first line.
+
+So this is not a false-pass path with this code. Adding a fourth field (the bare class name over the `PIDS` lines, which 14.20 already computes) would make (iv) the story's criterion word for word.
+
+**O-2. `ac12_run.py` reads a run on the start line's thread only.** In production, `setProgress` can suspend while WorkManager's progress future is pending. The coroutine can then resume on another `Dispatchers.Default` thread, so the `watermark advanced` or `backup complete` line may carry another tid. That gives `watermark=0` or `backedUp=none`, and (i) fails to pass: a false stop. The plan names the limit (3.5, "Known limits"). If it happens, the amend route is to read the run by its work id, or over the app's tids between start and result.
+
+**O-3. (vi)'s "not run" label.** Any non-start within 60 s is recorded "needs the owner to enter the app password". On a first install on API 24 the blocker could also be the first-sync or confirmation dialog, or a runtime-permission prompt. Recording which dialog was on screen (from the UI dump's resource ids, without text) would make the record exact. It is never a pass.
+
+**O-4. Synthetic classes in the release dex.** The expected values allow "a synthetic class R8 derived from the holder", but with obfuscation on, such a class cannot be recognised by name. D25 records and reports rather than stopping, so this is a judgement for the hand-off, not a risk of a false pass. `caller-lines=0` stays the deciding fact.
+
+**O-5. Formats recalled, not read on the emulator.** `notif_check.py`'s record form, the process, service and scheduler dump lines, and uiautomator's dump are tested only on constructed samples (the plan's R15). Every mismatch leads to `records=0`, "not determined", "not conclusive" or "not run", never to a pass. (i)'s notification condition is guarded by (iii)'s parse.
+
+## Iteration 2 — What I ran
+
+- **Embedded files.** A marker-based extractor over the plan text: the first fenced block after each marker, written LF, hashed two ways. Also the three production edits re-applied to the post-U-070 blobs, and the F-34 variants.
+- **Comparison with iteration 1.** `git show acc50c94:<plan>` compared with the current plan by SHA-256 of the extracted table rows and section 5.2. `git diff --no-index` was used for the T2 lines and the changed table rows.
+- **The tools on my own inputs.** `ui_bounds.py` (5 dumps), `notif_check.py` (7 inputs), `dt_secs.py` (4 pairs).
+- **The real log.** `ac12_run.py` (4 runs and the empty `--pids` case), the `PIDS` derivation and the extract filter, and the two refusal greps.
+- **The I6 step 4 pipeline** on a constructed mapping and dexdump listing, with a negative case and an empty mapping.
+- **The I0 step 3 `awk` and the I6 step 0 counts** on U-069's committed `mutation-log.md`.
+- **`grep` scans of section 9** for device paths, `MSYS_NO_PATHCONV`, `timeout` values, and `diff`/`cmp`.
+
+## Iteration 2 — What I could not check
+
+The same as iteration 1:
+- the real Gradle compile and run (N1 to N3);
+- JaCoCo's line totals (N4);
+- the real R8 and D8 output (N5);
+- ART's verifier below API 31 (P3);
+- the emulator's real `dumpsys` and uiautomator formats (O-5);
+- the device steps themselves.
+
+---
+
+## Iteration 1 (superseded by iteration 2 above)
+
+Verdict: FAIL (iteration 1, 2026-11-21T17:41:58Z, base `acc50c94`). Kept as the record; every blocker is closed in iteration 2.
+
+### Iteration 1 — Summary
 
 I reviewed iteration 1 of the plan (2,025 lines). I followed the rules for this run. I read no file under `app/` in the working tree and nothing under `app/build`. I read code only with `git show fd70325a:<path>` and from the two post-U-070 blobs (`ba667c43…` `BackupWorker.kt`, `dc84c4f5…` `RestoreWorker.kt`). I ran no Gradle, build, test, device or network command, and I did not call `diff` or `cmp`. Scratch work stayed in my session scratch folder, outside the repository. `HEAD` is now `acc50c94`, which commits the plan and the SC rulings. `git diff --stat 3770b9a4 HEAD -- app` is empty.
 
@@ -63,7 +227,7 @@ What I confirmed:
   Each old text is unique in the fixed tree. U-070's M-L11, M-L20 and M-L22 match U-070's plan I8 (B10/B12/B13, B17/B23, S3, over the same NEW5). U-070's story corrections (M-L8 (a), M-L4 (a)) do not touch them. FG3 passes under all three re-runs.
 - **Commands (item 5).** No external `diff` or `cmp` anywhere. Every byte-for-byte comparison is between two shell-written files (`ls` listings) or uses `sha256sum` and `git hash-object` on the tracked files. No Python-written file is compared byte-for-byte. The tools the plan calls exist (`dexdump.exe` in build-tools 36.0.0, `adb`, `emulator`, the AVDs `Pixel_9_Pro` and `Pixel_API_24`).
 
-## Blockers
+### Iteration 1 — Blockers
 
 **B-1. `ui_bounds.py` does not match its planned blob.**
 - **Where:** 3.5 (`plan.md:1287-1310`); I0 step 1 (`:1377-1378`); row D13.
@@ -122,7 +286,7 @@ What I confirmed:
 
   Cite each row in its step's **Rows:** line.
 
-## Observations
+### Iteration 1 — Observations
 
 **O-1. A cut-off targeted run in I5 (D29 against 4.8 step 5).** Protocol step 5 says "Restore at once … whatever the result", but D29 says "stop and report" for a log without `exit=`. State in D29 that inside an I5 entry the restore and the clean check (steps 5 and 6) come first, then the stop. Then no reading leaves a mutation in the tree after a cut-off run.
 
@@ -142,7 +306,7 @@ What I confirmed:
 
 **O-9. The test file at SDK 24 (N3, D11 (c)/(d)).** U-070's fixtures have only run at SDK 29. F13 is their first use at 24. The plan's stop rows cover a failure, and I see nothing in the fixture text that needs API 25 or later. This is noted only as the most likely place for an I2 surprise.
 
-## What I ran
+### Iteration 1 — What I ran
 
 - `git show`, `git cat-file blob`, `git rev-parse`, `git diff --stat`, `git log`, `git grep` at `fd70325a` and on the two post-U-070 blobs.
 - A scratch script that extracts the plan's code blocks by line range, writes them LF, hashes them with `git hash-object --no-filters`, applies E-B1, E-B2 and E-R1 to the post-U-070 blobs with occurrence counts, and reports blobs, line counts and the M-1 position. Also `git diff --no-index --numstat` and `-U0` hunk headers on the scratch copies.
@@ -152,7 +316,7 @@ What I confirmed:
 - `Glob` of the local Maven cache's `android-all-instrumented` folder and of the Gradle cache's `androidx.work` and `org.robolectric` folders.
 - Existence tests (paths not printed) for `dexdump.exe`, `adb`, `emulator`, and the AVD names.
 
-## What I could not check
+### Iteration 1 — What I could not check
 
 - The real Gradle compile of the two test files against the built U-070 fixtures (N1), and Robolectric's run-time behaviour at SDK 35 and 24 (N2, N3). U-070 is still being built, so its fixtures and anchors as built are checked only by the plan's I0 `oldtext_check.py start`.
 - JaCoCo's line totals for the two new classes (N4), and AGP's own D8/R8 output for the dex check (N5).

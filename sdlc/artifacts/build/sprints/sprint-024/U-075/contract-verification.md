@@ -4,12 +4,14 @@ gate: contract-verification
 gate_id: "contract-verification"
 checkpoint: plan-gate
 story_id: "U-075"
-verdict: FAIL
-iteration: 1
+verdict: PASS
+iteration: 2
 agent: "Solution Architect (separate instance)"
-timestamp: "2026-11-21T17:33:35Z"
-artifact_reviewed: "sdlc/artifacts/build/sprints/sprint-024/U-075/plan.md"
-base_commit: "acc50c94c1c635685164518731ab1b217dca76f2"
+timestamp: "2026-11-21T18:18:22Z"
+artifact_reviewed: "sdlc/artifacts/build/sprints/sprint-024/U-075/plan.md (iteration 2, working tree)"
+base_commit: "f731e70cc676094de5afa83fe6d7bfd24be10583"
+superseded_iterations:
+  - "iteration 1: FAIL at acc50c94 (B-1, the orchestrator's), 2026-11-21T17:33:35Z"
 contracts_checked:
   - CNTR-MODERNIZATION-004 (HEAD v3 and working-tree v4 under CR-017; INV-1 to INV-4, Rules 1 to 8, Error Handling, SchedulerState)
   - CNTR-MODERNIZATION-005 (BACKUP broadcast; failure-surfacing sentence)
@@ -21,9 +23,134 @@ requirements_checked:
   - REQ-MODERNIZATION-001, -005, -013, -015, -016, -017; EPIC-MODERNIZATION-001
 ---
 
-# Gate Report: contract-verification — U-075 (plan iteration 1)
+# Gate Report: contract-verification — U-075
 
-Verdict: FAIL
+## Iteration 2 (delta re-check, 2026-11-21, HEAD `f731e70c`)
+
+Verdict: PASS
+
+No blocker is open. Iteration 1's B-1 is resolved by committed design text. The plan's iteration 2 changes no
+production edit and makes no false contract statement.
+
+### Commits since iteration 1
+
+`git log acc50c94..HEAD` lists three commits:
+- `74b31759`: CR-017 applied, the scheduler contract at v4.
+- `f63a60aa`: stories U-076 to U-078 and the iteration-1 gate reports.
+- `f731e70c`: U-074 now depends on U-075.
+
+`git status --porcelain -- sdlc/artifacts/design sdlc/artifacts/requirements sdlc/artifacts/build/change-records` prints
+nothing: those folders are clean at HEAD.
+
+### 1. B-1: DES-014 row 16-1 as committed (resolved)
+
+- **The committed cell** (`git show HEAD:…/DES-MODERNIZATION-014-…md`, `:1282`, third cell) reads:
+  - "WorkManager runs on JobScheduler. Today every backup asks for a `dataSync` foreground service, and a start the
+    system refuses (off screen, Android 12 and later) fails the run (BUG-029)."
+  - "From story U-075, automatic backups (incoming, regular, after a restart, the `BACKUP` broadcast) run as ordinary
+    jobs under the job quota, and only work the user starts (manual backup, Skip, restore) asks for the foreground; a
+    refused start continues without it (CR-017, Amendment 2)."
+  - Cells 1, 2 and 4 are unchanged. The text matches CR-017 E-7.
+- **Against today's code** (`fd70325a`, post-U-070 blobs): true. `setForeground(createBackupForegroundInfo())` is the
+  first statement of `BackupWorker.doWork` for every type, outside the `try`.
+- **Against the plan's behaviour** (E-B1, E-B2, E-R1 and the helper, unchanged; see 3 below): true.
+  - The automatic types are `INCOMING`, `REGULAR` (also after a restart), and `BROADCAST_INTENT` (the `BACKUP`
+    broadcast). An untagged run resolves to `BROADCAST_INTENT`, so it is covered.
+  - The user-started types are `MANUAL`, `SKIP` and every restore.
+  - A refused start continues without the foreground.
+- **X-3** (CR-017 `:1644-1650`, close-out when U-075 closes) replaces the whole cell with:
+  "WorkManager runs on JobScheduler. Automatic backups (incoming, regular, after a restart, the `BACKUP` broadcast) run as
+  ordinary jobs under the job quota, and only work the user starts (manual backup, Skip, restore) asks for a `dataSync`
+  foreground service; a refused start continues without it (U-075; CR-017, Amendment 2)."
+  That is right for after the story, word for word against the plan's design. It also restores the cell's original
+  `dataSync` precision ("a `dataSync` foreground service" where E-7 says "the foreground").
+- The Design Auditor's quick check of Amendment 2
+  (`sdlc/artifacts/build/change-records/evidence/CR-017-applied-text-check.md`, `:683-766`, "Quick check of Amendment
+  2: PASS") agrees. Its own search confirms row 16-1 was the only present-tense sentence of this kind.
+- **Minor, no action needed (O-9):** E-7's phrase "fails the run" is exact for one-time work. For periodic work, the
+  refused run is skipped to the next period (BUG-029 L2), which still means the run fails. X-3 drops the sentence anyway.
+
+### 2. Statement table: rows whose text changed
+
+Method:
+- The committed changes are `git diff acc50c94 HEAD --stat -- sdlc/artifacts/design sdlc/artifacts/requirements`:
+  CNTR-004, DES-001, DES-005, DES-008, DES-014, REQ-001, REQ-005.
+- I filtered every changed `+`/`-` line for `foreground|notification|dataSync|FOREGROUND_SERVICE|setProgress|Result.|retry|cancel`.
+- The only foreground or notification sentence that changed is row 16-1 (above; statement-table row 18, now **true
+  after the change**).
+- The other hits are scheduling text of v4: Rules 4 and 4a, the `REGULAR` row, `UPDATE`/`CANCEL_AND_REENQUEUE`, and
+  `cancelAll()`'s unique name. None touches U-075's edits.
+
+The CNTR-004 sentences of rows 1 to 6 have byte-identical text at `acc50c94` and HEAD: Rules 7 and 8, the three Error
+Handling items, and `Running(progress)`. The SHA-256 of the extracted lines without line numbers is equal. Only their
+line numbers moved: Rule 8 `:280` → `:324`; Rule 7 `:279` → `:323`; Error Handling `:284`, `:285`, `:287` → `:328`,
+`:329`, `:331`. The full `git grep` at HEAD over the designs and requirements gives the same hit set as iteration 1,
+apart from these shifts. Every other row of the table stands as written.
+
+Contract statements and invariants are unchanged by v4 as far as U-075 is concerned. Item 2 of iteration 1 (INV-1 to
+INV-4, Rules 1 to 8, result reporting, progress events) holds at HEAD.
+
+### 3. Plan iteration 2
+
+- **Production edits unchanged.** Plan sections 3.1 to 3.3 (E-B1, E-B2, E-R1 and the full text of `WorkerForeground.kt`)
+  are byte-identical between `git show acc50c94:<plan>` and the iteration-2 working tree. The SHA-256 of the extracted
+  sections is the same, `ab99320b…`.
+- **O-1 answered (L27, 2.5 item 4).** In 2.9.1, `Processor.stopAndCancelWork` adds the id to the cancelled set, calls
+  `cleanUpWorkerUnsafe` (which removes it from the foreground map) and interrupts it. A user's cancel therefore still
+  stops a refused-but-continuing manual run, and only a system `stopWork` ignores foreground-mapped work. This is
+  consistent with CNTR-004 Rule 7 ("`cancel` is structured") and with "Cancellation is terminal". I did not re-run the
+  `javap` reading; see "Not verified".
+- **O-2 answered (section 9, `:2204-2205`; hand-over 10).**
+  - The app's grep is ` W SMSBackup\+: (BackupWorker|RestoreWorker): foreground start not allowed; continuing without the
+    foreground \(ForegroundServiceStartNotAllowedException\)`. It matches exactly the text the helper writes (3.3 line 50:
+    `"$site: …(${e.javaClass.simpleName})"`, with site `BackupWorker` or `RestoreWorker`).
+  - The defect grep is ` E WM-WorkerWrapper: .*ForegroundServiceStartNotAllowedException`. It cannot match the app's
+    line (different level and tag).
+- **O-6 settled.** The folders are clean at HEAD. Row D23 follows the orchestrator's ruling: uncommitted paths by others
+  are recorded with `sha256sum` at I0 and shown unchanged at I6, and that is not a stop.
+- **8.1 (`:1992-1999`)** records the DES-014 correction and X-3 as the orchestrator's item, and adds CNTR-005 and
+  CNTR-006 to `contracts_verified`. Both match iteration 1's rows 7 and 8. The frontmatter now lists CNTR-004, -005
+  and -006.
+- **New ledger facts** (L27; L29: WorkManager's own second refusal point in `SystemForegroundService$Api31Impl`, already
+  in 2.9.1, which only logs). These are library facts; they make no contract or design statement and change none. L29
+  corrects iteration 1's edge case 8 (2.6), and no contract cites that point.
+- **Nothing in iteration 2 touches a contract statement.** The iteration-2 table (`:68-109`) changes evidence tools,
+  section 9, rows D23 and D29 to D35, I6 steps and the ledger. It changes none of the CNTR-*, DES-* or REQ-* text, and
+  plan constraint 12 still forbids the developer to touch them.
+- **O-7 done.** U-074's frontmatter lists U-075 at HEAD (`:16`).
+
+### Observations (iteration 2)
+
+- **O-9:** E-7's "fails the run" wording (above). No action needed; X-3 removes it.
+- **O-10 (planner, at close-out; not a blocker):** the first bullet of 8.1 (`:1986-1991`) still reads "v3 at HEAD … the
+  working tree carries the orchestrator's uncommitted v4 … Rule 8 is at `:320`" and "CR-017 (working tree, `:247-249`)".
+  At HEAD, v4 is committed and Rule 8 is at `:324`. CR-017's table rows are at `:247` and `:249` as committed. The
+  substance is right; only the state words and one line number are stale. The same applies to the DES-005 bullet
+  ("at `:55`, `:130-132` in the working tree"), which is now HEAD.
+
+### Not verified (iteration 2)
+
+- The `javap` readings behind L27 and L29. I took them as the planner's; they are consistent with iteration 1's L10.
+- The plan sections outside 0, 3.1 to 3.3, 8.1, 10 items 9 and 10, 2.5 item 4, the section 9 greps and the
+  iteration-2 table. Those belong to plan-review.
+
+### Phase Completion Report (iteration 2)
+
+```yaml
+story_id: "U-075"
+phase: "plan-gate/contract-verification"
+verdict: "PASS"
+artifact_path: "sdlc/artifacts/build/sprints/sprint-024/U-075/contract-verification.md"
+story_status: "in-progress"
+current_build_phase: "planning"
+errors: []
+```
+
+---
+
+## Iteration 1 (SUPERSEDED by iteration 2 above; kept as the record)
+
+Verdict (iteration 1): FAIL
 
 The plan's code design changes no contract invariant, rule or interface, and the planner has nothing to fix for this
 gate. The FAIL comes from one blocker for the orchestrator. The story claims that no contract or design text says
@@ -260,7 +387,7 @@ comments (hand-over 3).
 - CR-017 Amendment 1 is not yet applied (its own status row says so). Any sentence it adds later was not checked.
 - The working tree under `app/` (U-070's session). By instruction, I read only the blobs named.
 
-## Phase Completion Report
+## Phase Completion Report (iteration 1, superseded)
 
 ```yaml
 story_id: "U-075"

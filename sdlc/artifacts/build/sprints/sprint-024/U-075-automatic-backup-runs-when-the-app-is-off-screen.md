@@ -262,6 +262,12 @@ None yet. Record here: the Start commit and counts; the outcome of P-1 (the refu
 - **SC-8 (the notification's title):** the code's title is "Backing up"; where this story says "Backup" for the title it is read as the code's text. Nothing changes in the code.
 - **SC-9 (checking the mailbox):** not done; it would need the owner. The log line that the append was confirmed is the evidence, as in story U-069's device check.
 
+**Plan gates, iteration 2 (2026-11-21): plan review PASS, contract verification PASS, depth check PASS (at iteration 1, with two recommendations that iteration 2 took up).** Iteration 1 failed plan review on six points (one tool hash, the device-check section not yet following the rulings above, two commands that could not run as written, waits above the tool limit, missing decision rows) and contract verification on one design sentence, which the orchestrator corrected through change record CR-017, Amendment 2 (close-out edit X-3 is applied when this story closes). Binding on the developer and on the device check in addition to the plan's text:
+
+- **Start:** the commit that closes story U-070. The plan's I0 old-text check must report no mismatch; a mismatch is a stop for a re-anchoring amendment, not something to adapt.
+- **Observations of the iteration-2 plan review (ruling 73: each can only cause a false stop, never a false pass):** the device check's refusal count (step (iv)) also counts any line of the app's process that contains the bare class name `ForegroundServiceStartNotAllowedException`, so that it matches this story's wording; a run whose log lines continue on another thread, a start that does not happen for a reason other than missing login details on the Android 7.0 emulator, a helper class that the release build's shrinker renames beyond recognition, and a `dumpsys` format that differs from the samples are each recorded with what was seen and reported, not decided by the developer.
+- **Full gate runs take about ten minutes** since story U-070 and are moved to the background by the harness; the developer waits for the completion notice and reads the log's `exit=` line.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 
