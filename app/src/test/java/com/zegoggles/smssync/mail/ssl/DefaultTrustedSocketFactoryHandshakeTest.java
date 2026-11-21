@@ -17,6 +17,7 @@ import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -76,6 +77,11 @@ import static org.junit.Assert.fail;
  *       {@link SSLException} that is not a certificate rejection, and the server does not report
  *       {@code OK}. The server presents the right-host chain in all of them, so only the protocol can stop
  *       them.</li>
+ *   <li>Cipher suites (U-066; F-1 of the U-065 security review; Record 11): the TLS 1.2 handshakes negotiate a
+ *       TLS 1.2 suite of the allowed list (ECDHE with AES-GCM or ChaCha20-Poly1305); against a server that limits
+ *       nothing the handshake negotiates TLS 1.3 with a TLS 1.3 suite; against a server limited to TLS 1.2 and to
+ *       one pruned suite (ECDHE with CBC and SHA-1, or RSA key exchange with GCM) the handshake fails with an
+ *       {@link SSLException} that is not a certificate rejection, and the server does not report {@code OK}.</li>
  * </ul>
  * The two call shapes are those of the IMAP connection code: implicit TLS ({@code createSocket(null, host,
  * port, null)}, then connect and handshake) and STARTTLS ({@code createSocket(plainSocket, host, port,
@@ -112,6 +118,9 @@ import static org.junit.Assert.fail;
  *   <li>U-065 AC-8: the refusal tests break when the TLS 1.2 floor is removed (M-P1/M-P8) or the old list
  *       is given back to the default factory alone (M-P6 (ii)); the TLS 1.2 tests are controls that keep
  *       passing under those mutations.</li>
+ *   <li>U-066 AC-6: the refusal tests break when a pruned suite is put back (M-X1 (a) or (b), each for its own
+ *       suite), the allow filter is removed (M-X2), the default factory's step is removed (M-X5 (ii)), or, for the
+ *       STARTTLS ones, the layered shape is skipped (M-X6). The TLS 1.3 test is a control.</li>
  * </ul>
  *
  * <p><b>Global state.</b> The only JVM-wide state this class touches is the private static default trust
@@ -122,12 +131,11 @@ import static org.junit.Assert.fail;
  * trust decision. The default host-name verifier is not replaced; the before-method fails if the current
  * one looks like a leftover from a test, and the after-method asserts it is unchanged.
  *
- * <p><b>Isolation guard A1-G2.</b> The before-method fails, naming A1-G2, if the factory's static cipher
- * list was computed under the JDK provider (it would contain DHE suites, which this class's provider never
- * produces). That would mean the JDK-provider class's Robolectric sandbox was reused here. The guard also
- * has an SSLv2Hello clause on the protocol list; since U-065 the factory never enables SSLv2Hello under
- * either provider, so that clause can no longer fire and the DHE clause alone carries the guard (U-065
- * AC-6 (e); the guard code is left unchanged).
+ * <p><b>Isolation guard A1-G2.</b> The before-method fails, naming A1-G2, if the TLS context's provider is
+ * not Conscrypt, which would mean the JDK-provider class's Robolectric sandbox was reused here. Until U-066
+ * the guard read this from the factory's static cipher list (a DHE suite appeared only under the JDK
+ * provider); since U-066 both providers give the same ten allowed suites, so it checks the live provider
+ * (U-066 AC-8). The SSLv2Hello clause can no longer fire since U-065 and is kept unchanged.
  *
  * <p><b>Time bounds.</b> Every wait is bounded (10 seconds: connect, reads, accept and the wait for the
  * server). There are no sleeps and no retries. Ports are chosen by the operating system and only the
@@ -143,6 +151,16 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
     private static final String HOST_MARKER = "was not verified against the server certificate";
     private static final int ENTRIES_IN_MESSAGES = 5;
     private static final int MAX_CAUSE_STEPS = 20;
+
+    /** The TLS 1.3 suites of the factory's allowed list (U-066). */
+    private static final List<String> TLS13_SUITES = Arrays.asList(
+            "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256");
+
+    /** The TLS 1.2 suites of the factory's allowed list (U-066): ECDHE with AES-GCM or ChaCha20-Poly1305. */
+    private static final List<String> AEAD12_SUITES = Arrays.asList(
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256");
 
     private Field trustManagerField;
     private X509TrustManager originalTrustManager;
@@ -325,7 +343,57 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
         assertRefusedByProtocolFloor(STARTTLS, "TLSv1");
     }
 
-    /** The right-host chain, a server limited to one protocol; the handshake must complete at it. */
+    /**
+     * U-066 AC-5 (b), default factory: against a server that limits nothing, the handshake completes at TLS
+     * 1.3 with one of the three TLS 1.3 suites, so the pruning leaves TLS 1.3 its suites. A control: under this
+     * provider the TLS 1.3 suites are provider-fixed (DP-4), so no U-066 mutation is expected to break it; the
+     * JDK provider class's exact-list tests carry the TLS 1.3 names (M-X4 (i)).
+     */
+    @Test
+    public void implicitTls_unrestrictedServer_negotiatesTls13WithAnAllowedSuite() throws Exception {
+        server = LoopbackTlsTestServer.start(IMPLICIT_TLS,
+                serverContext(RIGHT_HOST_CERT, RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT));
+        SSLSocket ssl = connectClient(IMPLICIT_TLS);
+
+        ssl.startHandshake();
+        int data = ssl.getInputStream().read();
+
+        assertWithMessage("the byte the server writes after the handshake").that(data)
+                .isEqualTo(LoopbackTlsTestServer.PAYLOAD);
+        assertWithMessage("negotiated protocol").that(ssl.getSession().getProtocol()).isEqualTo("TLSv1.3");
+        assertWithMessage("negotiated suite (U-066 AC-5 (b))").that(TLS13_SUITES)
+                .contains(ssl.getSession().getCipherSuite());
+        assertWithMessage("server outcome").that(server.awaitOutcome()).isEqualTo("OK");
+    }
+
+    /** U-066 AC-6, implicit TLS: a server limited to TLS 1.2 and to ECDHE with AES-CBC and SHA-1 is refused. */
+    @Test
+    public void implicitTls_serverLimitedToEcdheCbcSha_handshakeRefused() throws Exception {
+        assertRefusedByCipherPolicy(IMPLICIT_TLS, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+    }
+
+    /** U-066 AC-6, STARTTLS, ECDHE with AES-CBC and SHA-1. */
+    @Test
+    public void startTls_serverLimitedToEcdheCbcSha_handshakeRefused() throws Exception {
+        assertRefusedByCipherPolicy(STARTTLS, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+    }
+
+    /** U-066 AC-6, implicit TLS: a server limited to TLS 1.2 and to RSA key exchange with AES-GCM is refused. */
+    @Test
+    public void implicitTls_serverLimitedToRsaKeyExchangeGcm_handshakeRefused() throws Exception {
+        assertRefusedByCipherPolicy(IMPLICIT_TLS, "TLS_RSA_WITH_AES_128_GCM_SHA256");
+    }
+
+    /** U-066 AC-6, STARTTLS, RSA key exchange with AES-GCM. */
+    @Test
+    public void startTls_serverLimitedToRsaKeyExchangeGcm_handshakeRefused() throws Exception {
+        assertRefusedByCipherPolicy(STARTTLS, "TLS_RSA_WITH_AES_128_GCM_SHA256");
+    }
+
+    /**
+     * The right-host chain, a server limited to one protocol; the handshake must complete at it. Since U-066
+     * the negotiated suite must be an allowed suite of that protocol.
+     */
     private void assertCompletesAt(LoopbackTlsTestServer.Mode mode, String protocol) throws Exception {
         server = LoopbackTlsTestServer.start(mode,
                 serverContext(RIGHT_HOST_CERT, RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT), new String[] {protocol});
@@ -337,6 +405,9 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
         assertWithMessage("the byte the server writes after the handshake").that(data)
                 .isEqualTo(LoopbackTlsTestServer.PAYLOAD);
         assertWithMessage("negotiated protocol").that(ssl.getSession().getProtocol()).isEqualTo(protocol);
+        assertWithMessage("negotiated suite at " + protocol + " (U-066 AC-5 (a))")
+                .that("TLSv1.3".equals(protocol) ? TLS13_SUITES : AEAD12_SUITES)
+                .contains(ssl.getSession().getCipherSuite());
         assertWithMessage("server outcome").that(server.awaitOutcome()).isEqualTo("OK");
     }
 
@@ -355,6 +426,30 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
             assertWithMessage("the refusal must not be a certificate rejection; chain=" + describeChain(e))
                     .that(e.getCause() instanceof CertificateException).isFalse();
             assertWithMessage("server outcome against a client that refused " + protocol)
+                    .that(server.awaitOutcome()).isNotEqualTo("OK");
+        }
+    }
+
+    /**
+     * U-066 AC-6: the right-host chain, a server limited to TLS 1.2 and to one pruned suite; the handshake must
+     * fail, not on the certificate, and the server must not report OK. Control (probe I2 and M-X5 (ii)): a
+     * client with the provider's default suites completes the same handshake.
+     */
+    private void assertRefusedByCipherPolicy(LoopbackTlsTestServer.Mode mode, String prunedSuite)
+            throws Exception {
+        server = LoopbackTlsTestServer.start(mode,
+                serverContext(RIGHT_HOST_CERT, RIGHT_HOST_KEY_PKCS8, TRUSTED_CA_CERT),
+                new String[] {"TLSv1.2"}, new String[] {prunedSuite});
+        SSLSocket ssl = connectClient(mode);
+
+        try {
+            ssl.startHandshake();
+            fail("the handshake against a server limited to " + prunedSuite + " must be refused, but it"
+                    + " completed with " + ssl.getSession().getCipherSuite());
+        } catch (SSLException e) {
+            assertWithMessage("the refusal must not be a certificate rejection; chain=" + describeChain(e))
+                    .that(e.getCause() instanceof CertificateException).isFalse();
+            assertWithMessage("server outcome against a client that offers none of the server's suites")
                     .that(server.awaitOutcome()).isNotEqualTo("OK");
         }
     }
@@ -454,8 +549,9 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
     // -----------------------------------------------------------------------
 
     /**
-     * Isolation guard A1-G2: the factory's static lists must have been computed under this class's
-     * provider. SSLv2Hello and DHE suites appear only under the JDK provider.
+     * Isolation guard A1-G2: this class must run on its own provider, Conscrypt. Until U-066 the guard read
+     * the provider from the factory's cipher list (a DHE suite meant the JDK provider); since U-066 both
+     * providers give the same ten allowed suites, so it checks the TLS context's provider (U-066 AC-8).
      */
     private static void checkIsolationGuardA1G2() throws Exception {
         String[] protocols = constant("ENABLED_PROTOCOLS");
@@ -467,14 +563,10 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
                     + "under the JDK provider: TLS context provider=" + provider
                     + ", first entries=" + firstEntries(protocols));
         }
-        if (ciphers != null) {
-            for (String cipher : ciphers) {
-                if (cipher.startsWith("TLS_DHE_")) {
-                    fail("A1-G2: the factory's ENABLED_CIPHERS contains " + cipher
-                            + ", so it was computed under the JDK provider: TLS context provider="
-                            + provider + ", first entries=" + firstEntries(ciphers));
-                }
-            }
+        if (!"Conscrypt".equals(provider)) {
+            fail("A1-G2: this class must run on the Conscrypt provider, but the TLS context provider is "
+                    + provider + " (the JDK-provider class's sandbox was probably reused); the factory's"
+                    + " ENABLED_CIPHERS first entries=" + (ciphers == null ? "null" : firstEntries(ciphers)));
         }
     }
 

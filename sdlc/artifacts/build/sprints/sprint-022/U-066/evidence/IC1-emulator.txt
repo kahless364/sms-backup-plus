@@ -1,0 +1,28 @@
+IC-1 emulator check, story U-066. Run by the orchestrator.
+clock (host, UTC): 2026-11-21T09:21:48Z
+avd: Pixel_9_Pro (adb emu avd name; the only device attached; started by the orchestrator under the product owner's standing device instructions, decision appendix Record 14)
+sdk: 36
+apk: app/build/outputs/apk/debug/app-debug.apk size=6572602
+apk sha256: d5b91acaa4c1fe3ae6f7a098ec70ae754a0c4352936d9b740685a05da809edfa
+apk sha256 in hand-off (developer report; evidence/I9-checks.txt): d5b91acaa4c1fe3ae6f7a098ec70ae754a0c4352936d9b740685a05da809edfa
+install: adb install -r -> Success (app data kept; no uninstall, no downgrade flag, no data cleared)
+versionCode before: 1602, lastUpdateTime before: 2026-11-20 23:27:58
+versionCode after: 1602, lastUpdateTime after: 2026-11-21 03:18:03 (device clock)
+run 1 (device 03:19:34): manual backup -> 'BackupWorker: nothing to backup' (0 items; the worker opens no connection) -> not conclusive
+data: one test SMS was then sent to the emulator through the emulator console (sender 5551234, text 'U-066 IC-1 test message'), under the product owner's standing statement that adding or deleting SMS messages on the emulator is safe. No setting was changed. The app did not ask for a password or a sign-in.
+run 2 lines (app pid 3565, tag SMSBackup+):
+11-21 03:20:19.912  3565  3598 I SMSBackup+: BackupWorker: starting backup (1 messages)
+11-21 03:20:21.149  3565  3598 V SMSBackup+: BackupWorker: sending 1 SMS message(s) to server.
+11-21 03:20:28.179  3565  3598 D SMSBackup+: BackupWorker: watermark advanced for SMS to 1795252808825
+11-21 03:20:28.181  3565  3598 I SMSBackup+: BackupWorker: backup complete, backedUp=1
+count 'BackupWorker: starting backup (': 1 (N=1)
+count 'BackupWorker: backup complete, backedUp=': 1
+count FATAL EXCEPTION from the app's process: 0
+count SSLHandshakeException: 0
+count SSLProtocolException: 0
+count 'BackupWorker: unrecoverable error': 0
+verdict: PASS (start line with N=1, completion line, zero of the four error kinds)
+proves: after the change the app still connects to Gmail and completes a backup on Android 16 through the default factory, on a platform whose provider enables all ten allowed suites by default.
+does not prove: which suite was negotiated (the app does not log it; a separate probe on this emulator on 2026-11-21 saw Gmail negotiate TLS 1.3, so the pruned TLS 1.2 list is probably not exercised); that the removed suites are off on the device (the security review of U-066 asks for that observation; it is not part of IC-1 as the story defines it); anything about Android 11-era devices, the pinned factory (no host enrolled) or physical devices.
+side observation (not part of IC-1; recorded for BUG-023): the installed build is debuggable. In the device log from 03:20:05 to 03:21:25, which covers the test SMS and the minute after it, the content trigger fired (03:20:19 'BackupTriggerWorker.doWork: content-URI trigger fired; enqueueing delayed incoming backup with initialDelay=60s') and its INCOMING work ran at 03:21:19 ('BackupWorker.doWork: starting backup, type=INCOMING', then 'nothing to backup'). The same window holds 0 lines containing 'onReceive(' and 0 lines containing 'scheduleIncoming', although verbose lines of the app's tag are present in it. One emulator, one message.
+raw logcat and screenshots are kept outside the repository.

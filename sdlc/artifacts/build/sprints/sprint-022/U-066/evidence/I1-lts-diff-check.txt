@@ -1,0 +1,9 @@
+ .../smssync/mail/ssl/LoopbackTlsTestServer.java    | 35 ++++++++++++++++++----
+ 1 file changed, 30 insertions(+), 5 deletions(-)
+@@ -43,0 +44,5 @@ import javax.net.ssl.SSLSocket;
+@@ -85 +90,2 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -92 +98 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -100 +106 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -113 +119,17 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -116 +138 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -131,0 +154,3 @@ public final class LoopbackTlsTestServer implements AutoCloseable {

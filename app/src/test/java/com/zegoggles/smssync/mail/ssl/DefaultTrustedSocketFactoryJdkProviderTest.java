@@ -77,7 +77,10 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
  * factory's cipher order still in place after that step; for an IPv4-form host, a host with a colon, a
  * null, empty or blank host, and a name SNIHostName rejects it sets no server name and does not throw
  * (statements S2 to S5 of CR-013); and its sockets match the default factory's in protocols, cipher suites
- * and server names (U-065 AC-5).
+ * and server names (U-065 AC-5). Since U-066 (finding F-1 of the U-065
+ * security review; Record 11) both factories' direct and layered sockets enable exactly the ten allowed cipher
+ * suites, in the allowed order, although this provider enables 31 by default, among them DHE, DSS and CBC
+ * suites; nothing is provider-fixed here, so the three TLS 1.3 suites in that list are the factory's.
  *
  * <p><b>What they cannot prove.</b>
  * <ul>
@@ -116,11 +119,18 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
  *   <li>U-065 pinned rejected-name test: the catch in {@code setSniViaSSLParameters} removed (M-S5).
  *   <li>U-065 parity test: each of M-P2 to M-P7 and M-S5, in particular the three one-factory drifts
  *       M-P6 (i) to (iii).
+ *   <li>U-066 exact lists (J2, J3) and the pinned cipher literal after the server-name step (J1): a pruned
+ *       suite this provider offers put back (M-X1 (a), (c), (d)); the allow filter removed (M-X2); the TLS 1.3
+ *       names or the signalling value removed (M-X4); the step removed from one factory (M-X5); the layered
+ *       shape skipped in the default factory (M-X6, J2 and the parity test); two entries swapped (M-X8).
  * </ul>
  *
  * <p><b>Guard A1-G3 is a permanent tripwire.</b> If the JDK's TLS classes were initialised under
  * Conscrypt earlier in the same JVM by some other test, they cannot initialise here, and the guard
  * fails with its own name. A failure of A1-G3 therefore points at the other test, not at this one.
+ * Until U-066, guard A1-G1 also required a TLS_DHE_ suite in the factory's cipher
+ * list; since U-066 both providers give the same ten suites, so that clause is removed (it would fail every run)
+ * and the provider check carries A1-G1 (U-066 AC-8).
  *
  * <p><b>After the CR-009 move:</b> a missing field, method or class means this test's seam needs
  * retargeting to the moved class; a failed behavioural assertion is a regression, and the test is
@@ -133,10 +143,18 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
 
     private static final String IPV6_EIGHT_GROUP_LITERAL = "2001:0db8:0000:0000:0000:0000:0000:0001";
     private static final String DNS_HOST = "imap.right.test";
-    private static final int CIPHER_ENTRIES_IN_MESSAGES = 5;
 
     /** The allowed protocols of the factory (U-065, Record 8). */
     private static final String[] ALLOWED_PROTOCOLS_BASELINE = {"TLSv1.2", "TLSv1.3"};
+
+    /** The allowed cipher suites of the factory, in order (U-066; literal, never read from the factory). */
+    private static final String[] ALLOWED_CIPHERS_BASELINE = {
+            "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
+    };
 
     /** Protocol versions older than TLS 1.2 that must never be enabled (Record 8). */
     private static final String[] OLD_PROTOCOLS = {"TLSv1", "TLSv1.1", "SSLv3", "SSLv2Hello"};
@@ -168,29 +186,13 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
                     + " (the sandbox of the Conscrypt-mode classes was probably reused)");
         }
 
-        // A1-G1, the factory's reflected cipher list must come from SunJSSE: it has DHE suites,
-        // Conscrypt's default list has none.
-        String[] ciphers;
+        // A1-G3 via the factory's static initialiser: reading its cipher list runs it. Until U-066 the list
+        // also told the providers apart (a TLS_DHE_ suite meant SunJSSE); since U-066 both providers give the
+        // same ten allowed suites, so the provider check above carries A1-G1 (U-066 AC-8).
         try {
-            ciphers = constant("ENABLED_CIPHERS");
+            constant("ENABLED_CIPHERS");
         } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
-            fail("A1-G3 (via factory static init): the factory's static initialiser could not run: "
-                    + e);
-            return;
-        }
-        boolean hasDhe = false;
-        if (ciphers != null) {
-            for (String cipher : ciphers) {
-                if (cipher.startsWith("TLS_DHE_")) {
-                    hasDhe = true;
-                    break;
-                }
-            }
-        }
-        if (!hasDhe) {
-            fail("A1-G1: the factory's ENABLED_CIPHERS has no TLS_DHE_ suite, so it was computed "
-                    + "under another provider: TLS context provider=" + provider
-                    + ", first entries=" + firstEntries(ciphers));
+            fail("A1-G3 (via factory static init): the factory's static initialiser could not run: " + e);
         }
     }
 
@@ -325,6 +327,8 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
      * M-E2-jdk showed that this observable reports what the factory sets). Control: the default factory's
      * createSocket_dnsHost_setsServerNameOnRealSocket. The layered shape is not asserted for the name:
      * on this provider a layered socket already carries the host before any factory step (U-065 probe).
+     * Since U-066 the same socket's suites are also compared with the allowed list as a literal (CR-014
+     * Check of Amendment 1, point 6).
      */
     @Test
     public void pinnedFactory_createSocket_implicit_setsDnsHostAsOnlyServerName_jdkProvider() throws Exception {
@@ -351,6 +355,10 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
                     + " in the default factory's order")
                     .that(Arrays.asList(socket.getEnabledCipherSuites()))
                     .containsExactlyElementsIn(Arrays.asList(reference.getEnabledCipherSuites())).inOrder();
+            assertWithMessage("U-066 AC-2 (a): cipher suites on the same socket after the server-name step,"
+                    + " the allowed list as recorded")
+                    .that(Arrays.asList(socket.getEnabledCipherSuites()))
+                    .containsExactlyElementsIn(ALLOWED_CIPHERS_BASELINE).inOrder();
         } finally {
             closeQuietly(socket);
             if (reference != null) {
@@ -528,6 +536,53 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
         }
     }
 
+    /**
+     * U-066 AC-1 (this provider), AC-3 (a): the default factory's direct and layered sockets enable exactly
+     * the ten allowed suites, in the allowed order. Preconditions (AC-1 (a)): this provider's own default
+     * socket enables DHE-RSA, DHE-DSS, ECDHE CBC with SHA-1 and CBC with SHA-256 or SHA-384 suites, and its
+     * list is not the allowed list. Nothing is provider-fixed here, so the TLS 1.3 suites in the result are
+     * the factory's (AC-1 (c)). On another provider the preconditions fail (AC-8 (d)).
+     */
+    @Test
+    public void createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes_jdkProvider()
+            throws Exception {
+        assertJdkDefaultsOfferPrunedSuites(defaultEnabledCiphers());
+        SSLSocket direct = hardenedSocket(DNS_HOST);
+        try {
+            assertAllowedCipherList("default factory, direct socket",
+                    Arrays.asList(direct.getEnabledCipherSuites()));
+        } finally {
+            closeQuietly(direct);
+        }
+        try (Layered layered = new Layered(
+                new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication()), DNS_HOST)) {
+            assertAllowedCipherList("default factory, layered socket",
+                    Arrays.asList(layered.socket.getEnabledCipherSuites()));
+        }
+    }
+
+    /**
+     * U-066 AC-2 (a) (this provider), AC-3 (a): the pinned-certificate factory's direct and layered sockets
+     * enable exactly the ten allowed suites, in the allowed order, against the literal. Preconditions as
+     * above.
+     */
+    @Test
+    public void pinnedFactory_createSocket_enabledCipherSuites_areExactlyTheAllowedList_bothShapes_jdkProvider()
+            throws Exception {
+        assertJdkDefaultsOfferPrunedSuites(defaultEnabledCiphers());
+        SSLSocket direct = pinnedSocket(DNS_HOST);
+        try {
+            assertAllowedCipherList("pinned factory, direct socket",
+                    Arrays.asList(direct.getEnabledCipherSuites()));
+        } finally {
+            closeQuietly(direct);
+        }
+        try (Layered layered = new Layered(pinnedFactory(), DNS_HOST)) {
+            assertAllowedCipherList("pinned factory, layered socket",
+                    Arrays.asList(layered.socket.getEnabledCipherSuites()));
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
@@ -664,11 +719,73 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
         }
     }
 
-    private static String firstEntries(String[] values) {
-        if (values == null) {
-            return "null";
+    /** The default-enabled cipher suites of an untouched default socket of this provider. */
+    private static List<String> defaultEnabledCiphers() throws Exception {
+        SSLSocket plain = defaultSocket();
+        try {
+            return Arrays.asList(plain.getEnabledCipherSuites());
+        } finally {
+            closeQuietly(plain);
         }
-        return Arrays.asList(values).subList(0, Math.min(values.length, CIPHER_ENTRIES_IN_MESSAGES))
-                .toString();
+    }
+
+    /** AC-1 (a) for this provider: the pruned categories it offers are in its default list, which is not the allowed list. */
+    private static void assertJdkDefaultsOfferPrunedSuites(List<String> defaults) {
+        assertWithMessage("precondition AC-1 (a): a TLS_DHE_RSA_ suite in the defaults; defaults=" + defaults)
+                .that(containsMatch(defaults, "TLS_DHE_RSA_", "")).isTrue();
+        assertWithMessage("precondition AC-1 (a): a TLS_DHE_DSS_ suite in the defaults; defaults=" + defaults)
+                .that(containsMatch(defaults, "TLS_DHE_DSS_", "")).isTrue();
+        assertWithMessage("precondition AC-1 (a): an ECDHE suite with CBC and SHA-1 in the defaults")
+                .that(containsMatch(defaults, "TLS_ECDHE_", "_CBC_SHA")).isTrue();
+        assertWithMessage("precondition AC-1 (a): a CBC suite with SHA-256 or SHA-384 in the defaults")
+                .that(containsMatch(defaults, "", "_CBC_SHA256") || containsMatch(defaults, "", "_CBC_SHA384"))
+                .isTrue();
+        assertWithMessage("precondition AC-1 (a): the provider's own list must not be the allowed list")
+                .that(defaults).isNotEqualTo(Arrays.asList(ALLOWED_CIPHERS_BASELINE));
+    }
+
+    /** AC-1, AC-2: exactly the allowed list, in order; AC-3 (a): no suite of W1 to W12. */
+    private static void assertAllowedCipherList(String label, List<String> enabled) {
+        assertWithMessage(label + ": the enabled cipher suites must be exactly the allowed list, in its order")
+                .that(enabled).containsExactlyElementsIn(ALLOWED_CIPHERS_BASELINE).inOrder();
+        for (String suite : enabled) {
+            assertWithMessage(label + ": AC-3 (a): " + suite + " matches a weak category")
+                    .that(weakCategories(suite)).isEmpty();
+        }
+    }
+
+    /**
+     * The weak categories of U-066 AC-3 that a name matches: W1 CBC, W2 SHA-1 MAC, W3 RSA key exchange, W4
+     * static ECDH, W5 DHE, W6 DES and 3DES, W7 DSS, W8 NULL, W9 anonymous, W10 export, W11 RC4, W12 MD5. The
+     * renegotiation signalling value is exempt by name: it is not a cipher.
+     */
+    private static List<String> weakCategories(String name) {
+        List<String> found = new ArrayList<>();
+        if ("TLS_EMPTY_RENEGOTIATION_INFO_SCSV".equals(name)) {
+            return found;
+        }
+        if (name.contains("_CBC_")) found.add("W1");
+        if (name.endsWith("_SHA")) found.add("W2");
+        if (name.startsWith("TLS_RSA_") || name.startsWith("SSL_RSA_")) found.add("W3");
+        if (name.startsWith("TLS_ECDH_")) found.add("W4");
+        if (name.startsWith("TLS_DHE_") || name.startsWith("SSL_DHE_")) found.add("W5");
+        if (name.contains("DES")) found.add("W6");
+        if (name.contains("_DSS_")) found.add("W7");
+        if (name.contains("_NULL_")) found.add("W8");
+        if (name.toLowerCase(java.util.Locale.ROOT).contains("_anon_")) found.add("W9");
+        if (name.contains("EXPORT")) found.add("W10");
+        if (name.contains("RC4")) found.add("W11");
+        if (name.contains("MD5")) found.add("W12");
+        return found;
+    }
+
+    /** True if a name in {@code names} starts with {@code prefix} and ends with {@code suffix}. */
+    private static boolean containsMatch(List<String> names, String prefix, String suffix) {
+        for (String name : names) {
+            if (name.startsWith(prefix) && name.endsWith(suffix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

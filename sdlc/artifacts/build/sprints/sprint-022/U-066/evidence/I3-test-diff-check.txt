@@ -1,0 +1,117 @@
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -19,0 +20 @@ import java.util.Arrays;
+@@ -20,0 +22 @@ import java.util.HashSet;
+@@ -30 +31,0 @@ import static org.junit.Assert.fail;
+@@ -32 +32,0 @@ import static org.mockito.Mockito.mock;
+@@ -39,2 +39,2 @@ import static org.mockito.Mockito.when;
+@@ -43,13 +43,13 @@ import static org.mockito.Mockito.when;
+@@ -59,18 +59,14 @@ import static org.mockito.Mockito.when;
+@@ -79 +75 @@ import static org.mockito.Mockito.when;
+@@ -81,17 +77,12 @@ import static org.mockito.Mockito.when;
+@@ -99 +89,0 @@ import static org.mockito.Mockito.when;
+@@ -101,6 +91,7 @@ import static org.mockito.Mockito.when;
+@@ -118,2 +109,23 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -146,2 +158,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -165,0 +178,64 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -176,2 +252,3 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -190,8 +267,4 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -202 +275,3 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -206 +281 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -212 +287 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -214 +289 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -232 +307,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -236,4 +312,4 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -242 +318 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -253 +329,3 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -257 +335 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -262 +340 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -267,2 +345,5 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -272,4 +353,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -290,5 +369,7 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -297,20 +378,8 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -318,6 +387,24 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -324,0 +412,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -326,12 +415,37 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -340,11 +454,17 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -352,2 +472,4 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -505,6 +627,11 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -513 +640,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -515 +643,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -518,0 +648,4 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -522 +655,14 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -526,4 +672,5 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -532 +679 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -534,3 +681,7 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -582 +733 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -590,2 +741,2 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -597 +748 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -656,0 +808,22 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -658,3 +831,3 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -662,15 +835,29 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -678,7 +865,51 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -686,9 +917,5 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -697,10 +924,8 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+@@ -709,2 +934 @@ public class DefaultTrustedSocketFactoryHardeningTest {
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -80 +80,4 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -118,0 +122,4 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -123,0 +131,3 @@ import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+@@ -136 +145,0 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -140,0 +150,9 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -171,3 +189,3 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -175 +193 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -177,17 +195 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -327,0 +330,2 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -353,0 +358,4 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -530,0 +539,47 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -667,3 +722,66 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+@@ -671,2 +789 @@ public class DefaultTrustedSocketFactoryJdkProviderTest {
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -19,0 +20 @@ import java.util.Arrays;
+@@ -78,0 +80,5 @@ import static org.junit.Assert.fail;
+@@ -114,0 +121,3 @@ import static org.junit.Assert.fail;
+@@ -125,6 +134,5 @@ import static org.junit.Assert.fail;
+@@ -146,0 +155,10 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
+@@ -328 +346,51 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
+@@ -339,0 +408,3 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
+@@ -361,0 +433,24 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
+@@ -457,2 +552,3 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
+@@ -470,8 +566,4 @@ public class DefaultTrustedSocketFactoryHandshakeTest {
+== app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java', LF will be replaced by CRLF the next time Git touches it
+@@ -47,2 +47,2 @@ import static org.junit.Assert.fail;
+@@ -54 +54 @@ import static org.junit.Assert.fail;
+@@ -79,0 +80,4 @@ import static org.junit.Assert.fail;
+@@ -112,0 +117,2 @@ import static org.junit.Assert.fail;
+@@ -284,0 +291,46 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -304,0 +357,10 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -334,0 +397,3 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+@@ -355,0 +421,20 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
+== app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java', LF will be replaced by CRLF the next time Git touches it
+@@ -43,0 +44,5 @@ import javax.net.ssl.SSLSocket;
+@@ -85 +90,2 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -92 +98 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -100 +106 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -113 +119,17 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -116 +138 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+@@ -131,0 +154,3 @@ public final class LoopbackTlsTestServer implements AutoCloseable {
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/PinnedCertificateSocketFactoryCreateSocketTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHandshakeTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryHardeningTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/DefaultTrustedSocketFactoryJdkProviderTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/test/java/com/zegoggles/smssync/mail/ssl/LoopbackTlsTestServer.java', LF will be replaced by CRLF the next time Git touches it
+ ...edCertificateSocketFactoryCreateSocketTest.java |  91 ++-
+ .../DefaultTrustedSocketFactoryHandshakeTest.java  | 126 +++-
+ .../DefaultTrustedSocketFactoryHardeningTest.java  | 656 ++++++++++++++-------
+ ...DefaultTrustedSocketFactoryJdkProviderTest.java | 173 +++++-
+ .../smssync/mail/ssl/LoopbackTlsTestServer.java    |  35 +-
+ 5 files changed, 812 insertions(+), 269 deletions(-)
+untouched-exit=0
+746
+ignore-exit=1
+old-names-exit=1
+prod-clean-exit=0

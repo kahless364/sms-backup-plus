@@ -1,0 +1,67 @@
+package com.zegoggles.smssync.mail.ssl;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.ConscryptMode;
+import org.robolectric.annotation.LooperMode;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+
+import static org.robolectric.annotation.ConscryptMode.Mode.OFF;
+import static org.robolectric.annotation.LooperMode.Mode.LEGACY;
+
+/** THROWAWAY probe for U-066 step I2 under the JDK provider (the JDK class's annotations). No handshake. */
+@RunWith(RobolectricTestRunner.class)
+@ConscryptMode(OFF)
+@LooperMode(LEGACY)
+public class U066JdkProbeTest {
+
+    static final String[] ALLOWED = U066ConscryptProbeTest.ALLOWED;
+    static final String[] AEAD12 = U066ConscryptProbeTest.AEAD12;
+
+    @Test
+    public void probe() throws Exception {
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(null, null, null);
+        out("provider", ctx.getProvider().getName());
+        SSLSocket s = (SSLSocket) ctx.getSocketFactory().createSocket();
+        out("default_count", String.valueOf(s.getEnabledCipherSuites().length));
+        out("default", String.join(",", s.getEnabledCipherSuites()));
+        out("supported_has_all_allowed",
+                String.valueOf(Arrays.asList(s.getSupportedCipherSuites()).containsAll(Arrays.asList(ALLOWED))));
+        s.setEnabledCipherSuites(ALLOWED);
+        out("set_allowed", "accepted " + String.join(",", s.getEnabledCipherSuites()));
+        s.setEnabledProtocols(new String[] {"TLSv1.2", "TLSv1.3"});
+        String[] before = s.getEnabledCipherSuites();
+        SSLParameters p = s.getSSLParameters();
+        p.setServerNames(Collections.singletonList(new SNIHostName("imap.right.test")));
+        s.setSSLParameters(p);
+        out("roundtrip_allowed_kept", String.valueOf(Arrays.equals(before, s.getEnabledCipherSuites())));
+        s.close();
+        SSLSocket a = (SSLSocket) ctx.getSocketFactory().createSocket();
+        a.setEnabledCipherSuites(AEAD12);
+        a.setEnabledProtocols(new String[] {"TLSv1.2", "TLSv1.3"});
+        out("set_aead12_only", "accepted " + String.join(",", a.getEnabledCipherSuites())
+                + " protocols=" + String.join(",", a.getEnabledProtocols()));
+        a.close();
+        SSLSocket e = (SSLSocket) ctx.getSocketFactory().createSocket();
+        try {
+            e.setEnabledCipherSuites(new String[0]);
+            out("set_empty", "accepted enabled_count=" + e.getEnabledCipherSuites().length);
+        } catch (Exception ex) {
+            out("set_empty", "threw " + ex.getClass().getName());
+        }
+        e.close();
+    }
+
+    private static void out(String key, String value) {
+        System.out.println("U066-PROBE j_" + key + "=" + value);
+    }
+}

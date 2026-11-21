@@ -44,14 +44,14 @@ import static org.junit.Assert.fail;
  *
  * <p>The pinned factory's server-name checks (U-063 AC-19, U-065 AC-4) are in
  * {@code DefaultTrustedSocketFactoryJdkProviderTest}: the default test provider reports no server name
- * whatever is set, as mutation M-E2 showed on 2026-11-17. Its cipher suites are also checked against the
- * recorded rule in {@code DefaultTrustedSocketFactoryHardeningTest} (U-065 AC-3 (b)).
+ * whatever is set, as mutation M-E2 showed on 2026-11-17. Its cipher suites are also checked against
+ * the allowed list in {@code DefaultTrustedSocketFactoryHardeningTest} and the JDK provider class (U-066 AC-2).
  *
  * <p><b>What the code does, and what these tests record.</b> The pinned factory builds a plain TLS context
  * with its own pinning trust manager and returns an unconnected socket or one layered over a plain socket.
  * Since U-065 it gives every socket the default factory's handling by calling the default factory's
  * {@code hardenSocket} and then its {@code setSniHost}: only TLS 1.2 and TLS 1.3 where the provider supports
- * them, the default factory's cipher-suite order and blocked list, and the host as server name for a DNS
+ * them, the default factory's allowed cipher suites in their order (since U-066), and the host as server name for a DNS
  * name. Decided by the product owner on 2026-11-20 (Record 8: nothing older than TLS 1.2, for both
  * factories; Record 9: cipher suites and server name "Same as default"; BUG-019, BUG-020). Until U-065 the
  * pinned path left the provider's defaults untouched, which the two AC-18 tests recorded. It still does not
@@ -77,6 +77,10 @@ import static org.junit.Assert.fail;
  *       against a server limited to TLS 1.1 or to TLS 1.0 the client refuses with an {@link SSLException}
  *       that is not a certificate rejection, and the server does not report {@code OK}. The server presents
  *       the enrolled certificate in all of them, so only the protocol can stop them.</li>
+ *   <li>U-066 AC-5, AC-6: the TLS 1.2 handshakes negotiate an allowed TLS 1.2 suite; against a server that
+ *       limits nothing the handshake negotiates TLS 1.3 with a TLS 1.3 suite; against a server limited to TLS 1.2 and
+ *       to one pruned suite the handshake fails without a certificate rejection and the server does not report
+ *       {@code OK}.</li>
  * </ul>
  *
  * <p><b>What they cannot prove.</b>
@@ -110,6 +114,8 @@ import static org.junit.Assert.fail;
  *   <li>U-065 AC-8: the TLS 1.2 tests break under M-E4 (the pin then fails); the refusal tests break when
  *       the floor is removed (M-P1/M-P8) or the pinned protocol handling is removed (M-P2), the STARTTLS
  *       ones also under M-P7.</li>
+ *   <li>U-066 AC-6: the pinned call to the shared step removed (M-X5 (i)), a pruned suite put back (M-X1 (a), (b)),
+ *       the allow filter removed (M-X2).</li>
  * </ul>
  *
  * <p><b>Global state.</b> None is changed. The pinned factory builds its own trust manager, so the vendored
@@ -282,6 +288,52 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
         assertPinnedHandshakeRefused(LoopbackTlsTestServer.Mode.STARTTLS, "TLSv1");
     }
 
+    /** U-066 AC-5 (b), pinned factory: a server that limits nothing; TLS 1.3 with a TLS 1.3 suite (a control). */
+    @Test
+    public void handshake_implicitTls_unrestrictedServer_negotiatesTls13WithAnAllowedSuite() throws Exception {
+        server = LoopbackTlsTestServer.start(LoopbackTlsTestServer.Mode.IMPLICIT_TLS,
+                serverContext(OTHER_HOST_CERT, OTHER_HOST_KEY_PKCS8, TRUSTED_CA_CERT));
+        SSLSocket ssl = connectPinned(LoopbackTlsTestServer.Mode.IMPLICIT_TLS);
+
+        ssl.startHandshake();
+        int data = ssl.getInputStream().read();
+
+        assertWithMessage("the byte the server writes after the handshake").that(data)
+                .isEqualTo(LoopbackTlsTestServer.PAYLOAD);
+        assertWithMessage("negotiated protocol").that(ssl.getSession().getProtocol()).isEqualTo("TLSv1.3");
+        assertWithMessage("negotiated suite (U-066 AC-5 (b))").that(TLS13_SUITES)
+                .contains(ssl.getSession().getCipherSuite());
+        assertWithMessage("server outcome").that(server.awaitOutcome()).isEqualTo("OK");
+    }
+
+    /** U-066 AC-6, implicit TLS: a server limited to TLS 1.2 and ECDHE with AES-CBC and SHA-1 is refused. */
+    @Test
+    public void handshake_implicitTls_serverLimitedToEcdheCbcSha_isRefused() throws Exception {
+        assertPinnedHandshakeRefusedByCipherPolicy(LoopbackTlsTestServer.Mode.IMPLICIT_TLS,
+                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+    }
+
+    /** U-066 AC-6, STARTTLS, ECDHE with AES-CBC and SHA-1. */
+    @Test
+    public void handshake_startTls_serverLimitedToEcdheCbcSha_isRefused() throws Exception {
+        assertPinnedHandshakeRefusedByCipherPolicy(LoopbackTlsTestServer.Mode.STARTTLS,
+                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+    }
+
+    /** U-066 AC-6, implicit TLS: a server limited to TLS 1.2 and RSA key exchange with AES-GCM is refused. */
+    @Test
+    public void handshake_implicitTls_serverLimitedToRsaKeyExchangeGcm_isRefused() throws Exception {
+        assertPinnedHandshakeRefusedByCipherPolicy(LoopbackTlsTestServer.Mode.IMPLICIT_TLS,
+                "TLS_RSA_WITH_AES_128_GCM_SHA256");
+    }
+
+    /** U-066 AC-6, STARTTLS, RSA key exchange with AES-GCM. */
+    @Test
+    public void handshake_startTls_serverLimitedToRsaKeyExchangeGcm_isRefused() throws Exception {
+        assertPinnedHandshakeRefusedByCipherPolicy(LoopbackTlsTestServer.Mode.STARTTLS,
+                "TLS_RSA_WITH_AES_128_GCM_SHA256");
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
@@ -301,6 +353,16 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
 
     private static final String[] ALLOWED_PROTOCOLS_BASELINE = {"TLSv1.2", "TLSv1.3"};
     private static final String[] OLD_PROTOCOLS = {"TLSv1", "TLSv1.1", "SSLv3", "SSLv2Hello"};
+
+    /** The TLS 1.3 suites of the factory's allowed list (U-066). */
+    private static final List<String> TLS13_SUITES = Arrays.asList(
+            "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256");
+
+    /** The TLS 1.2 suites of the factory's allowed list (U-066): ECDHE with AES-GCM or ChaCha20-Poly1305. */
+    private static final List<String> AEAD12_SUITES = Arrays.asList(
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256");
 
     private static DefaultTrustedSocketFactory defaultFactory() {
         return new DefaultTrustedSocketFactory(RuntimeEnvironment.getApplication());
@@ -332,6 +394,9 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
         assertWithMessage("the byte the server writes after the handshake").that(data)
                 .isEqualTo(LoopbackTlsTestServer.PAYLOAD);
         assertWithMessage("negotiated protocol").that(ssl.getSession().getProtocol()).isEqualTo(protocol);
+        assertWithMessage("negotiated suite at " + protocol + " (U-066 AC-5 (a))")
+                .that("TLSv1.3".equals(protocol) ? TLS13_SUITES : AEAD12_SUITES)
+                .contains(ssl.getSession().getCipherSuite());
         assertWithMessage("server outcome").that(server.awaitOutcome()).isEqualTo("OK");
     }
 
@@ -349,6 +414,26 @@ public class PinnedCertificateSocketFactoryCreateSocketTest {
             assertWithMessage("the refusal must not be a certificate rejection; direct cause="
                     + e.getCause()).that(e.getCause() instanceof CertificateException).isFalse();
             assertWithMessage("server outcome against a client that refused " + protocol)
+                    .that(server.awaitOutcome()).isNotEqualTo("OK");
+        }
+    }
+
+    /** U-066 AC-6: the enrolled certificate, a server limited to TLS 1.2 and one pruned suite; the handshake must fail. */
+    private void assertPinnedHandshakeRefusedByCipherPolicy(LoopbackTlsTestServer.Mode mode, String prunedSuite)
+            throws Exception {
+        server = LoopbackTlsTestServer.start(mode,
+                serverContext(OTHER_HOST_CERT, OTHER_HOST_KEY_PKCS8, TRUSTED_CA_CERT),
+                new String[] {"TLSv1.2"}, new String[] {prunedSuite});
+        SSLSocket ssl = connectPinned(mode);
+
+        try {
+            ssl.startHandshake();
+            fail("the handshake against a server limited to " + prunedSuite + " must be refused, but it"
+                    + " completed with " + ssl.getSession().getCipherSuite());
+        } catch (SSLException e) {
+            assertWithMessage("the refusal must not be a certificate rejection; direct cause="
+                    + e.getCause()).that(e.getCause() instanceof CertificateException).isFalse();
+            assertWithMessage("server outcome against a client that offers none of the server's suites")
                     .that(server.awaitOutcome()).isNotEqualTo("OK");
         }
     }

@@ -1,0 +1,22 @@
+2026-11-21T08:15:58Z
+b9fd172fbc397ed43c451379a2c41a9cae1fc605
+sdlc/modernization-plan
+base-ancestor-exit=0
+sdlc/artifacts/build/change-records/CR-014-cntr-001-state-protocol-floor-and-cipher-handling.md
+s0-2-commit-files-end
+porcelain-end
+43e5a78ead7c4c32a6af2734514ab8ba5d5ccbd3
+21cc5f345977ab6fa161b2aa6925a04aea6a1479
+a0899262f0d858dd399ba078c21311fc2d763cab
+43e5a78ead7c4c32a6af2734514ab8ba5d5ccbd3
+21cc5f345977ab6fa161b2aa6925a04aea6a1479
+a0899262f0d858dd399ba078c21311fc2d763cab
+732
+toolchainVersion=25
+head=1 wt=1 :: ^status: approved
+head=1 wt=1 :: ^### Amendment 1
+head=1 wt=1 :: Check of Amendment 1
+head=2 wt=2 :: Every name on the allowed list is of one of these forms
+head=2 wt=2 :: removing from it every TLS 1.3 suite
+head=2 wt=2 :: Which suites the platform enables or places itself
+cr14-wt-diff-end

@@ -54,7 +54,7 @@ import java.util.Arrays;
  * <p>Protocols, cipher suites and server name: every socket this factory returns, direct or
  * layered, gets exactly the default factory's handling, by calling the same two steps of
  * {@code DefaultTrustedSocketFactory} in the same order: {@code hardenSocket} (only TLS 1.2 and
- * newer, where the platform supports them; the same cipher-suite order and blocked list), then
+ * newer, where the platform supports them; the same allowed cipher suites, in the same order), then
  * {@code setSniHost} (the host as server name for a DNS name; none for an IP address or a blank
  * host; none, without failure, for a name the platform rejects). Decided by the product owner on
  * 2026-11-20 (Records 8 and 9; BUG-019, BUG-020). These steps do not touch the trust manager: the

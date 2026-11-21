@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,50 +35,33 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
     protected static final String[] ENABLED_CIPHERS;
     protected static final String[] ENABLED_PROTOCOLS;
 
-    protected static final String[] ORDERED_KNOWN_CIPHERS = {
+    /**
+     * The only cipher suites this factory ever enables, in this order, and only those of them that the
+     * platform enables by default (story U-066: finding F-1 of the U-065 security review; product owner
+     * decision Record 11, answer 2; the orchestrator's rulings of 2026-11-21 under Record 12). Each gives
+     * forward secrecy and authenticated encryption: first the three TLS 1.3 suites, in the order in which
+     * Conscrypt, the Android provider, lists them; then the four TLS 1.2 ECDHE suites with AES-GCM,
+     * strongest first and RSA before ECDSA, the order used before U-066; then the two TLS 1.2 ECDHE suites
+     * with ChaCha20-Poly1305; last the renegotiation signalling value, which is not a cipher and is kept
+     * as the platform lists it. A suite not in this list is never enabled, including a suite the factory
+     * does not know, so a later suite needs an entry here before it is used, as a later protocol version
+     * needs one in {@link #ALLOWED_PROTOCOLS}. Until U-066 the factory removed a blocked list, placed a
+     * preferred list first and kept every other suite the platform enabled. Sources: RFC 8446 Appendix B.4
+     * and section 9.1 (the TLS 1.3 suites); RFC 9325 sections 4.1 and 4.2 (the four AES-GCM suites, which
+     * it recommends); RFC 7905 section 2 (the two ChaCha20-Poly1305 suites, beyond RFC 9325's four);
+     * RFC 5746 section 3.3 (the signalling value). The TLS 1.2 order is inherited, not an RFC's.
+     */
+    protected static final String[] ALLOWED_CIPHERS = {
+            "TLS_AES_128_GCM_SHA256",
+            "TLS_AES_256_GCM_SHA384",
+            "TLS_CHACHA20_POLY1305_SHA256",
             "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
             "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-            "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
-            "TLS_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
-            "TLS_RSA_WITH_AES_128_CBC_SHA",
-    };
-
-    protected static final String[] BLACKLISTED_CIPHERS = {
-            "SSL_RSA_WITH_DES_CBC_SHA",
-            "SSL_DHE_RSA_WITH_DES_CBC_SHA",
-            "SSL_DHE_DSS_WITH_DES_CBC_SHA",
-            "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-            "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_RSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-            "SSL_RSA_WITH_RC4_128_SHA",
-            "SSL_RSA_WITH_RC4_128_MD5",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
     };
 
     protected static final String[] ORDERED_KNOWN_PROTOCOLS = {
@@ -107,7 +91,9 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
             sslContext.init(null, null, null);
             SSLSocketFactory sf = sslContext.getSocketFactory();
             SSLSocket sock = (SSLSocket) sf.createSocket();
-            enabledCiphers = sock.getEnabledCipherSuites();
+            // Only the allowed suites that the platform enables by default, in the allowed
+            // order (U-066): see ciphersToEnable.
+            enabledCiphers = ciphersToEnable(sock);
 
             /*
              * Retrieve all supported protocols, not just the (default) enabled
@@ -121,8 +107,7 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
                     "protocols", e);
         }
 
-        ENABLED_CIPHERS = (enabledCiphers == null) ? null :
-                reorder(enabledCiphers, ORDERED_KNOWN_CIPHERS, BLACKLISTED_CIPHERS);
+        ENABLED_CIPHERS = enabledCiphers;
 
         ENABLED_PROTOCOLS = enabledProtocols;
     }
@@ -150,8 +135,8 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
             }
         }
 
-        // Add unknown items at the end. This way security won't get worse when unknown ciphers
-        // start showing up in the future.
+        // Add unknown items at the end, in their original order. Since U-066 only
+        // protocolsToEnable calls this, and it then keeps only ALLOWED_PROTOCOLS.
         result.addAll(unknown);
 
         return result.toArray(new String[result.size()]);
@@ -182,6 +167,27 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
             }
         }
         return enabled.toArray(new String[enabled.size()]);
+    }
+
+    /**
+     * The cipher suites this factory enables on {@code socket}: those of {@link #ALLOWED_CIPHERS} that the
+     * platform enables by default on it ({@code getEnabledCipherSuites()}, never the supported suites, so
+     * the factory never turns on a suite the platform leaves off), in the order of
+     * {@link #ALLOWED_CIPHERS}. Every other suite stays off, whatever its name. If the platform enables
+     * none of the allowed suites, the result is empty and no other suite is used instead (fail closed);
+     * what a platform then does with the empty list, and whether a handshake can complete, is the
+     * platform's (CR-014, "Not stated"). The two emulators measured for U-066 (Android 11 and 16) enable
+     * all of the allowed suites by default.
+     */
+    protected static String[] ciphersToEnable(SSLSocket socket) {
+        List<String> offered = Arrays.asList(socket.getEnabledCipherSuites());
+        List<String> suites = new ArrayList<String>();
+        for (String allowed : ALLOWED_CIPHERS) {
+            if (offered.contains(allowed)) {
+                suites.add(allowed);
+            }
+        }
+        return suites.toArray(new String[suites.size()]);
     }
 
     private Context context;
@@ -228,15 +234,13 @@ public class DefaultTrustedSocketFactory implements TrustedSocketFactory {
     }
 
     /**
-     * Applies the given lists. A null {@code ciphers} leaves the platform's cipher suites. A null
-     * {@code protocols} (the lists could not be computed at class initialisation) does not leave
-     * the platform's protocols: the list is computed from {@code sock} itself, so the TLS 1.2
-     * floor still applies (Record 8).
+     * Applies the given lists. A null list (the lists could not be computed at class initialisation)
+     * does not leave the platform's suites or protocols: each is computed from {@code sock} itself, so
+     * the allowed suites (U-066) and the TLS 1.2 floor (Record 8) still apply. If that computation
+     * throws, the exception leaves the calling {@code createSocket} and no socket is returned.
      */
     protected static void hardenSocket(SSLSocket sock, String[] ciphers, String[] protocols) {
-        if (ciphers != null) {
-            sock.setEnabledCipherSuites(ciphers);
-        }
+        sock.setEnabledCipherSuites(ciphers != null ? ciphers : ciphersToEnable(sock));
         sock.setEnabledProtocols(protocols != null ? protocols : protocolsToEnable(sock));
     }
 

@@ -1,0 +1,7 @@
+U063-DAEMON-JVM: java.version=25.0.5.1
+> Task :app:assembleDebug
+> Task :app:testDebugUnitTest
+> Task :app:jacocoTestCoverageVerification
+> Task :app:assembleRelease
+BUILD SUCCESSFUL in 7m 25s
+exit=0
