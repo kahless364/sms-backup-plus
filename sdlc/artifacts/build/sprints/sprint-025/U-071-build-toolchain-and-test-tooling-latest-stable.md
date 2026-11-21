@@ -57,7 +57,8 @@ pipeline: ''
 domain: modernization
 requirement_source: authored
 alignment_audit: passed
-updated_at: '2026-11-21T13:12:35.323Z'
+updated_at: '2026-11-21T14:04:17.888Z'
+current_build_phase: implementation
 ---
 
 # U-071: Move the Build Toolchain, the Test Tooling and the CI Action Versions to the Latest Stable Release of Each
@@ -360,6 +361,14 @@ Risks (design Risks 3, 5, 6, 7, 8, 9, 10, 12, 13): (1) the Gradle/AGP/Kotlin set
 - **Scope Concerns 3, 4, 5, 7, 8, 9 and 10:** acknowledged as the story states them. A forced test edit stops the story for a Solution Architect amendment; it is never made silently.
 - **Device and CI criteria that need the product owner (Scope Concern 6; IC-5, IC-6):** the story does not wait. Each is recorded "not run: needs the product owner's decision" (items PO-A and PO-B of Record 15, and PO-G of Record 17, which is the design's PO-3) with what is and is not claimed without it, and QA judges it "not applicable until decided", not "failed". The emulator `Pixel_4_2` (API 30) is not started for this story unless the owner allows it (item PO-H); the optional API 30 run is otherwise "not run". IC-4 (launch smoke on `Pixel_9_Pro`) is inside the standing authorisation and is run by the orchestrator.
 - **Fallbacks:** if a fallback of the design (F1 to F5) fires, the developer stops at that increment and reports; the orchestrator records it for the product owner before the story closes.
+
+**Rulings on the plan's scope concerns (2026-11-21; decision appendix, Record 19, rulings 48 to 51).**
+
+- **SC-P1 (the shrinker's rule file `configuration.txt`):** a difference at an increment is accepted and recorded when the set of kept names is equal to the previous increment's and every changed rule comes from the raised component's own shipped rules (the developer names the source of each changed rule). Any other difference stops the story.
+- **SC-P2 (the throwaway TLS provider probe):** allowed as planned: copied in and deleted within the same increment, never committed, with the proof that no probe file is left.
+- **SC-P3, SC-P4, SC-P5:** as the plan states them (the generated-file list equals the previous increment's from the Kotlin increment on; only the pre-specified forced edits are made and any other forced production fix stops for an exact edit from the Solution Architect; "no `org.gradle.java.home` anywhere" means it is not set in any properties, Gradle, wrapper or CI file).
+- **The `worker` package's coverage floor:** story U-069 writes 0.90 (ruling 47), which leaves one spare line at 16 counted lines. The plan's statement that the package has zero spare lines is superseded; its stop rule (never lower a floor) stands.
+- **Quotes and checksums (Q-1 to Q-12):** supplied by the orchestrator in `sdlc/artifacts/build/research/2026-11-21-u071-quote-supplement.md` before the build starts; the plan and the developer fetch nothing.
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->

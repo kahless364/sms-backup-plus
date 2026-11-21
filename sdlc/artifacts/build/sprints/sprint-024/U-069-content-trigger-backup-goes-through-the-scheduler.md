@@ -247,6 +247,8 @@ For QA. Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew 
 - **Start commit:** the commit that closes story U-068 (subject "U-068 done ..."). The developer reads it at the baseline step.
 - **A behaviour this story does not change, measured on 2026-11-21:** after the content trigger fires once it cannot fire again for about fifteen minutes, and the scheduler can hold the app's jobs back when the app has not been used. It is BUG-025 (`sdlc/artifacts/stories/BUG-025-incoming-sms-backup-delayed-by-trigger-period-and-job-quota.md`; record `sdlc/artifacts/build/research/2026-11-21-incoming-backup-delay-measurement.md`). The orchestrator takes it into account in the emulator check IC-3: the app is opened first, and the test SMS is sent after a fresh registration, so that the trigger can fire.
 
+**Correction of the coverage floor (2026-11-21; decision appendix, Record 19, ruling 47).** The floor of the `worker` package is the highest 0.05 step that leaves at least one spare line at the measured size: with 16 counted lines at 100 percent it is 0.90, not 0.95 (0.95 would still need every line). The developer was told while the build was running; the plan's text still says 0.95 and is read as corrected by this ruling.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 

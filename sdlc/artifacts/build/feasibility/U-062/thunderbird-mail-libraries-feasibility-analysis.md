@@ -2430,3 +2430,28 @@ Recorder: Orchestrator.
 | 46 | U-069 | The coverage floor of the worker package, which will measure 100 percent because generated classes are filtered out of the measurement | The floor is the measured ratio rounded down to 0.05, and one step lower (0.95) where the measurement is 1.00, so that a counting difference in a later coverage-tool version does not fail the gate when no story may lower a floor | Orchestrator, on the plan review's finding | Set the floor to 1.00 |
 
 Recorder: Orchestrator.
+
+### Record 19 — 2026-11-21 (story U-068 done; rulings on the plans of U-069 and U-071; two bugs found on the way)
+
+Story U-068 (minSdk 24) passed QA on 2026-11-21 and is done (seven increments, the last `0d490997`; close-out commit with the subject "U-068 done: ...").
+
+**Further rulings by the orchestrator under Record 12** (continuing Records 13 to 18):
+
+| # | Story | Question | Ruling | On whose recommendation | To reverse it |
+|---|-------|----------|--------|-------------------------|---------------|
+| 47 | U-069 | Ruling 46 set the coverage floor of the worker package at 0.95 under a measured 100 percent, to leave room for a counting difference in a later coverage-tool version. The toolchain plan showed that with 16 counted lines 0.95 still needs every line, so it leaves no room | Ruling 46 is corrected: the floor is the highest 0.05 step that leaves at least one spare line at the measured size. For 16 lines at 100 percent that is 0.90 | Solution Architect (the U-071 plan's finding) | Set it to 0.95 or 1.00 |
+| 48 | U-071 | The packaged build's rule file for code shrinking will probably differ after the build-plugin and library raises, because each ships its own rules; the story makes any difference a stop | A standing rule: a difference is accepted and recorded when the set of kept names is equal and every changed rule comes from the raised component's own rules. Anything else stops the story | Solution Architect (the plan) | Stop at every difference |
+| 49 | U-071 | A throwaway test that reads which TLS provider the tests run on, copied in and deleted at the first and one later increment and never committed | Allowed, as stories U-066 and U-068 did | Solution Architect (the plan) | Remove the probe |
+| 50 | U-071 | The list of generated source files after the code-generation tool is raised; forced production fixes; the reading of "no fixed Java home anywhere" | As the plan states them: the list must equal the previous increment's from the Kotlin increment on; only the fixes the design names are made, any other stops for an exact edit from the Solution Architect; the phrase means "not set in any properties, build, wrapper or CI file" | Solution Architect (the plan) | Overrule before the build |
+| 51 | U-071 | The vendor quotes and the two checksums the plan needs | The orchestrator supplies them in a supplement to the research file, read from the vendors' own pages on the planning date | Ruling 30 | Not applicable |
+| 52 | BUG-025, BUG-026 | Two defects found on 2026-11-21 while story U-069 was planned and measured by the orchestrator on the emulator: an incoming SMS can wait a long time for its automatic backup (the content trigger can fire only once in about fifteen minutes, and the system holds an unused app's jobs back); and choosing "Never" for the regular schedule appears to schedule a backup every fifteen minutes | Both are raised as bugs with the measurement record. Neither is fixed by story U-069. The orchestrator places their fixes after the Solution Architect's approach is written | Solution Architect (plan gates of U-069); Requirements Analyst | Not applicable |
+| 53 | U-068 | The device check on Android 7.0 | Recorded "not run: needs the product owner's decision" (item PO-A), as ruling 19 provides; QA judged it not applicable until decided | Ruling 19 | The product owner allows the image; the check is then run |
+
+**Held for the product owner, in addition to Records 15 and 17** (none blocks the work now in progress):
+
+| Item | Question | Recommendation on file | Blocks |
+|------|----------|------------------------|--------|
+| PO-I | How soon should an incoming SMS be backed up, and what should the app promise (BUG-025): keep "about a minute", accept up to about a quarter of an hour and say so, or another figure. The app cannot guarantee any figure when it has not been opened for a long time, because the system limits background work for unused apps | To be given with the Solution Architect's approach in BUG-025 | The shape of the BUG-025 fix |
+| PO-J | The same question as PO-C seen from BUG-025: restoring the SMS-received path would let every SMS start its backup at once, at the cost of a permission prompt; it does not help with the system's limit for unused apps | As PO-C until BUG-025's approach says otherwise | The shape of the BUG-025 fix |
+
+Recorder: Orchestrator.
