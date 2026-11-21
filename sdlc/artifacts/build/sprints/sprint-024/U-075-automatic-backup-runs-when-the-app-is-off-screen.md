@@ -51,7 +51,8 @@ title: Run automatic backups as ordinary background work so that they succeed wh
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-029
-updated_at: '2026-11-21T16:28:11.148Z'
+updated_at: '2026-11-21T17:21:40.864Z'
+current_build_phase: implementation
 ---
 
 # U-075: Run Automatic Backups as Ordinary Background Work So That They Succeed When the App Is Off Screen, Keep the Foreground Notification Only for Backups and Restores Started From the Screen, and Let a Refused Foreground Start Continue Instead of Failing the Run
@@ -248,6 +249,18 @@ Read by the Solution Architect in the bug, not run here: bug Description items 2
 <!-- Added by agents during build -->
 
 None yet. Record here: the Start commit and counts; the outcome of P-1 (the refusal level and how it was established offline), P-2 (the reading of a refused manual run or restore) and P-3 (the mapping of names and lines); the failing output at Start for the red tests; the helper's catch for U-074's IC-1 (IC-2); the stale comment in `BackupWorkerIntegrationTest.kt`; the bug's Not verified 5 as still not verified.
+
+**Rulings on the plan's scope concerns (orchestrator, 2026-11-21; decision appendix, Record 23).** They are binding for the plan gates, the developer and the device check.
+
+- **SC-1 (what the device evidence may hold):** no screenshot and no UI dump goes into the repository, because the owner's address is on that screen. The evidence carries the sanitised notification lines of `dumpsys notification` and the app's log lines.
+- **SC-2 (class loading below API 31):** the proof is the unit test at API 24, the dex check that the API 31 class is named only in the holder object, and, if it can be done without an account and without a password, a run on the emulator `Pixel_API_24` by the orchestrator. If the device step needs a configured account, it is recorded "not run: needs the owner to enter the app password" and is not a failure.
+- **SC-3 (device step (v), which needs airplane mode):** not run. Airplane mode is a system setting, and system settings on the emulator are the owner's to change. Recorded "not run: needs a system setting".
+- **SC-4 (the sender in the tests is a known contact):** accepted. The existing log line that writes an address for an unknown sender is not this story's subject (it has its own low-severity item); AC-2's check on the refusal warning stands as written.
+- **SC-5 (test SDK level):** the refusal tests run at SDK 35, with SDK 34 as the one planned fallback. The story's middle fallback (31 to 33) does not exist offline and is dropped. If neither 35 nor 34 runs, the developer stops before any production edit.
+- **SC-6 (the plan is stricter than the story):** accepted: the extra tests, the injection M-F7, the informational probe M-X1 and the dex check are part of the build.
+- **SC-7 (two new test files; shared helpers and the API 24 class in the backup test file):** accepted.
+- **SC-8 (the notification's title):** the code's title is "Backing up"; where this story says "Backup" for the title it is read as the code's text. Nothing changes in the code.
+- **SC-9 (checking the mailbox):** not done; it would need the owner. The log line that the append was confirmed is the evidence, as in story U-069's device check.
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
