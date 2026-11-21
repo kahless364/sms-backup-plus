@@ -162,6 +162,9 @@ Meanwhile, content-triggered and SMS-receiver backups (`INCOMING`) still run. Ea
 
 ## Evidence
 
+**Observed on a device, 2026-11-21 (added by the orchestrator; decision appendix, Record 21, ruling 62).** The restart procedure was run twice on the Android 16 emulator `Pixel_9_Pro` (debug build of story U-068, auto backup on, regular schedule at its default, no setting changed). After each restart the app logged `bootup` and `WorkManagerScheduler.scheduleBootup: enqueued bootup REGULAR with 60s delay`; the system's scheduler then held two jobs for the app, the content trigger and one one-time job, and no periodic job; after the boot backup had ended, WorkManager's diagnostics listed the content trigger as the only enqueued work. Record: `sdlc/artifacts/build/research/2026-11-21-background-backup-and-boot-observation.md`. The same runs showed that the boot backup itself fails when it starts off screen; that is BUG-029 and is fixed before this bug's story.
+
+
 | Evidence | What it shows |
 |---|---|
 | `receiver/BootReceiver.java:24`, `:31-34`; `AndroidManifest.xml:62`, `:141-147` | Boot path; the only caller |
