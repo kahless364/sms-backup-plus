@@ -1,6 +1,7 @@
 ---
 type: story
-status: ready
+status: planned
+sprint: '024'
 artifact_type: user-story
 priority: high
 complexity: medium
@@ -50,7 +51,7 @@ title: Run automatic backups as ordinary background work so that they succeed wh
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-029
-updated_at: '2026-11-21T16:24:41.805Z'
+updated_at: '2026-11-21T16:26:28.031Z'
 ---
 
 # U-075: Run Automatic Backups as Ordinary Background Work So That They Succeed When the App Is Off Screen, Keep the Foreground Notification Only for Backups and Restores Started From the Screen, and Let a Refused Foreground Start Continue Instead of Failing the Run

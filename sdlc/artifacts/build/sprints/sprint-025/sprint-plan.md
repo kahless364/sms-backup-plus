@@ -16,6 +16,15 @@ updated_at: '2026-11-21T13:12:34.179Z'
 - Raise the runtime libraries to latest stable, one family at a time, and show that backup, restore, scheduling and the default-SMS role behave as before (U-073, story S4, REQ-MODERNIZATION-016).
 - This follows the product owner's goal "get the app completed" and the order ruled in Records 15 to 18 of the decision appendix of `sdlc/artifacts/build/feasibility/U-062/thunderbird-mail-libraries-feasibility-analysis.md`: BUG-024's fix after U-070 and before the toolchain story, then U-071, U-072, U-073.
 
+## Revision, 2026-11-21
+
+BUG-029 (every automatic backup that starts off screen fails on Android 12 and later) is fixed by story U-075, which the orchestrator's ruling 60 (decision appendix Record 21) places directly after U-070 and before U-074. U-075 is now wave 4 of sprint 024. Effects on this sprint:
+
+- **Sprint 025 now starts after U-075 (sprint 024, wave 4) is done**, not after U-070. The start condition below is read with "U-075" in place of "U-070" as the last story of sprint 024. U-074's and U-071's dependencies on U-070 are met earlier than that; the sprint as a whole waits for U-075.
+- **U-074's plan must list the new helper's catch as "left on purpose".** U-075 adds one `catch (e: IllegalStateException)` in `WorkerForeground.kt` (rethrows a `CancellationException` first, continues only on `ForegroundServiceStartNotAllowedException`). U-074's search for catch sites (its IC-1) will find it; it is "left on purpose" (U-075 IC-2, hand-over H-1 to the orchestrator). U-074's story file is not edited by this revision.
+- **Expected, not planned:** three further stories are expected to be inserted before U-073 once they are written: one for BUG-026 and BUG-027 with one change record against the scheduler contract; a text-only story for BUG-025; and a story removing the SMS receiver with its change record. No story IDs and no waves are assigned to them here. The waves, stories and dependencies of this sprint are unchanged until those stories exist; a later revision places them.
+- The story files of this sprint are not moved or edited by this revision.
+
 ## Start condition
 
 Sprint 025 does not make any code change and does not run Gradle until sprint 024 is completed (U-068, U-069 and U-070 built, reviewed and closed). Planning and the plan gates of this sprint's stories (documents only) may be prepared earlier, as was done for sprint 024. U-074 depends on U-067 (done) and U-070 (sprint 024); U-071 on U-067, U-068 and, by ruling, U-069 and U-070 (its start condition SC-9); U-072 on U-071 and U-068; U-073 on U-067 to U-072.

@@ -69,6 +69,27 @@
         "skip_reason": null,
         "depends_on": ["U-069"],
         "parallel_group": "wave-3"
+      },
+      {
+        "step_id": "U-075",
+        "agent": "story-build-manager",
+        "agent_model": null,
+        "expected_artifacts": [
+          "sdlc/artifacts/build/sprints/sprint-024/U-075/plan.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-075/implementation-log.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-075/review-code.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-075/review-security.md",
+          "sdlc/artifacts/build/sprints/sprint-024/U-075/qa-results.md"
+        ],
+        "gate": {
+          "name": "wave-gate",
+          "verdict_type": "audit_gate",
+          "max_iterations": 1
+        },
+        "enabled": true,
+        "skip_reason": null,
+        "depends_on": ["U-070"],
+        "parallel_group": "wave-4"
       }
     ],
     "checkpoints": [
@@ -104,6 +125,17 @@
             "severity": "blocking"
           }
         ]
+      },
+      {
+        "checkpoint_id": "wave-4-complete",
+        "after_steps": ["U-075"],
+        "gates": [
+          {
+            "gate_id": "wave-4-gate",
+            "agent": "deterministic",
+            "severity": "blocking"
+          }
+        ]
       }
     ],
     "overrides_applied": {
@@ -114,9 +146,9 @@
     "metadata": {
       "created_by": "sprint-manager",
       "created_at": "2026-11-21T10:30:00Z",
-      "context_summary": "Sprint sprint-024 with 3 stories across 3 waves (strictly serial); starts after sprint 023 is completed",
-      "plan_revision": 1,
-      "re_consultation_reason": null,
+      "context_summary": "Sprint sprint-024 with 4 stories across 4 waves (strictly serial); starts after sprint 023 is completed",
+      "plan_revision": 2,
+      "re_consultation_reason": "Revision, 2026-11-21: U-075 (fix for BUG-029, orchestrator ruling 60) added as wave 4 after U-070; entries of U-068, U-069 and U-070 unchanged",
       "file_overlap_flags": []
     }
   }
