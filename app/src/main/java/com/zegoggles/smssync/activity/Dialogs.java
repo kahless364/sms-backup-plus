@@ -22,7 +22,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -167,9 +166,7 @@ public class Dialogs {
 
                 @Override @SuppressWarnings("deprecation") public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
-                    if (scrollPosition > 0 &&
-                        ABOUT_HTML.equals(url) &&
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                    if (scrollPosition > 0 && ABOUT_HTML.equals(url)) {
                         view.setScrollY((int) (view.getContentHeight() * view.getScale() * scrollPosition));
                     }
                 }

@@ -1,0 +1,12 @@
+debug/app-debug entries=536 so=0 dex=23 size=6459683 sha256=a6c119aa2922f56b27e9daa8bb8fd2c31c34303ad4403863a4507aceb1f5d553
+release/app-release-unsigned entries=516 so=0 dex=1 size=1937712 sha256=9522922213a4ebd567b9f474888bb806a4a000cf5616ab2a6fc7bb423f6b71ea
+mapping-lines=91896 kept-names=48
+self-mapped com.zegoggles.smssync.App=1
+self-mapped com.zegoggles.smssync.activity.MainActivity=1
+self-mapped com.zegoggles.smssync.receiver.SmsBroadcastReceiver=1
+self-mapped com.zegoggles.smssync.receiver.BootReceiver=1
+self-mapped com.zegoggles.smssync.receiver.PackageReplacedReceiver=1
+self-mapped com.zegoggles.smssync.receiver.BackupBroadcastReceiver=1
+self-mapped com.zegoggles.smssync.service.BackupWorker=1
+self-mapped com.zegoggles.smssync.service.RestoreWorker=1
+self-mapped com.zegoggles.smssync.worker.BackupTriggerWorker=1

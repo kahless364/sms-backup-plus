@@ -1,6 +1,9 @@
 package com.zegoggles.smssync.compat;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,5 +45,17 @@ public class SmsReceiverTest {
     @Test @Config(sdk = Build.VERSION_CODES.Q)
     public void testIsSmsBackupDefaultSmsApp_q_usesRoleManager() {
         assertThat(SmsReceiver.isSmsBackupDefaultSmsApp(RuntimeEnvironment.application)).isFalse();
+    }
+
+    @Test
+    public void testEnableThenDisable_togglesReceiverComponent() {
+        Context context = RuntimeEnvironment.application;
+        ComponentName component = new ComponentName(context, SmsReceiver.class);
+        SmsReceiver.enable(context);
+        assertThat(context.getPackageManager().getComponentEnabledSetting(component))
+                .isEqualTo(PackageManager.COMPONENT_ENABLED_STATE_ENABLED);
+        SmsReceiver.disable(context);
+        assertThat(context.getPackageManager().getComponentEnabledSetting(component))
+                .isEqualTo(PackageManager.COMPONENT_ENABLED_STATE_DISABLED);
     }
 }

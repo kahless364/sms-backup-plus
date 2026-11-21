@@ -1,13 +1,11 @@
 package com.zegoggles.smssync.calendar;
 
-import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.CalendarContract;
 import androidx.annotation.NonNull;
 import android.util.Log;
@@ -20,7 +18,6 @@ import java.util.TimeZone;
 import static com.zegoggles.smssync.App.LOCAL_LOGV;
 import static com.zegoggles.smssync.App.TAG;
 
-@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class CalendarAccessorPost40 implements CalendarAccessor {
 
     private ContentResolver resolver;

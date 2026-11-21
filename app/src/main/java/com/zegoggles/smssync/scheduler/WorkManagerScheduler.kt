@@ -17,7 +17,6 @@ package com.zegoggles.smssync.scheduler
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import androidx.work.*
 import androidx.work.PeriodicWorkRequest
@@ -55,9 +54,9 @@ import javax.inject.Inject
  *   [ListenableWorker.Result.failure] when effective delay would exceed 300s). This is not
  *   implementable here because the WorkManager API does not provide a cap parameter.
  *
- * - **INV-4 content-URI trigger**: API 24+ uses [Constraints.Builder.addContentUriTrigger]
- *   with [triggerForDescendants = true]; below API 24 the broadcast path calls
- *   [scheduleIncoming] instead. The two-stage debounce is preserved: the triggered
+ * - **INV-4 content-URI trigger**: [Constraints.Builder.addContentUriTrigger] with
+ *   `triggerForDescendants = true`, on every supported level (minSdk 24; no version branch,
+ *   CNTR-MODERNIZATION-004 v3). The two-stage debounce is preserved: the triggered
  *   [BackupTriggerWorker] enqueues a delayed [BackupWorker] rather than backing up directly.
  *   Source: `Trigger.contentUriTrigger(observedUris())` + `FLAG_NOTIFY_FOR_DESCENDANTS`
  *   at legacy BackupJobs.java:179,181; two-stage debounce preserved in BackupTriggerWorker.
@@ -205,9 +204,9 @@ class WorkManagerScheduler @Inject constructor(
     /**
      * Schedules the content-URI observer over the SMS provider (and call-log when enabled).
      *
-     * API 24+: uses [Constraints.Builder.addContentUriTrigger] with triggerForDescendants=true.
-     * Below API 24: the SMS-received broadcast path calls [scheduleIncoming] instead; this
-     * method returns null to signal that the API-24+ trigger was not registered.
+     * Uses [Constraints.Builder.addContentUriTrigger] with triggerForDescendants=true. Every
+     * supported level (minSdk 24) has content-URI triggers, so there is no version branch
+     * (CNTR-MODERNIZATION-004 v3, INV-4).
      *
      * INV-4: two-stage debounce — the triggered [BackupTriggerWorker] enqueues a delayed
      * incoming backup rather than backing up directly.
@@ -219,13 +218,6 @@ class WorkManagerScheduler @Inject constructor(
     override fun scheduleContentTrigger(): ScheduledJob? {
         if (secretStore.isEncryptionDegraded()) {
             Log.w(TAG, "WorkManagerScheduler.scheduleContentTrigger: blocked — encryption degraded, credentials in plaintext")
-            return null
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            // Below API 24: content-URI triggers are unavailable.
-            // The broadcast fallback (SmsBroadcastReceiver → scheduleIncoming()) covers this path.
-            Log.d(TAG, "WorkManagerScheduler.scheduleContentTrigger: API < 24, " +
-                    "using broadcast fallback (SmsBroadcastReceiver)")
             return null
         }
 
@@ -253,7 +245,7 @@ class WorkManagerScheduler @Inject constructor(
                 request
             )
 
-        Log.d(TAG, "WorkManagerScheduler.scheduleContentTrigger: enqueued CONTENT_TRIGGER (API 24+)")
+        Log.d(TAG, "WorkManagerScheduler.scheduleContentTrigger: enqueued CONTENT_TRIGGER")
         return ScheduledJob(CONTENT_TRIGGER_UNIQUE_NAME, "WorkManagerScheduler:CONTENT_TRIGGER")
     }
 

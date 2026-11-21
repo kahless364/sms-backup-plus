@@ -1,0 +1,23 @@
+== git diff --name-only HEAD -- app/src/main (eight files; with I4's manifest the nine of AC-9)
+app/src/main/java/com/zegoggles/smssync/App.java
+app/src/main/java/com/zegoggles/smssync/activity/Dialogs.java
+app/src/main/java/com/zegoggles/smssync/activity/MainActivity.java
+app/src/main/java/com/zegoggles/smssync/activity/SmsDefaultRoleHelper.kt
+app/src/main/java/com/zegoggles/smssync/calendar/CalendarAccessorPost40.java
+app/src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java
+app/src/main/java/com/zegoggles/smssync/scheduler/BackupScheduler.java
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt
+== SmsDefaultRoleHelper.kt: git diff -w -U0 HEAD, changed lines (5 minus, 0 plus expected)
+-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+-        } else {
+-            // Pre-KitKat: no SMS default permission required.
+-            delegate.startViewModelRestore()
+-        }
+== must-not-change files: git diff HEAD --stat (empty expected)
+== git diff --stat HEAD -- app/src/test (one file, SmsReceiverTest.java)
+ .../com/zegoggles/smssync/compat/SmsReceiverTest.java     | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+== working-tree count (--untracked, said so): 756 (C0+3 = 756)
+== class inventory equal to I0, package by package
+packages equal: True
+classes-count differences: []

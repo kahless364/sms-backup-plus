@@ -16,7 +16,6 @@
 
 package com.zegoggles.smssync.activity;
 
-import android.annotation.TargetApi;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -422,7 +421,6 @@ public class MainActivity extends ThemeActivity implements
         viewModel.startBackup(backupType);
     }
 
-    @TargetApi(Build.VERSION_CODES.KITKAT)
     private void startRestore() {
         // U-050 AR-003: SMS-role negotiation logic delegated to SmsDefaultRoleHelper.
         // Behavior and BUG-009/U-041 Q+ role-request path are preserved verbatim in the helper.

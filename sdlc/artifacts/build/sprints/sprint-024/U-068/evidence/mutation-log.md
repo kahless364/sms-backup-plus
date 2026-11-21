@@ -99,3 +99,18 @@ Recovery note: if a session is lost while an entry says APPLYING without a resto
 
 - expected: matches (exactly `inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger` failed, Truth "expected not to be: null", type A; the 24 other cases passed). verdict: detected.
 
+### M-C1 APPLYING 2026-11-21T12:24:55Z
+
+- file: `app/src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java`; HEAD blob `30b78e48aefc73fae08ab8f38cf7189bf859abdd`; hash before `30b78e48aefc73fae08ab8f38cf7189bf859abdd`; main-clean before.
+- edit: inside `disable`, `COMPONENT_ENABLED_STATE_DISABLED,` becomes `COMPONENT_ENABLED_STATE_ENABLED,` (disable no longer disables)
+- expected: failing `testEnableThenDisable_togglesReceiverComponent` (Truth "expected: 2 ... but was: 1" on the second assertion, type A); passing the four retargeted cases
+
+- run: exit=1; files=1 cases=5 pass=4 fail=1 error=0 skip=0; diffstat while mutated:  1 file changed, 1 insertion(+), 1 deletion(-)
+- failing/erroring cases:
+  - com.zegoggles.smssync.compat.SmsReceiverTest#testEnableThenDisable_togglesReceiverComponent FAIL com.google.common.truth.ComparisonFailureWithFacts
+- passing cases: 4
+- messages: see `mutations/M-C1-message.txt`
+- restored: 2026-11-21T12:26:34Z hash-ok main-clean (hash `30b78e48aefc73fae08ab8f38cf7189bf859abdd` equals HEAD blob)
+
+- expected: matches (exactly `testEnableThenDisable_togglesReceiverComponent` failed, Truth "expected: 2 ... but was : 1" on the second assertion, type A; the four retargeted cases passed). verdict: detected. No mutation runs after M-C1 (plan 4.8).
+

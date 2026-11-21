@@ -71,10 +71,11 @@ public interface BackupScheduler {
      * Schedules a recurring content-URI observer over the SMS provider (and the
      * call-log URI when {@code isCallLogBackupAfterCallEnabled()}).
      * <p>
-     * API-level branching (content-URI triggers are only available on API 24+) lives
-     * inside the adapter, not in this signature.
+     * Every supported level (minSdk 24) has content-URI triggers, so this call carries no
+     * version condition (CNTR-MODERNIZATION-004 v3, INV-4).
      *
-     * @return the enqueued job, or {@code null} if the adapter does not support it
+     * @return the enqueued job, or {@code null} if the adapter does not schedule it (today:
+     *         when encryption is degraded, U-054)
      */
     @Nullable
     ScheduledJob scheduleContentTrigger();

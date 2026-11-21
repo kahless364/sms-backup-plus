@@ -1,0 +1,50 @@
+== AC-7 grep after I5 (14 expected: 2 imports + 12 code lines)
+smssync/activity/MainActivity.java:241:                final boolean readyToRestore = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+smssync/activity/MainActivity.java:515:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+smssync/activity/SmsDefaultRoleHelper.kt:76:        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/activity/SmsDefaultRoleHelper.kt:106:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/activity/SmsDefaultRoleHelper.kt:130:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/activity/ThemeActivity.java:3:import android.annotation.TargetApi;
+smssync/activity/ThemeActivity.java:20:        if (VERSION.SDK_INT >= 26) {
+smssync/activity/ThemeActivity.java:26:    @TargetApi(26)
+smssync/App.java:35:import androidx.annotation.RequiresApi;
+smssync/App.java:246:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+smssync/App.java:350:    @RequiresApi(api = Build.VERSION_CODES.O)
+smssync/compat/SmsReceiver.java:45:        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/service/BackupWorker.kt:534:        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+smssync/service/RestoreWorker.kt:707:        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+total=14 without-imports=12
+== AC-8 grep after I5 (exactly one line expected: compat/package-info.java:2)
+smssync/compat/package-info.java:2: * The purpose of this package is compatibility with Kitkat+ versions
+== removed imports: simple names left in the edited files
+TargetApi in CalendarAccessorPost40, SmsReceiver, MainActivity (no line expected):
+exit=1
+word Build in Dialogs, CalendarAccessorPost40, WorkManagerScheduler (no line expected):
+exit=1
+== IC-1 caller list
+smssync/App.java:382:                scheduler.scheduleContentTrigger();
+smssync/activity/MainActivity.java:238:                // grant.  Use isSmsBackupDefaultSmsApp() on Q+ — the role-request just
+smssync/activity/MainActivity.java:242:                        ? isSmsBackupDefaultSmsApp(this)
+smssync/activity/MainActivity.java:312:        if (newState.isFinished() && isSmsBackupDefaultSmsApp(this)) {
+smssync/activity/MainActivity.java:427:        SmsDefaultRoleHelper.startRestore(this, preferences, new SmsDefaultRoleHelper.DialogDelegate() {
+smssync/activity/SmsDefaultRoleHelper.kt:74:        if (isSmsBackupDefaultSmsApp(activity)) {
+smssync/activity/SmsDefaultRoleHelper.kt:149:        if (isSmsBackupDefaultSmsApp(activity) && restoreIdle) {
+smssync/compat/SmsReceiver.java:35:        if (isSmsBackupDefaultSmsApp(context)) {
+smssync/compat/SmsReceiver.java:44:    public static boolean isSmsBackupDefaultSmsApp(@NonNull Context context) {
+smssync/scheduler/BackupScheduler.java:81:    ScheduledJob scheduleContentTrigger();
+smssync/scheduler/WorkManagerScheduler.kt:218:    override fun scheduleContentTrigger(): ScheduledJob? {
+test/activity/MainActivityRestoreTest.java:157:     * holds the role so {@code isSmsBackupDefaultSmsApp()} returns true. The fixed guard
+test/activity/MainActivityRestoreTest.java:171:     * this with {@code isSmsBackupDefaultSmsApp(this)} on Q+, unblocking the restore.
+test/activity/MainActivityRestoreTest.java:176:        // Grant ROLE_SMS to this test app so isSmsBackupDefaultSmsApp() returns true.
+test/compat/SmsReceiverTest.java:42:        assertThat(SmsReceiver.isSmsBackupDefaultSmsApp(RuntimeEnvironment.application)).isFalse();
+test/compat/SmsReceiverTest.java:47:        assertThat(SmsReceiver.isSmsBackupDefaultSmsApp(RuntimeEnvironment.application)).isFalse();
+test/service/WorkManagerSchedulerTest.kt:302:     * INV-4(a): scheduleContentTrigger() on API 29 (>= 24) enqueues a PeriodicWorkRequest
+test/service/WorkManagerSchedulerTest.kt:309:        scheduler.scheduleContentTrigger()
+test/service/WorkManagerSchedulerTest.kt:327:     * INV-4(b): scheduleContentTrigger() when call-log backup-after-call is enabled
+test/service/WorkManagerSchedulerTest.kt:336:        scheduler.scheduleContentTrigger()
+test/service/WorkManagerSchedulerTest.kt:352:     * INV-4(c): scheduleContentTrigger() when call-log is disabled → only SMS URI.
+test/service/WorkManagerSchedulerTest.kt:359:        scheduler.scheduleContentTrigger()
+test/service/WorkManagerSchedulerTest.kt:373:     * CR-015; DES-MODERNIZATION-005 INV-4 validation row): scheduleContentTrigger() returns a job, unique
+test/service/WorkManagerSchedulerTest.kt:381:        val result = scheduler.scheduleContentTrigger()
+test/service/WorkManagerSchedulerTest.kt:547:     * U-054 (SE-002): scheduleContentTrigger() returns null without enqueuing work when degraded.
+test/service/WorkManagerSchedulerTest.kt:555:        val job = scheduler.scheduleContentTrigger()

@@ -1,0 +1,317 @@
+== calendar/CalendarAccessorPost40.class (normalised javap -c -p, I4 vs I5)
+diff-exit=0
+== activity/MainActivity.class (normalised javap -c -p, I4 vs I5)
+diff-exit=0
+== compat/SmsReceiver.class (normalised javap -c -p, I4 vs I5)
+68,78c68,73
+<         37: getstatic                      // Field android/os/Build$VERSION.SDK_INT:I
+<         40: bipush        19
+<         42: if_icmplt     57
+<         45: aload_0
+<         46: invokevirtual                  // Method android/content/Context.getPackageName:()Ljava/lang/String;
+<         49: aload_0
+<         50: invokestatic                   // Method android/provider/Telephony$Sms.getDefaultSmsPackage:(Landroid/content/Context;)Ljava/lang/String;
+<         53: invokevirtual                  // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+<         56: ireturn
+<         57: iconst_0
+<         58: ireturn
+---
+>         37: aload_0
+>         38: invokevirtual                  // Method android/content/Context.getPackageName:()Ljava/lang/String;
+>         41: aload_0
+>         42: invokestatic                   // Method android/provider/Telephony$Sms.getDefaultSmsPackage:(Landroid/content/Context;)Ljava/lang/String;
+>         45: invokevirtual                  // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+>         48: ireturn
+diff-exit=1
+== activity/Dialogs$About$1.class (normalised javap -c -p, I4 vs I5)
+44c44
+<         12: ifle          52
+---
+>         12: ifle          44
+48,64c48,61
+<         21: ifeq          52
+<         24: getstatic                      // Field android/os/Build$VERSION.SDK_INT:I
+<         27: bipush        14
+<         29: if_icmplt     52
+<         32: aload_1
+<         33: aload_1
+<         34: invokevirtual                  // Method android/webkit/WebView.getContentHeight:()I
+<         37: i2f
+<         38: aload_1
+<         39: invokevirtual                  // Method android/webkit/WebView.getScale:()F
+<         42: fmul
+<         43: aload_0
+<         44: getfield                        // Field val$scrollPosition:F
+<         47: fmul
+<         48: f2i
+<         49: invokevirtual                  // Method android/webkit/WebView.setScrollY:(I)V
+<         52: return
+---
+>         21: ifeq          44
+>         24: aload_1
+>         25: aload_1
+>         26: invokevirtual                  // Method android/webkit/WebView.getContentHeight:()I
+>         29: i2f
+>         30: aload_1
+>         31: invokevirtual                  // Method android/webkit/WebView.getScale:()F
+>         34: fmul
+>         35: aload_0
+>         36: getfield                        // Field val$scrollPosition:F
+>         39: fmul
+>         40: f2i
+>         41: invokevirtual                  // Method android/webkit/WebView.setScrollY:(I)V
+>         44: return
+diff-exit=1
+== activity/SmsDefaultRoleHelper.class (normalised javap -c -p, I4 vs I5)
+22,78c22,72
+<         18: getstatic                      // Field android/os/Build$VERSION.SDK_INT:I
+<         21: bipush        19
+<         23: if_icmplt     155
+<         26: aload_0
+<         27: checkcast                      // class android/content/Context
+<         30: invokestatic                   // Method com/zegoggles/smssync/compat/SmsReceiver.isSmsBackupDefaultSmsApp:(Landroid/content/Context;)Z
+<         33: ifeq          45
+<         36: aload_2
+<         37: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.startViewModelRestore:()V
+<         42: goto          161
+<         45: getstatic                      // Field android/os/Build$VERSION.SDK_INT:I
+<         48: bipush        29
+<         50: if_icmplt     78
+<         53: aload_1
+<         54: invokevirtual                  // Method com/zegoggles/smssync/preferences/Preferences.hasSeenSmsDefaultPackageChangeDialog:()Z
+<         57: ifeq          69
+<         60: aload_2
+<         61: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.requestDefaultSmsPackageChange:()V
+<         66: goto          161
+<         69: aload_2
+<         70: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.showSmsDefaultPackageChangeDialog:()V
+<         75: goto          161
+<         78: aload_0
+<         79: checkcast                      // class android/content/Context
+<         82: invokestatic                   // Method android/provider/Telephony$Sms.getDefaultSmsPackage:(Landroid/content/Context;)Ljava/lang/String;
+<         85: astore_3
+<         86: ldc                            // String SMSBackup+
+<         88: aload_3
+<         89: invokedynamic ,  0             // InvokeDynamic :makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+<         94: invokestatic                   // Method android/util/Log.d:(Ljava/lang/String;Ljava/lang/String;)I
+<         97: pop
+<         98: aload_3
+<         99: checkcast                      // class java/lang/CharSequence
+<        102: invokestatic                   // Method android/text/TextUtils.isEmpty:(Ljava/lang/CharSequence;)Z
+<        105: ifne          138
+<        108: aload_1
+<        109: aload_3
+<        110: invokevirtual                  // Method com/zegoggles/smssync/preferences/Preferences.setSmsDefaultPackage:(Ljava/lang/String;)V
+<        113: aload_1
+<        114: invokevirtual                  // Method com/zegoggles/smssync/preferences/Preferences.hasSeenSmsDefaultPackageChangeDialog:()Z
+<        117: ifeq          129
+<        120: aload_2
+<        121: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.requestDefaultSmsPackageChange:()V
+<        126: goto          161
+<        129: aload_2
+<        130: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.showSmsDefaultPackageChangeDialog:()V
+<        135: goto          161
+<        138: aload_0
+<        139: checkcast                      // class android/content/Context
+<        142: getstatic                     // Field com/zegoggles/smssync/R$string.error_no_sms_default_package:I
+<        145: iconst_1
+<        146: invokestatic                  // Method android/widget/Toast.makeText:(Landroid/content/Context;II)Landroid/widget/Toast;
+<        149: invokevirtual                 // Method android/widget/Toast.show:()V
+<        152: goto          161
+<        155: aload_2
+<        156: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.startViewModelRestore:()V
+<        161: return
+---
+>         18: aload_0
+>         19: checkcast                      // class android/content/Context
+>         22: invokestatic                   // Method com/zegoggles/smssync/compat/SmsReceiver.isSmsBackupDefaultSmsApp:(Landroid/content/Context;)Z
+>         25: ifeq          37
+>         28: aload_2
+>         29: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.startViewModelRestore:()V
+>         34: goto          144
+>         37: getstatic                      // Field android/os/Build$VERSION.SDK_INT:I
+>         40: bipush        29
+>         42: if_icmplt     70
+>         45: aload_1
+>         46: invokevirtual                  // Method com/zegoggles/smssync/preferences/Preferences.hasSeenSmsDefaultPackageChangeDialog:()Z
+>         49: ifeq          61
+>         52: aload_2
+>         53: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.requestDefaultSmsPackageChange:()V
+>         58: goto          144
+>         61: aload_2
+>         62: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.showSmsDefaultPackageChangeDialog:()V
+>         67: goto          144
+>         70: aload_0
+>         71: checkcast                      // class android/content/Context
+>         74: invokestatic                   // Method android/provider/Telephony$Sms.getDefaultSmsPackage:(Landroid/content/Context;)Ljava/lang/String;
+>         77: astore_3
+>         78: ldc                            // String SMSBackup+
+>         80: aload_3
+>         81: invokedynamic ,  0             // InvokeDynamic :makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+>         86: invokestatic                   // Method android/util/Log.d:(Ljava/lang/String;Ljava/lang/String;)I
+>         89: pop
+>         90: aload_3
+>         91: checkcast                      // class java/lang/CharSequence
+>         94: invokestatic                   // Method android/text/TextUtils.isEmpty:(Ljava/lang/CharSequence;)Z
+>         97: ifne          130
+>        100: aload_1
+>        101: aload_3
+>        102: invokevirtual                  // Method com/zegoggles/smssync/preferences/Preferences.setSmsDefaultPackage:(Ljava/lang/String;)V
+>        105: aload_1
+>        106: invokevirtual                  // Method com/zegoggles/smssync/preferences/Preferences.hasSeenSmsDefaultPackageChangeDialog:()Z
+>        109: ifeq          121
+>        112: aload_2
+>        113: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.requestDefaultSmsPackageChange:()V
+>        118: goto          144
+>        121: aload_2
+>        122: invokeinterface ,  1           // InterfaceMethod com/zegoggles/smssync/activity/SmsDefaultRoleHelper$DialogDelegate.showSmsDefaultPackageChangeDialog:()V
+>        127: goto          144
+>        130: aload_0
+>        131: checkcast                      // class android/content/Context
+>        134: getstatic                     // Field com/zegoggles/smssync/R$string.error_no_sms_default_package:I
+>        137: iconst_1
+>        138: invokestatic                  // Method android/widget/Toast.makeText:(Landroid/content/Context;II)Landroid/widget/Toast;
+>        141: invokevirtual                 // Method android/widget/Toast.show:()V
+>        144: return
+diff-exit=1
+== scheduler/WorkManagerScheduler.class (normalised javap -c -p, I4 vs I5)
+215,285c215,276
+<         22: getstatic                     // Field android/os/Build$VERSION.SDK_INT:I
+<         25: bipush        24
+<         27: if_icmpge     40
+<         30: ldc                            // String SMSBackup+
+<         32: ldc                           // String WorkManagerScheduler.scheduleContentTrigger: API < 24, using broadcast fallback (SmsBroadcastReceiver)
+<         34: invokestatic                   // Method android/util/Log.d:(Ljava/lang/String;Ljava/lang/String;)I
+<         37: pop
+<         38: aconst_null
+<         39: areturn
+<         40: new                           // class androidx/work/Constraints$Builder
+<         43: dup
+<         44: invokespecial                 // Method androidx/work/Constraints$Builder."<init>":()V
+<         47: getstatic                     // Field com/zegoggles/smssync/Consts.SMS_PROVIDER:Landroid/net/Uri;
+<         50: dup
+<         51: ldc                           // String SMS_PROVIDER
+<         53: invokestatic                  // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+<         56: iconst_1
+<         57: invokevirtual                 // Method androidx/work/Constraints$Builder.addContentUriTrigger:(Landroid/net/Uri;Z)Landroidx/work/Constraints$Builder;
+<         60: astore_1
+<         61: aload_0
+<         62: getfield                       // Field preferences:Lcom/zegoggles/smssync/preferences/Preferences;
+<         65: invokevirtual                 // Method com/zegoggles/smssync/preferences/Preferences.getDataTypePreferences:()Lcom/zegoggles/smssync/preferences/DataTypePreferences;
+<         68: getstatic                     // Field com/zegoggles/smssync/mail/DataType.CALLLOG:Lcom/zegoggles/smssync/mail/DataType;
+<         71: invokevirtual                 // Method com/zegoggles/smssync/preferences/DataTypePreferences.isBackupEnabled:(Lcom/zegoggles/smssync/mail/DataType;)Z
+<         74: ifeq          103
+<         77: aload_0
+<         78: getfield                       // Field preferences:Lcom/zegoggles/smssync/preferences/Preferences;
+<         81: invokevirtual                 // Method com/zegoggles/smssync/preferences/Preferences.isCallLogBackupAfterCallEnabled:()Z
+<         84: ifeq          103
+<         87: aload_1
+<         88: getstatic                     // Field com/zegoggles/smssync/Consts.CALLLOG_PROVIDER:Landroid/net/Uri;
+<         91: dup
+<         92: ldc_w                         // String CALLLOG_PROVIDER
+<         95: invokestatic                  // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+<         98: iconst_1
+<         99: invokevirtual                 // Method androidx/work/Constraints$Builder.addContentUriTrigger:(Landroid/net/Uri;Z)Landroidx/work/Constraints$Builder;
+<        102: pop
+<        103: new                           // class androidx/work/PeriodicWorkRequest$Builder
+<        106: dup
+<        107: ldc_w                         // class com/zegoggles/smssync/worker/BackupTriggerWorker
+<        110: getstatic                     // Field PERIODIC_MIN_INTERVAL_SECS:J
+<        113: getstatic                     // Field java/util/concurrent/TimeUnit.SECONDS:Ljava/util/concurrent/TimeUnit;
+<        116: invokespecial                 // Method androidx/work/PeriodicWorkRequest$Builder."<init>":(Ljava/lang/Class;JLjava/util/concurrent/TimeUnit;)V
+<        119: aload_1
+<        120: invokevirtual                 // Method androidx/work/Constraints$Builder.build:()Landroidx/work/Constraints;
+<        123: invokevirtual                 // Method androidx/work/PeriodicWorkRequest$Builder.setConstraints:(Landroidx/work/Constraints;)Landroidx/work/WorkRequest$Builder;
+<        126: checkcast                     // class androidx/work/PeriodicWorkRequest$Builder
+<        129: ldc_w                         // String CONTENT_TRIGGER
+<        132: invokevirtual                 // Method androidx/work/PeriodicWorkRequest$Builder.addTag:(Ljava/lang/String;)Landroidx/work/WorkRequest$Builder;
+<        135: checkcast                     // class androidx/work/PeriodicWorkRequest$Builder
+<        138: invokevirtual                 // Method androidx/work/PeriodicWorkRequest$Builder.build:()Landroidx/work/WorkRequest;
+<        141: checkcast                     // class androidx/work/PeriodicWorkRequest
+<        144: astore_2
+<        145: aload_0
+<        146: getfield                       // Field context:Landroid/content/Context;
+<        149: invokestatic                  // Method androidx/work/WorkManager.getInstance:(Landroid/content/Context;)Landroidx/work/WorkManager;
+<        152: ldc_w                         // String CONTENT_TRIGGER
+<        155: getstatic                     // Field androidx/work/ExistingPeriodicWorkPolicy.UPDATE:Landroidx/work/ExistingPeriodicWorkPolicy;
+<        158: aload_2
+<        159: invokevirtual                 // Method androidx/work/WorkManager.enqueueUniquePeriodicWork:(Ljava/lang/String;Landroidx/work/ExistingPeriodicWorkPolicy;Landroidx/work/PeriodicWorkRequest;)Landroidx/work/Operation;
+<        162: pop
+<        163: ldc                            // String SMSBackup+
+<        165: ldc_w                         // String WorkManagerScheduler.scheduleContentTrigger: enqueued CONTENT_TRIGGER (API 24+)
+<        168: invokestatic                   // Method android/util/Log.d:(Ljava/lang/String;Ljava/lang/String;)I
+<        171: pop
+<        172: new                           // class com/zegoggles/smssync/scheduler/ScheduledJob
+<        175: dup
+<        176: ldc_w                         // String CONTENT_TRIGGER
+<        179: ldc_w                         // String WorkManagerScheduler:CONTENT_TRIGGER
+<        182: invokespecial                 // Method com/zegoggles/smssync/scheduler/ScheduledJob."<init>":(Ljava/lang/String;Ljava/lang/String;)V
+<        185: areturn
+---
+>         22: new                           // class androidx/work/Constraints$Builder
+>         25: dup
+>         26: invokespecial                 // Method androidx/work/Constraints$Builder."<init>":()V
+>         29: getstatic                     // Field com/zegoggles/smssync/Consts.SMS_PROVIDER:Landroid/net/Uri;
+>         32: dup
+>         33: ldc                           // String SMS_PROVIDER
+>         35: invokestatic                  // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+>         38: iconst_1
+>         39: invokevirtual                 // Method androidx/work/Constraints$Builder.addContentUriTrigger:(Landroid/net/Uri;Z)Landroidx/work/Constraints$Builder;
+>         42: astore_1
+>         43: aload_0
+>         44: getfield                       // Field preferences:Lcom/zegoggles/smssync/preferences/Preferences;
+>         47: invokevirtual                 // Method com/zegoggles/smssync/preferences/Preferences.getDataTypePreferences:()Lcom/zegoggles/smssync/preferences/DataTypePreferences;
+>         50: getstatic                     // Field com/zegoggles/smssync/mail/DataType.CALLLOG:Lcom/zegoggles/smssync/mail/DataType;
+>         53: invokevirtual                 // Method com/zegoggles/smssync/preferences/DataTypePreferences.isBackupEnabled:(Lcom/zegoggles/smssync/mail/DataType;)Z
+>         56: ifeq          85
+>         59: aload_0
+>         60: getfield                       // Field preferences:Lcom/zegoggles/smssync/preferences/Preferences;
+>         63: invokevirtual                 // Method com/zegoggles/smssync/preferences/Preferences.isCallLogBackupAfterCallEnabled:()Z
+>         66: ifeq          85
+>         69: aload_1
+>         70: getstatic                     // Field com/zegoggles/smssync/Consts.CALLLOG_PROVIDER:Landroid/net/Uri;
+>         73: dup
+>         74: ldc_w                         // String CALLLOG_PROVIDER
+>         77: invokestatic                  // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+>         80: iconst_1
+>         81: invokevirtual                 // Method androidx/work/Constraints$Builder.addContentUriTrigger:(Landroid/net/Uri;Z)Landroidx/work/Constraints$Builder;
+>         84: pop
+>         85: new                           // class androidx/work/PeriodicWorkRequest$Builder
+>         88: dup
+>         89: ldc_w                         // class com/zegoggles/smssync/worker/BackupTriggerWorker
+>         92: getstatic                     // Field PERIODIC_MIN_INTERVAL_SECS:J
+>         95: getstatic                     // Field java/util/concurrent/TimeUnit.SECONDS:Ljava/util/concurrent/TimeUnit;
+>         98: invokespecial                 // Method androidx/work/PeriodicWorkRequest$Builder."<init>":(Ljava/lang/Class;JLjava/util/concurrent/TimeUnit;)V
+>        101: aload_1
+>        102: invokevirtual                 // Method androidx/work/Constraints$Builder.build:()Landroidx/work/Constraints;
+>        105: invokevirtual                 // Method androidx/work/PeriodicWorkRequest$Builder.setConstraints:(Landroidx/work/Constraints;)Landroidx/work/WorkRequest$Builder;
+>        108: checkcast                     // class androidx/work/PeriodicWorkRequest$Builder
+>        111: ldc_w                         // String CONTENT_TRIGGER
+>        114: invokevirtual                 // Method androidx/work/PeriodicWorkRequest$Builder.addTag:(Ljava/lang/String;)Landroidx/work/WorkRequest$Builder;
+>        117: checkcast                     // class androidx/work/PeriodicWorkRequest$Builder
+>        120: invokevirtual                 // Method androidx/work/PeriodicWorkRequest$Builder.build:()Landroidx/work/WorkRequest;
+>        123: checkcast                     // class androidx/work/PeriodicWorkRequest
+>        126: astore_2
+>        127: aload_0
+>        128: getfield                       // Field context:Landroid/content/Context;
+>        131: invokestatic                  // Method androidx/work/WorkManager.getInstance:(Landroid/content/Context;)Landroidx/work/WorkManager;
+>        134: ldc_w                         // String CONTENT_TRIGGER
+>        137: getstatic                     // Field androidx/work/ExistingPeriodicWorkPolicy.UPDATE:Landroidx/work/ExistingPeriodicWorkPolicy;
+>        140: aload_2
+>        141: invokevirtual                 // Method androidx/work/WorkManager.enqueueUniquePeriodicWork:(Ljava/lang/String;Landroidx/work/ExistingPeriodicWorkPolicy;Landroidx/work/PeriodicWorkRequest;)Landroidx/work/Operation;
+>        144: pop
+>        145: ldc                            // String SMSBackup+
+>        147: ldc_w                         // String WorkManagerScheduler.scheduleContentTrigger: enqueued CONTENT_TRIGGER
+>        150: invokestatic                   // Method android/util/Log.d:(Ljava/lang/String;Ljava/lang/String;)I
+>        153: pop
+>        154: new                           // class com/zegoggles/smssync/scheduler/ScheduledJob
+>        157: dup
+>        158: ldc_w                         // String CONTENT_TRIGGER
+>        161: ldc_w                         // String WorkManagerScheduler:CONTENT_TRIGGER
+>        164: invokespecial                 // Method com/zegoggles/smssync/scheduler/ScheduledJob."<init>":(Ljava/lang/String;Ljava/lang/String;)V
+>        167: areturn
+diff-exit=1
+
+(An extra offset-free comparison was attempted and not produced: the `diff` tool was quarantined by the endpoint-security product while the run was in progress, so the run stopped. The comparison above already shows, per class, the removed instructions with only offsets and jump targets shifted in the remainder, as plan 5.4 expects.)
+
+N11 (R8 assumes SDK_INT >= min-api): not confirmed. No R8 release note was read in this run; no step or decision row depends on it. The equivalence evidence is this debug-bytecode comparison, the case analysis of plan 2.3 and the tests; the release comparisons are regression checks only.

@@ -376,8 +376,8 @@ public class App extends Application implements Configuration.Provider {
         if (preferences.isAutoBackupEnabled()) {
             scheduler.scheduleRegular();
 
-            // U-017: isUseOldScheduler() guard removed; WorkManagerScheduler handles
-            // API-level branching internally (content-URI triggers on API 24+).
+            // U-017: isUseOldScheduler() guard removed. WorkManagerScheduler enqueues the
+            // content-URI trigger with no version branch (minSdk 24, CNTR-MODERNIZATION-004 v3).
             if (preferences.getIncomingTimeoutSecs() > 0) {
                 scheduler.scheduleContentTrigger();
             }

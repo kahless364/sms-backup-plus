@@ -3,20 +3,22 @@ artifact_type: implementation-log
 story_id: "U-068"
 gate_id: "implementation"
 checkpoint: "implementation"
-verdict: "PASS"
+verdict: "FAIL"
 agent: "Developer"
-timestamp: "2026-11-21T11:42:09Z"
+timestamp: "2026-11-21T12:45:00Z"
 iteration: 1
 base_commit: "4300ffa98370b77dcc4dd8d12142079aada8313a"
-files_changed: 0
-files_created: 0
+files_changed: 14
+files_created: 1
 tests_added: 3
-tests_passing: 0
+tests_passing: 756
 ---
 
 # Implementation Log: U-068 - Raise minSdk to 24 and remove what the floor makes dead
 
 Plan: `sdlc/artifacts/build/sprints/sprint-024/U-068/plan.md` (iteration 2), followed step by step. Evidence is under `sdlc/artifacts/build/sprints/sprint-024/U-068/evidence/`. Raw logs, saved JaCoCo XML copies, pristine copies and commit messages were kept in a work folder outside the repository. One local commit per increment, explicit paths, nothing pushed. No emulator or device was used (I8 is the orchestrator's).
+
+**Status: INCOMPLETE. The run stopped inside increment I5 (before its commit) because endpoint security quarantined `diff.exe`; see "Stopped here" below. `verdict: FAIL` in the frontmatter means "phase not finished", not a failed gate: every gate that was run is green. Sections for I6, I7, Contract Adherence, Capabilities Inventory and Runtime Claims are not written yet.**
 
 `START` = `4300ffa98370b77dcc4dd8d12142079aada8313a` (subject "Sprint-023 closed: U-067 done, BUG-022 closed; U-068 plan gates passed"), branch `sdlc/modernization-plan`. `C0` = **753** (authoritative command at `START`).
 
@@ -32,6 +34,13 @@ Plan: `sdlc/artifacts/build/sprints/sprint-024/U-068/plan.md` (iteration 2), fol
 | SC-6 | No device or emulator was touched by this run. | - |
 
 All 19 files of plan table 2.1: HEAD blob equals working-tree hash equals planning blob (19 of 19, `evidence/I0-start.txt`). `plan-head-ancestor-exit=0`. Commits between the plan head `c12a2788` and START: `36e715e7` and `4300ffa9`, documents only (`moved-files-end` preceded by nothing). Rows D1 to D5: none fired.
+
+## Interruption (endpoint security) and the substituted comparison commands
+
+- **What happened:** during I5, after the I5 gate and most of its checks, the endpoint-security product (SentinelOne) logged "Malware detected" for the Git for Windows `usr/bin/diff.exe` (event 06:36:29 local time, about 12:36 UTC) and quarantined it. The next `diff` call failed with "command not found". I stopped, ran no further shell command, recorded the state in this log with the Edit tool, and reported.
+- **Owner's decision (2026-11-21, relayed by the orchestrator):** builds continue using Git's built-in comparison in place of `diff.exe`; nothing is restored from quarantine and no exclusion is added. I called neither `diff` nor `cmp` after the stop and installed, copied or downloaded no comparison tool.
+- **Deviations: comparison tool.** Every `diff` of the plan after the stop is `git -c core.autocrlf=false diff --no-index --no-color -- A B` (header lines cut with `tail -n +5`; the exit code is printed as `git-diff-no-index-exit=0|1`, 0 equal, 1 differ). Process substitutions (`<(...)`) are replaced by scratch files in the work folder, because `--no-index` needs real paths. Output is unified (`-`/`+` lines) instead of `<`/`>`; where the plan counts lines the pattern is `^-` / `^+` excluding the `---`/`+++` headers. Adapted commands and expected values are given in the entries below where they are used.
+- The comparisons made before the stop (I1 `xml-check`, I4 manifest and APK diffs, the first part of I5-bytecode) used the external `diff` and were not repeated; their outputs are in the evidence files as produced.
 
 ## Steps
 
@@ -100,5 +109,24 @@ I3 commit: `853483e295b890871a3ce313fffc9d7c4a8e4c4f` ("U-068 S1-I3: retarget th
 - **APK comparison I0 vs I4** (`I4-apk-diffs.txt`, rows D26 to D29): kept-name set (48) and `configuration.txt` identical; `so=0` both; class-file majors 61/61/52 unchanged. Declared differences (ruling P-4, row D28): debug `classes*.dex` 17 -> 23 (release stays 1); nine `res/` entries removed from each APK, all base-folder duplicates of `-v21/-v22/-v23` variants (qualifier-normalised debug list differs only by the items below). **Three differences the plan did not name, each explained by the floor** (flagged for the orchestrator; I judged them explained, not undeclared-and-unexplained, so I did not stop): (a) debug APK has no `META-INF/CERT.RSA`, `CERT.SF`, `MANIFEST.MF` - AGP stops writing the v1 JAR signature at minSdk 24 or higher; `apksigner verify -v` of the I4 debug APK: Verifies, v1 false, v2 true (the unsigned release APK never had them); (b) release `META-INF/services/r4.b0` -> `q4.b0` and `w4.t` -> `v4.t` - the two kotlinx.coroutines service interfaces (`CoroutineExceptionHandler`, `MainDispatcherFactory`) under shifted R8 obfuscated names (the R8 output changed with the min-api: `mapping.txt` 95,470 -> 91,897 lines; kept names and configuration unchanged); (c) release `res/u01.xml` gone - the shortened path of the collapsed `layout-v22` duplicate (nine removed `res/` entries in each APK).
 - Bytecode "before" copies for I5 saved (six classes, work folder).
 - **Must hold (S1-I4):** "merged-manifest diff shows only `minSdkVersion="24"` and the two removals" - held, with the declared `extractNativeLibs` difference (D24).
+
+### I5 - The seven dead sites and the stale text (AC-7, AC-8, AC-9) (evidence `I5-*`; interrupted once, then completed)
+
+I4 commit: `c8e98a7f98e5c28593bddbf207c6d19ef5f1ed52` ("U-068 S1-I4: minSdk 24; drop the two permissions capped below API 24").
+
+**Stop (row D50, constraint 3):** after the I5 gate and most of its checks, the endpoint-security product (SentinelOne, event "Malware detected", file `diff.exe` of the Git for Windows `usr/bin` folder) quarantined `diff.exe`; `/usr/bin/diff.exe` is gone and every `diff` call now fails with "command not found". The same product has already killed or quarantined Git tools on this machine. I did not restore the file, did not substitute another tool for the missing comparison, and ran no further shell command after confirming the event. Everything below was produced before the stop.
+
+Done in I5:
+- **Step 1a, test C-1 (ruling P-5):** `app/src/main` equalled HEAD (`main-clean-exit=0`). C1.a (imports) and C1.b (`testEnableThenDisable_togglesReceiverComponent`) applied exactly as plan 6.1; first run `exit=0`, five PASS, `cases=5`, 5 lines with `@Test` (`I5-c1-first-run.txt`). **M-C1** (`COMPONENT_ENABLED_STATE_DISABLED` -> `..._ENABLED` in `disable`): exactly `testEnableThenDisable_togglesReceiverComponent` failed (Truth "expected: 2 / but was : 1", type A), the four retargeted cases passed; restored, hash equals the HEAD blob `30b78e48...`, `app/src/main` diff empty (`mutation-log.md`, `mutations/M-C1-*`). Rows D35b, D17: not fired.
+- **Step 2, E5.1 to E5.18** applied exactly as plan 3.6 (Dialogs, CalendarAccessorPost40 x3, SmsReceiver x3, MainActivity x2, SmsDefaultRoleHelper.kt, WorkManagerScheduler.kt x5, BackupScheduler.java, App.java). Edit order, not plan order, was used for the edits within a file; every `old_string` matched exactly once (no row D4).
+- **Step 3, gate G4:** `exit=0`, `BUILD SUCCESSFUL in 8m 10s`; `files=80 tests=756 failures=0 errors=0 skipped=2` = C0 + 3. No compile error (row D34: not fired). Coverage (`I5-jacoco-packages.txt`): **`compat` 18/71 = 25.4 %, 3 spare lines** (as planned, with C-1: `disable`'s three lines covered), `receiver` 39/58 = 67.2 %, **`scheduler` 137/185 = 74.1 %** (as planned), `calendar` 37/50, `activity` 198/1008 (floor 0.10). Class inventory equals I0 package by package (`packages equal: True`, no class-count difference; `I5-checks.txt`). The five retargeted tests, the API 24 test, the three INV-4 API 29 tests, the U-054 test and the five `MainActivityRestoreTest` cases PASS (`I5-cases.txt`). Rows D35, D36: not fired.
+- **AC-4 (g)** (`I5-jacoco-lines.txt`): in `SmsReceiver.java` the role-manager line (`RoleManager roleManager = ...`, ci=5) and the package line (`return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));`, ci=6) are both covered. The only tests between API 24 and 28 are the two `N` cases (the API 24 scheduler test never calls `SmsReceiver`), so the package line is the `N` tests' doing; M-R1 and M-R2 (I3) showed which pair runs which branch. Row D38: not fired.
+- **Step 4, greps** (`I5-greps.txt`): AC-7 grep 14 lines, 12 without imports, exactly the plan's list (`App.java` O x2; `MainActivity.java` Q, TIRAMISU; `SmsDefaultRoleHelper.kt` Q x3; `ThemeActivity.java` 26 x2; `SmsReceiver.java` Q; `BackupWorker.kt` Q; `RestoreWorker.kt` Q; the two remaining imports are `RequiresApi` in `App.java` and `TargetApi` in `ThemeActivity.java`); AC-8 grep exactly one line, `compat/package-info.java:2`; no `TargetApi` left in the three files and no word `Build` left in `Dialogs.java`, `CalendarAccessorPost40.java`, `WorkManagerScheduler.kt` (AC-7 (b)); IC-1 caller list printed (callers `MainActivity.java` `:242`, `:312`, `:427`, `SmsDefaultRoleHelper.kt` `:74`, `:149`, `SmsReceiver.onReceive` `:35`, `App.java:382`, the tests; all compile unchanged). Rows D32, D33: not fired.
+- **Step 5 checks** (`I5-checks.txt`): `git diff --name-only HEAD -- app/src/main` lists the eight files (nine with I4's manifest); `git diff -w -U0` of `SmsDefaultRoleHelper.kt` has exactly the five expected `-` lines and no `+` line; the must-not-change files (`SmsBroadcastReceiver.java`, `BackupBroadcastReceiver.java`, `BackupTriggerWorker.kt`, the two workers, `k9mail-vendored`, `robolectric.properties`) show an empty diff; `git diff --stat HEAD -- app/src/test` is one file (`SmsReceiverTest.java`, 15 insertions); working-tree count 756 = C0 + 3 (`--untracked`).
+- **Step 7, bytecode** (`I5-bytecode.txt`): the normalised `javap -c -p` of `CalendarAccessorPost40` and `MainActivity` is identical (S-2, S-5); `SmsReceiver` loses only the `SDK_INT`/19 compare and the `iconst_0; ireturn`; `Dialogs$About$1` only the `SDK_INT`/14 compare; `SmsDefaultRoleHelper` only the `SDK_INT`/19 compare and the pre-KitKat call; `WorkManagerScheduler` only the `SDK_INT`/24 compare with its `Log.d` and `return null`, and the final log constant loses " (API 24+)". In each, the remaining instructions are the same with shifted offsets (as plan 5.4). Row D37: not fired. N11: not confirmed (no R8 release note was read).
+
+**Resumed (2026-11-21T13:03Z) after the owner's decision (see "Interruption"):** the tree was verified against this record before continuing (`git diff --stat HEAD -- app`: eight production files and `SmsReceiverTest.java`, 46 insertions, 55 deletions; `BackupBroadcastReceiver.java` still equals its blob; no change since the gate), so the I5 gate was not re-run.
+- **Step 6, `I5-build-diffs.txt` (I4 vs I5, via `git diff --no-index`):** merged manifests (debug, release) and packaged manifests (normalised) identical; kept names identical; `configuration.txt` identical; APK entry lists identical (raw and qualifier-normalised, both APKs); javap majors identical. Only `I5-apk.txt` differs: debug size 6,408,587 -> 6,459,683, release size 1,937,824 -> 1,937,712, both sha256, and `mapping-lines` 91,897 -> 91,896 (one line fewer in the R8 mapping, from the removed log constant); entries, dex counts (23 and 1) and `so=0` are the same. Rows D26 to D29: not fired.
+- **Must hold (S1-I5):** "AC-6 grep passes; coverage floors hold (scheduler measured)" - held (AC-7 grep as listed, `scheduler` 137/185 = 74.1 %, `compat` 18/71, every package at or above its floor because the gate's `jacocoTestCoverageVerification` passed).
 
 <!-- LOG-ENTRIES-END -->

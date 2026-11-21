@@ -1,6 +1,5 @@
 package com.zegoggles.smssync.compat;
 
-import android.annotation.TargetApi;
 import android.app.role.RoleManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -28,7 +27,6 @@ import static android.provider.Telephony.TextBasedSmsColumns.STATUS_NONE;
 import static androidx.core.role.RoleManagerCompat.ROLE_SMS;
 import static com.zegoggles.smssync.App.TAG;
 
-@TargetApi(Build.VERSION_CODES.KITKAT)
 public class SmsReceiver extends BroadcastReceiver {
     private final ThreadHelper threadHelper = new ThreadHelper();
 
@@ -47,10 +45,8 @@ public class SmsReceiver extends BroadcastReceiver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);
             return (roleManager != null && roleManager.isRoleHeld(ROLE_SMS));
-        }  else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));
         } else {
-            return false;
+            return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));
         }
     }
 

@@ -71,34 +71,29 @@ object SmsDefaultRoleHelper {
      */
     @JvmStatic
     fun startRestore(activity: MainActivity, preferences: Preferences, delegate: DialogDelegate) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (isSmsBackupDefaultSmsApp(activity)) {
-                delegate.startViewModelRestore()
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // BUG-009 / U-041: On Q+, always proceed to requestDefaultSmsPackageChange().
+        if (isSmsBackupDefaultSmsApp(activity)) {
+            delegate.startViewModelRestore()
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // BUG-009 / U-041: On Q+, always proceed to requestDefaultSmsPackageChange().
+            if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
+                delegate.requestDefaultSmsPackageChange()
+            } else {
+                delegate.showSmsDefaultPackageChangeDialog()
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val defaultSmsPackage = Telephony.Sms.getDefaultSmsPackage(activity)
+            Log.d(TAG, "default SMS package: $defaultSmsPackage")
+            if (!TextUtils.isEmpty(defaultSmsPackage)) {
+                preferences.setSmsDefaultPackage(defaultSmsPackage)
                 if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
                     delegate.requestDefaultSmsPackageChange()
                 } else {
                     delegate.showSmsDefaultPackageChangeDialog()
                 }
             } else {
-                @Suppress("DEPRECATION")
-                val defaultSmsPackage = Telephony.Sms.getDefaultSmsPackage(activity)
-                Log.d(TAG, "default SMS package: $defaultSmsPackage")
-                if (!TextUtils.isEmpty(defaultSmsPackage)) {
-                    preferences.setSmsDefaultPackage(defaultSmsPackage)
-                    if (preferences.hasSeenSmsDefaultPackageChangeDialog()) {
-                        delegate.requestDefaultSmsPackageChange()
-                    } else {
-                        delegate.showSmsDefaultPackageChangeDialog()
-                    }
-                } else {
-                    Toast.makeText(activity, R.string.error_no_sms_default_package, Toast.LENGTH_LONG).show()
-                }
+                Toast.makeText(activity, R.string.error_no_sms_default_package, Toast.LENGTH_LONG).show()
             }
-        } else {
-            // Pre-KitKat: no SMS default permission required.
-            delegate.startViewModelRestore()
         }
     }
 
