@@ -17,58 +17,55 @@ package com.zegoggles.smssync.worker
 
 import android.content.Context
 import android.util.Log
-import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkManager
+import androidx.hilt.work.HiltWorker
 import androidx.work.WorkerParameters
 import androidx.work.Worker
 import com.zegoggles.smssync.preferences.Preferences
-import com.zegoggles.smssync.service.BackupType
-import com.zegoggles.smssync.service.BackupWorker
-import java.util.concurrent.TimeUnit
+import com.zegoggles.smssync.scheduler.BackupScheduler
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 
 /**
  * Content-URI trigger worker — implements the INV-4 two-stage debounce.
  *
  * This worker is enqueued by the CONTENT_TRIGGER [androidx.work.PeriodicWorkRequest]
  * (set up by [com.zegoggles.smssync.scheduler.WorkManagerScheduler.scheduleContentTrigger]).
- * It does NOT perform a backup directly; instead it enqueues a delayed
- * [OneTimeWorkRequest] for [BackupWorker] with [initialDelay = getIncomingTimeoutSecs()].
+ * It does NOT perform a backup directly; instead it calls [BackupScheduler.scheduleIncoming],
+ * the one builder of the delayed incoming backup (unique work INCOMING, REPLACE). This path
+ * therefore gets every rule of that call: the encryption-degraded gate (U-054), the
+ * auto-backup and delay rule, the network constraint per Wi-Fi only (INV-2), the exponential
+ * 30 s backoff (INV-3) and the delay of getIncomingTimeoutSecs() (INV-4).
  *
  * This preserves the two-stage debounce (INV-4):
  * - Stage 1: content-URI change fires this trigger worker
  * - Stage 2: this worker enqueues the delayed incoming backup via scheduleIncoming()
  *
  * The worker does NOT back up on the raw content change (INV-4, DES-MODERNIZATION-005
- * §Incoming-SMS trigger).
+ * §Incoming-SMS trigger). It returns success whether or not the scheduler enqueued work:
+ * a declined enqueue is a rule working, and the scheduler logs the reason.
  *
- * U-015 dependency: once BackupWorker is a CoroutineWorker with full execution logic,
- * this trigger worker's follow-up enqueue will invoke the real backup. No changes to this
- * worker are required by U-015.
+ * U-069 (BUG-023): created by HiltWorkerFactory through the assisted factory generated for
+ * [HiltWorker], like the backup and restore workers. The class name and package must not
+ * change: CONTENT_TRIGGER work persisted on a device stores this class name.
  */
-class BackupTriggerWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class BackupTriggerWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val scheduler: BackupScheduler,
+    private val preferences: Preferences
 ) : Worker(context, params) {
 
     override fun doWork(): Result {
-        val prefs = Preferences(applicationContext)
-        val incomingTimeoutSecs = prefs.incomingTimeoutSecs.toLong()
+        // Read for the log line only; scheduleIncoming() reads the preferences itself and decides.
+        val incomingTimeoutSecs = preferences.incomingTimeoutSecs
 
         Log.d(TAG, "BackupTriggerWorker.doWork: content-URI trigger fired; " +
                 "enqueueing delayed incoming backup with initialDelay=${incomingTimeoutSecs}s")
 
-        // INV-4: two-stage debounce — enqueue delayed incoming backup; do NOT back up directly.
-        val incomingWork = OneTimeWorkRequest.Builder(BackupWorker::class.java)
-            .setInitialDelay(incomingTimeoutSecs, TimeUnit.SECONDS)
-            .addTag(BackupType.INCOMING.name)
-            .build()
-
-        WorkManager.getInstance(applicationContext)
-            .enqueueUniqueWork(
-                BackupType.INCOMING.name,
-                androidx.work.ExistingWorkPolicy.REPLACE,
-                incomingWork
-            )
+        // INV-4 stage 2: the one builder of INCOMING work applies INV-1 to INV-3, the U-054 gate
+        // and the auto-backup and delay rule. A null result (declined) is not a failure of this run.
+        scheduler.scheduleIncoming()
 
         return Result.success()
     }

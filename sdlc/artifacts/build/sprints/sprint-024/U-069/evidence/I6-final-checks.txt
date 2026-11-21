@@ -1,0 +1,93 @@
+
+$ AC-10a
+exit=1
+
+$ AC-10b
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:153:            .enqueueUniqueWork(BackupType.INCOMING.name, ExistingWorkPolicy.REPLACE, request)
+
+$ AC-10c
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:146:            .setConstraints(networkConstraints(BackupType.INCOMING))
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:149:            .addTag(BackupType.INCOMING.name)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:153:            .enqueueUniqueWork(BackupType.INCOMING.name, ExistingWorkPolicy.REPLACE, request)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:156:                "delay=${timeoutSecs}s, network=${constraintDescription(BackupType.INCOMING)}")
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:157:        return ScheduledJob(BackupType.INCOMING.name, "WorkManagerScheduler:INCOMING @ ${timeoutSecs}s")
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:421:            BackupType.INCOMING -> BackupType.INCOMING.name
+
+$ IC-2a
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:29:import com.zegoggles.smssync.worker.BackupTriggerWorker
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:60: *   [BackupTriggerWorker] enqueues a delayed [BackupWorker] rather than backing up directly.
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:62: *   at legacy BackupJobs.java:179,181; two-stage debounce preserved in BackupTriggerWorker.
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:211:     * INV-4: two-stage debounce — the triggered [BackupTriggerWorker] enqueues a delayed
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:233:            BackupTriggerWorker::class.java,
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:52:class BackupTriggerWorker @AssistedInject constructor(
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:63:        Log.d(TAG, "BackupTriggerWorker.doWork: content-URI trigger fired; " +
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:61:class BackupTriggerWorkerTest {
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:304:        assertWithMessage("worker class name").that(BackupTriggerWorker::class.java.name)
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:321:        val assistedConstructors = BackupTriggerWorker::class.java.declaredConstructors
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:342:            if (workerClassName == BackupTriggerWorker::class.java.name) {
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:343:                BackupTriggerWorker(appContext, workerParameters, scheduler, preferences)
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:365:        TestListenableWorkerBuilder<BackupTriggerWorker>(context)
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:461:        private const val PERSISTED_CLASS_NAME = "com.zegoggles.smssync.worker.BackupTriggerWorker"
+app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:463:            "BackupTriggerWorker.doWork: content-URI trigger fired; enqueueing delayed incoming backup with initialDelay="
+
+$ AC-12e-restricted
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:41: * - Stage 2: this worker enqueues the delayed incoming backup via scheduleIncoming()
+app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt:548:     * The content-URI trigger worker would ultimately call scheduleIncoming(), but the gate
+sdlc/artifacts/design/contracts/CNTR-MODERNIZATION-004-backup-scheduler.md:384:// On trigger, the worker does NOT back up directly — it calls scheduler.scheduleIncoming(),
+sdlc/artifacts/design/modernization/DES-MODERNIZATION-005-workmanager-scheduler-design.md:135:> `contentTrigger` job, does NOT back up directly — it calls `scheduleIncoming()` to enqueue
+
+$ AC-12e-newtest
+400:        assertWithMessage("request via the trigger worker, against the request via scheduleIncoming()")
+
+$ AC-13a
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt
+
+$ AC-13bc
+exit=0
+
+$ AC-13d
+warning: in the working copy of 'app/build.gradle', LF will be replaced by CRLF the next time Git touches it
+ app/build.gradle | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+$ AC-13ef
+exit=0
+
+$ ignore-assume
+exit=1
+
+$ AC-12-docs
+--
+--end
+
+$ commits
+code-commits-end
+
+$ log-all
+b096514b BUG-029 raised (ready): a backup that starts off screen fails at the foreground start on Android 12+; Record 21
+0c99149e Research: automatic backups that start in the background fail on Android 16 (emulator observation); AGP 9.1-9.5 release-note facts for U-071
+33706a13 U-068: launch check on Android 7.0 passed (new API 24 emulator, allowed by the product owner)
+e130182e Record 20: four product-owner decisions; BUG-027 raised; U-069 plan Amendment A4; U-071 gate reports
+9aa6b76c BUG-025 and BUG-026 raised (ready)
+c9b3954d Research supplement for U-071: Gradle checksums and the vendor pages' compatibility statements (2026-11-21)
+ba8eb9d2 Record 19 (rulings 47 to 53); U-071 plan (iteration 1) with rulings on its scope concerns; U-069 floor correction
+
+$ AC-14
+771
+
+$ AC-14-head
+756
+
+$ test-porcelain
+?? app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt
+
+$ app-porcelain
+ M app/build.gradle
+ M app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt
+?? app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt
+
+$ blobs
+c47a0452d040f959df134fc8a71fda5be6b6180f
+d816cfa55eca3ff139debf91cd1bfb5e5b30cd97
+49946fa0d093ab99296df416791eae9ecf068bfe
+0194308cfcf9ff34effaf08c7990c087b0bedcbd

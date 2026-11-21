@@ -1,0 +1,8 @@
+# I1 checks (after Amendment A4 edits R-1 to R-3)
+4bf587816a29340afec5bb913fedd6b016054252
+15
+?? app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt
+main-clean-exit=0
+# after the red run
+main-clean-after-run-exit=0
+4bf587816a29340afec5bb913fedd6b016054252

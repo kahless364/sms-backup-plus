@@ -1,0 +1,11 @@
+51 mi=0 ci=2 mb=0 cb=0 | @HiltWorker
+52 mi=0 ci=1 mb=0 cb=0 | class BackupTriggerWorker @AssistedInject constructor(
+55 mi=0 ci=3 mb=0 cb=0 | private val scheduler: BackupScheduler,
+56 mi=0 ci=3 mb=0 cb=0 | private val preferences: Preferences
+57 mi=0 ci=2 mb=0 cb=0 | ) : Worker(context, params) {
+61 mi=0 ci=4 mb=0 cb=0 | val incomingTimeoutSecs = preferences.incomingTimeoutSecs
+63 mi=0 ci=3 mb=0 cb=0 | Log.d(TAG, "BackupTriggerWorker.doWork: content-URI trigger fired; " +
+64 mi=0 ci=2 mb=0 cb=0 | "enqueueing delayed incoming backup with initialDelay=${incomingTimeoutSecs}s")
+68 mi=0 ci=4 mb=0 cb=0 | scheduler.scheduleIncoming()
+70 mi=0 ci=5 mb=0 cb=0 | return Result.success()
+TOTAL com/zegoggles/smssync/worker/BackupTriggerWorker.kt covered=10 missed=0

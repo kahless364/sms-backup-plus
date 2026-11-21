@@ -576,14 +576,14 @@ task jacocoTestCoverageVerification(type: JacocoCoverageVerification, dependsOn:
         // Note: BackupWorker and RestoreWorker are in service*, not worker*.
         // U-052: Exclusions for BackupWorker/RestoreWorker removed; they now contribute
         // to Rule 1 (service*, measured 75.6% after U-052 integration tests).
-        // BackupTriggerWorker has no unit tests; floor stays at 0%.
+        // BackupTriggerWorker has unit tests since U-069 (BackupTriggerWorkerTest); its Hilt-generated classes report no lines to JaCoCo (@DaggerGenerated filter; the others are interfaces).
         rule {
             element = 'PACKAGE'
             includes = ['com.zegoggles.smssync.worker*']
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.00 // MEASURED 0% — BackupTriggerWorker untested; TODO raise after dedicated tests
+                minimum = 0.90 // MEASURED 100.0% (10/10 lines, 2026-11-21, U-069); floor is the highest 0.05 step that leaves one spare line at this size
             }
         }
     }

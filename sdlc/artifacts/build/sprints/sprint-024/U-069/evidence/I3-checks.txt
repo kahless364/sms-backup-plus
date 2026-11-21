@@ -1,0 +1,33 @@
+# blobs
+c47a0452d040f959df134fc8a71fda5be6b6180f
+d816cfa55eca3ff139debf91cd1bfb5e5b30cd97
+# numstat
+25	28	app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt
+# hunks
+@@ -17,58 +17,55 @@ package com.zegoggles.smssync.worker
+# header lines
+2
+M-T1/M-T7 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+M-T8 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+M-T9 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+M-T10 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+M-T11 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+T-F app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt occurrences=1
+RESULT mode=fixed mismatches=0
+oldtext-exit=0
+# AC-10 a
+exit=1
+# AC-10 b
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:153:            .enqueueUniqueWork(BackupType.INCOMING.name, ExistingWorkPolicy.REPLACE, request)
+# AC-10 c
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:146:            .setConstraints(networkConstraints(BackupType.INCOMING))
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:149:            .addTag(BackupType.INCOMING.name)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:153:            .enqueueUniqueWork(BackupType.INCOMING.name, ExistingWorkPolicy.REPLACE, request)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:156:                "delay=${timeoutSecs}s, network=${constraintDescription(BackupType.INCOMING)}")
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:157:        return ScheduledJob(BackupType.INCOMING.name, "WorkManagerScheduler:INCOMING @ ${timeoutSecs}s")
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:421:            BackupType.INCOMING -> BackupType.INCOMING.name
+# import grep
+exit=1
+# porcelain
+ M app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt
+?? app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt

@@ -1,0 +1,29 @@
+# (a)
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:20:import androidx.work.OneTimeWorkRequest
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:35: * [OneTimeWorkRequest] for [BackupWorker] with [initialDelay = getIncomingTimeoutSecs()].
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:61:        val incomingWork = OneTimeWorkRequest.Builder(BackupWorker::class.java)
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:67:            .enqueueUniqueWork(
+# (b)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:153:            .enqueueUniqueWork(BackupType.INCOMING.name, ExistingWorkPolicy.REPLACE, request)
+# (c)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:146:            .setConstraints(networkConstraints(BackupType.INCOMING))
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:149:            .addTag(BackupType.INCOMING.name)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:153:            .enqueueUniqueWork(BackupType.INCOMING.name, ExistingWorkPolicy.REPLACE, request)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:156:                "delay=${timeoutSecs}s, network=${constraintDescription(BackupType.INCOMING)}")
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:157:        return ScheduledJob(BackupType.INCOMING.name, "WorkManagerScheduler:INCOMING @ ${timeoutSecs}s")
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:421:            BackupType.INCOMING -> BackupType.INCOMING.name
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:63:            .addTag(BackupType.INCOMING.name)
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:68:                BackupType.INCOMING.name,
+# (d)
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:29:import com.zegoggles.smssync.worker.BackupTriggerWorker
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:60: *   [BackupTriggerWorker] enqueues a delayed [BackupWorker] rather than backing up directly.
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:62: *   at legacy BackupJobs.java:179,181; two-stage debounce preserved in BackupTriggerWorker.
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:211:     * INV-4: two-stage debounce — the triggered [BackupTriggerWorker] enqueues a delayed
+app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:233:            BackupTriggerWorker::class.java,
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:48:class BackupTriggerWorker(
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:57:        Log.d(TAG, "BackupTriggerWorker.doWork: content-URI trigger fired; " +
+# (e)
+app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:39: * - Stage 2: this worker enqueues the delayed incoming backup via scheduleIncoming()
+app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt:548:     * The content-URI trigger worker would ultimately call scheduleIncoming(), but the gate
+sdlc/artifacts/design/contracts/CNTR-MODERNIZATION-004-backup-scheduler.md:384:// On trigger, the worker does NOT back up directly — it calls scheduler.scheduleIncoming(),
+sdlc/artifacts/design/modernization/DES-MODERNIZATION-005-workmanager-scheduler-design.md:135:> `contentTrigger` job, does NOT back up directly — it calls `scheduleIncoming()` to enqueue

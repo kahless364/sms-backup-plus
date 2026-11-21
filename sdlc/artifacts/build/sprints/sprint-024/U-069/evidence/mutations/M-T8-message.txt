@@ -1,0 +1,5 @@
+message="com.google.common.truth.ComparisonFailureWithFacts: doWork() result&#10;expected: Success {mOutputData=Data {}}&#10;but was : Failure {mOutputData=Data {}}"
+message="com.google.common.truth.ComparisonFailureWithFacts: doWork() result&#10;expected: Success {mOutputData=Data {}}&#10;but was : Failure {mOutputData=Data {}}"
+message="com.google.common.truth.ComparisonFailureWithFacts: doWork() result&#10;expected: Success {mOutputData=Data {}}&#10;but was : Failure {mOutputData=Data {}}"
+message="com.google.common.truth.ComparisonFailureWithFacts: doWork() result&#10;expected: Success {mOutputData=Data {}}&#10;but was : Failure {mOutputData=Data {}}"
+message="com.google.common.truth.ComparisonFailureWithFacts: doWork() result&#10;expected: Success {mOutputData=Data {}}&#10;but was : Failure {mOutputData=Data {}}"

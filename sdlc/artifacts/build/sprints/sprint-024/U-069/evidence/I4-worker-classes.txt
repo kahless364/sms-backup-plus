@@ -1,0 +1,7 @@
+CLASS com.zegoggles.smssync.worker.BackupTriggerWorker covered=10 missed=0
+CLASS com.zegoggles.smssync.worker.BackupTriggerWorker$Companion covered=0 missed=0
+CLASS com.zegoggles.smssync.worker.BackupTriggerWorker_AssistedFactory covered=0 missed=0
+CLASS com.zegoggles.smssync.worker.BackupTriggerWorker_AssistedFactory_Impl covered=0 missed=0
+CLASS com.zegoggles.smssync.worker.BackupTriggerWorker_Factory covered=0 missed=0
+CLASS com.zegoggles.smssync.worker.BackupTriggerWorker_HiltModule covered=0 missed=0
+PACKAGE com.zegoggles.smssync.worker covered=10 total=10 ratio=1.0000 percent=100.0 floor=1.00 ruled_floor=0.90

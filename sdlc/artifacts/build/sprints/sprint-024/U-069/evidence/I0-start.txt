@@ -1,0 +1,73 @@
+2026-11-21T14:06:07Z
+29f30ec575eee3241a00084cc01023d1a0c825d9
+sdlc/modernization-plan
+plan-head-ancestor-exit=0
+29f30ec5 U-068 done: minSdk 24 passed QA; U-069 cleared to build
+456c3c98 U-069: plan iteration 3 passed plan review (contract verification and depth check passed on iteration 2)
+d73a5377 U-068: code review PASS, security review PASS, launch check on Android 16 passed; U-069 plan iteration 3; measurement of the incoming-backup delay
+677ad6c2 U-068: developer's notes in the story; U-069 plan iteration 2 and its gate reports (plan review FAIL on one count, contract verification PASS, depth check PASS)
+0d490997 U-068 S1-I7: CHANGES, developer and engagement docs, bug-report template for minSdk 24
+7c5e6073 U-068 S1-I6: prune the lint baseline entries made stale
+92cfc34d Sprint-025 activated; U-071 opened for planning (no code or Gradle before sprint 024 completes)
+c23d0e09 Sprint-025 planned (draft): U-074, then U-071, U-072, U-073, one at a time
+1ba97d95 U-074: restore the pipeline frontmatter field the story text dropped; story finalized (ready)
+3eba805c Story U-074 ready: a cancelled backup or restore is not reported as a failure (fix for BUG-024)
+9aa84266 U-068 S1-I5: remove the code branches the minSdk 24 floor makes dead
+b097d602 Record 18: the endpoint-security event and the product owner's decision; rulings 37 to 46; U-069 plan-review iteration 1
+d93bb508 U-070 plan iteration 2 passed its three gates; U-069 plan (iteration 1) with rulings and two gate reports
+c8e98a7f U-068 S1-I4: minSdk 24; drop the two permissions capped below API 24
+853483e2 U-068 S1-I3: retarget the five tests below SDK 24 to API 24 and Q
+2aad7d70 U-068 S1-I2: unit test for the BACKUP broadcast receiver's opt-in guard
+cf136a2d U-070: plan-review iteration 1 (FAIL on two test-text blockers) and the orchestrator's rulings for iteration 2
+533e9f51 U-068 S1-I1: switch on JUnit XML test reports
+4f041c3f BUG-024 raised (ready): a cancelled backup or restore is logged and reported as a failure
+2b927b21 Sprint-023 retro; U-070 gate reports (contract verification PASS, depth check PASS); U-069 opened for planning
+7
+sdlc/artifacts/build/sprints/sprint-024/U-068-minsdk-24-floor.md:3:status: done
+sdlc/artifacts/build/sprints/sprint-023/U-067-worker-cancellation-checks-use-the-running-coroutine.md:3:status: done
+porcelain-end
+29:        reports.html.required = false
+30:        reports.junitXml.required = true
+24:        minSdkVersion 24
+c37bbbff2176213bc174610b9e9dfc772b1c5d3d c37bbbff2176213bc174610b9e9dfc772b1c5d3d app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt
+0194308cfcf9ff34effaf08c7990c087b0bedcbd 0194308cfcf9ff34effaf08c7990c087b0bedcbd app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt
+f626cfabf5e96ccf0badae6e5386283bfe4b5a0d f626cfabf5e96ccf0badae6e5386283bfe4b5a0d app/build.gradle
+15d81e5c63d0bbb125490a2f84f7ea064eace1b3 15d81e5c63d0bbb125490a2f84f7ea064eace1b3 app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt
+eb535f5c9c384e639f5077ce8ed3bd0ad7af350d eb535f5c9c384e639f5077ce8ed3bd0ad7af350d app/src/main/java/com/zegoggles/smssync/service/BackupWorker.kt
+17522557542ea87ffdec31505328741ba6e919bb 17522557542ea87ffdec31505328741ba6e919bb app/src/main/java/com/zegoggles/smssync/scheduler/BackupScheduler.java
+b67a8dce742d4ecbfd6f6a1752a3b653804bd4c5 b67a8dce742d4ecbfd6f6a1752a3b653804bd4c5 app/src/main/java/com/zegoggles/smssync/receiver/SmsBroadcastReceiver.java
+4d7576f65807fd4773452a24689bc241e60e9225 4d7576f65807fd4773452a24689bc241e60e9225 app/src/main/AndroidManifest.xml
+W1 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+W2 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+W2-doc app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+W3 app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+LOG app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt occurrences=1
+M-T2 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=1
+M-T3/M-T4 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=1
+M-T5/M-T12 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=1
+M-T6 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=1
+AC13b-1 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=1
+AC13b-2 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=1
+NO-PRE24 app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=1
+G1 app/build.gradle occurrences=1
+G2 app/build.gradle occurrences=1
+AC12c app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt occurrences=1
+T-se002-incoming app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt occurrences=1
+T-autoBackupOff app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt occurrences=1
+T-zeroTimeout app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt occurrences=1
+T-atMinSdk24 app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt occurrences=1
+pre24-branch app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt occurrences=0 (expected 0)
+pre24-test app/src/test/java/com/zegoggles/smssync/service/WorkManagerSchedulerTest.kt occurrences=0 (expected 0)
+RESULT mode=start mismatches=0
+oldtext-exit=0
+ls: cannot access 'app/src/test/java/com/zegoggles/smssync/worker': No such file or directory
+baseline_diff.py
+jacoco_inventory.py
+jacoco_lines.py
+lint_ids.py
+sdk_dir.py
+756
+HEAD:app/src/test/java/com/zegoggles/smssync/AppTest.java:13:    @Ignore @Test public void shouldGetVersionName() throws Exception {
+HEAD:app/src/test/java/com/zegoggles/smssync/preferences/AuthPreferencesTest.java:1079:    @Ignore("Robolectric 4.12.x does not shadow AndroidKeyStore JCA provider — " +
+toolchainVersion=25
+jps-gradle-end

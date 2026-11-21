@@ -1,0 +1,14 @@
+> Task :app:kspDebugKotlin
+> Task :app:kspReleaseKotlin
+> Task :app:kspDebugUnitTestKotlin UP-TO-DATE
+> Task :app:assembleDebug
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:testDebugUnitTest
+> Task :app:testDebugUnitTest
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+> Task :app:jacocoTestReport
+> Task :app:jacocoTestCoverageVerification
+BUILD SUCCESSFUL in 9m 49s
+exit=0

@@ -1,0 +1,13 @@
+app-release-unsigned.apk
+baselineProfiles/
+output-metadata.json
+1937932 app/build/outputs/apk/release/app-release-unsigned.apk
+7627906 app/build/outputs/mapping/release/mapping.txt
+78300:com.zegoggles.smssync.worker.BackupTriggerWorker -> com.zegoggles.smssync.worker.BackupTriggerWorker:
+78319:com.zegoggles.smssync.worker.BackupTriggerWorker$Companion -> com.zegoggles.smssync.worker.BackupTriggerWorker$a:
+1
+3486
+com/zegoggles/smssync/worker/BackupTriggerWorker
+com/zegoggles/smssync/worker/BackupTriggerWorker$a
+1
+classes.dex key-string=1

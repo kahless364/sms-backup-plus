@@ -1,0 +1,7 @@
+BackupTriggerWorker_AssistedFactory.java
+BackupTriggerWorker_AssistedFactory_Impl.java
+BackupTriggerWorker_Factory.java
+BackupTriggerWorker_HiltModule.java
+1
+debug put=1 size3=1
+release put=1 size3=1

@@ -46,8 +46,8 @@ title: Make the content-trigger worker start the incoming backup through the sch
 pipeline: ''
 domain: modernization
 requirement_source: bug:BUG-023
-updated_at: '2026-11-21T12:17:23.364Z'
-current_build_phase: implementation
+updated_at: '2026-11-21T15:35:11.092Z'
+current_build_phase: review
 ---
 
 # U-069: Make the Content-Trigger Worker Start the Incoming Backup Through the Scheduler's scheduleIncoming(), So It Obeys the Network, Encryption-Degraded, Auto-Backup and Delay Rules, and Give the Worker Its First Tests
@@ -248,6 +248,16 @@ For QA. Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew 
 - **A behaviour this story does not change, measured on 2026-11-21:** after the content trigger fires once it cannot fire again for about fifteen minutes, and the scheduler can hold the app's jobs back when the app has not been used. It is BUG-025 (`sdlc/artifacts/stories/BUG-025-incoming-sms-backup-delayed-by-trigger-period-and-job-quota.md`; record `sdlc/artifacts/build/research/2026-11-21-incoming-backup-delay-measurement.md`). The orchestrator takes it into account in the emulator check IC-3: the app is opened first, and the test SMS is sent after a fresh registration, so that the trigger can fire.
 
 **Correction of the coverage floor (2026-11-21; decision appendix, Record 19, ruling 47).** The floor of the `worker` package is the highest 0.05 step that leaves at least one spare line at the measured size: with 16 counted lines at 100 percent it is 0.90, not 0.95 (0.95 would still need every line). The developer was told while the build was running; the plan's text still says 0.95 and is read as corrected by this ruling.
+
+**Developer's notes (implementation, 2026-11-21).** Full record: `sdlc/artifacts/build/sprints/sprint-024/U-069/implementation-log.md`; evidence under `sdlc/artifacts/build/sprints/sprint-024/U-069/evidence/`. Nothing committed.
+
+- **Start commit** `29f30ec5`; start count C0 = 756; end count (working tree, `--untracked` form) 771 = C0 + 15; Gradle/JUnit 756 -> 771, failures 0, errors 0, skipped 2.
+- **Interruption:** the first red run did not compile (Room not on the unit-test compile classpath, row D13); I stopped; Amendment A4 made the test helper reflective (no dependency or build-file change); the amended test compiled and the red run matched the plan (11 fail, 4 pass).
+- **Fix:** `BackupTriggerWorker.kt` is a `@HiltWorker` with injected `BackupScheduler` and `Preferences`, calling `scheduler.scheduleIncoming()`; class name and package unchanged; log line byte for byte; `Result.success()` always. KSP generated the four classes and both Hilt components map the worker (`put=1 size3=1`).
+- **Mutations:** 11 counted detections (M-T1 to M-T10, M-T12), each failing exactly the cases the plan names; M-T11 (`@AssistedInject` removed) fails the KSP step, detected by the build. Every restore proven by blob, raw SHA-256 and porcelain.
+- **Coverage:** `worker` package 10/10 lines (100.0%), only `BackupTriggerWorker` reports lines; floor written `0.90` per Record 19 ruling 47 (20 x 9 / 10 = 18 -> 0.90), with the note in `app/build.gradle` Rule 15.
+- **Release build (IC-4):** the worker is self-mapped in the mapping, present in the release dex, the key string present. IC-3 (emulator) is the orchestrator's; the debug APK for it is named in the log.
+- CR for the CNTR-004 `:372-376` example: not yet raised.
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->

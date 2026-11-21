@@ -1,0 +1,4 @@
+e: file:///<repo>/app/src/test/java/com/zegoggles/smssync/worker/BackupTriggerWorkerTest.kt:421:70 Cannot access 'androidx.room.RoomDatabase' which is a supertype of 'WorkDatabase'. Check your module classpath for missing or conflicting dependencies.
+FAILURE: Build failed with an exception.
+BUILD FAILED in 1m 2s
+exit=1

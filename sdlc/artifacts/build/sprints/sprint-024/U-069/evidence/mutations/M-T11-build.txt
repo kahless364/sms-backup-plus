@@ -1,0 +1,6 @@
+e: [ksp] <repo>/app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:52: @HiltWorker annotated class should contain exactly one @AssistedInject annotated constructor.
+e: [ksp] <repo>/app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:53: @Assisted parameters can only be used within an @AssistedInject-annotated constructor.
+e: [ksp] <repo>/app/src/main/java/com/zegoggles/smssync/worker/BackupTriggerWorker.kt:54: @Assisted parameters can only be used within an @AssistedInject-annotated constructor.
+FAILURE: Build failed with an exception.
+BUILD FAILED in 42s
+exit=1
