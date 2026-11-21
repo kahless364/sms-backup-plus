@@ -1,0 +1,21 @@
+IC-4 launch smoke on Android 7.0, story U-068. Run by the orchestrator after the story closed, as its own check (decision appendix, Record 20, ruling 57).
+clock (host, UTC): 2026-11-21T15:23:25Z
+authority: the product owner's decision of 2026-11-21 (Record 20): download the SDK command-line tools and an Android 7.0 system image and create a new virtual device.
+set-up: SDK command-line tools 22.0 (commandlinetools-win-15859902_latest.zip from dl.google.com; SHA-256 90ae805d20434428bffcb699c290860f19bb5f66a67e6b330067e3de801fb04a, equal to the value on developer.android.com/studio); system image 'system-images;android-24;google_apis;x86_64' revision 27 installed with the SDK manager; virtual device 'Pixel_API_24' created with the AVD manager (device profile pixel). The emulator Pixel_10_Pro was not started or touched.
+avd: Pixel_API_24 (adb emu avd name; the only device attached)
+sdk: 24 (Android 7.0)
+apk: the developer's app-debug.apk from the I7 tree (the same file as IC-3), size=6408559
+apk sha256: 40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e
+install: adb install (fresh device, the app was not installed before) -> Success
+after: versionCode=1602 minSdk=24 targetSdk=35
+start: am start -W -n com.zegoggles.smssync/.activity.MainActivity -> Status: ok; Activity: com.zegoggles.smssync/.activity.MainActivity; TotalTime: 1226
+pid before the log read: 4250; pid after: 4250; pid after dismissing the first-run dialog: 4250 (no crash and restart)
+count FATAL EXCEPTION from the app's process: 0 (also 0 after the dialog was dismissed)
+count lines of the app's pid at level E or F containing hilt or dagger: 0
+count lines of the app's pid containing IllegalArgumentException or SecurityException: 0
+other error-level lines of the app's pid: 20, all from the emulator's graphics layer and the system WebView's start-up (EGL and 'variations seed' messages); none from the app's own code.
+screen: the first-run dialog ('SMS Backup+ 1.6.0-BETA2', its text and the OK button) was shown; after OK the main screen's texts were read from the view hierarchy (see below). No account is configured on this device and none was entered.
+verdict: PASS for a launch smoke (Status ok, same pid, no crash signature, the first-run dialog and the main screen render).
+proves: the minSdk 24 build installs and starts on Android 7.0 (API 24), the lowest supported level, and its injection graph and first screens come up.
+does not prove: a backup or restore on Android 7.0 (no account is configured there; only the owner enters the password); anything on Android 8 to 15.
+raw logcat and the screenshot are kept outside the repository. The emulator was shut down after the check.
