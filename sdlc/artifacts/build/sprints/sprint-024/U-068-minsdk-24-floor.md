@@ -1,6 +1,6 @@
 ---
 type: story
-status: in-progress
+status: done
 sprint: '024'
 artifact_type: user-story
 priority: high
@@ -48,8 +48,9 @@ pipeline: ''
 domain: modernization
 requirement_source: authored
 alignment_audit: passed
-updated_at: '2026-11-21T11:42:19.089Z'
-current_build_phase: review
+updated_at: '2026-11-21T14:03:20.009Z'
+resolution: done
+updated_date: 2026-11-21
 ---
 
 # U-068: Raise minSdk to 24 and Remove What the Floor Makes Dead
@@ -307,6 +308,17 @@ Risks: (1) `receiver` and `scheduler` coverage at their floors (AC-3, AC-15); (2
 
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
+
+Summarised by the orchestrator from the workspace `sdlc/artifacts/build/sprints/sprint-024/U-068/` on 2026-11-21. The story's seven increments are the commits `533e9f51`, `2aad7d70`, `853483e2`, `c8e98a7f`, `9aa84266`, `7c5e6073` and `0d490997` (subjects start `U-068 S1-`). Test count by the authoritative command: 753 at the start (`4300ffa9`), 756 at `0d490997`; three tests added, five renamed with their assertions kept or strengthened, none removed, 2 skipped as before.
+
+- **Plan checks.** Iteration 1: plan review FAIL on six mechanical blockers (the added test not written as exact edits, a line-ending fault in the lint scratch copy, a check against the wrong commit, an evidence file no step wrote, three wrong expected counts, end checks not limited to the story's own paths); contract verification PASS; depth check PASS. Iteration 2: all three PASS.
+- **The build was interrupted once.** In the fifth increment the machine's endpoint security quarantined Git's `diff.exe`. The developer stopped and reported; nothing was restored and no exclusion was added. The product owner decided the builds continue with Git's built-in comparison (decision appendix, Record 18). The developer resumed with `git diff --no-index`; the code review found the substituted commands prove the same thing.
+- **Code review: PASS** (`review-code.md`). No Critical, High or Medium finding. All seven removed sites reduce to what ran at API 24 and above; twelve sites at higher levels are untouched; the files that must not change have empty diffs. Low: for two of the three package differences the developer flagged, the identity of the renamed files was inferred from positions and counts (QA then confirmed it from the R8 mapping); one long comment line.
+- **Security review: PASS** (`review-security.md`). No Critical or High finding. The exported components, backup rules and network security configuration are unchanged; none of the removed branches was a security check. Four Low findings, deferred with reasons: the test runtime for Android 7.0 was fetched by the test framework outside the build's dependency verification (checksums recorded; test classpath only); unreachable pre-24 branches remain in the vendored mail library (left on purpose until the migration); a signed release package was not inspected; the pre-Q restore path still has no unit test.
+- **Launch check IC-3: passed** on the Android 16 emulator (`evidence/IC3-emulator.txt`): the build installed over the configured app, the platform reads it as minSdk 24, and it started with no crash. Beyond the criterion, the new build ran a pending incoming backup of two test messages against the mail server to completion.
+- **IC-4 (an Android 7.0 device): not run.** It needs the product owner's decision PO-A (downloading an API 24 image and creating a virtual device). By ruling it is "not applicable until PO-A is decided".
+- **QA: PASS** (`qa-results.md`). Every criterion met; four with deviations declared or ruled before the build (AC-6, AC-10, AC-13, AC-14). QA's own gate run: 756 tests, 0 failures, 2 skipped; all 18 coverage rules hold (`receiver` 39/58, `compat` 18/71, `scheduler` 137/185). QA re-applied three mutations and saw the plan's failing sets. The three package differences not named in the plan are each explained by the new floor (the debug package is signed with the v2 scheme only; two service files carry new shortened names; one layout variant was folded away).
+- **Carried forward.** Follow-up text sites left by ruling (`README.md` line 38, a package comment, comments that are true as written, older entries of the issue template). The untested restore path for Android 7.0 to 9 and the About dialog's scroll restore go to the backlog. Eight lint baseline entries that the floor did not make stale are left for the compileSdk story. The design's count of 38 baseline entries is 37.
 
 ## Notes
 

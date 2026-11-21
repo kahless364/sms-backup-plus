@@ -1,0 +1,54 @@
+U-068 QA: manifests, APKs and coverage from QA's own gate run (2026-11-21). Comparisons with git diff --no-index (no external diff or cmp).
+
+== merged manifests vs evidence/I0-merged-{debug,release}.xml (both variants, same three hunks)
+- android:minSdkVersion="21" -> "24"
+- removed: <uses-permission android:name="android.permission.USE_CREDENTIALS" android:maxSdkVersion="22"/> with its two comments
+- removed: <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="18"/> with its comment block and group comment
+- android:extractNativeLibs="true" -> "false" (declared difference, plan row D24, ruling P-2)
+nothing else differs. vs evidence/I7-merged-{debug,release}.xml: identical (exit 0).
+
+== packaged manifests (aapt2 36.1.0 dump xmltree, line numbers stripped) vs evidence/I0-manifest-*.txt, both APKs
+- minSdkVersion 21 -> 24; the two uses-permission elements (maxSdkVersion 22 and 18) removed; extractNativeLibs true -> false. Nothing else.
+vs evidence/I7-manifest-*.txt: identical (exit 0).
+
+== invariants (merged release, packaged both)
+SystemForegroundService: android:foregroundServiceType="dataSync" (packaged 0x00000001)
+InitializationProvider: 0 occurrences
+BackupBroadcastReceiver: android:exported="true", action com.zegoggles.smssync.BACKUP, category DEFAULT
+SmsBroadcastReceiver: exported="false", permission BROADCAST_SMS, action SMS_RECEIVED; source block sha256 at 4300ffa9 = at 0d490997 (0d3478e5...)
+git grep maxSdkVersion 0d490997 -- app/src/main/AndroidManifest.xml: no output
+git grep "USE_CREDENTIALS|WRITE_EXTERNAL_STORAGE" -- app/src k9mail-vendored/src: only TokenRefresher.java:97 (a comment)
+
+== APK entry lists vs evidence/I7-apk-entries-*.txt: identical (exit 0, both)
+debug entries 536 so 0 dex 23 ; release entries 516 so 0 dex 1
+the three differences the plan did not name (I0 vs end), checked on QA's APKs:
+(a) debug: no META-INF/CERT.RSA, CERT.SF, MANIFEST.MF. apksigner verify -v: Verifies; v1 false; v2 true; v3 false. (I0 list had the three files.)
+(b) release META-INF/services: q4.b0 -> r4.b ; v4.t -> r4.a ; java.nio.charset.spi.CharsetProvider -> t1.b (3 service files, 3 at I0).
+    mapping.txt: kotlinx.coroutines.CoroutineExceptionHandler -> q4.b0 ; kotlinx.coroutines.internal.MainDispatcherFactory -> v4.t
+    debug APK (not obfuscated): META-INF/services/kotlinx.coroutines.CoroutineExceptionHandler -> AndroidExceptionPreHandler ; .../MainDispatcherFactory -> AndroidDispatcherFactory
+(c) release res/u01.xml gone: shortened res paths 414 at I0, 413 now. aapt2 dump resources (release): layout/abc_alert_dialog_button_bar_material has configs () res/hP1.xml and (watch) res/GR.xml only; both names are in the I0 list. debug at I0 had layout/, layout-v22/ and layout-watch-v20/ for this resource; now layout/ and layout-watch-v20/.
+
+== JaCoCo LINE per package (report generated from QA's gate exec data by :app:jacocoTestReport; 18 rules of app/build.gradle evaluated)
+com.zegoggles.smssync.service                  674/822     82.0%  floor 0.70  spare   98  OK
+com.zegoggles.smssync.service.exception         15/19      78.9%  floor 0.70  spare    1  OK
+com.zegoggles.smssync.service.state            115/122     94.3%  floor 0.70  spare   29  OK
+com.zegoggles.smssync.mail                     541/746     72.5%  floor 0.70  spare   18  OK
+com.zegoggles.smssync.mail.transport           241/287     84.0%  floor 0.70  spare   40  OK
+com.zegoggles.smssync.auth                     185/235     78.7%  floor 0.70  spare   20  OK
+com.zegoggles.smssync                           17/29      58.6%  floor 0.50  spare    2  OK
+com.zegoggles.smssync.activity                 198/1008    19.6%  floor 0.10  spare   97  OK
+com.zegoggles.smssync.activity.auth              0/135      0.0%  floor 0.00  spare    0  OK
+com.zegoggles.smssync.activity.events            0/8        0.0%  floor 0.00  spare    0  OK
+com.zegoggles.smssync.activity.fragments        58/472     12.3%  floor 0.10  spare   10  OK
+com.zegoggles.smssync.calendar                  37/50      74.0%  floor 0.70  spare    2  OK
+com.zegoggles.smssync.compat                    18/71      25.4%  floor 0.20  spare    3  OK
+com.zegoggles.smssync.contacts                  41/53      77.4%  floor 0.70  spare    3  OK
+com.zegoggles.smssync.di                         2/29       6.9%  floor 0.03  spare    1  OK
+com.zegoggles.smssync.preferences              309/412     75.0%  floor 0.65  spare   41  OK
+com.zegoggles.smssync.receiver                  39/58      67.2%  floor 0.50  spare   10  OK
+com.zegoggles.smssync.scheduler                137/185     74.1%  floor 0.60  spare   26  OK
+com.zegoggles.smssync.tasks                      0/20       0.0%  floor 0.00  spare    0  OK
+com.zegoggles.smssync.utils                     30/199     15.1%  floor 0.10  spare   10  OK
+com.zegoggles.smssync.worker                     0/16       0.0%  floor 0.00  spare    0  OK
+SmsReceiver.java lines (nr, ci, mi, cb, mb): (45,3,0,2,0) (46,5,0,0,0) (47,10,0,3,1) (49,6,0,0,0)
+  line 45 is "if (SDK_INT >= Q)": 2 of 2 branches covered; 46 is the RoleManager line; 49 is the getDefaultSmsPackage line.

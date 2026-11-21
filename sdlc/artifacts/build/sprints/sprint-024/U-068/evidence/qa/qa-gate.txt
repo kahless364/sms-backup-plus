@@ -1,0 +1,25 @@
+U-068 QA gate (run by QA, 2026-11-21). HEAD 677ad6c2 (documents-only commit on top of 0d490997; `git diff --quiet HEAD -- app k9mail-vendored build.gradle` exit 0 before the run).
+shell: MSYS_NO_PATHCONV set: 0 (env | grep -c MSYS_NO_PATHCONV)
+pre-step: rm -rf app/build/test-results
+command: ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:jacocoTestCoverageVerification :app:assembleRelease
+result: EXIT=0; BUILD SUCCESSFUL in 5m 33s; 153 actionable tasks: 5 executed, 148 up-to-date
+tasks seen: > Task :app:jacocoTestCoverageVerification ; > Task :app:assembleRelease
+up-to-date: :app:compileDebugKotlin, :app:compileDebugJavaWithJavac, :app:packageDebug, :app:assembleDebug (the tree equals the developer's I7 build)
+./gradlew --version: Gradle 9.5.1 ; Launcher JVM 25.0.5.1 ; Daemon JVM: Compatible with Java 25, any vendor, nativeImageCapable=false (from gradle/gradle-daemon-jvm.properties)
+
+JUnit XML written by the build itself (S1-I1 switch), app/build/test-results/testDebugUnitTest/TEST-*.xml:
+files 80 tests 756 failures 0 errors 0 skipped 2
+skipped: com.zegoggles.smssync.AppTest shouldGetVersionName
+skipped: com.zegoggles.smssync.preferences.AuthPreferencesTest u012_robolectricSmoke_encryptedPrefsSecretStore_migrateFromPlaintext
+receiver.BackupBroadcastReceiverTest tests 2 failures 0 errors 0 skipped 0 (cases: onReceive_integrationOff_neverSchedules, onReceive_integrationOn_schedulesImmediateOnce)
+compat.SmsReceiverTest tests 5 failures 0 errors 0 skipped 0
+service.WorkManagerSchedulerTest tests 25 failures 0 errors 0 skipped 0
+activity.MainActivityRestoreTest tests 5 failures 0 errors 0 skipped 0
+
+debug APK after the gate: size 6408559, sha256 40d46cabe10ff218be9f6ee07284617110db718cd8cae1c1146818749e01824e
+  (equal to evidence/I7-apk.txt and to the APK installed in evidence/IC3-emulator.txt; packageDebug was UP-TO-DATE against the HEAD tree)
+
+Authoritative count: git grep -h "@Test" <commit> -- 'app/src/test/**/*.java' 'app/src/test/**/*.kt' | grep -c "@Test"
+4300ffa9 753
+0d490997 756
+@Ignore lines (pattern count, includes comment mentions): 6 at 4300ffa9, 6 at 0d490997

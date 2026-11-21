@@ -1,0 +1,36 @@
+U-068 QA mutations (2026-11-21). Each: one single-line sed substitution on the working-tree file, one targeted run (./gradlew :app:testDebugUnitTest --tests <class>), then git checkout -- <file>, hash check, status check. Never staged, never committed.
+
+Q-1 = plan row M-B1 (literal text), file app/src/main/java/com/zegoggles/smssync/receiver/BackupBroadcastReceiver.java:51
+  edit: "        if (new Preferences(context).isAllow3rdPartyIntegration()) {" -> "        if (true || new Preferences(context).isAllow3rdPartyIntegration()) {"
+  numstat while mutated: 1 1 (the only changed file under app)
+  run: EXIT=1; class BackupBroadcastReceiverTest tests 2 failures 1 errors 0
+    FAIL onReceive_integrationOff_neverSchedules org.mockito.exceptions.verification.NoInteractionsWanted
+    PASS onReceive_integrationOn_schedulesImmediateOnce
+  plan row: fails exactly the "off" test (No interactions wanted, A); the "on" test passes -> EQUAL
+  restored: hash b038d7fdb8b50d5cddd32ef1899736c29efc7274 = HEAD blob; git status --short -- app k9mail-vendored build.gradle: empty
+
+Q-2 = plan row M-R2 (literal text), file app/src/main/java/com/zegoggles/smssync/compat/SmsReceiver.java:49
+  edit: "            return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));" -> "            if (true) throw new IllegalStateException(\"U-068 M-R2\"); return context.getPackageName().equals(Sms.getDefaultSmsPackage(context));"
+  numstat while mutated: 1 1
+  run: EXIT=1; class SmsReceiverTest tests 5 failures 2 errors 0
+    FAIL testIsSmsBackupDefaultSmsApp_belowQ_usesDefaultSmsPackage java.lang.IllegalStateException: U-068 M-R2
+    FAIL testOnReceive_belowQ java.lang.IllegalStateException: U-068 M-R2
+    PASS testIsSmsBackupDefaultSmsApp_q_usesRoleManager, testOnReceive_q, testEnableThenDisable_togglesReceiverComponent
+  plan row: fails the two _belowQ cases (X "U-068 M-R2"); the two _q cases pass -> EQUAL (the C-1 test, added after the row was written, also passes)
+  restored: hash bb0c5be0bbe8c4b2bf29ed30dc7a198c476d8c04 = HEAD blob; status empty
+
+Q-3 = plan row M-W2 (boundary mutant), HEAD-equivalent form, file app/src/main/java/com/zegoggles/smssync/scheduler/WorkManagerScheduler.kt:219
+  why not literal: M-W2's target line "if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {" was deleted by S-7 (I5), and the Build import with it. The equivalent puts the null return back onto the floor in one line:
+  edit: "        if (secretStore.isEncryptionDegraded()) {" -> "        if (secretStore.isEncryptionDegraded() || android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.N) {"
+  numstat while mutated: 1 1
+  run: EXIT=1; class WorkManagerSchedulerTest tests 25 failures 1 errors 0
+    FAIL inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger com.google.common.truth.AssertionErrorWithFacts: expected not to be: null
+    PASS the other 24 (including inv4_contentTrigger_api29_smsUriPresent_withDescendants, inv4_contentTrigger_callLogEnabled_bothUrisPresent, inv4_contentTrigger_callLogDisabled_onlySmsUri and the U-054 degraded test)
+  plan row: fails exactly inv4_contentTrigger_atMinSdk24_enqueuesContentTrigger ("expected not to be null", A); every API 29 case and the U-054 case pass -> EQUAL
+  restored: hash 0194308cfcf9ff34effaf08c7990c087b0bedcbd = HEAD blob; status empty
+
+After the last restore:
+  git status --short -- app k9mail-vendored build.gradle: empty
+  git diff --quiet HEAD -- app k9mail-vendored build.gradle: exit 0
+  post-restore run (--tests BackupBroadcastReceiverTest, SmsReceiverTest, WorkManagerSchedulerTest): EXIT=0; 2/5/25 tests, 0 failures, 0 errors
+  (so no class compiled from a mutant remains in app/build; the test-results and jacoco exec in app/build are now those of this targeted run, not of the full gate)

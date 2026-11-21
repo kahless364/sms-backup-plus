@@ -1,0 +1,61 @@
+U-068 QA repository checks (2026-11-21). START 4300ffa9, last story commit 0d490997. git grep against the commit.
+
+== AC-7 (a) grep -nE "SDK_INT|VERSION_CODES|TargetApi|RequiresApi" app/src/main
+at 4300ffa9: 24 lines, 5 import lines
+at 0d490997: 14 lines, 12 without import lines:
+App.java:246 (O), :350 @RequiresApi(O); MainActivity.java:241 (Q), :515 (TIRAMISU); SmsDefaultRoleHelper.kt:76, :106, :130 (Q); ThemeActivity.java:20 (26), :26 @TargetApi(26); SmsReceiver.java:45 (Q); BackupWorker.kt:534 (Q); RestoreWorker.kt:707 (Q)
+imports: App.java:35 RequiresApi; ThemeActivity.java:3 TargetApi
+AC-7 (b) removed imports, word count left in the file: Dialogs.java Build 0; CalendarAccessorPost40.java Build 0, TargetApi 0; SmsReceiver.java TargetApi 0; MainActivity.java TargetApi 0; WorkManagerScheduler.kt Build 0
+S-6: git diff -w 4300ffa9 0d490997 -- SmsDefaultRoleHelper.kt: numstat 0 5 (removed: the outer KITKAT if, "} else {", the pre-KitKat comment, delegate.startViewModelRestore(), "}")
+
+== AC-8 grep -niE "pre-?24|below API 24|API ?< ?24|API 24\+|API-level branching|broadcast fallback|kitkat" app/src/main/java app/src/test/java/com/zegoggles/smssync/service app/src/test/java/com/zegoggles/smssync/compat
+one hit: app/src/main/java/com/zegoggles/smssync/compat/package-info.java:2 ("Kitkat+")
+untouched (BUG-023): BackupTriggerWorker.kt:39 "via scheduleIncoming()"; WorkManagerSchedulerTest.kt:548 "would ultimately call scheduleIncoming()" (was :537; not in the diff)
+
+== AC-4 (e) grep -nE "LOLLIPOP|sdk = \[?2[0-3]" app/src/test: no output
+
+== AC-5 app/build.gradle:21 compileSdkVersion 35, :24 minSdkVersion 24, :25 targetSdkVersion 35, :26 versionCode 1602; "minSdk 21|SDK 21": no output; k9mail-vendored/build.gradle:54 minSdkVersion 21
+
+== AC-9
+git diff --stat 4300ffa9 0d490997 -- SmsBroadcastReceiver.java BackupBroadcastReceiver.java BackupTriggerWorker.kt BackupWorker.kt RestoreWorker.kt k9mail-vendored/ app/src/test/resources/robolectric.properties: empty
+AndroidManifest.xml numstat 0 14, one hunk @@ -38,14 +37,0 @@
+git diff --name-only 4300ffa9 0d490997 -- app/src/main: AndroidManifest.xml, App.java, activity/Dialogs.java, activity/MainActivity.java, activity/SmsDefaultRoleHelper.kt, calendar/CalendarAccessorPost40.java, compat/SmsReceiver.java, scheduler/BackupScheduler.java, scheduler/WorkManagerScheduler.kt (nine)
+
+== AC-10
+git diff --numstat 4300ffa9 0d490997 -- app/lint-baseline.xml: 0 121 ; app/lint.xml: no line
+entries (grep -c '^ *<issue *$'): 37 at 4300ffa9, 26 at 0d490997; added lines 0; removed "<issue" 11, removed "</issue>" 11; the file at 0d490997 parses as XML with 26 issues
+removed: Deprecated BackupJobs.java:68; ObsoleteSdkInt CalendarAccessorPost40.java:23 (>= 14), Dialogs.java:169 (>= 21), MainActivity.java:364 (>= 19), :368 (>= 21), ServiceBase.java:209, :225 (>= 21), SmsReceiver.java:31 (>= 19), :50 (>= 21), SmsRestoreService.java:67 (never < 21), :165 (>= 21)
+remaining ids: Range 6, RtlHardcoded 6, GradleDependency 5, NonConstantResourceId 3, and one each of RedundantLabel, ExportedReceiver, SystemPermissionTypo, DataExtractionRules, MonochromeLauncherIcon, IgnoreWithoutReason
+
+== AC-11
+CHANGES:3 "Minimum Android version is now 7.0 (API 24); Android 5.0, 5.1 and 6.0 (API 21 to 23) are no longer supported" (replaces "Android minSdk now 14 (4.0, Ice Cream Sandwich)")
+DEVELOPMENT.md numstat 1 1: "- **minSdkVersion**: 21" -> "- **minSdkVersion**: 24"
+code-location.md: "| minSdk | 21 (Android 5.0) |" -> "| minSdk | 24 (Android 7.0) |"
+500_bug_report.yml: 6.0 (Marshmallow 2015), 5.1 (Lollipop 2015), 5.0 (Lollipop 2014) removed; nothing else
+CR-016 D-5: grep -n CR-016: REQ-001 :13 (change_records) and :18 (note); REQ-006 :17 and :24; "superseded by REQ-MODERNIZATION-015": 1 in each; git diff f0d0d17e^ f0d0d17e of each: change_records [] -> list with CR-016, plus the added note; no criterion or status line
+sweep git grep -niE "minSdk(Version)?[^0-9]{0,6}21|API (level )?21" 0d490997 -- . ':!sdlc': 7 hits = CHANGES:3 (intended), WindowInsetsUtil.java:48, :84, WindowInsetsUtilTest.java:31, :116, k9mail-vendored/build.gradle:54, DefaultTrustedSocketFactory.java:153
+
+== AC-12
+git diff --stat 4300ffa9 0d490997 -- gradle/verification-metadata.xml gradle/wrapper/ gradle/gradle-daemon-jvm.properties settings.gradle gradle.properties gradlew gradlew.bat k9mail-vendored/build.gradle app/lint.xml app/proguard-rules.pro .github/workflows/: empty
+numstat build.gradle 1 1 (line 30 reports.junitXml.required = true; line 29 reports.html.required = false unchanged); app/build.gradle 3 3 (:24 minSdkVersion, :153 and :160 comments)
+files outside sdlc/artifacts/build changed 4300ffa9..0d490997: the nine of AC-9, three test files, app/build.gradle, build.gradle, app/lint-baseline.xml, CHANGES, DEVELOPMENT.md, sdlc/artifacts/engagement/code-location.md, .github/ISSUE_TEMPLATE/500_bug_report.yml, and sdlc/artifacts/stories/BUG-024-*.md (from orchestrator commit 4f041c3f, not a story commit)
+
+== AC-14 test diff 4300ffa9..0d490997 (app/src/test: 3 files, 114 insertions, 22 deletions)
+added @Test: BackupBroadcastReceiverTest.onReceive_integrationOn_schedulesImmediateOnce, .onReceive_integrationOff_neverSchedules, SmsReceiverTest.testEnableThenDisable_togglesReceiverComponent
+removed @Test lines: 5, each replaced in place by a retargeted one (rename table in implementation-log I3); assertions: SmsReceiverTest no throw / isFalse() unchanged; WorkManagerSchedulerTest isNull() replaced by isNotNull, tag, unique work, content://sms trigger, isTriggeredForDescendants (stronger)
+
+== AC-16 commits (topological order), each parent and files
+533e9f51 S1-I1 (parent 4f041c3f doc): build.gradle + workspace
+2aad7d70 S1-I2 (parent cf136a2d doc): BackupBroadcastReceiverTest.java + workspace
+853483e2 S1-I3 (parent 2aad7d70): SmsReceiverTest.java, WorkManagerSchedulerTest.kt + workspace
+c8e98a7f S1-I4 (parent 853483e2): app/build.gradle, AndroidManifest.xml + workspace
+9aa84266 S1-I5 (parent b097d602 doc): the eight production files, SmsReceiverTest.java (C-1) + workspace
+7c5e6073 S1-I6 (parent 92cfc34d doc): app/lint-baseline.xml + workspace
+0d490997 S1-I7 (parent 7c5e6073): CHANGES, DEVELOPMENT.md, 500_bug_report.yml, code-location.md + workspace
+git log 4300ffa9..HEAD -- app gradle k9mail-vendored build.gradle settings.gradle CHANGES DEVELOPMENT.md .github code-location.md: only the seven story commits
+merges in 4300ffa9..HEAD: 0
+
+== IC-1 signatures: no diff line touches isSmsBackupDefaultSmsApp(@NonNull Context), startRestore(...), ScheduledJob scheduleContentTrigger() or its @Nullable, fun scheduleContentTrigger(): ScheduledJob?
+callers at 0d490997: App.java:382; MainActivity.java:242, :312, :427; SmsDefaultRoleHelper.kt:74, :149; SmsReceiver.java:35; tests
+
+== hygiene: added lines of the seven commits scanned for e-mail-like tokens, the user name, the host name, a user-profile or application-data path: 0 hits in each commit. Whole-file hits are upstream copyright headers predating the story.

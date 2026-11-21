@@ -242,6 +242,11 @@ For QA. Run Gradle in a shell without `MSYS_NO_PATHCONV`, on JDK 25 (`./gradlew 
 
 **Comparison tool (binding; the product owner's decision of 2026-11-21, decision appendix Record 18).** After the machine's endpoint security quarantined Git's `diff.exe`, no step of this story calls the external `diff` or `cmp`. Comparisons are made with `git diff --no-index` (`--quiet` for equal or different; `--stat` or `--numstat` for counts) or by comparing `sha256sum` values. Where the plan's text still shows `diff` or `cmp`, the developer substitutes these, re-derives any expected value that depended on the output form, and records each substitution in the log. Nothing is restored from quarantine, no exclusion is added, shell activity is kept modest, and if another tool disappears or a process is killed without a visible reason the developer stops and reports.
 
+**Plan gates, iteration 3 (2026-11-21): plan review PASS; contract verification and the depth check passed on iteration 2.** Iteration 1 failed plan review on three blockers and iteration 2 on one that the rework introduced (a final grep that also matched an assertion label in the new test); all are closed. The plan to build from is iteration 3.
+
+- **Start commit:** the commit that closes story U-068 (subject "U-068 done ..."). The developer reads it at the baseline step.
+- **A behaviour this story does not change, measured on 2026-11-21:** after the content trigger fires once it cannot fire again for about fifteen minutes, and the scheduler can hold the app's jobs back when the app has not been used. It is BUG-025 (`sdlc/artifacts/stories/BUG-025-incoming-sms-backup-delayed-by-trigger-period-and-job-quota.md`; record `sdlc/artifacts/build/research/2026-11-21-incoming-backup-delay-measurement.md`). The orchestrator takes it into account in the emulator check IC-3: the app is opened first, and the test SMS is sent after a fresh registration, so that the trigger can fire.
+
 ## Review Findings
 <!-- Summarized from workspace artifacts -->
 
